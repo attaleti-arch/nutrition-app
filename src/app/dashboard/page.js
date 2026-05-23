@@ -1,6 +1,6 @@
 'use client'
 import { useState } from 'react'
-import PlanApp from './PlanApp'
+import PlanApp from '../PlanApp'
 
 export default function Home() {
   const [name, setName] = useState('')
