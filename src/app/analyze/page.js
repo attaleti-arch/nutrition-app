@@ -26,7 +26,7 @@ export default function AnalyzePage() {
     const { data } = await supabase
       .from('daily_logs')
       .select('*')
-      .eq('client_name', client.name) // ✅ תוקן
+.eq('client_name', client.password)
       .order('log_date', { ascending: false })
       .limit(7)
     setLogs(data || [])
