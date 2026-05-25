@@ -106,7 +106,7 @@ export default function AdminPage() {
                 onClick={() => deleteClient(c.id, c.name)}
                 style={{ background:'#fee2e2', color:'#ef4444', border:'none', borderRadius:8, padding:'6px 12px', cursor:'pointer', fontSize:13 }}
               >
-                מחקי
+                {'מחקי'}
               </button>
             </div>
           ))}
