@@ -19,10 +19,10 @@ export default function AnalyzePage() {
   }
 
   const loadLogs = async (idx) => {
-    eq('client_name', client.password)
-    if (!client) return
-    setSelected(client)
-    setAnalysis('')
+  const client = clients[idx]
+  if (!client) return
+  setSelected(client)
+  setAnalysis('')
     const { data } = await supabase
       .from('daily_logs')
       .select('*')
