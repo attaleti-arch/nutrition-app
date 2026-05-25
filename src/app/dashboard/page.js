@@ -32,8 +32,8 @@ export default function Dashboard() {
         <input type="password" value={password} onChange={e=>setPassword(e.target.value)}
           onKeyDown={e=>e.key==='Enter'&&password==='Esterika26'&&setAuth(true)}
           placeholder="סיסמה..." style={{width:'100%',padding:'10px 14px',borderRadius:10,border:'1.5px solid #e5e7eb',fontSize:15,textAlign:'center',outline:'none',boxSizing:'border-box',marginBottom:10}} />
-        <button onClick={()=>password==='Esterika26'&&setAuth(true)} style={{width:'100%',padding:12,borderRadius:10,background:'#0f4c2a',color:'#fff',border:'none',cursor:'pointer',fontWeight:700,fontSize:15}}>כניסה</button>
-        {password&&password!=='Esterika26'&&<div style={{color:'#ef4444',fontSize:13,marginTop:8}}>סיסמה שגויה</div>}
+        ['Esterika26','Riki1','Rucha2'].includes(password)
+       password&&['Esterika26','Riki1','Rucha2'].includes(password)
       </div>
     </div>
   )
