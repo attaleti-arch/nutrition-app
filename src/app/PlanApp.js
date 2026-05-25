@@ -203,6 +203,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const { data, error } = await supabase
     .from('daily_logs')
     .upsert(payload, { onConflict: 'client_name,log_date' })
+    .select()
   console.log('תוצאה:', data, 'שגיאה:', error)
   setSaving(false)
   setSaved(true)
