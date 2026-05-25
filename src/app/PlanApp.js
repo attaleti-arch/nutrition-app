@@ -126,6 +126,18 @@ function RadioRow({ id, text, accent, selected, onSelect }) {
   )
 }
 
+function FreeText({ value, onChange, placeholder }) {
+  return (
+    <textarea
+      value={value}
+      onChange={function(e) { onChange(e.target.value) }}
+      placeholder={placeholder || 'הוסיפי פרטים נוספים...'}
+      rows={2}
+      style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginTop: 8, color: '#555' }}
+    />
+  )
+}
+
 export default function PlanApp({ clientName, userPassword }) {
   const displayName = clientName || userPassword || ''
   const dbKey = userPassword || clientName || ''
@@ -143,6 +155,9 @@ export default function PlanApp({ clientName, userPassword }) {
   const [water, setWater] = useState(0)
   const [steps, setSteps] = useState('')
   const [note, setNote] = useState('')
+  const [bokerFree, setBokerFree] = useState('')
+  const [lunchFree, setLunchFree] = useState('')
+  const [erevFree, setErevFree] = useState('')
   const [feedback, setFeedback] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -164,6 +179,9 @@ export default function PlanApp({ clientName, userPassword }) {
         setWater(todayLog.data.water || 0)
         setSteps(todayLog.data.steps || '')
         setNote(todayLog.data.note || '')
+        setBokerFree(todayLog.data.boker_free || '')
+        setLunchFree(todayLog.data.lunch_free || '')
+        setErevFree(todayLog.data.erev_free || '')
         setFeedback(todayLog.data.trainer_feedback)
       }
     }
@@ -171,11 +189,7 @@ export default function PlanApp({ clientName, userPassword }) {
   }, [dbKey, todayKey])
 
   const toggleRestriction = function(key) {
-    setRestrictions(function(r) {
-      var n = Object.assign({}, r)
-      n[key] = !n[key]
-      return n
-    })
+    setRestrictions(function(r) { var n = Object.assign({}, r); n[key] = !n[key]; return n })
   }
 
   const toggleCheck = function(id) {
@@ -195,6 +209,9 @@ export default function PlanApp({ clientName, userPassword }) {
       water: water,
       steps: steps,
       note: note,
+      boker_free: bokerFree,
+      lunch_free: lunchFree,
+      erev_free: erevFree,
       diet_type: dietType,
       restrictions: restrictions,
       updated_at: new Date().toISOString(),
@@ -224,12 +241,7 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {DIET_TYPES.map(function(d) {
               return (
-                <button key={d.key} onClick={function() { setDietType(d.key) }} style={{
-                  padding: '12px 16px', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: 'pointer', textAlign: 'right',
-                  border: '2px solid ' + (dietType === d.key ? C.greenMid : '#e5e7eb'),
-                  background: dietType === d.key ? C.greenLight : '#fafafa',
-                  color: dietType === d.key ? C.greenDark : '#333',
-                }}>
+                <button key={d.key} onClick={function() { setDietType(d.key) }} style={{ padding: '12px 16px', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: 'pointer', textAlign: 'right', border: '2px solid ' + (dietType === d.key ? C.greenMid : '#e5e7eb'), background: dietType === d.key ? C.greenLight : '#fafafa', color: dietType === d.key ? C.greenDark : '#333' }}>
                   {d.icon} {d.label}
                 </button>
               )
@@ -237,28 +249,18 @@ export default function PlanApp({ clientName, userPassword }) {
           </div>
         </div>
         <div style={{ width: '100%', maxWidth: 340, background: '#fff', borderRadius: 20, padding: 20, marginBottom: 20 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12, textAlign: 'right' }}>הגבלות נוספות (סמני הכל שרלוונטי):</div>
+          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12, textAlign: 'right' }}>הגבלות נוספות:</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {RESTRICTIONS.map(function(r) {
               return (
-                <button key={r.key} onClick={function() { toggleRestriction(r.key) }} style={{
-                  padding: '10px 16px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'right',
-                  border: '2px solid ' + (restrictions[r.key] ? C.blue : '#e5e7eb'),
-                  background: restrictions[r.key] ? C.blueLight : '#fafafa',
-                  color: restrictions[r.key] ? C.blue : '#333',
-                }}>
+                <button key={r.key} onClick={function() { toggleRestriction(r.key) }} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'right', border: '2px solid ' + (restrictions[r.key] ? C.blue : '#e5e7eb'), background: restrictions[r.key] ? C.blueLight : '#fafafa', color: restrictions[r.key] ? C.blue : '#333' }}>
                   {r.icon} {r.label} {restrictions[r.key] ? '✓' : ''}
                 </button>
               )
             })}
           </div>
         </div>
-        <button onClick={function() { if (dietType) setSetupDone(true) }} disabled={!dietType} style={{
-          padding: '14px 40px', borderRadius: 14, fontSize: 16, fontWeight: 800,
-          background: dietType ? C.greenMid : '#e5e7eb',
-          color: dietType ? '#fff' : '#9ca3af',
-          border: 'none', cursor: dietType ? 'pointer' : 'default', width: '100%', maxWidth: 340,
-        }}>
+        <button onClick={function() { if (dietType) setSetupDone(true) }} disabled={!dietType} style={{ padding: '14px 40px', borderRadius: 14, fontSize: 16, fontWeight: 800, background: dietType ? C.greenMid : '#e5e7eb', color: dietType ? '#fff' : '#9ca3af', border: 'none', cursor: dietType ? 'pointer' : 'default', width: '100%', maxWidth: 340 }}>
           בואי נתחיל!
         </button>
       </div>
@@ -278,6 +280,7 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ fontSize: 11, color: '#86efac', marginTop: 4 }}>{checkedCount}/{totalItems} פריטים סומנו היום</div>
         </div>
       </div>
+
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '14px 14px 80px' }}>
         {feedback && (
           <div style={{ background: '#fefce8', border: '2px solid #fbbf24', borderRadius: 14, padding: '12px 16px', marginBottom: 12 }}>
@@ -285,23 +288,20 @@ export default function PlanApp({ clientName, userPassword }) {
             <div style={{ fontSize: 14, color: '#78350f', lineHeight: 1.7 }}>{feedback}</div>
           </div>
         )}
-        <Section title="ארוחת בוקר" icon="☀" accent={C.orange} light={C.orangeLight} defaultOpen={true}>
+
+        <Section title="ארוחת בוקר" icon="☀️" accent={C.orange} light={C.orangeLight} defaultOpen={true}>
           <div style={{ fontSize: 12, color: '#9ca3af', padding: '8px 0 4px', textAlign: 'right' }}>{PLAN.bokerSnack}</div>
           {filteredBoker.map(function(item) {
             return <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={toggleCheck} />
           })}
+          <FreeText value={bokerFree} onChange={setBokerFree} placeholder="אכלתי גם / פרטים נוספים על הבוקר..." />
         </Section>
+
         <Section title="ארוחת צהריים" icon="🌞" accent={C.greenMid} light={C.greenLight}>
           <div style={{ display: 'flex', gap: 8, padding: '10px 0' }}>
             {['A', 'B'].map(function(opt) {
               return (
-                <button key={opt} onClick={function() { setLunchOpt(lunchOpt === opt ? null : opt) }} style={{
-                  flex: 1, padding: '10px 8px', borderRadius: 12,
-                  border: '2px solid ' + (lunchOpt === opt ? C.greenMid : '#e5e7eb'),
-                  background: lunchOpt === opt ? C.greenLight : '#fafafa',
-                  cursor: 'pointer', fontWeight: 700, fontSize: 13,
-                  color: lunchOpt === opt ? C.greenDark : '#555',
-                }}>
+                <button key={opt} onClick={function() { setLunchOpt(lunchOpt === opt ? null : opt) }} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: '2px solid ' + (lunchOpt === opt ? C.greenMid : '#e5e7eb'), background: lunchOpt === opt ? C.greenLight : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: lunchOpt === opt ? C.greenDark : '#555' }}>
                   {opt === 'A' ? 'אופציה A' : 'אופציה B'}
                 </button>
               )
@@ -309,55 +309,52 @@ export default function PlanApp({ clientName, userPassword }) {
           </div>
           {lunchOpt === 'A' && (
             <div>
-              <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>פחמימה - בחרי אחת:</div>
+              <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>פחמימה:</div>
               {filteredCarbs.map(function(o) { return <RadioRow key={o.id} id={o.id} text={o.text} accent={C.greenMid} selected={carbSel} onSelect={setCarbSel} /> })}
-              <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '10px 0 2px', textAlign: 'right' }}>חלבון - בחרי אחת:</div>
+              <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '10px 0 2px', textAlign: 'right' }}>חלבון:</div>
               {filteredProt.map(function(o) { return <RadioRow key={o.id} id={o.id} text={o.text} accent={C.greenMid} selected={protSel} onSelect={setProtSel} /> })}
             </div>
           )}
           {lunchOpt === 'B' && (
             <div>
-              <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>שומן - בחרי אחת:</div>
+              <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>שומן:</div>
               {filteredFat.map(function(o) { return <RadioRow key={o.id} id={o.id} text={o.text} accent={C.greenMid} selected={fatSel} onSelect={setFatSel} /> })}
             </div>
           )}
+          <FreeText value={lunchFree} onChange={setLunchFree} placeholder="אכלתי גם / פרטים נוספים על הצהריים..." />
         </Section>
+
         <Section title="ביניים" icon="🌤" accent={C.blue} light={C.blueLight}>
-          <div style={{ padding: '10px 0', fontSize: 14, color: '#333', lineHeight: 1.8, textAlign: 'right' }}>
-            קפה + 150 קלוריות חופשיות
-          </div>
+          <div style={{ padding: '10px 0', fontSize: 14, color: '#333', lineHeight: 1.8, textAlign: 'right' }}>קפה + 150 קלוריות חופשיות</div>
         </Section>
+
         <Section title="ארוחת ערב" icon="🌙" accent={C.purple} light={C.purpleLight}>
           {filteredErev.map(function(item) {
             return <CheckRow key={item.id} id={item.id} text={item.text} accent={C.purple} checked={!!checks[item.id]} onToggle={toggleCheck} />
           })}
+          <FreeText value={erevFree} onChange={setErevFree} placeholder="אכלתי גם / פרטים נוספים על הערב..." />
         </Section>
+
         <Section title="מעקב שתייה" icon="💧" accent={C.blue} light={C.blueLight}>
           <div style={{ padding: '10px 0' }}>
             <div style={{ fontSize: 13, color: '#555', marginBottom: 8, textAlign: 'right' }}>{water}/8 כוסות</div>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
               {Array.from({ length: 8 }).map(function(_, i) {
-                return (
-                  <button key={i} onClick={function() { setWater(i < water ? i : i + 1) }} style={{
-                    width: 38, height: 38, borderRadius: 10, fontSize: 18, cursor: 'pointer',
-                    border: '2px solid ' + (i < water ? C.blue : '#e5e7eb'),
-                    background: i < water ? C.blueLight : '#fafafa',
-                  }}>💧</button>
-                )
+                return <button key={i} onClick={function() { setWater(i < water ? i : i + 1) }} style={{ width: 38, height: 38, borderRadius: 10, fontSize: 18, cursor: 'pointer', border: '2px solid ' + (i < water ? C.blue : '#e5e7eb'), background: i < water ? C.blueLight : '#fafafa' }}>💧</button>
               })}
             </div>
           </div>
         </Section>
+
         <Section title="מעקב צעדים" icon="🚶‍♀️" accent={C.purple} light={C.purpleLight}>
           <div style={{ padding: '10px 0' }}>
-            <input type="number" value={steps} onChange={function(e) { setSteps(e.target.value) }}
-              placeholder="הכניסי מספר צעדים..."
-              style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, outline: 'none', boxSizing: 'border-box', textAlign: 'right' }} />
+            <input type="number" value={steps} onChange={function(e) { setSteps(e.target.value) }} placeholder="הכניסי מספר צעדים..." style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, outline: 'none', boxSizing: 'border-box', textAlign: 'right' }} />
             <div style={{ marginTop: 8, height: 8, background: '#f3f4f6', borderRadius: 99 }}>
               <div style={{ width: Math.min(100, Math.round((parseInt(steps) || 0) / 10000 * 100)) + '%', height: '100%', background: C.purple, borderRadius: 99 }} />
             </div>
           </div>
         </Section>
+
         <Section title="כללים חשובים" icon="📋" accent={C.amber} light={C.amberLight}>
           <div style={{ paddingTop: 8 }}>
             {PLAN.rules.map(function(r, i) {
@@ -370,25 +367,17 @@ export default function PlanApp({ clientName, userPassword }) {
             })}
           </div>
         </Section>
+
         <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', border: '1.5px solid #f0f0f0', marginBottom: 10 }}>
           <div style={{ fontWeight: 700, fontSize: 15, color: '#111', marginBottom: 10, textAlign: 'right' }}>הערה יומית לאתי</div>
-          <textarea value={note} onChange={function(e) { setNote(e.target.value) }}
-            placeholder="כתבי כאן איך הרגשת היום, קשיים, שאלות..."
-            rows={3}
-            style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+          <textarea value={note} onChange={function(e) { setNote(e.target.value) }} placeholder="כתבי כאן איך הרגשת היום, קשיים, שאלות..." rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
         </div>
-        <button onClick={handleSave} disabled={saving} style={{
-          width: '100%', padding: 16, borderRadius: 16,
-          background: saved ? '#16a34a' : 'linear-gradient(135deg,#0f4c2a,#16a34a)',
-          color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 17,
-        }}>
+
+        <button onClick={handleSave} disabled={saving} style={{ width: '100%', padding: 16, borderRadius: 16, background: saved ? '#16a34a' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 17 }}>
           {saving ? 'שומרת...' : saved ? 'נשמר! אתי תראה את זה' : 'שמרי את היום שלי'}
         </button>
-        <button onClick={function() { setSetupDone(false) }} style={{
-          width: '100%', padding: 10, borderRadius: 12, marginTop: 8,
-          background: 'transparent', border: '1px solid #e5e7eb',
-          color: '#9ca3af', cursor: 'pointer', fontSize: 13,
-        }}>
+
+        <button onClick={function() { setSetupDone(false) }} style={{ width: '100%', padding: 10, borderRadius: 12, marginTop: 8, background: 'transparent', border: '1px solid #e5e7eb', color: '#9ca3af', cursor: 'pointer', fontSize: 13 }}>
           עדכני העדפות תזונה
         </button>
       </div>
