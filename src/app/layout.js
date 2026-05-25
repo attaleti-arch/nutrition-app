@@ -1,14 +1,14 @@
-import './globals (1).css'
-
 export const metadata = {
   title: 'תוכנית תזונה | בין הראש לצלחת',
-  description: 'אתי אטל – תוכנית תזונה אישית',
+  description: 'אתי אטל',
 }
 
 export default function RootLayout({ children }) {
   return (
     <html lang="he" dir="rtl">
-      <body>{children}</body>
+      <body style={{margin:0,padding:0,fontFamily:'Arial,sans-serif',direction:'rtl',background:'#f8fafc'}}>
+        {children}
+      </body>
     </html>
   )
 }
