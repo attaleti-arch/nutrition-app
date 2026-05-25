@@ -1,20 +1,10 @@
-import Anthropic from '@anthropic-ai/sdk'
+content: `אתה דיאטנית מומחית. נתחי את יומן התזונה של ${name} ותני פידבק מפורט בעברית.
 
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+כתבי:
+1. **מה אכל/ה טוב** - מה עבד השבוע
+2. **איך נראית הצלחת** - הרכב הארוחות בפועל
+3. **מה לשפר** - המלצות ספציפיות ומעשיות
+4. **עידוד אישי** - משפט מחזק
 
-export async function POST(request) {
-  const { name, logs } = await request.json()
-  
-  const message = await client.messages.create({
-    model: 'claude-opus-4-5',
-    max_tokens: 1024,
-    messages: [
-      {
-        role: 'user',
-        content: 'You are a nutrition expert. Analyze the food diary of ' + name + ' and give short practical recommendations in Hebrew.\n\nFood diary:\n' + logs
-      }
-    ]
-  })
-
-  return Response.json({ result: message.content[0].text })
-}
+יומן תזונה:
+${logs}`
