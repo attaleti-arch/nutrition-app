@@ -1,57 +1,53 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { supabase } from '../supabase'
 
 export default function AdminPage() {
   const [pin, setPin] = useState('')
   const [auth, setAuth] = useState(false)
-  const [clients, setclients] = useState([])
-  const [newName, setNewName] = useState('')
-  const [newPass, setNewPass] = useState('')
+  const [name, setName] = useState('')
+  const [pass, setPass] = useState('')
+  const [list, setList] = useState([])
+  const [msg, setMsg] = useState('')
 
-  useEffect(() => {
-    if (auth) {
-      supabase.from('clients').select('*').then(({ data }) => setclients(data || []))
+  const login = () => {
+    if (pin === 'Esterika26') {
+      setAuth(true)
+      load()
     }
-  }, [auth])
-
-  const addclient = async () => {
-    if (!newName || !newPass) return
-    await supabase.from('clients').insert({ name: newName, password: newPass })
-    setNewName('')
-    setNewPass('')
-    supabase.from('clients').select('*').then(({ data }) => setclients(data || []))
   }
 
-  if (!auth) {
-    return (
-      <div style={{ padding: 40, textAlign: 'center', direction: 'rtl' }}>
-        <h2>עמוד מנהלת</h2>
-        <input
-          type="password"
-          placeholder="סיסמה"
-          value={pin}
-          onChange={e => setPin(e.target.value)}
-          style={{ padding: 10, fontSize: 16, marginBottom: 10, display: 'block', width: '100%' }}
-        />
-        <button onClick={() => pin === 'Esterika26' && setAuth(true)} style={{ padding: 10, fontSize: 16 }}>
-          כניסה
-        </button>
-      </div>
-    )
+  const load = () => {
+    supabase.from('clients').select('*').then(r => setList(r.data || []))
   }
+
+  const add = () => {
+    if (!name || !pass) return
+    supabase.from('clients').insert([{ name, password: pass }]).then(() => {
+      setMsg('נוספה: ' + name)
+      setName('')
+      setPass('')
+      load()
+    })
+  }
+
+  if (!auth) return (
+    <div style={{padding:40,textAlign:'center',direction:'rtl'}}>
+      <h2>מנהלת</h2>
+      <input type="password" value={pin} onChange={e=>setPin(e.target.value)} placeholder="סיסמה" style={{padding:10,fontSize:16,display:'block',width:'200px',margin:'10px auto'}}/>
+      <button onClick={login} style={{padding:'10px 20px',fontSize:16}}>כניסה</button>
+    </div>
+  )
 
   return (
-    <div style={{ padding: 24, direction: 'rtl' }}>
-      <h2>לקוחות</h2>
-      <input placeholder="שם" value={newName} onChange={e => setNewName(e.target.value)} style={{ padding: 8, marginLeft: 8 }} />
-      <input placeholder="סיסמה" value={newPass} onChange={e => setNewPass(e.target.value)} style={{ padding: 8, marginLeft: 8 }} />
-      <button onClick={addClient} style={{ padding: 8 }}>הוסיפי</button>
-      <ul>
-        {clients.map(c => (
-          <li key={c.id}>{c.name} - {c.password}</li>
-        ))}
-      </ul>
+    <div style={{padding:24,direction:'rtl',maxWidth:400,margin:'0 auto'}}>
+      <h2>הוספת לקוחה</h2>
+      {msg && <p style={{color:'green'}}>{msg}</p>}
+      <input value={name} onChange={e=>setName(e.target.value)} placeholder="שם" style={{padding:8,display:'block',width:'100%',marginBottom:8}}/>
+      <input value={pass} onChange={e=>setPass(e.target.value)} placeholder="סיסמה" style={{padding:8,display:'block',width:'100%',marginBottom:8}}/>
+      <button onClick={add} style={{padding:'10px 20px',fontSize:16,background:'green',color:'white',border:'none',cursor:'pointer'}}>הוסיפי</button>
+      <h3>לקוחות:</h3>
+      {list.map(c=><div key={c.id} style={{padding:8,borderBottom:'1px solid #ddd'}}>{c.name} — {c.password}</div>)}
     </div>
   )
 }
