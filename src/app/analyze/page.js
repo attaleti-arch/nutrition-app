@@ -21,7 +21,7 @@ export default function AnalyzePage() {
   const loadLogs = async (name) => {
     setSelected(name)
     setAnalysis('')
-    const { data } = await supabase.from('daily_logs').select('*').eq('client_name', name).order('log_date', { ascending: false }).limit(7)
+    const { data } = await supabase.from('daily_logs').select('*')..eq('client_name', clients.find(c=>c.name===name)?.password || name)
     setLogs(data || [])
   }
 
