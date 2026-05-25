@@ -149,12 +149,12 @@ export default function PlanApp({ clientName, userPassword }) {
 
   useEffect(function() {
     async function load() {
-      var r = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).order('log_date', { ascending: false }).limit(1).single()
+      var r = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).order('log_date', { ascending: false }).limit(1).()
       if (r.data) {
         if (r.data.diet_type) { setDietType(r.data.diet_type); setSetupDone(true) }
         if (r.data.restrictions) setRestrictions(r.data.restrictions)
       }
-      var today = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', todayKey).single()
+      var today = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
       if (today.data) {
         setChecks(today.data.checks || {})
         setCarbSel(today.data.carb_sel)
