@@ -216,7 +216,7 @@ export default function PlanApp({ clientName, userPassword }) {
       restrictions: restrictions,
       updated_at: new Date().toISOString(),
     }
-    await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' }).select()
+   await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
     setSaving(false)
     setSaved(true)
     setTimeout(function() { setSaved(false) }, 3000)
