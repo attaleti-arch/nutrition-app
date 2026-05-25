@@ -149,22 +149,22 @@ export default function PlanApp({ clientName, userPassword }) {
 
   useEffect(function() {
     async function load() {
-      var r = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).order('log_date', { ascending: false }).limit(1).()
+      var r = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).order('log_date', { ascending: false }).limit(1).maybeSingle()
       if (r.data) {
         if (r.data.diet_type) { setDietType(r.data.diet_type); setSetupDone(true) }
         if (r.data.restrictions) setRestrictions(r.data.restrictions)
       }
-      var today = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
-      if (today.data) {
-        setChecks(today.data.checks || {})
-        setCarbSel(today.data.carb_sel)
-        setProtSel(today.data.prot_sel)
-        setFatSel(today.data.fat_sel)
-        setLunchOpt(today.data.lunch_opt)
-        setWater(today.data.water || 0)
-        setSteps(today.data.steps || '')
-        setNote(today.data.note || '')
-        setFeedback(today.data.trainer_feedback)
+      var todayLog = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
+      if (todayLog.data) {
+        setChecks(todayLog.data.checks || {})
+        setCarbSel(todayLog.data.carb_sel)
+        setProtSel(todayLog.data.prot_sel)
+        setFatSel(todayLog.data.fat_sel)
+        setLunchOpt(todayLog.data.lunch_opt)
+        setWater(todayLog.data.water || 0)
+        setSteps(todayLog.data.steps || '')
+        setNote(todayLog.data.note || '')
+        setFeedback(todayLog.data.trainer_feedback)
       }
     }
     if (dbKey) load()
@@ -183,32 +183,27 @@ export default function PlanApp({ clientName, userPassword }) {
   }
 
   const handleSave = async function() {
-  setSaving(true)
-  var payload = {
-    client_name: dbKey,
-    log_date: todayKey,
-    checks: checks,
-    carb_sel: carbSel,
-    prot_sel: protSel,
-    fat_sel: fatSel,
-    lunch_opt: lunchOpt,
-    water: water,
-    steps: steps,
-    note: note,
-    diet_type: dietType,
-    restrictions: restrictions,
-    updated_at: new Date().toISOString(),
+    setSaving(true)
+    var payload = {
+      client_name: dbKey,
+      log_date: todayKey,
+      checks: checks,
+      carb_sel: carbSel,
+      prot_sel: protSel,
+      fat_sel: fatSel,
+      lunch_opt: lunchOpt,
+      water: water,
+      steps: steps,
+      note: note,
+      diet_type: dietType,
+      restrictions: restrictions,
+      updated_at: new Date().toISOString(),
+    }
+    await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' }).select()
+    setSaving(false)
+    setSaved(true)
+    setTimeout(function() { setSaved(false) }, 3000)
   }
-  console.log('שומר:', JSON.stringify(payload))
-  const { data, error } = await supabase
-    .from('daily_logs')
-    .upsert(payload, { onConflict: 'client_name,log_date' })
-    .select()
-  console.log('תוצאה:', data, 'שגיאה:', error)
-  setSaving(false)
-  setSaved(true)
-  setTimeout(function() { setSaved(false) }, 3000)
-}
 
   const filteredBoker = PLAN.boker.filter(function(i) { return !shouldHide(i, dietType, restrictions) })
   const filteredProt = PLAN.protOptions.filter(function(i) { return !shouldHide(i, dietType, restrictions) })
@@ -224,7 +219,6 @@ export default function PlanApp({ clientName, userPassword }) {
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f0fdf4', padding: 24, direction: 'rtl' }}>
         <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 6 }}>היי {displayName.split(' ')[0]}!</div>
         <div style={{ fontSize: 14, color: '#555', marginBottom: 24 }}>בואי נתאים את התפריט עבורך</div>
-
         <div style={{ width: '100%', maxWidth: 340, background: '#fff', borderRadius: 20, padding: 20, marginBottom: 16 }}>
           <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12, textAlign: 'right' }}>סוג תזונה (בחרי אחת):</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -242,7 +236,6 @@ export default function PlanApp({ clientName, userPassword }) {
             })}
           </div>
         </div>
-
         <div style={{ width: '100%', maxWidth: 340, background: '#fff', borderRadius: 20, padding: 20, marginBottom: 20 }}>
           <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12, textAlign: 'right' }}>הגבלות נוספות (סמני הכל שרלוונטי):</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -260,7 +253,6 @@ export default function PlanApp({ clientName, userPassword }) {
             })}
           </div>
         </div>
-
         <button onClick={function() { if (dietType) setSetupDone(true) }} disabled={!dietType} style={{
           padding: '14px 40px', borderRadius: 14, fontSize: 16, fontWeight: 800,
           background: dietType ? C.greenMid : '#e5e7eb',
@@ -286,7 +278,6 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ fontSize: 11, color: '#86efac', marginTop: 4 }}>{checkedCount}/{totalItems} פריטים סומנו היום</div>
         </div>
       </div>
-
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '14px 14px 80px' }}>
         {feedback && (
           <div style={{ background: '#fefce8', border: '2px solid #fbbf24', borderRadius: 14, padding: '12px 16px', marginBottom: 12 }}>
@@ -294,14 +285,12 @@ export default function PlanApp({ clientName, userPassword }) {
             <div style={{ fontSize: 14, color: '#78350f', lineHeight: 1.7 }}>{feedback}</div>
           </div>
         )}
-
-        <Section title="ארוחת בוקר" icon="☀️" accent={C.orange} light={C.orangeLight} defaultOpen={true}>
+        <Section title="ארוחת בוקר" icon="☀" accent={C.orange} light={C.orangeLight} defaultOpen={true}>
           <div style={{ fontSize: 12, color: '#9ca3af', padding: '8px 0 4px', textAlign: 'right' }}>{PLAN.bokerSnack}</div>
           {filteredBoker.map(function(item) {
             return <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={toggleCheck} />
           })}
         </Section>
-
         <Section title="ארוחת צהריים" icon="🌞" accent={C.greenMid} light={C.greenLight}>
           <div style={{ display: 'flex', gap: 8, padding: '10px 0' }}>
             {['A', 'B'].map(function(opt) {
@@ -333,19 +322,16 @@ export default function PlanApp({ clientName, userPassword }) {
             </div>
           )}
         </Section>
-
         <Section title="ביניים" icon="🌤" accent={C.blue} light={C.blueLight}>
           <div style={{ padding: '10px 0', fontSize: 14, color: '#333', lineHeight: 1.8, textAlign: 'right' }}>
             קפה + 150 קלוריות חופשיות
           </div>
         </Section>
-
         <Section title="ארוחת ערב" icon="🌙" accent={C.purple} light={C.purpleLight}>
           {filteredErev.map(function(item) {
             return <CheckRow key={item.id} id={item.id} text={item.text} accent={C.purple} checked={!!checks[item.id]} onToggle={toggleCheck} />
           })}
         </Section>
-
         <Section title="מעקב שתייה" icon="💧" accent={C.blue} light={C.blueLight}>
           <div style={{ padding: '10px 0' }}>
             <div style={{ fontSize: 13, color: '#555', marginBottom: 8, textAlign: 'right' }}>{water}/8 כוסות</div>
@@ -362,7 +348,6 @@ export default function PlanApp({ clientName, userPassword }) {
             </div>
           </div>
         </Section>
-
         <Section title="מעקב צעדים" icon="🚶‍♀️" accent={C.purple} light={C.purpleLight}>
           <div style={{ padding: '10px 0' }}>
             <input type="number" value={steps} onChange={function(e) { setSteps(e.target.value) }}
@@ -373,7 +358,6 @@ export default function PlanApp({ clientName, userPassword }) {
             </div>
           </div>
         </Section>
-
         <Section title="כללים חשובים" icon="📋" accent={C.amber} light={C.amberLight}>
           <div style={{ paddingTop: 8 }}>
             {PLAN.rules.map(function(r, i) {
@@ -386,7 +370,6 @@ export default function PlanApp({ clientName, userPassword }) {
             })}
           </div>
         </Section>
-
         <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', border: '1.5px solid #f0f0f0', marginBottom: 10 }}>
           <div style={{ fontWeight: 700, fontSize: 15, color: '#111', marginBottom: 10, textAlign: 'right' }}>הערה יומית לאתי</div>
           <textarea value={note} onChange={function(e) { setNote(e.target.value) }}
@@ -394,7 +377,6 @@ export default function PlanApp({ clientName, userPassword }) {
             rows={3}
             style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
         </div>
-
         <button onClick={handleSave} disabled={saving} style={{
           width: '100%', padding: 16, borderRadius: 16,
           background: saved ? '#16a34a' : 'linear-gradient(135deg,#0f4c2a,#16a34a)',
@@ -402,7 +384,6 @@ export default function PlanApp({ clientName, userPassword }) {
         }}>
           {saving ? 'שומרת...' : saved ? 'נשמר! אתי תראה את זה' : 'שמרי את היום שלי'}
         </button>
-
         <button onClick={function() { setSetupDone(false) }} style={{
           width: '100%', padding: 10, borderRadius: 12, marginTop: 8,
           background: 'transparent', border: '1px solid #e5e7eb',
