@@ -5,6 +5,8 @@ import MacroCalculator from './MacroCalculator'
 
 export default function Dashboard() {
   const [password, setPassword] = useState('')
+  const names = {'Esterika26':'אתי','Riki1':'ריקי','Rucha2':'רוחה'}
+const clientName = names[password] || password
   const [auth, setAuth] = useState(false)
   const [logs, setLogs] = useState([])
   const [feedback, setFeedback] = useState({})
