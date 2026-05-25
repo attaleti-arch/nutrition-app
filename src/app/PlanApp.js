@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from './supabase'
+const NAMES = {'Esterika26':'אתי','Riki1':'ריקי','Rucha2':'רוחה'}
 
 const C = {
   greenDark: '#0f4c2a', greenMid: '#16a34a', greenLight: '#dcfce7',
@@ -99,7 +100,9 @@ function NoteBox({ text, accent, light }) {
   )
 }
 
-export default function PlanApp({ clientName }) {
+export default function PlanApp({ clientName: raw }) {
+const NAMES = {'Esterika26':'אתי','Riki1':'ריקי','Rucha2':'רוחה'}
+const clientName = NAMES[raw] || raw
   const today = new Date().toLocaleDateString('he-IL')
   const todayKey = new Date().toISOString().split('T')[0]
 
