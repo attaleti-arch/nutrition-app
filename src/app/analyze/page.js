@@ -19,7 +19,7 @@ export default function AnalyzePage() {
   }
 
   const loadLogs = async (idx) => {
-    const client = clients[idx]
+    eq('client_name', client.password)
     if (!client) return
     setSelected(client)
     setAnalysis('')
