@@ -183,27 +183,31 @@ export default function PlanApp({ clientName, userPassword }) {
   }
 
   const handleSave = async function() {
-    setSaving(true)
-    var payload = {
-      client_name: dbKey,
-      log_date: todayKey,
-      checks: checks,
-      carb_sel: carbSel,
-      prot_sel: protSel,
-      fat_sel: fatSel,
-      lunch_opt: lunchOpt,
-      water: water,
-      steps: steps,
-      note: note,
-      diet_type: dietType,
-      restrictions: restrictions,
-      updated_at: new Date().toISOString(),
-    }
-    await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
-    setSaving(false)
-    setSaved(true)
-    setTimeout(function() { setSaved(false) }, 3000)
+  setSaving(true)
+  var payload = {
+    client_name: dbKey,
+    log_date: todayKey,
+    checks: checks,
+    carb_sel: carbSel,
+    prot_sel: protSel,
+    fat_sel: fatSel,
+    lunch_opt: lunchOpt,
+    water: water,
+    steps: steps,
+    note: note,
+    diet_type: dietType,
+    restrictions: restrictions,
+    updated_at: new Date().toISOString(),
   }
+  console.log('שומר:', JSON.stringify(payload))
+  const { data, error } = await supabase
+    .from('daily_logs')
+    .upsert(payload, { onConflict: 'client_name,log_date' })
+  console.log('תוצאה:', data, 'שגיאה:', error)
+  setSaving(false)
+  setSaved(true)
+  setTimeout(function() { setSaved(false) }, 3000)
+}
 
   const filteredBoker = PLAN.boker.filter(function(i) { return !shouldHide(i, dietType, restrictions) })
   const filteredProt = PLAN.protOptions.filter(function(i) { return !shouldHide(i, dietType, restrictions) })
