@@ -20,7 +20,7 @@ export default function Home() {
     }
   }
 
-  if (started) return <PlanApp clientName={clientName} />
+  if (started) return <PlanApp clientName={clientName} userPassword={password} />
 
   return (
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'linear-gradient(160deg,#f0fdf4,#eff6ff)',padding:24}}>
