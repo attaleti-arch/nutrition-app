@@ -5,22 +5,22 @@ import { supabase } from '../supabase'
 export default function AdminPage() {
   const [pin, setPin] = useState('')
   const [auth, setAuth] = useState(false)
-  const [clients, setClients] = useState([])
+  const [clients, setclients] = useState([])
   const [newName, setNewName] = useState('')
   const [newPass, setNewPass] = useState('')
 
   useEffect(() => {
     if (auth) {
-      supabase.from('clients').select('*').then(({ data }) => setClients(data || []))
+      supabase.from('clients').select('*').then(({ data }) => setclients(data || []))
     }
   }, [auth])
 
-  const addClient = async () => {
+  const addclient = async () => {
     if (!newName || !newPass) return
     await supabase.from('clients').insert({ name: newName, password: newPass })
     setNewName('')
     setNewPass('')
-    supabase.from('clients').select('*').then(({ data }) => setClients(data || []))
+    supabase.from('clients').select('*').then(({ data }) => setclients(data || []))
   }
 
   if (!auth) {
