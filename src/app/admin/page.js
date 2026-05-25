@@ -17,7 +17,7 @@ export default function AdminPage() {
 
   useEffect(() => { if (auth) loadClients() }, [auth])
 
-  const addClient = async () => {
+
     if (!newName || !newPass) return
     await supabase.from('clients').insert({ name: newName, password: newPass })
     setMsg('נוספה! ' + newName)
