@@ -1,67 +1,78 @@
 'use client'
-import { useState } from 'react'
-import PlanApp from '../PlanApp'
+import { useState, useEffect } from 'react'
+import { supabase } from '../supabase'
 
-export default function Home() {
-  const [name, setName] = useState('')
-  const [started, setStarted] = useState(false)
+export default function Dashboard() {
+  const [password, setPassword] = useState('')
+  const [auth, setAuth] = useState(false)
+  const [logs, setLogs] = useState([])
+  const [feedback, setFeedback] = useState({})
+  const [saving, setSaving] = useState(null)
 
-  if (started) return <PlanApp clientName={name} />
+  async function loadLogs() {
+    const { data } = await supabase.from('daily_logs').select('*').order('updated_at', { ascending: false }).limit(100)
+    setLogs(data || [])
+  }
+
+  useEffect(() => { if (auth) loadLogs() }, [auth])
+
+  async function saveFeedback(log) {
+    setSaving(log.id)
+    await supabase.from('daily_logs').update({ trainer_feedback: feedback[log.id] }).eq('id', log.id)
+    setSaving(null)
+    loadLogs()
+  }
+
+  if (!auth) return (
+    <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#f8fafc'}}>
+      <div style={{background:'#fff',borderRadius:20,padding:32,boxShadow:'0 8px 40px #0000000f',width:300,textAlign:'center'}}>
+        <div style={{fontSize:32,marginBottom:12}}>🔐</div>
+        <div style={{fontWeight:700,fontSize:18,marginBottom:20}}>דשבורד מאמנת</div>
+        <input type="password" value={password} onChange={e=>setPassword(e.target.value)}
+          onKeyDown={e=>e.key==='Enter'&&password==='Esterika26'&&setAuth(true)}
+          placeholder="סיסמה..." style={{width:'100%',padding:'10px 14px',borderRadius:10,border:'1.5px solid #e5e7eb',fontSize:15,textAlign:'center',outline:'none',boxSizing:'border-box',marginBottom:10}} />
+        <button onClick={()=>password==='Esterika26'&&setAuth(true)} style={{width:'100%',padding:12,borderRadius:10,background:'#0f4c2a',color:'#fff',border:'none',cursor:'pointer',fontWeight:700,fontSize:15}}>כניסה</button>
+        {password&&password!=='Esterika26'&&<div style={{color:'#ef4444',fontSize:13,marginTop:8}}>סיסמה שגויה</div>}
+      </div>
+    </div>
+  )
 
   return (
-    <div style={{
-      minHeight: '100vh', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      background: 'linear-gradient(160deg,#f0fdf4 0%,#faf5ff 50%,#eff6ff 100%)',
-      padding: 24,
-    }}>
-      <div style={{ textAlign: 'center', marginBottom: 36 }}>
-        <div style={{
-          width: 72, height: 72, borderRadius: 20, margin: '0 auto 14px',
-          background: 'linear-gradient(135deg,#16a34a,#9333ea)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 36, boxShadow: '0 8px 24px #16a34a33',
-        }}>🥗</div>
-        <div style={{ fontWeight: 900, fontSize: 24, color: '#111' }}>בין הראש לצלחת</div>
-        <div style={{ fontSize: 14, color: '#6b7280', marginTop: 4 }}>אתי אטל · תוכנית תזונה אישית</div>
+    <div style={{minHeight:'100vh',background:'#f8fafc',direction:'rtl'}}>
+      <div style={{background:'linear-gradient(135deg,#0f4c2a,#16a34a)',padding:'20px 24px',color:'#fff',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+        <div>
+          <div style={{fontSize:11,color:'#86efac'}}>בין הראש לצלחת</div>
+          <div style={{fontSize:22,fontWeight:900}}>דשבורד מאמנת</div>
+        </div>
+        <button onClick={loadLogs} style={{background:'#ffffff20',border:'1px solid #ffffff44',borderRadius:10,color:'#fff',padding:'8px 14px',cursor:'pointer',fontSize:13}}>🔄 רענן</button>
       </div>
-
-      <div style={{
-        background: '#fff', borderRadius: 22, padding: '32px 28px',
-        boxShadow: '0 8px 40px #0000000f', width: '100%', maxWidth: 380,
-        border: '1.5px solid #f0fdf4',
-      }}>
-        <div style={{ fontWeight: 700, fontSize: 17, color: '#111', marginBottom: 6 }}>שלום! מה שמך?</div>
-        <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 18 }}>הכניסי את שמך כדי להתחיל</div>
-        <input
-          autoFocus
-          value={name}
-          onChange={e => setName(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && name.trim() && setStarted(true)}
-          placeholder="שם מלא..."
-          style={{
-            width: '100%', padding: '12px 16px', borderRadius: 12, fontSize: 16,
-            border: '2px solid #e5e7eb', fontFamily: 'Heebo, sans-serif',
-            outline: 'none', boxSizing: 'border-box',
-          }}
-        />
-        <button
-          onClick={() => name.trim() && setStarted(true)}
-          disabled={!name.trim()}
-          style={{
-            width: '100%', marginTop: 14, padding: 13, borderRadius: 12,
-            background: name.trim() ? 'linear-gradient(135deg,#16a34a,#15803d)' : '#e5e7eb',
-            color: name.trim() ? '#fff' : '#9ca3af', border: 'none',
-            cursor: name.trim() ? 'pointer' : 'default',
-            fontFamily: 'Heebo, sans-serif', fontWeight: 700, fontSize: 16,
-            boxShadow: name.trim() ? '0 4px 16px #16a34a44' : 'none',
-          }}
-        >
-          {name.trim() ? `בואי נתחיל, ${name.trim().split(' ')[0]}! 💪` : 'הכניסי שם להמשך'}
-        </button>
-      </div>
-      <div style={{ marginTop: 20, fontSize: 11, color: '#d1d5db' }}>
-        כל התכנים בלעדיים · © בין הראש לצלחת
+      <div style={{maxWidth:700,margin:'0 auto',padding:'20px 16px'}}>
+        {logs.length===0&&<div style={{textAlign:'center',color:'#9ca3af',padding:40}}>עדיין אין נתונים 🌱</div>}
+        {logs.map(log=>(
+          <div key={log.id} style={{background:'#fff',borderRadius:18,marginBottom:12,border:'1.5px solid #f0f0f0',overflow:'hidden'}}>
+            <div style={{padding:'14px 18px',display:'flex',alignItems:'center',gap:12,borderBottom:'1px solid #f3f4f6'}}>
+              <div style={{width:44,height:44,borderRadius:12,background:'#dcfce7',display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,flexShrink:0}}>{log.client_name?.[0]}</div>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:800,fontSize:16}}>{log.client_name}</div>
+                <div style={{fontSize:12,color:'#9ca3af'}}>{log.log_date} · {Object.values(log.checks||{}).filter(Boolean).length} פריטים ✓</div>
+              </div>
+            </div>
+            <div style={{padding:'12px 18px',background:'#f8fafc',display:'flex',gap:12,flexWrap:'wrap'}}>
+              <span style={{fontSize:13,color:'#555'}}>💧 {log.water||0}/8</span>
+              <span style={{fontSize:13,color:'#555'}}>🚶 {log.steps||'—'}</span>
+              <span style={{fontSize:13,color:'#555'}}>🌞 אופציה {log.lunch_opt||'—'}</span>
+            </div>
+            {log.note&&<div style={{padding:'8px 18px',background:'#fffbeb',borderRight:'3px solid #fbbf24',fontSize:13,color:'#78350f',margin:'0 18px 10px'}}>{log.note}</div>}
+            <div style={{padding:'12px 18px'}}>
+              <textarea value={feedback[log.id]??log.trainer_feedback??''} onChange={e=>setFeedback(f=>({...f,[log.id]:e.target.value}))}
+                placeholder="כתבי משוב..." rows={2}
+                style={{width:'100%',padding:'8px 12px',borderRadius:10,border:'1.5px solid #e5e7eb',fontSize:14,resize:'none',outline:'none',fontFamily:'inherit',textAlign:'right',boxSizing:'border-box',marginBottom:8}} />
+              <button onClick={()=>saveFeedback(log)} style={{width:'100%',padding:10,borderRadius:10,background:'#0f4c2a',color:'#fff',border:'none',cursor:'pointer',fontWeight:700,fontSize:14}}>
+                {saving===log.id?'שומר...':'💬 שלחי משוב'}
+              </button>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )
