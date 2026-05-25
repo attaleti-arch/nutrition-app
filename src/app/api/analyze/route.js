@@ -11,4 +11,10 @@ export async function POST(request) {
     messages: [
       {
         role: 'user',
-        content: `אתה דיאטנית מומחית. נתחי את יומן האכילה של ${name} ותני המלצות תזונתיות קצרות
+        content: 'You are a nutrition expert. Analyze the food diary of ' + name + ' and give short practical recommendations in Hebrew.\n\nFood diary:\n' + logs
+      }
+    ]
+  })
+
+  return Response.json({ result: message.content[0].text })
+}
