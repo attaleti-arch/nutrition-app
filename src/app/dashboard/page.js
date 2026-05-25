@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
+import MacroCalculator from './MacroCalculator'
 
 export default function Dashboard() {
   const [password, setPassword] = useState('')
@@ -39,6 +40,7 @@ export default function Dashboard() {
 
   return (
     <div style={{minHeight:'100vh',background:'#f8fafc',direction:'rtl'}}>
+    <MacroCalculator />
       <div style={{background:'linear-gradient(135deg,#0f4c2a,#16a34a)',padding:'20px 24px',color:'#fff',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
         <div>
           <div style={{fontSize:11,color:'#86efac'}}>בין הראש לצלחת</div>
