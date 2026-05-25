@@ -33,7 +33,7 @@ export default function AnalyzePage() {
   const analyze = async () => {
     if (!logs.length || !selected) return
     setLoading(true)
-    const summary = logs.map(l => 'Date: ' + l.log_date + ', Note: ' + (l.note || '')).join('\n')
+   const summary = logs.map(function(l) { return 'תאריך: ' + l.log_date + ' | מים: ' + (l.water || 0) + ' | צעדים: ' + (l.steps || 0) + ' | פחמימה: ' + (l.carb_sel || 'לא נבחר') + ' | חלבון: ' + (l.prot_sel || 'לא נבחר') + ' | הערה: ' + (l.note || '') }).join('\n')
     const res = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
