@@ -59,6 +59,28 @@ const BLOOD_TESTS = [
   { key: 'crp', label: 'דלקת CRP', unit: 'mg/L', normal: '<1.0' },
 ]
 
+function NutritionRow({ item, onSave }) {
+  const [vals, setVals] = useState(item)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '8px 16px', borderBottom: '1px solid #f3f4f6', alignItems: 'center' }}>
+      <div style={{ fontSize: 13, color: '#333', fontWeight: 600 }}>{item.name}</div>
+      {['calories', 'protein', 'fat', 'fiber'].map(function(field) {
+        return (
+          <input key={field} type="number" value={vals[field] || 0}
+            onChange={function(e) { setVals(function(v) { return { ...v, [field]: Number(e.target.value) } }) }}
+            style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
+        )
+      })}
+      <button onClick={async function() { setSaving(true); await onSave(vals); setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000) }}
+        style={{ padding: '6px 10px', borderRadius: 8, background: saved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+        {saving ? '...' : saved ? '✓' : 'שמור'}
+      </button>
+    </div>
+  )
+}
+
 export default function AdminPage() {
   const [pin, setPin] = useState('')
   const [auth, setAuth] = useState(false)
@@ -73,9 +95,7 @@ export default function AdminPage() {
 
   const login = () => { if (pin === 'Esterika26') setAuth(true) }
 
-  useEffect(function() {
-    if (auth) loadClients()
-  }, [auth])
+  useEffect(function() { if (auth) loadClients() }, [auth])
 
   async function loadClients() {
     const { data } = await supabase.from('clients').select('*')
@@ -85,10 +105,10 @@ export default function AdminPage() {
   async function loadProfile(client) {
     setSelectedClient(client)
     setProfile({})
+    setTab('questionnaire')
     const { data } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
     if (data) setProfile(data)
     else setProfile({ client_password: client.password, blood_tests: {} })
-
     const { data: nd } = await supabase.from('nutrition_data').select('*').order('id')
     setNutritionItems(nd || [])
   }
@@ -119,7 +139,6 @@ export default function AdminPage() {
         r.onerror = () => rej(new Error('Read failed'))
         r.readAsDataURL(file)
       })
-
       var response = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -130,12 +149,11 @@ export default function AdminPage() {
             role: 'user',
             content: [
               { type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } },
-              { type: 'text', text: 'זהו דף בדיקות דם. חלץ את הערכים הבאים אם קיימים ותחזיר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_d":null,"vitamin_b12":null,"tsh":null,"crp":null}\nהחזר רק את המספרים ללא יחידות. אם ערך לא קיים השאר null.' }
+              { type: 'text', text: 'זהו דף בדיקות דם. חלץ את הערכים הבאים אם קיימים ותחזיר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_d":null,"vitamin_b12":null,"tsh":null,"crp":null}\nהחזר רק מספרים ללא יחידות. אם ערך לא קיים השאר null.' }
             ]
           }]
         })
       })
-
       var data = await response.json()
       var text = data.content[0].text
       var clean = text.replace(/```json|```/g, '').trim()
@@ -171,13 +189,7 @@ export default function AdminPage() {
         <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 16, border: '1.5px solid #f0f0f0' }}>
           <div style={{ fontWeight: 700, marginBottom: 10 }}>בחרי מטופל:</div>
           {clients.map(c => (
-            <button key={c.id} onClick={() => loadProfile(c)} style={{
-              display: 'block', width: '100%', textAlign: 'right',
-              padding: '10px 14px', marginBottom: 6, borderRadius: 10,
-              border: '2px solid ' + (selectedClient?.id === c.id ? '#0f4c2a' : '#e5e7eb'),
-              background: selectedClient?.id === c.id ? '#dcfce7' : '#fff',
-              cursor: 'pointer', fontWeight: 600, fontSize: 15
-            }}>
+            <button key={c.id} onClick={() => loadProfile(c)} style={{ display: 'block', width: '100%', textAlign: 'right', padding: '10px 14px', marginBottom: 6, borderRadius: 10, border: '2px solid ' + (selectedClient?.id === c.id ? '#0f4c2a' : '#e5e7eb'), background: selectedClient?.id === c.id ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 15 }}>
               {c.name}
               {c.goal && <span style={{ fontSize: 12, color: '#9ca3af', marginRight: 8 }}>— {c.goal}</span>}
             </button>
@@ -189,11 +201,7 @@ export default function AdminPage() {
             <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
               {[{ k: 'questionnaire', l: '📋 שאלון 360' }, { k: 'blood', l: '🩸 בדיקות דם' }, { k: 'nutrition', l: '🥗 ערכי תזונה' }].map(function(t) {
                 return (
-                  <button key={t.k} onClick={() => setTab(t.k)} style={{
-                    flex: 1, padding: '10px 8px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'),
-                    background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 13,
-                    color: tab === t.k ? '#0f4c2a' : '#555'
-                  }}>{t.l}</button>
+                  <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: tab === t.k ? '#0f4c2a' : '#555' }}>{t.l}</button>
                 )
               })}
             </div>
@@ -203,23 +211,39 @@ export default function AdminPage() {
                 <Section title="פרטים כלליים ורפואיים" icon="👤">
                   <Field label="איכות שינה" value={profile.sleep_quality} onChange={v => updateProfile('sleep_quality', v)} rows={2} />
                   <Field label="בעיות שינה / התעוררות" value={profile.sleep_issues} onChange={v => updateProfile('sleep_issues', v)} rows={2} />
+                  <Field label="שעת קימה" value={profile.wake_time} onChange={v => updateProfile('wake_time', v)} />
+                  <Field label="שעת שינה" value={profile.sleep_time} onChange={v => updateProfile('sleep_time', v)} />
                   <Field label="פעילות מעיים (עצירות/שלשול)" value={profile.digestion} onChange={v => updateProfile('digestion', v)} rows={2} />
                   <Field label="מעשן/ת?" value={profile.smoking} onChange={v => updateProfile('smoking', v)} type="boolean" />
+                  <Field label="מחזור חודשי — רגיל/לא?" value={profile.menstrual_cycle} onChange={v => updateProfile('menstrual_cycle', v)} rows={1} />
+                  <Field label="כמה ימים נמשך הדימום?" value={profile.menstrual_days} onChange={v => updateProfile('menstrual_days', parseInt(v))} type="number" />
                   <Field label="תרופות / תוספי תזונה" value={profile.medications} onChange={v => updateProfile('medications', v)} rows={2} />
                   <Field label="מטפלים / תרפיסטים" value={profile.therapists} onChange={v => updateProfile('therapists', v)} rows={2} />
                   <Field label="היסטוריה רפואית (מחלות, אשפוזים, פציעות)" value={profile.medical_history} onChange={v => updateProfile('medical_history', v)} rows={3} />
                   <Field label="בריאות הורים (סכרת, לחץ דם, כולסטרול)" value={profile.family_history} onChange={v => updateProfile('family_history', v)} rows={2} />
                 </Section>
 
-                <Section title="הרגלי תזונה" icon="🍽️">
+                <Section title="הרגלי תזונה" icon="🍽">
+                  <Field label="הגבלות תזונה (כשר/צמחוני/טבעוני)" value={profile.diet_restrictions} onChange={v => updateProfile('diet_restrictions', v)} />
                   <Field label="ארוחת בוקר רגילה" value={profile.breakfast_habits} onChange={v => updateProfile('breakfast_habits', v)} rows={2} />
                   <Field label="ארוחת צהריים רגילה" value={profile.lunch_habits} onChange={v => updateProfile('lunch_habits', v)} rows={2} />
                   <Field label="ארוחת ערב רגילה" value={profile.dinner_habits} onChange={v => updateProfile('dinner_habits', v)} rows={2} />
                   <Field label="ביניים / נשנושים" value={profile.snack_habits} onChange={v => updateProfile('snack_habits', v)} rows={2} />
                   <Field label="רגישויות למזון" value={profile.food_sensitivities} onChange={v => updateProfile('food_sensitivities', v)} rows={2} />
-                  <Field label="מבשל/ת בבית?" value={profile.cooks_at_home} onChange={v => updateProfile('cooks_at_home', v)} type="boolean" />
-                  <Field label="כמה פעמים בשבוע במסעדה?" value={profile.restaurants_per_week} onChange={v => updateProfile('restaurants_per_week', v)} type="number" />
                   <Field label="ירקות/פירות שנמנע/ת מהם" value={profile.avoided_foods} onChange={v => updateProfile('avoided_foods', v)} rows={2} />
+                  <Field label="מבשל/ת בבית?" value={profile.cooks_at_home} onChange={v => updateProfile('cooks_at_home', v)} type="boolean" />
+                  <Field label="כמה פעמים בשבוע במסעדה?" value={profile.restaurants_per_week} onChange={v => updateProfile('restaurants_per_week', parseInt(v))} type="number" />
+                </Section>
+
+                <Section title="אורח חיים ורגש" icon="🧠">
+                  <Field label="כמות מים ביום" value={profile.water_intake} onChange={v => updateProfile('water_intake', v)} />
+                  <Field label="קפה ביום" value={profile.coffee_intake} onChange={v => updateProfile('coffee_intake', v)} />
+                  <Field label="אלכוהול" value={profile.alcohol_intake} onChange={v => updateProfile('alcohol_intake', v)} />
+                  <Field label="אכילה רגשית (לחץ/שעמום)" value={profile.emotional_eating} onChange={v => updateProfile('emotional_eating', v)} rows={2} />
+                  <Field label="שעות עבודה" value={profile.work_hours} onChange={v => updateProfile('work_hours', v)} />
+                  <Field label="רמת לחץ (1-10)" value={profile.stress_level} onChange={v => updateProfile('stress_level', parseInt(v))} type="number" />
+                  <Field label="רמת אנרגיה (1-10)" value={profile.energy_level} onChange={v => updateProfile('energy_level', parseInt(v))} type="number" />
+                  <Field label="הערות מצב רוח" value={profile.mood_notes} onChange={v => updateProfile('mood_notes', v)} rows={2} />
                 </Section>
 
                 <Section title="פעילות גופנית" icon="🏃">
@@ -243,15 +267,14 @@ export default function AdminPage() {
                 <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 700, marginBottom: 10 }}>📸 סריקת בדיקות דם עם AI</div>
                   <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 12 }}>העלי תמונה/סריקה של הבדיקות — ה-AI ימלא את הערכים אוטומטית</div>
-                  <input type="file" accept="image/*,application/pdf" onChange={e => e.target.files[0] && scanBloodTests(e.target.files[0])}
-                    style={{ display: 'none' }} id="scan-input" />
+                  <input type="file" accept="image/*" onChange={e => e.target.files[0] && scanBloodTests(e.target.files[0])} style={{ display: 'none' }} id="scan-input" />
                   <label htmlFor="scan-input" style={{ display: 'block', padding: 12, borderRadius: 10, background: '#f0fdf4', border: '2px dashed #16a34a', textAlign: 'center', cursor: 'pointer', fontWeight: 700, color: '#0f4c2a' }}>
                     {scanLoading ? '⏳ סורק...' : '📸 העלי תמונה של בדיקות דם'}
                   </label>
                 </div>
 
                 <div style={{ background: '#fff', borderRadius: 18, padding: 16, border: '1.5px solid #f0f0f0' }}>
-                  <div style={{ fontWeight: 700, marginBottom: 4 }}>🩸 ערכי בדיקות דם</div>
+                  <div style={{ fontWeight: 700, marginBottom: 12 }}>🩸 ערכי בדיקות דם</div>
                   <Field label="תאריך הבדיקות" value={profile.blood_tests_date} onChange={v => updateProfile('blood_tests_date', v)} type="date" />
                   {BLOOD_TESTS.map(function(test) {
                     var val = (profile.blood_tests || {})[test.key] || ''
@@ -261,9 +284,7 @@ export default function AdminPage() {
                           <div style={{ fontSize: 13, fontWeight: 600, color: '#333' }}>{test.label}</div>
                           <div style={{ fontSize: 11, color: '#9ca3af' }}>תקין: {test.normal} {test.unit}</div>
                         </div>
-                        <input type="number" value={val} onChange={e => updateBloodTest(test.key, e.target.value)}
-                          placeholder="ערך"
-                          style={{ padding: '6px 8px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, textAlign: 'center', outline: 'none', width: '100%', boxSizing: 'border-box' }} />
+                        <input type="number" value={val} onChange={e => updateBloodTest(test.key, e.target.value)} placeholder="ערך" style={{ padding: '6px 8px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, textAlign: 'center', outline: 'none', width: '100%', boxSizing: 'border-box' }} />
                         <div style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center' }}>{test.unit}</div>
                       </div>
                     )
@@ -294,39 +315,14 @@ export default function AdminPage() {
               </div>
             )}
 
-            <button onClick={saveProfile} disabled={saving || tab === 'nutrition'} style={{
-              width: '100%', padding: 14, borderRadius: 14, marginTop: 16,
-              background: saved ? '#16a34a' : tab === 'nutrition' ? '#e5e7eb' : '#0f4c2a',
-              color: tab === 'nutrition' ? '#9ca3af' : '#fff',
-              border: 'none', cursor: tab === 'nutrition' ? 'default' : 'pointer', fontWeight: 700, fontSize: 16
-            }}>
-              {saving ? '⏳ שומר...' : saved ? '✅ נשמר!' : tab === 'nutrition' ? 'שמור בכל שורה בנפרד' : '💾 שמרי פרופיל'}
-            </button>
+            {tab !== 'nutrition' && (
+              <button onClick={saveProfile} disabled={saving} style={{ width: '100%', padding: 14, borderRadius: 14, marginTop: 16, background: saved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
+                {saving ? '⏳ שומר...' : saved ? '✅ נשמר!' : '💾 שמרי פרופיל'}
+              </button>
+            )}
           </>
         )}
       </div>
-    </div>
-  )
-}
-
-function NutritionRow({ item, onSave }) {
-  const [vals, setVals] = useState(item)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '8px 16px', borderBottom: '1px solid #f3f4f6', alignItems: 'center' }}>
-      <div style={{ fontSize: 13, color: '#333', fontWeight: 600 }}>{item.name}</div>
-      {['calories', 'protein', 'fat', 'fiber'].map(function(field) {
-        return (
-          <input key={field} type="number" value={vals[field] || 0}
-            onChange={function(e) { setVals(function(v) { return { ...v, [field]: Number(e.target.value) } }) }}
-            style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
-        )
-      })}
-      <button onClick={async function() { setSaving(true); await onSave(vals); setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000) }}
-        style={{ padding: '6px 10px', borderRadius: 8, background: saved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
-        {saving ? '...' : saved ? '✓' : 'שמור'}
-      </button>
     </div>
   )
 }
