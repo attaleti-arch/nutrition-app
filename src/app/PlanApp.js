@@ -9,7 +9,7 @@ const C = {
   blue: '#0284c7', blueLight: '#eff6ff',
   amber: '#d97706', amberLight: '#fffbeb',
 }
-
+ 
 const DIET_TYPES = [
   { key: 'regular', label: 'אוכלת הכל', icon: '🍗' },
   { key: 'vegetarian', label: 'צמחונית', icon: '🥚' },
