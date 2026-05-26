@@ -311,6 +311,8 @@ export default function PlanApp({ clientName, userPassword }) {
     if (carbSel) add(carbSel)
     if (protSel) add(protSel)
     if (fatSel) add(fatSel)
+    if (veggieSel) add(veggieSel)
+    if (benayimSel) add(benayimSel)
     if (hadBenayim) add('benayim')
     return total
   }
