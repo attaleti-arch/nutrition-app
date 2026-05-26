@@ -216,7 +216,8 @@ export default function PlanApp({ clientName, userPassword }) {
       restrictions: restrictions,
       updated_at: new Date().toISOString(),
     }
-   await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
+   const { error } = await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
+if (error) { alert('שגיאה: ' + error.message) } else { alert('נשמר!') }
     setSaving(false)
     setSaved(true)
     setTimeout(function() { setSaved(false) }, 3000)
