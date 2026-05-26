@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 
 const PROT_NAMES = {
@@ -12,6 +12,45 @@ const CARB_NAMES = {
   c4: '170 גרם תפוחי אדמה / בטטה', c5: '150 גרם כרובית / ברוקולי'
 }
 
+function calcNutrition(log, nutritionData) {
+  var total = { calories: 0, protein: 0, fat: 0, fiber: 0 }
+  var nd = nutritionData
+
+  function add(id) {
+    var item = nd[id]
+    if (item) {
+      total.calories += item.calories || 0
+      total.protein += item.protein || 0
+      total.fat += item.fat || 0
+      total.fiber += item.fiber || 0
+    }
+  }
+
+  if (log.had_snack) add('snack')
+  if (log.checks) Object.keys(log.checks).forEach(function(id) { if (log.checks[id]) add(id) })
+  if (log.carb_sel) add(log.carb_sel)
+  if (log.prot_sel) add(log.prot_sel)
+  if (log.fat_sel) add(log.fat_sel)
+  if (log.had_benayim) add('benayim')
+
+  return total
+}
+
+function NutritionBar({ label, value, max, color }) {
+  var pct = Math.min(100, Math.round((value / max) * 100))
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+        <span style={{ color: '#555' }}>{label}</span>
+        <span style={{ fontWeight: 700, color: color }}>{Math.round(value)}</span>
+      </div>
+      <div style={{ height: 8, background: '#f3f4f6', borderRadius: 99 }}>
+        <div style={{ width: pct + '%', height: '100%', background: color, borderRadius: 99 }} />
+      </div>
+    </div>
+  )
+}
+
 export default function AnalyzePage() {
   const [pin, setPin] = useState('')
   const [auth, setAuth] = useState(false)
@@ -20,6 +59,17 @@ export default function AnalyzePage() {
   const [logs, setLogs] = useState([])
   const [analysis, setAnalysis] = useState('')
   const [loading, setLoading] = useState(false)
+  const [nutritionData, setNutritionData] = useState({})
+
+  useEffect(function() {
+    async function loadNutrition() {
+      var { data } = await supabase.from('nutrition_data').select('*')
+      var nd = {}
+      if (data) data.forEach(function(item) { nd[item.id] = item })
+      setNutritionData(nd)
+    }
+    loadNutrition()
+  }, [])
 
   const login = async () => {
     if (pin !== 'Esterika26') return
@@ -44,11 +94,18 @@ export default function AnalyzePage() {
     if (!logs.length || !selected) return
     setLoading(true)
     const summary = logs.map(function(l) {
+      var nut = calcNutrition(l, nutritionData)
       return 'תאריך: ' + l.log_date +
+        ' | קלוריות: ' + Math.round(nut.calories) +
+        ' | חלבון: ' + Math.round(nut.protein) + 'g' +
+        ' | שומן: ' + Math.round(nut.fat) + 'g' +
+        ' | סיבים: ' + Math.round(nut.fiber) + 'g' +
         ' | מים: ' + (l.water || 0) + ' כוסות' +
         ' | צעדים: ' + (l.steps || 0) +
-        ' | פחמימה: ' + (CARB_NAMES[l.carb_sel] || l.carb_sel || 'לא נבחר') +
-        ' | חלבון: ' + (PROT_NAMES[l.prot_sel] || l.prot_sel || 'לא נבחר') +
+        ' | פחמימה: ' + (CARB_NAMES[l.carb_sel] || 'לא נבחר') +
+        ' | חלבון נבחר: ' + (PROT_NAMES[l.prot_sel] || 'לא נבחר') +
+        ' | חטיף בוקר: ' + (l.had_snack ? 'כן' : 'לא') +
+        ' | ביניים: ' + (l.had_benayim ? 'כן' : 'לא') +
         ' | בוקר נוסף: ' + (l.boker_free || '') +
         ' | צהריים נוסף: ' + (l.lunch_free || '') +
         ' | ערב נוסף: ' + (l.erev_free || '') +
@@ -102,14 +159,24 @@ export default function AnalyzePage() {
 
         {selected && logs.length > 0 && (
           <div style={{background:'#fff',borderRadius:18,padding:16,marginBottom:16,border:'1.5px solid #f0f0f0'}}>
-            <div style={{fontWeight:700,marginBottom:8}}>📅 {logs.length} רשומות אחרונות:</div>
-            {logs.map(l => (
-              <div key={l.id} style={{padding:'6px 0',borderBottom:'1px solid #f3f4f6',fontSize:13,color:'#666'}}>
-                {l.log_date} — מים: {l.water || 0} | צעדים: {l.steps || 0} | {PROT_NAMES[l.prot_sel] || 'אין חלבון'}
-              </div>
-            ))}
+            <div style={{fontWeight:700,marginBottom:12}}>📅 {logs.length} רשומות אחרונות:</div>
+            {logs.map(function(l) {
+              var nut = calcNutrition(l, nutritionData)
+              return (
+                <div key={l.id} style={{marginBottom:16,paddingBottom:16,borderBottom:'1px solid #f3f4f6'}}>
+                  <div style={{fontWeight:700,fontSize:14,marginBottom:8,color:'#111'}}>{l.log_date}</div>
+                  <NutritionBar label="קלוריות" value={nut.calories} max={2000} color="#f97316" />
+                  <NutritionBar label="חלבון (g)" value={nut.protein} max={100} color="#16a34a" />
+                  <NutritionBar label="שומן (g)" value={nut.fat} max={70} color="#9333ea" />
+                  <NutritionBar label="סיבים (g)" value={nut.fiber} max={30} color="#0284c7" />
+                  <div style={{fontSize:12,color:'#9ca3af',marginTop:4}}>
+                    מים: {l.water || 0}/8 | צעדים: {l.steps || 0}
+                  </div>
+                </div>
+              )
+            })}
             <button onClick={analyze} disabled={loading} style={{
-              width:'100%',padding:14,borderRadius:12,marginTop:12,
+              width:'100%',padding:14,borderRadius:12,marginTop:4,
               background: loading ? '#9ca3af' : '#0f4c2a',
               color:'#fff',border:'none',cursor: loading ? 'default' : 'pointer',
               fontWeight:700,fontSize:16
