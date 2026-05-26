@@ -92,6 +92,8 @@ export default function AdminPage() {
   const [saved, setSaved] = useState(false)
   const [tab, setTab] = useState('questionnaire')
   const [scanLoading, setScanLoading] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiAnalysis, setAiAnalysis] = useState('')
 
   const login = () => { if (pin === 'Esterika26') setAuth(true) }
 
@@ -106,6 +108,7 @@ export default function AdminPage() {
     setSelectedClient(client)
     setProfile({})
     setTab('questionnaire')
+    setAiAnalysis('')
     const { data } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
     if (data) setProfile(data)
     else setProfile({ client_password: client.password, blood_tests: {} })
@@ -128,6 +131,23 @@ export default function AdminPage() {
     setSaving(false)
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
+  }
+
+  async function runProfileAnalysis() {
+    setAiLoading(true)
+    setAiAnalysis('')
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: selectedClient.name,
+        mode: 'profile',
+        profile: { ...profile, ...selectedClient }
+      })
+    })
+    const data = await res.json()
+    setAiAnalysis(data.result)
+    setAiLoading(false)
   }
 
   async function scanBloodTests(file) {
@@ -170,7 +190,7 @@ export default function AdminPage() {
   if (!auth) return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0fdf4', direction: 'rtl' }}>
       <div style={{ background: '#fff', borderRadius: 20, padding: 32, width: 300, textAlign: 'center', boxShadow: '0 8px 40px #0000000f' }}>
-        <div style={{ fontSize: 32, marginBottom: 12 }}>⚙️</div>
+        <div style={{ fontSize: 32, marginBottom: 12 }}>⚙</div>
         <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 20 }}>ניהול מטופלים</div>
         <input type="password" value={pin} onChange={e => setPin(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} placeholder="סיסמה..." style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 15, textAlign: 'center', outline: 'none', boxSizing: 'border-box', marginBottom: 10 }} />
         <button onClick={login} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>כניסה</button>
@@ -198,10 +218,15 @@ export default function AdminPage() {
 
         {selectedClient && (
           <>
-            <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-              {[{ k: 'questionnaire', l: '📋 שאלון 360' }, { k: 'blood', l: '🩸 בדיקות דם' }, { k: 'nutrition', l: '🥗 ערכי תזונה' }].map(function(t) {
+            <div style={{ display: 'flex', gap: 6, marginBottom: 16, flexWrap: 'wrap' }}>
+              {[
+                { k: 'questionnaire', l: '📋 שאלון' },
+                { k: 'blood', l: '🩸 בדיקות' },
+                { k: 'nutrition', l: '🥗 תזונה' },
+                { k: 'ai', l: '🧠 ניתוח AI' }
+              ].map(function(t) {
                 return (
-                  <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: tab === t.k ? '#0f4c2a' : '#555' }}>{t.l}</button>
+                  <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 80 }}>{t.l}</button>
                 )
               })}
             </div>
@@ -223,7 +248,7 @@ export default function AdminPage() {
                   <Field label="בריאות הורים (סכרת, לחץ דם, כולסטרול)" value={profile.family_history} onChange={v => updateProfile('family_history', v)} rows={2} />
                 </Section>
 
-                <Section title="הרגלי תזונה" icon="🍽">
+                <Section title="הרגלי תזונה" icon="🍽️">
                   <Field label="הגבלות תזונה (כשר/צמחוני/טבעוני)" value={profile.diet_restrictions} onChange={v => updateProfile('diet_restrictions', v)} />
                   <Field label="ארוחת בוקר רגילה" value={profile.breakfast_habits} onChange={v => updateProfile('breakfast_habits', v)} rows={2} />
                   <Field label="ארוחת צהריים רגילה" value={profile.lunch_habits} onChange={v => updateProfile('lunch_habits', v)} rows={2} />
@@ -266,13 +291,12 @@ export default function AdminPage() {
               <>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 700, marginBottom: 10 }}>📸 סריקת בדיקות דם עם AI</div>
-                  <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 12 }}>העלי תמונה/סריקה של הבדיקות — ה-AI ימלא את הערכים אוטומטית</div>
+                  <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 12 }}>העלי תמונה של הבדיקות — ה-AI ימלא את הערכים אוטומטית</div>
                   <input type="file" accept="image/*" onChange={e => e.target.files[0] && scanBloodTests(e.target.files[0])} style={{ display: 'none' }} id="scan-input" />
                   <label htmlFor="scan-input" style={{ display: 'block', padding: 12, borderRadius: 10, background: '#f0fdf4', border: '2px dashed #16a34a', textAlign: 'center', cursor: 'pointer', fontWeight: 700, color: '#0f4c2a' }}>
                     {scanLoading ? '⏳ סורק...' : '📸 העלי תמונה של בדיקות דם'}
                   </label>
                 </div>
-
                 <div style={{ background: '#fff', borderRadius: 18, padding: 16, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 700, marginBottom: 12 }}>🩸 ערכי בדיקות דם</div>
                   <Field label="תאריך הבדיקות" value={profile.blood_tests_date} onChange={v => updateProfile('blood_tests_date', v)} type="date" />
@@ -315,9 +339,37 @@ export default function AdminPage() {
               </div>
             )}
 
-            {tab !== 'nutrition' && (
+            {tab === 'ai' && (
+              <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
+                <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 8 }}>🧠 ניתוח AI מלא</div>
+                <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>
+                  הניתוח משלב: NLP, מעגל שינוי, רמות לוגיות, בדיקות דם, תזונה וספורט
+                </div>
+                <button onClick={runProfileAnalysis} disabled={aiLoading} style={{
+                  width: '100%', padding: 14, borderRadius: 12,
+                  background: aiLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)',
+                  color: '#fff', border: 'none', cursor: aiLoading ? 'default' : 'pointer',
+                  fontWeight: 700, fontSize: 16, marginBottom: 16
+                }}>
+                  {aiLoading ? '⏳ מנתח...' : '🧠 הפעילי ניתוח מלא'}
+                </button>
+                {aiAnalysis && (
+                  <div style={{ fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', color: '#333', background: '#f8fafc', borderRadius: 14, padding: 16 }}>
+                    {aiAnalysis}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {tab !== 'nutrition' && tab !== 'ai' && (
               <button onClick={saveProfile} disabled={saving} style={{ width: '100%', padding: 14, borderRadius: 14, marginTop: 16, background: saved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
                 {saving ? '⏳ שומר...' : saved ? '✅ נשמר!' : '💾 שמרי פרופיל'}
+              </button>
+            )}
+
+            {tab === 'blood' && (
+              <button onClick={saveProfile} disabled={saving} style={{ width: '100%', padding: 14, borderRadius: 14, marginTop: 16, background: saved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
+                {saving ? '⏳ שומר...' : saved ? '✅ נשמר!' : '💾 שמרי בדיקות'}
               </button>
             )}
           </>
