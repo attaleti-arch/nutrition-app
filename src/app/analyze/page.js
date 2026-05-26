@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 
 const PROT_NAMES = {
   p1: '200 גרם דג לבן', p2: '100 גרם סלמון', p3: '150 גרם טופו',
@@ -12,12 +13,40 @@ const CARB_NAMES = {
   c4: '170 גרם תפוחי אדמה / בטטה', c5: '150 גרם כרובית / ברוקולי'
 }
 
-function calcNutrition(log, nutritionData) {
-  var total = { calories: 0, protein: 0, fat: 0, fiber: 0 }
-  var nd = nutritionData
+const GOALS_SPLIT = {
+  'ירידה במשקל': { protein: 40, carbs: 30, fat: 30 },
+  'שמירה על משקל': { protein: 30, carbs: 40, fat: 30 },
+  'עלייה במסה': { protein: 30, carbs: 50, fat: 20 },
+}
 
+const ACTIVITY_MULT = {
+  'יושבני': 1.2, 'קל': 1.375, 'בינוני': 1.55, 'פעיל': 1.725, 'מאוד פעיל': 1.9
+}
+
+function calcTargets(client) {
+  if (!client || !client.weight || !client.height || !client.age) return null
+  var bmr = client.gender === 'זכר'
+    ? 10 * client.weight + 6.25 * client.height - 5 * client.age + 5
+    : 10 * client.weight + 6.25 * client.height - 5 * client.age - 161
+  var tdee = bmr * (ACTIVITY_MULT[client.activity] || 1.55)
+  var adjust = client.goal === 'ירידה במשקל' ? -400 : client.goal === 'עלייה במסה' ? 300 : 0
+  var calories = Math.round(tdee + adjust)
+  var split = GOALS_SPLIT[client.goal] || GOALS_SPLIT['ירידה במשקל']
+  return {
+    calories,
+    protein: Math.round((calories * split.protein / 100) / 4),
+    carbs: Math.round((calories * split.carbs / 100) / 4),
+    fat: Math.round((calories * split.fat / 100) / 9),
+    proteinPct: split.protein,
+    carbsPct: split.carbs,
+    fatPct: split.fat,
+  }
+}
+
+function calcNutrition(log, nutritionData) {
+  var total = { calories: 0, protein: 0, carbs: 0, fat: 0, fiber: 0 }
   function add(id) {
-    var item = nd[id]
+    var item = nutritionData[id]
     if (item) {
       total.calories += item.calories || 0
       total.protein += item.protein || 0
@@ -25,26 +54,85 @@ function calcNutrition(log, nutritionData) {
       total.fiber += item.fiber || 0
     }
   }
-
   if (log.had_snack) add('snack')
   if (log.checks) Object.keys(log.checks).forEach(function(id) { if (log.checks[id]) add(id) })
   if (log.carb_sel) add(log.carb_sel)
   if (log.prot_sel) add(log.prot_sel)
   if (log.fat_sel) add(log.fat_sel)
   if (log.had_benayim) add('benayim')
-
+  var totalCal = total.protein * 4 + total.fat * 9
+  total.proteinPct = totalCal > 0 ? Math.round((total.protein * 4 / totalCal) * 100) : 0
+  total.fatPct = totalCal > 0 ? Math.round((total.fat * 9 / totalCal) * 100) : 0
+  total.carbsPct = 100 - total.proteinPct - total.fatPct
   return total
+}
+
+function MacroPieChart({ actual, target, title }) {
+  var actualData = [
+    { name: 'חלבון', value: actual.proteinPct, color: '#16a34a' },
+    { name: 'שומן', value: actual.fatPct, color: '#9333ea' },
+    { name: 'פחמימות', value: Math.max(0, actual.carbsPct), color: '#f97316' },
+  ]
+  var targetData = target ? [
+    { name: 'חלבון', value: target.proteinPct, color: '#16a34a' },
+    { name: 'שומן', value: target.fatPct, color: '#9333ea' },
+    { name: 'פחמימות', value: target.carbsPct, color: '#f97316' },
+  ] : null
+
+  return (
+    <div style={{ marginBottom: 16, background: '#f8fafc', borderRadius: 14, padding: 14 }}>
+      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12, color: '#111' }}>{title}</div>
+      <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>בפועל</div>
+          <ResponsiveContainer width="100%" height={140}>
+            <PieChart>
+              <Pie data={actualData} cx="50%" cy="50%" innerRadius={35} outerRadius={60} dataKey="value" paddingAngle={3}>
+                {actualData.map(function(entry, i) { return <Cell key={i} fill={entry.color} stroke="none" /> })}
+              </Pie>
+              <Tooltip formatter={function(v) { return v + '%' }} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div style={{ fontSize: 12, color: '#555' }}>{Math.round(actual.calories)} קל</div>
+        </div>
+        {targetData && (
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>יעד אישי</div>
+            <ResponsiveContainer width="100%" height={140}>
+              <PieChart>
+                <Pie data={targetData} cx="50%" cy="50%" innerRadius={35} outerRadius={60} dataKey="value" paddingAngle={3}>
+                  {targetData.map(function(entry, i) { return <Cell key={i} fill={entry.color} stroke="none" /> })}
+                </Pie>
+                <Tooltip formatter={function(v) { return v + '%' }} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div style={{ fontSize: 12, color: '#555' }}>{target.calories} קל יעד</div>
+          </div>
+        )}
+      </div>
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8 }}>
+        {[{ l: 'חלבון', c: '#16a34a' }, { l: 'שומן', c: '#9333ea' }, { l: 'פחמימות', c: '#f97316' }].map(function(i) {
+          return (
+            <div key={i.l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <div style={{ width: 10, height: 10, borderRadius: 3, background: i.c }} />
+              <span style={{ fontSize: 12, color: '#555' }}>{i.l}</span>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 function NutritionBar({ label, value, max, color }) {
   var pct = Math.min(100, Math.round((value / max) * 100))
   return (
-    <div style={{ marginBottom: 10 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 3 }}>
         <span style={{ color: '#555' }}>{label}</span>
         <span style={{ fontWeight: 700, color: color }}>{Math.round(value)}</span>
       </div>
-      <div style={{ height: 8, background: '#f3f4f6', borderRadius: 99 }}>
+      <div style={{ height: 6, background: '#f3f4f6', borderRadius: 99 }}>
         <div style={{ width: pct + '%', height: '100%', background: color, borderRadius: 99 }} />
       </div>
     </div>
@@ -56,6 +144,7 @@ export default function AnalyzePage() {
   const [auth, setAuth] = useState(false)
   const [clients, setClients] = useState([])
   const [selected, setSelected] = useState(null)
+  const [selectedClient, setSelectedClient] = useState(null)
   const [logs, setLogs] = useState([])
   const [analysis, setAnalysis] = useState('')
   const [loading, setLoading] = useState(false)
@@ -80,6 +169,7 @@ export default function AnalyzePage() {
 
   const loadLogs = async (client) => {
     setSelected(client)
+    setSelectedClient(client)
     setAnalysis('')
     const { data } = await supabase
       .from('daily_logs')
@@ -93,12 +183,16 @@ export default function AnalyzePage() {
   const analyze = async () => {
     if (!logs.length || !selected) return
     setLoading(true)
+    var targets = calcTargets(selectedClient)
     const summary = logs.map(function(l) {
       var nut = calcNutrition(l, nutritionData)
       return 'תאריך: ' + l.log_date +
         ' | קלוריות: ' + Math.round(nut.calories) +
+        (targets ? ' (יעד: ' + targets.calories + ')' : '') +
         ' | חלבון: ' + Math.round(nut.protein) + 'g' +
+        (targets ? ' (יעד: ' + targets.protein + 'g)' : '') +
         ' | שומן: ' + Math.round(nut.fat) + 'g' +
+        (targets ? ' (יעד: ' + targets.fat + 'g)' : '') +
         ' | סיבים: ' + Math.round(nut.fiber) + 'g' +
         ' | מים: ' + (l.water || 0) + ' כוסות' +
         ' | צעדים: ' + (l.steps || 0) +
@@ -134,6 +228,8 @@ export default function AnalyzePage() {
     </div>
   )
 
+  var targets = calcTargets(selectedClient)
+
   return (
     <div style={{minHeight:'100vh',background:'#f8fafc',direction:'rtl'}}>
       <div style={{background:'linear-gradient(135deg,#0f4c2a,#16a34a)',padding:'20px 24px',color:'#fff'}}>
@@ -153,6 +249,7 @@ export default function AnalyzePage() {
               cursor:'pointer',fontWeight:600,fontSize:15
             }}>
               {c.name}
+              {c.goal && <span style={{fontSize:12,color:'#9ca3af',marginRight:8}}>— {c.goal}</span>}
             </button>
           ))}
         </div>
@@ -163,14 +260,15 @@ export default function AnalyzePage() {
             {logs.map(function(l) {
               var nut = calcNutrition(l, nutritionData)
               return (
-                <div key={l.id} style={{marginBottom:16,paddingBottom:16,borderBottom:'1px solid #f3f4f6'}}>
-                  <div style={{fontWeight:700,fontSize:14,marginBottom:8,color:'#111'}}>{l.log_date}</div>
-                  <NutritionBar label="קלוריות" value={nut.calories} max={2000} color="#f97316" />
-                  <NutritionBar label="חלבון (g)" value={nut.protein} max={100} color="#16a34a" />
-                  <NutritionBar label="שומן (g)" value={nut.fat} max={70} color="#9333ea" />
+                <div key={l.id} style={{marginBottom:20,paddingBottom:20,borderBottom:'1px solid #f3f4f6'}}>
+                  <div style={{fontWeight:700,fontSize:14,marginBottom:10,color:'#111'}}>{l.log_date}</div>
+                  <MacroPieChart actual={nut} target={targets} title="" />
+                  <NutritionBar label="קלוריות" value={nut.calories} max={targets ? targets.calories : 2000} color="#f97316" />
+                  <NutritionBar label="חלבון (g)" value={nut.protein} max={targets ? targets.protein : 100} color="#16a34a" />
+                  <NutritionBar label="שומן (g)" value={nut.fat} max={targets ? targets.fat : 70} color="#9333ea" />
                   <NutritionBar label="סיבים (g)" value={nut.fiber} max={30} color="#0284c7" />
-                  <div style={{fontSize:12,color:'#9ca3af',marginTop:4}}>
-                    מים: {l.water || 0}/8 | צעדים: {l.steps || 0}
+                  <div style={{fontSize:12,color:'#9ca3af',marginTop:6}}>
+                    💧 {l.water || 0}/8 כוסות | 🚶 {l.steps || 0} צעדים
                   </div>
                 </div>
               )
