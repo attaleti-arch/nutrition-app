@@ -346,7 +346,7 @@ export default function AdminPage() {
       name + ' (ת.ז: ' + id + ') הינו/ה המטופל/ת שלי.\n' +
       'בכדי שאוכל להמשיך את הטיפול התזונתי, אבקש לבצע את הבדיקות הבאות:\n\n' +
       tests + '\n\n' +
-      'בתודה מראש,\nאתי אטל\nיועצת בריאות ותזונה התנהגותית\n054-XXXXXXX'
+     'בתודה מראש,\nאתי אטל\nיועצת בריאות ותזונה התנהגותית\n052-333-6766 | Attal.eti@gmail.com'
     if (phone) {
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
     } else {
