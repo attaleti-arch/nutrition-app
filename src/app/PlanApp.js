@@ -142,7 +142,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const displayName = clientName || userPassword || ''
   const dbKey = userPassword || clientName || ''
   const today = new Date().toLocaleDateString('he-IL')
-  const todayKey = new Date().toISOString().split('T')[0]
+ const todayKey = new Date().toLocaleDateString('sv-SE')
 
   const [dietType, setDietType] = useState(null)
   const [restrictions, setRestrictions] = useState({})
