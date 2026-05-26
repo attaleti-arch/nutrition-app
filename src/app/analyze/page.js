@@ -12,13 +12,11 @@ const CARB_NAMES = {
   c1: '150 גרם אורז / קינואה', c2: '200 גרם בורגול', c3: '110 גרם פתיתים',
   c4: '170 גרם תפוחי אדמה / בטטה', c5: '150 גרם כרובית / ברוקולי'
 }
-
 const GOALS_SPLIT = {
   'ירידה במשקל': { protein: 40, carbs: 30, fat: 30 },
   'שמירה על משקל': { protein: 30, carbs: 40, fat: 30 },
   'עלייה במסה': { protein: 30, carbs: 50, fat: 20 },
 }
-
 const ACTIVITY_MULT = {
   'יושבני': 1.2, 'קל': 1.375, 'בינוני': 1.55, 'פעיל': 1.725, 'מאוד פעיל': 1.9
 }
@@ -67,7 +65,7 @@ function calcNutrition(log, nutritionData) {
   return total
 }
 
-function MacroPieChart({ actual, target, title }) {
+function MacroPieChart({ actual, target }) {
   var actualData = [
     { name: 'חלבון', value: actual.proteinPct, color: '#16a34a' },
     { name: 'שומן', value: actual.fatPct, color: '#9333ea' },
@@ -80,42 +78,41 @@ function MacroPieChart({ actual, target, title }) {
   ] : null
 
   return (
-    <div style={{ marginBottom: 16, background: '#f8fafc', borderRadius: 14, padding: 14 }}>
-      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 12, color: '#111' }}>{title}</div>
+    <div style={{ marginBottom: 12, background: '#f8fafc', borderRadius: 14, padding: 12 }}>
       <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
         <div style={{ flex: 1, textAlign: 'center' }}>
-          <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>בפועל</div>
-          <ResponsiveContainer width="100%" height={140}>
+          <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>בפועל</div>
+          <ResponsiveContainer width="100%" height={120}>
             <PieChart>
-              <Pie data={actualData} cx="50%" cy="50%" innerRadius={35} outerRadius={60} dataKey="value" paddingAngle={3}>
+              <Pie data={actualData} cx="50%" cy="50%" innerRadius={28} outerRadius={50} dataKey="value" paddingAngle={3}>
                 {actualData.map(function(entry, i) { return <Cell key={i} fill={entry.color} stroke="none" /> })}
               </Pie>
               <Tooltip formatter={function(v) { return v + '%' }} />
             </PieChart>
           </ResponsiveContainer>
-          <div style={{ fontSize: 12, color: '#555' }}>{Math.round(actual.calories)} קל</div>
+          <div style={{ fontSize: 12, color: '#555', fontWeight: 700 }}>{Math.round(actual.calories)} קל</div>
         </div>
         {targetData && (
           <div style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>יעד אישי</div>
-            <ResponsiveContainer width="100%" height={140}>
+            <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>יעד</div>
+            <ResponsiveContainer width="100%" height={120}>
               <PieChart>
-                <Pie data={targetData} cx="50%" cy="50%" innerRadius={35} outerRadius={60} dataKey="value" paddingAngle={3}>
+                <Pie data={targetData} cx="50%" cy="50%" innerRadius={28} outerRadius={50} dataKey="value" paddingAngle={3}>
                   {targetData.map(function(entry, i) { return <Cell key={i} fill={entry.color} stroke="none" /> })}
                 </Pie>
                 <Tooltip formatter={function(v) { return v + '%' }} />
               </PieChart>
             </ResponsiveContainer>
-            <div style={{ fontSize: 12, color: '#555' }}>{target.calories} קל יעד</div>
+            <div style={{ fontSize: 12, color: '#555', fontWeight: 700 }}>{target.calories} קל יעד</div>
           </div>
         )}
       </div>
-      <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8 }}>
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 6 }}>
         {[{ l: 'חלבון', c: '#16a34a' }, { l: 'שומן', c: '#9333ea' }, { l: 'פחמימות', c: '#f97316' }].map(function(i) {
           return (
             <div key={i.l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <div style={{ width: 10, height: 10, borderRadius: 3, background: i.c }} />
-              <span style={{ fontSize: 12, color: '#555' }}>{i.l}</span>
+              <div style={{ width: 8, height: 8, borderRadius: 2, background: i.c }} />
+              <span style={{ fontSize: 11, color: '#555' }}>{i.l}</span>
             </div>
           )
         })}
@@ -146,9 +143,13 @@ export default function AnalyzePage() {
   const [selected, setSelected] = useState(null)
   const [selectedClient, setSelectedClient] = useState(null)
   const [logs, setLogs] = useState([])
+  const [filteredLogs, setFilteredLogs] = useState([])
   const [analysis, setAnalysis] = useState('')
   const [loading, setLoading] = useState(false)
   const [nutritionData, setNutritionData] = useState({})
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [filterMode, setFilterMode] = useState('all')
 
   useEffect(function() {
     async function loadNutrition() {
@@ -159,6 +160,31 @@ export default function AnalyzePage() {
     }
     loadNutrition()
   }, [])
+
+  useEffect(function() {
+    applyFilter(logs, filterMode, dateFrom, dateTo)
+  }, [logs, filterMode, dateFrom, dateTo])
+
+  function applyFilter(allLogs, mode, from, to) {
+    if (mode === 'all') { setFilteredLogs(allLogs); return }
+    if (mode === 'today') {
+      var today = new Date().toLocaleDateString('sv-SE')
+      setFilteredLogs(allLogs.filter(function(l) { return l.log_date === today }))
+      return
+    }
+    if (mode === 'week') {
+      var weekAgo = new Date()
+      weekAgo.setDate(weekAgo.getDate() - 7)
+      var weekAgoStr = weekAgo.toLocaleDateString('sv-SE')
+      setFilteredLogs(allLogs.filter(function(l) { return l.log_date >= weekAgoStr }))
+      return
+    }
+    if (mode === 'custom' && from && to) {
+      setFilteredLogs(allLogs.filter(function(l) { return l.log_date >= from && l.log_date <= to }))
+      return
+    }
+    setFilteredLogs(allLogs)
+  }
 
   const login = async () => {
     if (pin !== 'Esterika26') return
@@ -171,20 +197,23 @@ export default function AnalyzePage() {
     setSelected(client)
     setSelectedClient(client)
     setAnalysis('')
+    setFilterMode('all')
+    setDateFrom('')
+    setDateTo('')
     const { data } = await supabase
       .from('daily_logs')
       .select('*')
       .eq('client_name', client.password)
       .order('log_date', { ascending: false })
-      .limit(7)
+      .limit(30)
     setLogs(data || [])
   }
 
   const analyze = async () => {
-    if (!logs.length || !selected) return
+    if (!filteredLogs.length || !selected) return
     setLoading(true)
     var targets = calcTargets(selectedClient)
-    const summary = logs.map(function(l) {
+    const summary = filteredLogs.map(function(l) {
       var nut = calcNutrition(l, nutritionData)
       return 'תאריך: ' + l.log_date +
         ' | קלוריות: ' + Math.round(nut.calories) +
@@ -192,7 +221,6 @@ export default function AnalyzePage() {
         ' | חלבון: ' + Math.round(nut.protein) + 'g' +
         (targets ? ' (יעד: ' + targets.protein + 'g)' : '') +
         ' | שומן: ' + Math.round(nut.fat) + 'g' +
-        (targets ? ' (יעד: ' + targets.fat + 'g)' : '') +
         ' | סיבים: ' + Math.round(nut.fiber) + 'g' +
         ' | מים: ' + (l.water || 0) + ' כוסות' +
         ' | צעדים: ' + (l.steps || 0) +
@@ -256,13 +284,44 @@ export default function AnalyzePage() {
 
         {selected && logs.length > 0 && (
           <div style={{background:'#fff',borderRadius:18,padding:16,marginBottom:16,border:'1.5px solid #f0f0f0'}}>
-            <div style={{fontWeight:700,marginBottom:12}}>📅 {logs.length} רשומות אחרונות:</div>
-            {logs.map(function(l) {
+            <div style={{fontWeight:700,marginBottom:10}}>📅 סינון תאריכים:</div>
+            <div style={{display:'flex',gap:8,marginBottom:10,flexWrap:'wrap'}}>
+              {[{k:'today',l:'היום'},{k:'week',l:'שבוע אחרון'},{k:'all',l:'הכל'}].map(function(m) {
+                return (
+                  <button key={m.k} onClick={function(){setFilterMode(m.k)}} style={{
+                    padding:'6px 14px',borderRadius:99,fontSize:13,fontWeight:600,cursor:'pointer',
+                    border:'2px solid ' + (filterMode === m.k ? '#0f4c2a' : '#e5e7eb'),
+                    background: filterMode === m.k ? '#dcfce7' : '#fafafa',
+                    color: filterMode === m.k ? '#0f4c2a' : '#555'
+                  }}>{m.l}</button>
+                )
+              })}
+              <button onClick={function(){setFilterMode('custom')}} style={{
+                padding:'6px 14px',borderRadius:99,fontSize:13,fontWeight:600,cursor:'pointer',
+                border:'2px solid ' + (filterMode === 'custom' ? '#0f4c2a' : '#e5e7eb'),
+                background: filterMode === 'custom' ? '#dcfce7' : '#fafafa',
+                color: filterMode === 'custom' ? '#0f4c2a' : '#555'
+              }}>טווח מותאם</button>
+            </div>
+            {filterMode === 'custom' && (
+              <div style={{display:'flex',gap:8,marginBottom:10,alignItems:'center'}}>
+                <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                  style={{flex:1,padding:'8px 10px',borderRadius:10,border:'1.5px solid #e5e7eb',fontSize:13,outline:'none'}} />
+                <span style={{color:'#9ca3af'}}>עד</span>
+                <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                  style={{flex:1,padding:'8px 10px',borderRadius:10,border:'1.5px solid #e5e7eb',fontSize:13,outline:'none'}} />
+              </div>
+            )}
+            <div style={{fontSize:13,color:'#9ca3af',marginBottom:12}}>
+              מציג {filteredLogs.length} מתוך {logs.length} רשומות
+            </div>
+
+            {filteredLogs.map(function(l) {
               var nut = calcNutrition(l, nutritionData)
               return (
                 <div key={l.id} style={{marginBottom:20,paddingBottom:20,borderBottom:'1px solid #f3f4f6'}}>
                   <div style={{fontWeight:700,fontSize:14,marginBottom:10,color:'#111'}}>{l.log_date}</div>
-                  <MacroPieChart actual={nut} target={targets} title="" />
+                  <MacroPieChart actual={nut} target={targets} />
                   <NutritionBar label="קלוריות" value={nut.calories} max={targets ? targets.calories : 2000} color="#f97316" />
                   <NutritionBar label="חלבון (g)" value={nut.protein} max={targets ? targets.protein : 100} color="#16a34a" />
                   <NutritionBar label="שומן (g)" value={nut.fat} max={targets ? targets.fat : 70} color="#9333ea" />
@@ -273,9 +332,14 @@ export default function AnalyzePage() {
                 </div>
               )
             })}
-            <button onClick={analyze} disabled={loading} style={{
+
+            {filteredLogs.length === 0 && (
+              <div style={{textAlign:'center',color:'#9ca3af',padding:20}}>אין רשומות בטווח הנבחר</div>
+            )}
+
+            <button onClick={analyze} disabled={loading || filteredLogs.length === 0} style={{
               width:'100%',padding:14,borderRadius:12,marginTop:4,
-              background: loading ? '#9ca3af' : '#0f4c2a',
+              background: loading || filteredLogs.length === 0 ? '#9ca3af' : '#0f4c2a',
               color:'#fff',border:'none',cursor: loading ? 'default' : 'pointer',
               fontWeight:700,fontSize:16
             }}>
