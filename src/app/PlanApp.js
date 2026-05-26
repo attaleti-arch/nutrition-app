@@ -539,11 +539,11 @@ export default function PlanApp({ clientName, userPassword }) {
             </div>
           )}
           {lunchOpt === 'B' && (
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>רטבים ותוספות:</div>
-              {filteredFat.map(function(o) { return <RadioRow key={o.id} id={o.id} text={o.text} accent={C.greenMid} selected={fatSel} onSelect={setFatSel} /> })}
-            </div>
-          )}
+  <div>
+    <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>רטבים ותוספות (ניתן לסמן כמה):</div>
+    {filteredFat.map(function(o) { return <CheckRow key={o.id} id={o.id} text={o.text} accent={C.greenMid} checked={!!checks[o.id]} onToggle={toggleCheck} /> })}
+  </div>
+)}
           <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות (חובה!):</div>
           {PLAN.veggieOptions.map(function(o) { return <RadioRow key={o.id} id={o.id} text={o.text} accent={C.teal} selected={veggieSel} onSelect={setVeggieSel} /> })}
           <FreeText value={lunchFree} onChange={setLunchFree} placeholder="אכלתי גם / פרטים נוספים על הצהריים..." />
