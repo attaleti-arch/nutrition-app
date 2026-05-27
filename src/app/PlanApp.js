@@ -42,8 +42,12 @@ const PLAN = {
     { id: 'b1', text: 'משקה חלבון', tags: [] },
     { id: 'b2', text: 'חטיף חלבון', tags: [] },
     { id: 'b3', text: 'מעדן פרו + פרי / ברנפלקס 10 גרם', tags: ['vegan'] },
-    { id: 'b4', text: '3 פריכיות + 3 כפיות קוטג + חצי כפית דבש', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b5', text: 'חצי גביע קוטג / גבינה לבנה + ירקות', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b4', text: '3 פריכיות + 3 כפיות קוטג׳ + חצי כפית דבש', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b5', text: 'קוטג׳ 3% חצי גביע + ירקות טריים', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b10', text: 'גבינה לבנה 5% חצי גביע + ירקות טריים', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b11', text: 'גבינה בולגרית 5% חצי גביע + ירקות טריים', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b12', text: 'גבינה צפתית 5% חצי גביע + ירקות טריים', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b13', text: 'סלט ירקות טריים', tags: ['vegan'] },
     { id: 'b6', text: 'פיתה בוסמין / 4 פריכיות / 2 פרוסות לחם שיפון', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'b7', text: 'ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'] },
     { id: 'b8', text: 'אבוקדו + ירקות', tags: ['vegan', 'keto'] },
@@ -64,6 +68,8 @@ const PLAN = {
     { id: 'p3', text: '150 גרם טופו', tags: ['vegan'] },
     { id: 'p4', text: '100 גרם סינטה / 120 גרם פרגית', hide: ['vegan', 'vegetarian', 'keto'] },
     { id: 'p5', text: '140 גרם ירך עוף / 100 גרם הודו טחון', hide: ['vegan', 'vegetarian'] },
+    { id: 'p10', text: '150 גרם חזה עוף', hide: ['vegan', 'vegetarian'] },
+    { id: 'p11', text: '150 גרם מגדרה', tags: ['vegan'] },
     { id: 'p6', text: '2 המבורגר צמחוני 99 קל', tags: ['vegan'] },
     { id: 'p7', text: '200 גרם דג שמן / סלמון (קיטו)', tags: ['keto'], hide: ['vegan', 'vegetarian', 'no_fish'] },
     { id: 'p8', text: '3 ביצים / אומלט', hide: ['vegan', 'no_eggs'] },
@@ -84,7 +90,10 @@ const PLAN = {
     { id: 'v4', text: 'סלט עלים ירוקים (תרד, רוקט, חסה)' },
   ],
   erev: [
-    { id: 'e1', text: 'גביע קוטג 3% / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'] },
+    { id: 'e1', text: 'קוטג׳ 3% חצי גביע + ירקות טריים', hide: ['vegan', 'no_lactose'] },
+    { id: 'e9', text: 'גבינה לבנה 5% חצי גביע + ירקות טריים', hide: ['vegan', 'no_lactose'] },
+    { id: 'e10', text: 'גבינה בולגרית 5% חצי גביע + ירקות טריים', hide: ['vegan', 'no_lactose'] },
+    { id: 'e11', text: 'גבינה צפתית 5% חצי גביע + ירקות טריים', hide: ['vegan', 'no_lactose'] },
     { id: 'e2', text: '50 גרם ברנפלקס + 150 מל חלב / משקה צמחי', hide: ['keto'] },
     { id: 'e3', text: '5 דפי אורז + ממרח', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'e4', text: 'פיתה / 4 פריכיות / 2 פרוסות לחם שיפון', hide: ['keto', 'no_gluten'] },
@@ -201,6 +210,7 @@ function YesNo({ value, onChange, labelYes, labelNo, accent }) {
     </div>
   )
 }
+
 export default function PlanApp({ clientName, userPassword }) {
   const displayName = clientName || userPassword || ''
   const dbKey = userPassword || clientName || ''
