@@ -357,8 +357,8 @@ export default function AdminPage() {
       '</div>' +
       '</body></html>'
 
-    var win = window.open('', '_blank')
-    win.document.write(html + '<div style="text-align:center;margin-top:30px"><button onclick="window.print()" style="padding:14px 30px;background:#0f4c2a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer">🖨️ שמור / הדפס PDF</button></div>')
+var win = window.open('', '_blank')
+    win.document.write(html + '<div style="text-align:center;margin-top:30px"><button onclick="window.print()" style="padding:14px 30px;background:#0f4c2a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer">🖨️ שמור PDF</button></div>')
     win.document.close()
   }
 
