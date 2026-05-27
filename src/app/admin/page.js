@@ -575,7 +575,7 @@ export default function AdminPage() {
                     )
                   })}
                 </div>
-                <button onClick={sendDoctorLetter} style={{ width: '100%', padding: 14, borderRadius: 12, background: selectedClient.phone ? '#25D366' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
+                <button onClick={openDoctorLetter} ...> style={{ width: '100%', padding: 14, borderRadius: 12, background: selectedClient.phone ? '#25D366' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
                   {selectedClient.phone ? '📱 שלחי ב-WhatsApp' : '📋 העתיקי ללוח'}
                 </button>
               </div>
