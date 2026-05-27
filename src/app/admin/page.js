@@ -334,25 +334,36 @@ export default function AdminPage() {
   function selectAllTests() { var all = {}; DOCTOR_TESTS.forEach(t => { all[t.key] = true }); setSelectedTests(all) }
   function clearAllTests() { setSelectedTests({}) }
 
-  function sendDoctorLetter() {
-    if (!selectedClient) return
-    var phone = selectedClient.phone
-    var today = new Date().toLocaleDateString('he-IL')
-    var name = selectedClient.name
-    var id = patientId || '___________'
-    var tests = DOCTOR_TESTS.filter(t => selectedTests[t.key]).map(t => '❑ ' + t.label).join('\n')
-    if (!tests) { alert('בחרי לפחות בדיקה אחת'); return }
-    var msg = today + '\n\nלכבוד רופא המשפחה\n\nהנדון: המלצה לביצוע בדיקות מעבדה\n\n' +
-      name + ' (ת.ז: ' + id + ') הינו/ה המטופל/ת שלי.\n' +
-      'בכדי שאוכל להמשיך את הטיפול התזונתי, אבקש לבצע את הבדיקות הבאות:\n\n' +
-      tests + '\n\n' +
-     'בתודה מראש,\nאתי אטל\nיועצת בריאות ותזונה התנהגותית\n052-333-6766 | Attal.eti@gmail.com'
-    if (phone) {
-      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-    } else {
-      navigator.clipboard.writeText(msg).then(function() { alert('המכתב הועתק ללוח!') })
-    }
-  }
+  function openDoctorLetter() {
+  if (!selectedClient) return
+  var today = new Date().toLocaleDateString('he-IL')
+  var fullName = (selectedClient.name || '') + ' ' + (selectedClient.last_name || '')
+  var id = patientId || '___________'
+  var tests = DOCTOR_TESTS.filter(t => selectedTests[t.key]).map(t => '<tr><td style="padding:6px 12px;font-size:14px;border-bottom:1px solid #f0f0f0;">❑ ' + t.label + '</td></tr>').join('')
+  if (!tests) { alert('בחרי לפחות בדיקה אחת'); return }
+
+  var html = '<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;direction:rtl;padding:40px;color:#222;max-width:700px;margin:0 auto}.header{text-align:center;margin-bottom:30px;border-bottom:2px solid #0f4c2a;padding-bottom:20px}.logo{height:80px;margin-bottom:10px}.name{font-size:22px;font-weight:bold;color:#0f4c2a}.title{font-size:13px;color:#666}table{width:100%;border-collapse:collapse;margin:16px 0}.signature{margin-top:40px;border-top:1px solid #e5e7eb;padding-top:20px}p{line-height:1.8;font-size:15px}</style></head><body>' +
+    '<div class="header">' +
+    '<img class="logo" src="https://project-l990h.vercel.app/8912c850-f7b6-4418-807b-593a84e31f64.png" />' +
+    '<div class="name">אתי אטל</div>' +
+    '<div class="title">יועצת בריאות ותזונה התנהגותית</div>' +
+    '<div class="title">052-333-6766 | Attal.eti@gmail.com</div>' +
+    '</div>' +
+    '<p style="text-align:right;color:#666;font-size:14px;">' + today + '</p>' +
+    '<p>לכבוד רופא המשפחה</p>' +
+    '<p><strong>הנדון: המלצה לביצוע בדיקות מעבדה</strong></p>' +
+    '<p>' + fullName.trim() + ' (ת.ז: ' + id + ') הינו/ה המטופל/ת שלי.<br/>בכדי שאוכל להמשיך את הטיפול התזונתי, אבקש לבצע את הבדיקות הבאות:</p>' +
+    '<table>' + tests + '</table>' +
+    '<div class="signature">' +
+    '<p>בתודה מראש,</p><br/>' +
+    '<p><strong>אתי אטל</strong><br/>יועצת בריאות ותזונה התנהגותית<br/>052-333-6766 | Attal.eti@gmail.com</p>' +
+    '</div>' +
+    '</body></html>'
+
+  var win = window.open('', '_blank')
+  win.document.write(html)
+  win.document.close()
+}
 
   async function saveProfile() {
     setSaving(true)
