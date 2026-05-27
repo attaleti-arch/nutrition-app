@@ -335,35 +335,35 @@ export default function AdminPage() {
   function clearAllTests() { setSelectedTests({}) }
 
   function openDoctorLetter() {
-  if (!selectedClient) return
-  var today = new Date().toLocaleDateString('he-IL')
-  var fullName = (selectedClient.name || '') + ' ' + (selectedClient.last_name || '')
-  var id = patientId || '___________'
-  var tests = DOCTOR_TESTS.filter(t => selectedTests[t.key]).map(t => '<tr><td style="padding:6px 12px;font-size:14px;border-bottom:1px solid #f0f0f0;">❑ ' + t.label + '</td></tr>').join('')
-  if (!tests) { alert('בחרי לפחות בדיקה אחת'); return }
+    if (!selectedClient) return
+    var today = new Date().toLocaleDateString('he-IL')
+    var fullName = (selectedClient.name || '') + ' ' + (selectedClient.last_name || '')
+    var id = patientId || '___________'
+    var tests = DOCTOR_TESTS.filter(t => selectedTests[t.key]).map(t => '<tr><td style="padding:6px 12px;font-size:14px;border-bottom:1px solid #f0f0f0;">❑ ' + t.label + '</td></tr>').join('')
+    if (!tests) { alert('בחרי לפחות בדיקה אחת'); return }
 
-  var html = '<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;direction:rtl;padding:40px;color:#222;max-width:700px;margin:0 auto}.header{text-align:center;margin-bottom:30px;border-bottom:2px solid #0f4c2a;padding-bottom:20px}.logo{height:80px;margin-bottom:10px}.name{font-size:22px;font-weight:bold;color:#0f4c2a}.title{font-size:13px;color:#666}table{width:100%;border-collapse:collapse;margin:16px 0}.signature{margin-top:40px;border-top:1px solid #e5e7eb;padding-top:20px}p{line-height:1.8;font-size:15px}</style></head><body>' +
-    '<div class="header">' +
-    '<img class="logo" src="https://project-l990h.vercel.app/8912c850-f7b6-4418-807b-593a84e31f64.png" />' +
-    '<div class="name">אתי אטל</div>' +
-    '<div class="title">יועצת בריאות ותזונה התנהגותית</div>' +
-    '<div class="title">052-333-6766 | Attal.eti@gmail.com</div>' +
-    '</div>' +
-    '<p style="text-align:right;color:#666;font-size:14px;">' + today + '</p>' +
-    '<p>לכבוד רופא המשפחה</p>' +
-    '<p><strong>הנדון: המלצה לביצוע בדיקות מעבדה</strong></p>' +
-    '<p>' + fullName.trim() + ' (ת.ז: ' + id + ') הינו/ה המטופל/ת שלי.<br/>בכדי שאוכל להמשיך את הטיפול התזונתי, אבקש לבצע את הבדיקות הבאות:</p>' +
-    '<table>' + tests + '</table>' +
-    '<div class="signature">' +
-    '<p>בתודה מראש,</p><br/>' +
-    '<p><strong>אתי אטל</strong><br/>יועצת בריאות ותזונה התנהגותית<br/>052-333-6766 | Attal.eti@gmail.com</p>' +
-    '</div>' +
-    '</body></html>'
+    var html = '<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;direction:rtl;padding:40px;color:#222;max-width:700px;margin:0 auto}.header{text-align:center;margin-bottom:30px;border-bottom:2px solid #0f4c2a;padding-bottom:20px}.logo{height:80px;margin-bottom:10px}.name{font-size:22px;font-weight:bold;color:#0f4c2a}.title{font-size:13px;color:#666}table{width:100%;border-collapse:collapse;margin:16px 0}.signature{margin-top:40px;border-top:1px solid #e5e7eb;padding-top:20px}p{line-height:1.8;font-size:15px}</style></head><body>' +
+      '<div class="header">' +
+      '<img class="logo" src="https://project-l990h.vercel.app/8912c850-f7b6-4418-807b-593a84e31f64.png" />' +
+      '<div class="name">אתי אטל</div>' +
+      '<div class="title">יועצת בריאות ותזונה התנהגותית</div>' +
+      '<div class="title">052-333-6766 | Attal.eti@gmail.com</div>' +
+      '</div>' +
+      '<p style="text-align:right;color:#666;font-size:14px;">' + today + '</p>' +
+      '<p>לכבוד רופא המשפחה</p>' +
+      '<p><strong>הנדון: המלצה לביצוע בדיקות מעבדה</strong></p>' +
+      '<p>' + fullName.trim() + ' (ת.ז: ' + id + ') הינו/ה המטופל/ת שלי.<br/>בכדי שאוכל להמשיך את הטיפול התזונתי, אבקש לבצע את הבדיקות הבאות:</p>' +
+      '<table>' + tests + '</table>' +
+      '<div class="signature">' +
+      '<p>בתודה מראש,</p><br/>' +
+      '<p><strong>אתי אטל</strong><br/>יועצת בריאות ותזונה התנהגותית<br/>052-333-6766 | Attal.eti@gmail.com</p>' +
+      '</div>' +
+      '</body></html>'
 
-  var win = window.open('', '_blank')
-  win.document.write(html)
-  win.document.close()
-}
+    var win = window.open('', '_blank')
+    win.document.write(html)
+    win.document.close()
+  }
 
   async function saveProfile() {
     setSaving(true)
@@ -548,13 +548,13 @@ export default function AdminPage() {
             {tab === 'doctor' && (
               <div>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
-                 <div style={{ textAlign: 'center', marginBottom: 16 }}>
-  <img src="/8912c850-f7b6-4418-807b-593a84e31f64.png" alt="אתי אטל" style={{ height: 80, objectFit: 'contain' }} />
-  <div style={{ fontWeight: 800, fontSize: 18, color: '#0f4c2a', marginTop: 6 }}>אתי אטל</div>
-  <div style={{ fontSize: 13, color: '#9ca3af' }}>יועצת בריאות ותזונה התנהגותית</div>
-  <div style={{ fontSize: 12, color: '#9ca3af' }}>052-333-6766 | Attal.eti@gmail.com</div>
-</div>
-<div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>📄 מכתב לרופא המשפחה</div>
+                  <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                    <img src="/8912c850-f7b6-4418-807b-593a84e31f64.png" alt="אתי אטל" style={{ height: 80, objectFit: 'contain' }} />
+                    <div style={{ fontWeight: 800, fontSize: 18, color: '#0f4c2a', marginTop: 6 }}>אתי אטל</div>
+                    <div style={{ fontSize: 13, color: '#9ca3af' }}>יועצת בריאות ותזונה התנהגותית</div>
+                    <div style={{ fontSize: 12, color: '#9ca3af' }}>052-333-6766 | Attal.eti@gmail.com</div>
+                  </div>
+                  <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>📄 מכתב לרופא המשפחה</div>
                   <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>בחרי את הבדיקות הנדרשות ושלחי ב-WhatsApp</div>
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>תעודת זהות מטופל/ת</div>
@@ -575,8 +575,8 @@ export default function AdminPage() {
                     )
                   })}
                 </div>
-                <button onClick={openDoctorLetter} ...> style={{ width: '100%', padding: 14, borderRadius: 12, background: selectedClient.phone ? '#25D366' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
-                  {selectedClient.phone ? '📱 שלחי ב-WhatsApp' : '📋 העתיקי ללוח'}
+                <button onClick={openDoctorLetter} style={{ width: '100%', padding: 14, borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
+                  📄 פתחי מכתב לרופא
                 </button>
               </div>
             )}
