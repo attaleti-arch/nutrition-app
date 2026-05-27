@@ -577,7 +577,16 @@ export default function AdminPage() {
                 </div>
                 <button onClick={openDoctorLetter} style={{ width: '100%', padding: 14, borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
                   📄 פתחי מכתב לרופא
-                </button>
+  {selectedClient.phone && (
+  <button onClick={() => {
+    var phone = selectedClient.phone
+    var msg = 'היי ' + selectedClient.name + '! 🌿\n\nמצורף מכתב לרופא המשפחה.\n\nכניסה ליומן: https://project-l990h.vercel.app'
+    window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+  }} style={{ width: '100%', padding: 14, borderRadius: 12, background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16, marginTop: 8 }}>
+    📱 שלחי ב-WhatsApp
+  </button>
+)}
+                    </button>
               </div>
             )}
 
