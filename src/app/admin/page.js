@@ -11,14 +11,6 @@ const GOALS_SPLIT = {
 const ACTIVITY_MULT = {
   'יושבני': 1.2, 'קל': 1.375, 'בינוני': 1.55, 'פעיל': 1.725, 'מאוד פעיל': 1.9
 }
-const PROT_NAMES = {
-  p1: 'דג לבן', p2: 'סלמון', p3: 'טופו', p4: 'סינטה/פרגית',
-  p5: 'ירך עוף/הודו', p6: 'המבורגר צמחוני', p7: 'דג שמן', p8: 'ביצים', p9: 'טונה/סרדינים'
-}
-const CARB_NAMES = {
-  c1: 'אורז/קינואה', c2: 'בורגול/כוסמת', c3: 'פתיתים/קוסקוס',
-  c4: 'תפוחי אדמה/בטטה', c5: 'כרובית/ברוקולי', c6: 'עדשים/חומוס', c7: 'שעועית'
-}
 
 const DOCTOR_TESTS = [
   { key: 'blood_count', label: 'ספירת דם מלאה' },
@@ -299,14 +291,11 @@ export default function AdminPage() {
     setFilteredLogs([])
     setPatientId('')
     setSelectedTests({})
-
     const { data } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
     if (data) setProfile(data)
     else setProfile({ client_password: client.password, blood_tests: {} })
-
     const { data: nd } = await supabase.from('nutrition_data').select('*').order('id')
     setNutritionItems(nd || [])
-
     const { data: logsData } = await supabase.from('daily_logs').select('*').eq('client_name', client.password).order('log_date', { ascending: false }).limit(30)
     setLogs(logsData || [])
     applyFilter(logsData || [], 'week', '', '')
@@ -342,12 +331,10 @@ export default function AdminPage() {
     var tests = DOCTOR_TESTS.filter(t => selectedTests[t.key]).map(t => '<tr><td style="padding:6px 12px;font-size:14px;border-bottom:1px solid #f0f0f0;">❑ ' + t.label + '</td></tr>').join('')
     if (!tests) { alert('בחרי לפחות בדיקה אחת'); return }
 
-    var html = '<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;direction:rtl;padding:40px;color:#222;max-width:700px;margin:0 auto}.header{text-align:center;margin-bottom:30px;border-bottom:2px solid #0f4c2a;padding-bottom:20px}.logo{height:80px;margin-bottom:10px}.name{font-size:22px;font-weight:bold;color:#0f4c2a}.title{font-size:13px;color:#666}table{width:100%;border-collapse:collapse;margin:16px 0}.signature{margin-top:40px;border-top:1px solid #e5e7eb;padding-top:20px}p{line-height:1.8;font-size:15px}</style></head><body>' +
+    var html = '<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;direction:rtl;padding:40px;color:#222;max-width:700px;margin:0 auto}.header{text-align:center;margin-bottom:30px;border-bottom:2px solid #0f4c2a;padding-bottom:20px}.logo{height:120px;margin-bottom:10px}table{width:100%;border-collapse:collapse;margin:16px 0}.signature{margin-top:40px;border-top:1px solid #e5e7eb;padding-top:20px}p{line-height:1.8;font-size:15px}.contact{font-size:13px;color:#666}</style></head><body>' +
       '<div class="header">' +
-      '<img class="logo" src="https://project-l990h.vercel.app/7da0206f-ed80-4d6c-9dce-2dbe2d159922.jpg" />' +
-      '<div class="name">אתי אטל</div>' +
-      '<div class="title">יועצת בריאות ותזונה התנהגותית</div>' +
-      '<div class="title">052-333-6766 | Attal.eti@gmail.com</div>' +
+      '<img class="logo" src="https://project-l990h.vercel.app/logo.png" />' +
+      '<div class="contact">052-333-6766 | Attal.eti@gmail.com</div>' +
       '</div>' +
       '<p style="text-align:right;color:#666;font-size:14px;">' + today + '</p>' +
       '<p>לכבוד רופא המשפחה</p>' +
@@ -549,13 +536,10 @@ export default function AdminPage() {
               <div>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                    <img src="/7da0206f-ed80-4d6c-9dce-2dbe2d159922.jpg" alt="אתי אטל" style={{ height: 80, objectFit: 'contain' }} />
-                    <div style={{ fontWeight: 800, fontSize: 18, color: '#0f4c2a', marginTop: 6 }}>אתי אטל</div>
-                    <div style={{ fontSize: 13, color: '#9ca3af' }}>יועצת בריאות ותזונה התנהגותית</div>
-                    <div style={{ fontSize: 12, color: '#9ca3af' }}>052-333-6766 | Attal.eti@gmail.com</div>
+                    <img src="/logo.png" alt="לוגו" style={{ height: 120, objectFit: 'contain' }} />
                   </div>
                   <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>📄 מכתב לרופא המשפחה</div>
-                  <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>בחרי את הבדיקות הנדרשות ושלחי ב-WhatsApp</div>
+                  <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>בחרי את הבדיקות הנדרשות</div>
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>תעודת זהות מטופל/ת</div>
                     <input type="text" value={patientId} onChange={e => setPatientId(e.target.value)} placeholder="הזיני ת.ז..." style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
