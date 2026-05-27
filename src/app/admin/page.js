@@ -344,7 +344,7 @@ export default function AdminPage() {
 
     var html = '<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;direction:rtl;padding:40px;color:#222;max-width:700px;margin:0 auto}.header{text-align:center;margin-bottom:30px;border-bottom:2px solid #0f4c2a;padding-bottom:20px}.logo{height:80px;margin-bottom:10px}.name{font-size:22px;font-weight:bold;color:#0f4c2a}.title{font-size:13px;color:#666}table{width:100%;border-collapse:collapse;margin:16px 0}.signature{margin-top:40px;border-top:1px solid #e5e7eb;padding-top:20px}p{line-height:1.8;font-size:15px}</style></head><body>' +
       '<div class="header">' +
-      '<img class="logo" src="https://project-l990h.vercel.app/8912c850-f7b6-4418-807b-593a84e31f64.png" />' +
+      '<img class="logo" src="https://project-l990h.vercel.app/7da0206f-ed80-4d6c-9dce-2dbe2d159922.jpg" />' +
       '<div class="name">אתי אטל</div>' +
       '<div class="title">יועצת בריאות ותזונה התנהגותית</div>' +
       '<div class="title">052-333-6766 | Attal.eti@gmail.com</div>' +
@@ -549,7 +549,7 @@ export default function AdminPage() {
               <div>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                    <img src="/8912c850-f7b6-4418-807b-593a84e31f64.png" alt="אתי אטל" style={{ height: 80, objectFit: 'contain' }} />
+                    <img src="/7da0206f-ed80-4d6c-9dce-2dbe2d159922.jpg alt="אתי אטל" style={{ height: 80, objectFit: 'contain' }} />
                     <div style={{ fontWeight: 800, fontSize: 18, color: '#0f4c2a', marginTop: 6 }}>אתי אטל</div>
                     <div style={{ fontSize: 13, color: '#9ca3af' }}>יועצת בריאות ותזונה התנהגותית</div>
                     <div style={{ fontSize: 12, color: '#9ca3af' }}>052-333-6766 | Attal.eti@gmail.com</div>
