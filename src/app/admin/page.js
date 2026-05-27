@@ -549,7 +549,7 @@ export default function AdminPage() {
               <div>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                    <img src="/7da0206f-ed80-4d6c-9dce-2dbe2d159922.jpg alt="אתי אטל" style={{ height: 80, objectFit: 'contain' }} />
+                    <img src="/7da0206f-ed80-4d6c-9dce-2dbe2d159922.jpg" alt="אתי אטל" style={{ height: 80, objectFit: 'contain' }} />
                     <div style={{ fontWeight: 800, fontSize: 18, color: '#0f4c2a', marginTop: 6 }}>אתי אטל</div>
                     <div style={{ fontSize: 13, color: '#9ca3af' }}>יועצת בריאות ותזונה התנהגותית</div>
                     <div style={{ fontSize: 12, color: '#9ca3af' }}>052-333-6766 | Attal.eti@gmail.com</div>
