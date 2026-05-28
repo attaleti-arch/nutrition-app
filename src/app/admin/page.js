@@ -309,7 +309,10 @@ export default function AdminPage() {
     setPatientId('')
     setSelectedTests({})
     const { data } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
-    if (data) setProfile(data)
+    if (data) {
+      setProfile(data)
+      setFoodDiary(data.food_diary || '')
+    }
     else setProfile({ client_password: client.password, blood_tests: {} })
     const { data: nd } = await supabase.from('nutrition_data').select('*').order('id')
     setNutritionItems(nd || [])
@@ -421,7 +424,7 @@ export default function AdminPage() {
 
   async function saveProfile() {
     setSaving(true)
-    var payload = { ...profile, client_password: selectedClient.password, updated_at: new Date().toISOString() }
+    var payload = { ...profile, food_diary: foodDiary, client_password: selectedClient.password, updated_at: new Date().toISOString() }
     await supabase.from('client_profiles').upsert(payload, { onConflict: 'client_password' })
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000)
   }
@@ -450,6 +453,13 @@ export default function AdminPage() {
 
   async function runProfileAnalysis() {
     setAiLoading(true); setAiAnalysis(''); setEditableAnalysis('')
+    // שמרי את יומן האכילה לפני הניתוח
+    if (foodDiary.trim()) {
+      await supabase.from('client_profiles').upsert(
+        { ...profile, food_diary: foodDiary, client_password: selectedClient.password, updated_at: new Date().toISOString() },
+        { onConflict: 'client_password' }
+      )
+    }
     const res = await fetch('/api/analyze', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
