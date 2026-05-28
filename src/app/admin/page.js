@@ -435,12 +435,7 @@ export default function AdminPage() {
     setSavingFeedback(null); setSentFeedback(log.id); setTimeout(() => setSentFeedback(null), 4000)
     const { data } = await supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).order('log_date', { ascending: false }).limit(30)
     setLogs(data || [])
-    // התראה ללקוחה
-    if (selectedClient.phone) {
-      var phone = selectedClient.phone.replace(/^0/, '972')
-      var msg = 'היי ' + selectedClient.name + '! 🌿\nיש לך משוב חדש מאתי ליומן ' + log.log_date + '\nכנסי לאפליקציה: https://project-l990h.vercel.app'
-      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-    }
+
   }
 
   function openWhatsApp(log) {
@@ -458,7 +453,7 @@ export default function AdminPage() {
       await supabase.from('client_profiles').upsert(
         { ...profile, food_diary: foodDiary, client_password: selectedClient.password, updated_at: new Date().toISOString() },
         { onConflict: 'client_password' }
-      )
+      ).catch(e => console.log('save error:', e))
     }
     const res = await fetch('/api/analyze', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -470,8 +465,12 @@ export default function AdminPage() {
       })
     })
     const data = await res.json()
-    setAiAnalysis(data.result)
-    setEditableAnalysis(data.result)
+    if (data.error) {
+      alert('שגיאה: ' + data.error)
+    } else {
+      setAiAnalysis(data.result)
+      setEditableAnalysis(data.result)
+    }
     setAiLoading(false)
   }
 
@@ -489,11 +488,7 @@ export default function AdminPage() {
     setSendingToClient(false)
     setSentToClient(true)
     setTimeout(() => setSentToClient(false), 4000)
-    if (selectedClient.phone) {
-      var phone = selectedClient.phone.replace(/^0/, '972')
-      var msg = 'היי ' + selectedClient.name + '! 🌿\n\nהכנתי לך ניתוח אישי מיוחד — כנסי לאפליקציה לקראו:\nhttps://project-l990h.vercel.app'
-      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-    }
+
   }
 
   async function runLogsAnalysis() {
@@ -850,7 +845,7 @@ export default function AdminPage() {
                         👁️ תצוגה מקדימה
                       </button>
                       <button onClick={sendAnalysisToClient} disabled={sendingToClient} style={{ flex: 2, padding: 14, borderRadius: 12, background: sentToClient ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
-                        {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשלח ללקוחה!' : '📤 שלחי ללקוחה'}
+                        {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
                       </button>
                     </div>
                   </div>
