@@ -437,8 +437,7 @@ export default function AdminPage() {
   </div>
 
   <div class="section">
-    <div class="section-body">${feedbackText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/
-/g, '<br/>')}</div>
+    <div class="section-body">${feedbackText.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>').replace(/\\n/g, '<br/>')}</div>
   </div>
 
   <div class="footer">
