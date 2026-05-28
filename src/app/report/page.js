@@ -94,7 +94,6 @@ function ReportContent() {
   const [client, setClient] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -238,8 +237,8 @@ function ReportContent() {
 
       {/* Buttons */}
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 16px 50px' }}>
-        <button onClick={saveToGallery} disabled={saving} style={{ width: '100%', padding: 18, borderRadius: 16, background: 'linear-gradient(135deg,' + C.teal + ',' + C.green + ')', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 17, marginBottom: 10 }}>
-          '🖨️ שמרי / הדפסי את הדוח'
+        <button onClick={() => window.print()} style={{ width: '100%', padding: 18, borderRadius: 16, background: 'linear-gradient(135deg,' + C.teal + ',' + C.green + ')', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 17, marginBottom: 10 }}>
+          🖨️ שמרי / הדפסי את הדוח
         </button>
         <button onClick={() => window.print()} style={{ width: '100%', padding: 14, borderRadius: 16, background: 'transparent', color: C.teal, border: '2px solid ' + C.teal, cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
           🖨️ הדפסי
