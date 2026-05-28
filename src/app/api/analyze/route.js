@@ -1,8 +1,10 @@
 import Anthropic from '@anthropic-ai/sdk'
+export const maxDuration = 60
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(request) {
+try {
   const body = await request.json()
   const { name, logs, mode, profile, foodDiary } = body
 
@@ -128,11 +130,32 @@ ${logs}
 חם ומעצים.`
   }
 
+  if (mode === 'blood' && body.bloodText) {
+    const bloodPrompt = `חלץ ערכי בדיקות דם מהטקסט הבא והחזר JSON בלבד ללא הסברים.
+החזר אך ורק JSON תקני עם המפתחות הבאים (null אם לא נמצא):
+{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"iron":null,"transferrin":null,"folic_acid":null,"vitamin_b12":null,"vitamin_b6":null,"vitamin_d":null,"calcium":null,"zinc":null,"magnesium":null,"tsh":null,"t3":null,"t4":null,"crp":null,"esr":null,"homocysteine":null,"alt":null,"ast":null,"creatinine":null,"urea":null,"uric_acid":null,"estrogen":null,"progesterone":null,"testosterone":null,"insulin":null,"wbc":null,"rbc":null,"platelets":null,"urine_general":null,"urine_culture":null,"blood_type":null,"lactose_sensitivity":null,"gluten_sensitivity":null,"celiac":null}
+
+החזר מספרים בלבד (ללא יחידות). לבדיקות שלא נמצאו — null.
+
+טקסט הבדיקות:
+${body.bloodText}`
+
+    const bloodMsg = await client.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 1000,
+      messages: [{ role: 'user', content: bloodPrompt }]
+    })
+    return Response.json({ result: bloodMsg.content[0].text })
+  }
+
   const message = await client.messages.create({
-    model: 'claude-opus-4-5',
-    max_tokens: 3000,
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 2000,
     messages: [{ role: 'user', content: prompt }]
   })
 
   return Response.json({ result: message.content[0].text })
-}
+} catch(err) {
+  console.error('API Error:', err)
+  return Response.json({ error: err.message, result: 'שגיאה: ' + err.message }, { status: 500 })
+}}
