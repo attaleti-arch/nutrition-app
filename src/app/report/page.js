@@ -111,6 +111,10 @@ function ReportContent() {
   }, [clientKey])
 
   function saveToGallery() {
+    // הוסף CSS להסתרת כפתורים בהדפסה
+    const style = document.createElement('style')
+    style.innerHTML = '@media print { .no-print { display: none !important; } }'
+    document.head.appendChild(style)
     window.print()
   }
 
