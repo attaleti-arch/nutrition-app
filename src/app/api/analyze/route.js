@@ -1,161 +1,109 @@
 import Anthropic from '@anthropic-ai/sdk'
+
 export const maxDuration = 60
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
 export async function POST(request) {
-try {
-  const body = await request.json()
-  const { name, logs, mode, profile, foodDiary } = body
+  try {
+    const body = await request.json()
+    const { name, logs, mode, profile, foodDiary } = body
 
-  let prompt = ''
+    // Blood text extraction
+    if (mode === 'blood' && body.bloodText) {
+      const msg = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        messages: [{ role: 'user', content: `חלץ ערכי בדיקות דם מהטקסט והחזר JSON בלבד:
+{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"iron":null,"vitamin_b12":null,"vitamin_d":null,"calcium":null,"tsh":null,"crp":null,"alt":null,"ast":null,"creatinine":null,"insulin":null,"wbc":null,"rbc":null,"platelets":null}
+החזר מספרים בלבד ללא יחידות.
+טקסט: ${body.bloodText}` }]
+      })
+      return Response.json({ result: msg.content[0].text })
+    }
 
-  if (mode === 'profile' && profile) {
-    const p = profile
-    const isAthlete = p.exercise_type && (
-      p.exercise_type.includes('ריצ') ||
-      p.exercise_type.includes('כוח') ||
-      p.exercise_type.includes('אימון') ||
-      p.exercise_type.includes('ספורט') ||
-      p.exercise_type.includes('חדר כושר') ||
-      p.exercise_type.includes('פעיל')
-    )
-    const isHighStress = (p.stress_level >= 7) || (p.work_hours && parseInt(p.work_hours) >= 9)
-    const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
+    // Weekly logs analysis
+    if (logs && !mode) {
+      const msg = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: `אתה אתי אטל — יועצת בריאות ותזונה התנהגותית.
+נתחי את יומן ${name} וכתבי משוב שבועי חם ואישי בעברית.
 
-    prompt = `אתה אתי אטל — יועצת בריאות במגמת תזונה בגישת NLP. אתה מכינה ניתוח אישי עמוק עבור ${name}.
-
-כתבי בגוף שני נקבה, בעברית פשוטה וחמה, ישירות אל ${name}. הניתוח חייב להרגיש costume-made — שהיא תרגיש שראית אותה לעומק.
-
-===== נתוני הלקוחה =====
-
-פרטים: גיל ${p.age || 'לא צוין'} | משקל ${p.weight || '?'} ק"ג | גובה ${p.height || '?'} ס"מ | מגדר ${p.gender || 'לא צוין'}
-מטרה: ${p.goal || 'לא צוינה'} | משקל יעד: ${p.target_weight || 'לא צוין'} | פעילות: ${p.activity || 'לא צוינה'}
-
-בריאות: שינה: ${p.sleep_quality || 'לא צוין'} | בעיות שינה: ${p.sleep_issues || 'אין'} | שעת קימה: ${p.wake_time || 'לא צוינה'}
-עיכול: ${p.digestion || 'לא צוין'} | מחזור: ${p.menstrual_cycle || 'לא צוין'} | תרופות: ${p.medications || 'אין'}
-היסטוריה רפואית: ${p.medical_history || 'לא צוינה'} | בריאות הורים: ${p.family_history || 'לא צוינה'}
-
-תזונה: ${p.diet_restrictions || 'ללא הגבלות'} | רגישויות: ${p.food_sensitivities || 'אין'}
-בוקר: ${p.breakfast_habits || 'לא צוין'} | צהריים: ${p.lunch_habits || 'לא צוין'} | ערב: ${p.dinner_habits || 'לא צוין'}
-נשנושים: ${p.snack_habits || 'לא צוין'} | מים: ${p.water_intake || 'לא צוין'} | קפה: ${p.coffee_intake || 'לא צוין'}
-בישול בבית: ${p.cooks_at_home ? 'כן' : 'לא'} | מסעדות: ${p.restaurants_per_week || 'לא צוין'} פעמים בשבוע
-
-אורח חיים: לחץ: ${p.stress_level || '?'}/10 | אנרגיה: ${p.energy_level || '?'}/10 | שעות עבודה: ${p.work_hours || 'לא צוין'}
-אכילה רגשית: ${p.emotional_eating || 'לא צוין'} | אלכוהול: ${p.alcohol_intake || 'לא צוין'}
-
-פעילות גופנית: ${p.exercise_type || 'לא צוין'} | כאבים: ${p.pain_issues || 'אין'}
-
-NLP: מה רוצה: ${p.main_goal || 'לא צוין'} | מה מעכב: ${p.goal_obstacles || 'לא צוין'}
-מוטיבציה: ${p.goal_motivation || '?'}/10 | הצלחה נראית כך: ${p.success_vision || 'לא צוין'}
-מה חשוב: ${p.important_values || 'לא צוין'} | זיכרונות חיוביים: ${p.positive_memories || 'לא צוין'}
-
-בדיקות דם: ${JSON.stringify(p.blood_tests || {}, null, 2)}
-
-${foodDiary ? `===== 5 ימי אכילה לפני התהליך =====\n${foodDiary}` : ''}
-
-===== הנחיות לניתוח =====
-
-כתבי ניתוח מקיף עם הסעיפים הבאים בדיוק. כל סעיף יתחיל עם אמוג'י ו-** סביב הכותרת:
-
-**🌟 הקווים הזוהרים שלך — מה שרואים בך**
-2-3 חוזקות אמיתיות ספציפיות מהנתונים. לא כלליות — ספציפי לה.
-
-**🔍 מה באמת קורה — הגשר הטיפולי**
-${isHighStress || isAthlete ? 
-  'היא עמוסה ופעילה מאוד. הסבירי שהלופ של הקפה/מתוק הוא עוגן רגשי לפיצוי על עייפות וחוסר שינה — לא חוסר רצון. זה מנגנון הישרדות של הגוף.' :
-  'הסבירי שהלופ של המתוק/קפה נובע מהרגל, שעמום, או נפילת אנרגיה מארוחות לא מאוזנות — לא חוסר רצון.'
-}
-חיבר בין ה-NLP לתזונה — למה היא אוכלת מה שאוכלת, לא רק מה שהיא אוכלת.
-
-**🧠 האמונות המגבילות שזיהיתי**
-אמונות ספציפיות שעולות מהתשובות שלה. פרקי אותן בעדינות.
-
-**⚡ ההשפעה הפיזיולוגית — מה קורה לגוף שלך**
-${isAthlete ? 
-  'היא ספורטאית! הסבירי את חלון ההזדמנויות החסום — אם היא מתאמנת עם קפה על בטן ריקה, הגוף מפרק שריר (קטבוליזם). חוסר חלבון = פגיעה ישירה בביצועים ובהתאוששות. היי ספציפית לסוג האימון שלה.' :
-  'הסבירי כיצד חוסר חלבון ושומן בריא מאט את חילוף החומרים במנוחה, גורם להתקפי רעב, וחוסר שובע לאורך היום.'
-}
-
-**🩸 מה אומרות הבדיקות שלך**
-${Object.keys(p.blood_tests || {}).length > 0 ? 
-  'פרשי כל ערך חריג בשפה פשוטה. חיבר בין הבדיקות לאורח החיים שלה — למשל: הכולסטרול הגבוה + חוסר שומנים בריאים בתזונה.' :
-  'אין בדיקות — דלגי על סעיף זה.'
-}
-
-**🥗 המלצות תזונה אישיות — בדיוק בשבילך**
-ספציפיות לפרופיל שלה. בהתחשב בהגבלות, בריאות, שגרה, ובדיקות.
-${isAthlete ? 'כללי תזונה סביב אימונים — לפני/אחרי. כמויות חלבון לספורטאית.' : ''}
-
-**💊 תוספים ובדיקות לשקול**
-על בסיס הנתונים — מה חסר, מה לבדוק.
-
-**🎯 3 הצעדים הראשונים — רק למחר בבוקר**
-${isAthlete ? 
-  'התאמי לספורטאית: ארוחה לפני אימון, חלבון אחרי, הידרציה. אל תציעי להתחיל לעשות ספורט כי היא כבר עושה.' :
-  isSedentary ?
-  'התחילי עם 7,000 צעדים ביום (לא 10,000 — זה מציאותי להתחלה). אחרי תקופת הסתגלות — 10,000. הוסיפי 6 תרגילי ליבה בסיסיים שאפשר לעשות בבית. אחר כך הפני לליווי פיזי מקצועי.' :
-  'צעדים פרקטיים ומותאמים לשגרה שלה. התחילי עם 7,000 צעדים אם לא פעילה, ו-6 תרגילי ליבה בסיסיים בבית.'
-}
-שלושה דברים קטנים, ספציפיים, ריאליסטיים. לא רשימת מכולת — 3 בלבד.
-
-**💚 מסר אישי ממני אליך**
-חם, אמיתי, מעצים. שהיא תרגיש שמישהי ראתה אותה באמת ומאמינה בה.
-
----
-חשוב: היי ספציפית לאורך כל הניתוח. השתמשי בנתונים האמיתיים שלה. כל סעיף חייב להרגיש כתוב רק עבורה.`
-
-  } else if (logs) {
-    prompt = `אתה אתי אטל — יועצת בריאות במגמת תזונה בגישת NLP.
-נתחי את יומן התזונה השבועי של ${name} וצרי משוב חם, אישי ומעשי בעברית.
-
-יומן תזונה:
+יומן:
 ${logs}
 
-צרי משוב עם הסעיפים הבאים:
-
-**📊 סיכום השבוע של ${name}**
-דפוסים, מה חזר, מה בולט.
-
-**✅ מה עשית נהדר השבוע**
-הצלחות קונקרטיות — גם קטנות.
-
-**⚡ איפה את נתקעת**
-קשיים שעולים — בלי שיפוט, עם הסבר למה זה קורה.
-
+כתבי עם הסעיפים:
+**📊 סיכום השבוע**
+**✅ מה עשית נהדר**
+**⚡ איפה נתקעת**
 **🎯 3 דברים לשבוע הבא**
-קונקרטיים, מעשיים, ריאליסטיים.
+**💚 מסר אישי**` }]
+      })
+      return Response.json({ result: msg.content[0].text })
+    }
 
-**💚 מסר אישי**
-חם ומעצים.`
+    // Full profile analysis
+    if (mode === 'profile' && profile) {
+      const p = profile
+      const isAthlete = p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר|פעיל/.test(p.exercise_type)
+      const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
+
+      const prompt = `אתה אתי אטל — יועצת בריאות ותזונה התנהגותית בגישת NLP.
+כתבי ניתוח אישי עמוק ל-${name} בעברית, בגוף שני נקבה, חם ואישי.
+
+נתונים:
+גיל: ${p.age} | משקל: ${p.weight} | גובה: ${p.height} | מטרה: ${p.goal}
+שינה: ${p.sleep_quality} | קימה: ${p.wake_time} | לחץ: ${p.stress_level}/10
+פעילות: ${p.exercise_type || 'לא צוין'} | רמת פעילות: ${p.activity}
+בוקר: ${p.breakfast_habits} | צהריים: ${p.lunch_habits} | ערב: ${p.dinner_habits}
+מים: ${p.water_intake} | קפה: ${p.coffee_intake} | אכילה רגשית: ${p.emotional_eating}
+מה רוצה: ${p.main_goal} | מה מעכב: ${p.goal_obstacles}
+מוטיבציה: ${p.goal_motivation}/10 | ערכים: ${p.important_values}
+תרופות: ${p.medications || 'אין'} | רפואי: ${p.medical_history || 'אין'}
+בדיקות דם: ${JSON.stringify(p.blood_tests || {})}
+${foodDiary ? `5 ימי אכילה:\n${foodDiary}` : ''}
+
+כתבי ניתוח עם הסעיפים הבאים:
+
+**🌟 הקווים הזוהרים שלך**
+[2-3 חוזקות ספציפיות שרואים בנתונים]
+
+**🔍 מה באמת קורה — הגשר הטיפולי**
+[${isAthlete ? 'הלופ של הקפה/מתוק כעוגן רגשי לעייפות — לא חוסר רצון' : 'הלופ של המתוק/קפה מהרגל או נפילת אנרגיה — לא חוסר רצון'}]
+
+**🧠 האמונות המגבילות שזיהיתי**
+[אמונות ספציפיות מהתשובות]
+
+**⚡ ההשפעה הפיזיולוגית**
+[${isAthlete ? 'חלון הזדמנויות חסום — תזונה סביב אימון, קטבוליזם' : 'חילוף חומרים, התקפי רעב, אנרגיה יומית'}]
+
+**🩸 מה אומרות הבדיקות**
+[פרשנות פשוטה של ערכים חריגים]
+
+**🥗 המלצות תזונה אישיות**
+[ספציפיות לה]
+
+**💊 תוספים ובדיקות לשקול**
+
+**🎯 3 צעדים ראשונים למחר**
+[${isSedentary ? 'התחילי ב-7,000 צעדים + 6 תרגילי ליבה בבית' : isAthlete ? 'תזונה סביב אימון' : '3 שינויים קטנים ומעשיים'}]
+
+**💚 מסר אישי ממני**
+[חם, אמיתי, מעצים]`
+
+      const msg = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+      return Response.json({ result: msg.content[0].text })
+    }
+
+    return Response.json({ result: 'לא התקבלו נתונים לניתוח' })
+
+  } catch(err) {
+    console.error('API Error:', err)
+    return Response.json({ result: 'שגיאה: ' + err.message }, { status: 500 })
   }
-
-  if (mode === 'blood' && body.bloodText) {
-    const bloodPrompt = `חלץ ערכי בדיקות דם מהטקסט הבא והחזר JSON בלבד ללא הסברים.
-החזר אך ורק JSON תקני עם המפתחות הבאים (null אם לא נמצא):
-{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"iron":null,"transferrin":null,"folic_acid":null,"vitamin_b12":null,"vitamin_b6":null,"vitamin_d":null,"calcium":null,"zinc":null,"magnesium":null,"tsh":null,"t3":null,"t4":null,"crp":null,"esr":null,"homocysteine":null,"alt":null,"ast":null,"creatinine":null,"urea":null,"uric_acid":null,"estrogen":null,"progesterone":null,"testosterone":null,"insulin":null,"wbc":null,"rbc":null,"platelets":null,"urine_general":null,"urine_culture":null,"blood_type":null,"lactose_sensitivity":null,"gluten_sensitivity":null,"celiac":null}
-
-החזר מספרים בלבד (ללא יחידות). לבדיקות שלא נמצאו — null.
-
-טקסט הבדיקות:
-${body.bloodText}`
-
-    const bloodMsg = await client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 1000,
-      messages: [{ role: 'user', content: bloodPrompt }]
-    })
-    return Response.json({ result: bloodMsg.content[0].text })
-  }
-
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-20250514',
-    max_tokens: 2000,
-    messages: [{ role: 'user', content: prompt }]
-  })
-
-  return Response.json({ result: message.content[0].text })
-} catch(err) {
-  console.error('API Error:', err)
-  return Response.json({ error: err.message, result: 'שגיאה: ' + err.message }, { status: 500 })
-}}
+}
