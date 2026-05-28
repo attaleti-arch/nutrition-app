@@ -1,5 +1,6 @@
 'use client'
-import { useState, useEffect } from 'react'
+export const dynamic = 'force-dynamic'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '../supabase'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, ReferenceLine } from 'recharts'
@@ -83,7 +84,7 @@ function parseSection(text, keyword) {
   return result.length ? result.join('\n') : null
 }
 
-export default function ReportPage() {
+function ReportContent() {
   const searchParams = useSearchParams()
   const clientKey = searchParams.get('client')
   const [log, setLog] = useState(null)
@@ -242,5 +243,12 @@ export default function ReportPage() {
         </div>
       </div>
     </div>
+  )
+}
+export default function ReportPage() {
+  return (
+    <Suspense fallback={<div style={{minHeight:'100vh',background:'#f5f0e8',display:'flex',alignItems:'center',justifyContent:'center'}}><div style={{color:'#4a9b8e',fontWeight:700}}>🌿 טוענת...</div></div>}>
+      <ReportContent />
+    </Suspense>
   )
 }
