@@ -775,9 +775,16 @@ export default function AdminPage() {
                       value={foodDiary}
                       onChange={e => setFoodDiary(e.target.value)}
                       placeholder='הזיני כאן תיאור של 5 ימי אכילה רגילים...'
+                      rows={8}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7 }}
+                    />
+                  </div>
 
+                  <button onClick={runProfileAnalysis} disabled={aiLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: aiLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: aiLoading ? 'default' : 'pointer', fontWeight: 700, fontSize: 16 }}>
+                    {aiLoading ? '⏳ מנתחת... (עד דקה)' : '🧠 הפעילי ניתוח מקיף'}
                   </button>
                 </div>
+
 
                 {editableAnalysis && (
                   <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
@@ -844,3 +851,4 @@ export default function AdminPage() {
       </div>
     </div>
   )
+}
