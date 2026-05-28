@@ -387,6 +387,10 @@ export default function PlanApp({ clientName, userPassword }) {
     setSaving(false)
     setSaved(true)
     setTimeout(function() { setSaved(false) }, 3000)
+    // התראה לאתי
+    var trainerPhone = '972523336766'
+    var notifyMsg = 'יומן חדש! 🌿\n' + (clientName || dbKey) + ' מילאה את היומן היום.\nhttps://project-l990h.vercel.app/admin'
+    window.open('https://wa.me/' + trainerPhone + '?text=' + encodeURIComponent(notifyMsg), '_blank')
   }
 
   const targets = calcTargets(parseFloat(userWeight), parseFloat(userHeight), parseInt(userAge), userGender, userActivity, userGoal)
