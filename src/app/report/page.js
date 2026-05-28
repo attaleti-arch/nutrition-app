@@ -1,6 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useState, useEffect, Suspense, useRef } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '../supabase'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
@@ -89,7 +89,7 @@ function ReportContent() {
   const searchParams = useSearchParams()
   const clientKey = searchParams.get('client')
   const isPreview = searchParams.get('preview') === 'true'
-  const reportRef = useRef(null)
+
   const [log, setLog] = useState(null)
   const [client, setClient] = useState(null)
   const [profile, setProfile] = useState(null)
@@ -110,19 +110,8 @@ function ReportContent() {
     load()
   }, [clientKey])
 
-  async function saveToGallery() {
-    setSaving(true)
-    try {
-      const html2canvas = (await import('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js')).default
-      const canvas = await html2canvas(reportRef.current, { backgroundColor: C.cream, scale: 2 })
-      const link = document.createElement('a')
-      link.download = 'הדוח-האישי-שלי.png'
-      link.href = canvas.toDataURL()
-      link.click()
-    } catch(e) {
-      window.print()
-    }
-    setSaving(false)
+  function saveToGallery() {
+    window.print()
   }
 
   if (loading) return (
@@ -174,7 +163,7 @@ function ReportContent() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.cream, direction: 'rtl' }}>
-      <div ref={reportRef}>
+      <div>
         {/* Header */}
         <div style={{ background: 'linear-gradient(135deg, #fff 60%, ' + C.tealLight + ')', padding: '32px 20px 28px', textAlign: 'center', boxShadow: '0 2px 24px rgba(0,0,0,0.07)', marginBottom: 28 }}>
           <img src="/logo.png" style={{ height: 100, marginBottom: 12 }} alt="לוגו" />
@@ -246,7 +235,7 @@ function ReportContent() {
       {/* Buttons */}
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 16px 50px' }}>
         <button onClick={saveToGallery} disabled={saving} style={{ width: '100%', padding: 18, borderRadius: 16, background: 'linear-gradient(135deg,' + C.teal + ',' + C.green + ')', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 17, marginBottom: 10 }}>
-          {saving ? '⏳ שומרת...' : '📥 שמרי לגלריה / הורידי'}
+          '🖨️ שמרי / הדפסי את הדוח'
         </button>
         <button onClick={() => window.print()} style={{ width: '100%', padding: 14, borderRadius: 16, background: 'transparent', color: C.teal, border: '2px solid ' + C.teal, cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
           🖨️ הדפסי
