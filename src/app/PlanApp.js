@@ -241,6 +241,8 @@ export default function PlanApp({ clientName, userPassword }) {
   const [lunchExtraCal, setLunchExtraCal] = useState(0)
   const [erevExtraCal, setErevExtraCal] = useState(0)
   const [feedback, setFeedback] = useState(null)
+  const [reportApproved, setReportApproved] = useState(false)
+  const [activeTab, setActiveTab] = useState('diary')
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [nutritionData, setNutritionData] = useState({})
@@ -300,6 +302,7 @@ export default function PlanApp({ clientName, userPassword }) {
         setHadSnack(todayLog.data.had_snack ?? null)
         setHadBenayim(todayLog.data.had_benayim ?? null)
         setFeedback(todayLog.data.trainer_feedback)
+        setReportApproved(todayLog.data.report_approved || false)
       }
     }
     if (dbKey) load()
@@ -388,10 +391,14 @@ export default function PlanApp({ clientName, userPassword }) {
     setSaving(false)
     setSaved(true)
     setTimeout(function() { setSaved(false) }, 3000)
-    // התראה לאתי
+    // התראה לאתי - קישור ישיר ללקוחה
     var trainerPhone = '972523336766'
     var notifyMsg = 'יומן חדש! 🌿\n' + (clientName || dbKey) + ' מילאה את היומן היום.\nhttps://project-l990h.vercel.app/admin'
-    window.open('https://wa.me/' + trainerPhone + '?text=' + encodeURIComponent(notifyMsg), '_blank')
+    var trainerLink = document.createElement('a')
+    trainerLink.href = 'https://wa.me/' + trainerPhone + '?text=' + encodeURIComponent(notifyMsg)
+    trainerLink.target = '_blank'
+    trainerLink.rel = 'noopener'
+    trainerLink.click()
   }
 
   const targets = calcTargets(parseFloat(userWeight), parseFloat(userHeight), parseInt(userAge), userGender, userActivity, userGoal)
@@ -527,14 +534,36 @@ export default function PlanApp({ clientName, userPassword }) {
         </div>
       </div>
 
-      <div style={{ maxWidth: 520, margin: '0 auto', padding: '14px 14px 80px' }}>
+      {/* Tabs */}
+      <div style={{ maxWidth: 520, margin: '0 auto', padding: '10px 14px 0' }}>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+          <button onClick={function() { setActiveTab('diary') }} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: '2px solid ' + (activeTab === 'diary' ? '#16a34a' : '#e5e7eb'), background: activeTab === 'diary' ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: activeTab === 'diary' ? '#0f4c2a' : '#555' }}>
+            📅 היומן שלי
+          </button>
+          {reportApproved && (
+            <button onClick={function() { setActiveTab('report') }} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: '2px solid ' + (activeTab === 'report' ? '#4a9b8e' : '#e5e7eb'), background: activeTab === 'report' ? '#e8f5f2' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: activeTab === 'report' ? '#4a9b8e' : '#555' }}>
+              🌿 הדוח שלי
+            </button>
+          )}
+        </div>
+      </div>
+
+      {activeTab === 'report' && reportApproved && (
+        <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px' }}>
+          <iframe
+            src={'/report?client=' + dbKey}
+            style={{ width: '100%', height: '85vh', border: 'none', borderRadius: 16, boxShadow: '0 2px 20px rgba(0,0,0,0.08)' }}
+            title="הדוח האישי שלי"
+          />
+        </div>
+      )}
+
+      <div style={{ maxWidth: 520, margin: '0 auto', padding: '14px 14px 80px', display: activeTab === 'diary' ? 'block' : 'none' }}>
         {feedback && (
           <div style={{ background: '#f5f0e8', border: '2px solid #4a9b8e', borderRadius: 14, padding: '12px 16px', marginBottom: 12 }}>
             <div style={{ fontWeight: 700, fontSize: 13, color: '#4a9b8e', marginBottom: 4 }}>💚 הודעה מאתי:</div>
             <div style={{ fontSize: 14, color: '#444', lineHeight: 1.7 }}>{feedback.substring(0, 120)}{feedback.length > 120 ? '...' : ''}</div>
-            <button onClick={function() { window.open('/report?client=' + dbKey, '_blank') }} style={{ width: '100%', marginTop: 10, padding: '12px', borderRadius: 12, background: 'linear-gradient(135deg,#4a9b8e,#7aab6e)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15 }}>
-              🌿 פתחי את הדוח האישי שלך
-            </button>
+
           </div>
         )}
 
