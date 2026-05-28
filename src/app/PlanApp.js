@@ -212,42 +212,6 @@ function YesNo({ value, onChange, labelYes, labelNo, accent }) {
 }
 
 
-function openPersonalReport(feedbackText) {
-  var html = `<!DOCTYPE html>
-<html dir="rtl" lang="he">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: Arial, sans-serif; background: #f5f0e8; color: #2d2d2d; direction: rtl; padding: 20px; }
-  .header { text-align: center; padding: 24px; background: white; border-radius: 20px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
-  .header img { height: 80px; margin-bottom: 8px; }
-  .header h1 { font-size: 20px; color: #4a9b8e; font-weight: 800; }
-  .header p { font-size: 13px; color: #aaa; margin-top: 4px; }
-  .section { background: white; border-radius: 16px; padding: 20px 22px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-  .content { line-height: 1.9; font-size: 14px; white-space: pre-wrap; color: #444; }
-  .content strong { color: #4a9b8e; }
-  .print-btn { display: block; width: 100%; margin-top: 20px; padding: 14px; background: linear-gradient(135deg,#4a9b8e,#7aab6e); color: white; border: none; border-radius: 14px; font-size: 16px; font-weight: 800; cursor: pointer; }
-</style>
-</head>
-<body>
-<div class="header">
-  <img src="https://project-l990h.vercel.app/logo.png" onerror="this.style.display='none'" />
-  <h1>בין הראש לצלחת</h1>
-  <p>אתי אטל | יועצת בריאות ותזונה התנהגותית</p>
-</div>
-<div class="section">
-  <div class="content">${feedbackText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>')}</div>
-</div>
-<button class="print-btn" onclick="window.print()">🖨️ שמרי / הדפסי</button>
-</body>
-</html>`
-  var win = window.open('', '_blank')
-  win.document.write(html)
-  win.document.close()
-}
-
 export default function PlanApp({ clientName, userPassword }) {
   const displayName = clientName || userPassword || ''
   const dbKey = userPassword || clientName || ''
@@ -568,7 +532,7 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ background: '#f5f0e8', border: '2px solid #4a9b8e', borderRadius: 14, padding: '12px 16px', marginBottom: 12 }}>
             <div style={{ fontWeight: 700, fontSize: 13, color: '#4a9b8e', marginBottom: 4 }}>💚 הודעה מאתי:</div>
             <div style={{ fontSize: 14, color: '#444', lineHeight: 1.7 }}>{feedback.substring(0, 120)}{feedback.length > 120 ? '...' : ''}</div>
-            <button onClick={function() { openPersonalReport(feedback) }} style={{ width: '100%', marginTop: 10, padding: '12px', borderRadius: 12, background: 'linear-gradient(135deg,#4a9b8e,#7aab6e)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15 }}>
+            <button onClick={function() { window.open('/report?client=' + dbKey, '_blank') }} style={{ width: '100%', marginTop: 10, padding: '12px', borderRadius: 12, background: 'linear-gradient(135deg,#4a9b8e,#7aab6e)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15 }}>
               🌿 פתחי את הדוח האישי שלך
             </button>
           </div>
