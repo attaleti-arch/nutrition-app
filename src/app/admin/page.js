@@ -277,6 +277,8 @@ export default function AdminPage() {
   const [addingClient, setAddingClient] = useState(false)
   const [clientAdded, setClientAdded] = useState('')
   const [foodDiary, setFoodDiary] = useState('')
+  const [bloodText, setBloodText] = useState('')
+  const [bloodScanLoading, setBloodScanLoading] = useState(false)
   const [editableAnalysis, setEditableAnalysis] = useState('')
   const [sendingToClient, setSendingToClient] = useState(false)
   const [sentToClient, setSentToClient] = useState(false)
@@ -394,6 +396,28 @@ export default function AdminPage() {
     loadClients()
   }
 
+
+  async function extractBloodFromText() {
+    if (!bloodText.trim()) return
+    setBloodScanLoading(true)
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'blood', bloodText: bloodText })
+      })
+      const data = await res.json()
+      var parsed = JSON.parse(data.result.replace(/```json|```/g, '').trim())
+      var newTests = Object.assign({}, profile.blood_tests || {})
+      Object.keys(parsed).forEach(function(k) { if (parsed[k] !== null && parsed[k] !== '') newTests[k] = String(parsed[k]) })
+      setProfile(p => ({ ...p, blood_tests: newTests }))
+      setBloodText('')
+      alert('✅ הערכים חולצו בהצלחה! בדקי את השדות ושמרי.')
+    } catch(e) {
+      alert('שגיאה: ' + e.message)
+    }
+    setBloodScanLoading(false)
+  }
 
   async function saveProfile() {
     setSaving(true)
@@ -719,6 +743,21 @@ export default function AdminPage() {
                     {scanLoading ? '⏳ סורק...' : '📸 העלי תמונה של בדיקות דם'}
                   </label>
                 </div>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>📋 הדבקת טקסט מבדיקות דם</div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>העתיקי והדביקי את טקסט הבדיקות — ה-AI יחלץ את הערכים אוטומטית</div>
+                  <textarea
+                    value={bloodText}
+                    onChange={e => setBloodText(e.target.value)}
+                    placeholder="הדביקי כאן את תוצאות הבדיקות כטקסט חופשי..."
+                    rows={5}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginBottom: 8 }}
+                  />
+                  <button onClick={extractBloodFromText} disabled={bloodScanLoading || !bloodText.trim()} style={{ width: '100%', padding: 12, borderRadius: 10, background: bloodScanLoading ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                    {bloodScanLoading ? '⏳ מחלץ ערכים...' : '🤖 חלצי ערכים אוטומטית'}
+                  </button>
+                </div>
+
                 <div style={{ background: '#fff', borderRadius: 18, padding: 16, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 700, marginBottom: 12 }}>🩸 ערכי בדיקות דם</div>
                   <Field label="תאריך הבדיקות" value={profile.blood_tests_date} onChange={v => updateProfile('blood_tests_date', v)} type="date" />
