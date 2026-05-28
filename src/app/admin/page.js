@@ -515,10 +515,7 @@ export default function AdminPage() {
     setTimeout(() => setSentToClient(false), 4000)
     if (selectedClient.phone) {
       var phone = selectedClient.phone.replace(/^0/, '972')
-      var msg = 'היי ' + selectedClient.name + '! 🌿
-
-הכנתי לך ניתוח אישי מיוחד — כנסי לאפליקציה לקראו:
-https://project-l990h.vercel.app'
+      var msg = 'היי ' + selectedClient.name + '! 🌿\n\nהכנתי לך ניתוח אישי מיוחד — כנסי לאפליקציה לקראו:\nhttps://project-l990h.vercel.app'
       window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
     }
   }
