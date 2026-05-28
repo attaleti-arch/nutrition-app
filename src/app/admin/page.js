@@ -273,7 +273,7 @@ export default function AdminPage() {
   const [dateTo, setDateTo] = useState('')
   const [patientId, setPatientId] = useState('')
   const [selectedTests, setSelectedTests] = useState({})
-  const [newClient, setNewClient] = useState({ name: '', last_name: '', password: '', phone: '', age: '', weight: '', height: '', goal: 'ירידה במשקל', activity: 'בינוני', gender: 'נקבה' })
+  const [newClient, setNewClient] = useState({ name: '', last_name: '', password: '', phone: '', age: '', weight: '', height: '', goal: '', activity: '', gender: '' })
   const [addingClient, setAddingClient] = useState(false)
   const [clientAdded, setClientAdded] = useState('')
 
@@ -338,7 +338,7 @@ export default function AdminPage() {
     if (!selectedClient) return
     var today = new Date().toLocaleDateString('he-IL')
     var fullName = (selectedClient.name || '') + ' ' + (selectedClient.last_name || '')
-    var id = patientId || '___________'
+    var id = selectedClient.id_number || patientId || '___________'
     var tests = DOCTOR_TESTS.filter(t => selectedTests[t.key]).map(t => '<tr><td style="padding:6px 12px;font-size:14px;border-bottom:1px solid #f0f0f0;">❑ ' + t.label + '</td></tr>').join('')
     if (!tests) { alert('בחרי לפחות בדיקה אחת'); return }
 
@@ -374,6 +374,7 @@ export default function AdminPage() {
       last_name: newClient.last_name,
       password: newClient.password,
       phone: newClient.phone,
+      id_number: newClient.id_number || null,
       age: newClient.age ? parseInt(newClient.age) : null,
       weight: newClient.weight ? parseFloat(newClient.weight) : null,
       height: newClient.height ? parseFloat(newClient.height) : null,
@@ -402,6 +403,12 @@ export default function AdminPage() {
     setSavingFeedback(null); setSentFeedback(log.id); setTimeout(() => setSentFeedback(null), 4000)
     const { data } = await supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).order('log_date', { ascending: false }).limit(30)
     setLogs(data || [])
+    // התראה ללקוחה
+    if (selectedClient.phone) {
+      var phone = selectedClient.phone.replace(/^0/, '972')
+      var msg = 'היי ' + selectedClient.name + '! 🌿\nיש לך משוב חדש מאתי ליומן ' + log.log_date + '\nכנסי לאפליקציה: https://project-l990h.vercel.app'
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+    }
   }
 
   function openWhatsApp(log) {
@@ -743,6 +750,7 @@ export default function AdminPage() {
                 <Field label="שם משפחה" value={newClient.last_name} onChange={v => setNewClient(c => ({...c, last_name: v}))} />
                 <Field label="סיסמה *" value={newClient.password} onChange={v => setNewClient(c => ({...c, password: v}))} />
                 <Field label="טלפון" value={newClient.phone} onChange={v => setNewClient(c => ({...c, phone: v}))} />
+                <Field label="תעודת זהות" value={newClient.id_number} onChange={v => setNewClient(c => ({...c, id_number: v}))} />
                 <div style={{ display: 'flex', gap: 8 }}>
                   <div style={{ flex: 1 }}><Field label="גיל" value={newClient.age} onChange={v => setNewClient(c => ({...c, age: v}))} type="number" /></div>
                   <div style={{ flex: 1 }}><Field label="משקל (ק״ג)" value={newClient.weight} onChange={v => setNewClient(c => ({...c, weight: v}))} type="number" /></div>
