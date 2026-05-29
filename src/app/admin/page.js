@@ -479,7 +479,7 @@ export default function AdminPage() {
         body: JSON.stringify({
           name: selectedClient.name,
           mode: 'profile',
-          profile: { ...profileData, ...clientData },
+          profile: { ...profileData, ...clientData, extra_blood_notes: extraBloodNotes },
           foodDiary: foodDiary || '',
         })
       })
