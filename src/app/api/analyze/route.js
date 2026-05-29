@@ -113,12 +113,36 @@ export async function POST(request) {
         + '**\ud83e\udd57 המלצות תזונה ותוספים**\n'
         + '**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')'
 
-      const msg = await client.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 3000,
-        messages: [{ role: 'user', content: prompt }]
-      })
-      return Response.json({ result: msg.content[0].text })
+      // 2 בקשות מקביליות — כל אחת ~20 שניות, ביחד ~20 שניות
+      const basePrompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
+        + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
+        + 'סגנון: אינטימי, מחבק — כמו שיחה עם חברה. ללא טבלאות.\n'
+        + 'חובה: עברית תקנית. כתבי "את" ולא "אתת". אל תמציאי פרטים שלא נכתבו.\n\n'
+        + 'נתונים:\n'
+        + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + ' | פעילות: ' + s(p.exercise_type,'לא') + '\n'
+        + 'שינה: ' + s(p.sleep_quality,'?') + ' | קימה: ' + s(p.wake_time,'?') + ' | לחץ: ' + s(p.stress_level,'?') + '/10\n'
+        + 'בוקר: ' + s(p.breakfast_habits,'?') + ' | קפה: ' + s(p.coffee_intake,'?') + ' | מים: ' + s(p.water_intake,'?') + '\n'
+        + 'אכילה רגשית: ' + s(p.emotional_eating,'?') + ' | מה מעכב: ' + s(p.goal_obstacles,'?') + '\n'
+        + 'מה רוצה: ' + s(p.main_goal,'?') + ' | מה חשוב: ' + s(p.important_values,'?') + '\n'
+        + 'רפואי: ' + s(p.medical_history,'אין') + ' | תרופות: ' + s(p.medications,'אין') + '\n'
+        + 'בדיקות: ' + bloodText + '\n'
+        + (extraBlood ? extraBlood + '\n' : '')
+        + (diary ? 'אכילה (3 ימים): ' + diary + '\n' : '')
+
+      const [msg1, msg2] = await Promise.all([
+        client.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1500,
+          messages: [{ role: 'user', content: basePrompt + '\nכתבי 3 סעיפים:\n\n**\u2728 הקווים הזוהרים שלך**\n**\ud83d\udd0d מה באמת קורה**\n' + athleteSection }]
+        }),
+        client.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1500,
+          messages: [{ role: 'user', content: basePrompt + '\nכתבי 3 סעיפים:\n\n' + bloodSection + '\n**\ud83e\udd57 המלצות תזונה ותוספים**\n**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
+        })
+      ])
+
+      return Response.json({ result: msg1.content[0].text + '\n\n' + msg2.content[0].text })
     }
 
     return Response.json({ result: 'לא התקבלו נתונים' })
