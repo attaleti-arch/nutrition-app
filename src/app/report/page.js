@@ -76,11 +76,20 @@ function SectionBody({ text }) {
   const paragraphs = text.split('\n').filter(l => l.trim())
   return (
     <div>
-      {paragraphs.map((p, i) => (
-        <p key={i} style={{ fontSize: 16, lineHeight: 1.9, color: C.text, marginBottom: 12, padding: 0 }}>
-          {p.replace(/^[-•]\s*/, '')}
-        </p>
-      ))}
+      {paragraphs.map((p, i) => {
+        if (p.startsWith('|') || p.match(/^[-|\s]+$/) || p.startsWith('#')) return null
+        const clean = p
+          .replace(/^[-•*]\s*/, '')
+          .replace(/\*\*/g, '')
+          .replace(/^#+\s*/, '')
+          .trim()
+        if (!clean) return null
+        return (
+          <p key={i} style={{ fontSize: 15, lineHeight: 1.9, color: C.text, marginBottom: 14, padding: 0 }}>
+            {clean}
+          </p>
+        )
+      })}
     </div>
   )
 }
@@ -109,13 +118,7 @@ function ReportContent() {
     load()
   }, [clientKey])
 
-  function saveToGallery() {
-    // הוסף CSS להסתרת כפתורים בהדפסה
-    const style = document.createElement('style')
-    style.innerHTML = '@media print { .no-print { display: none !important; } }'
-    document.head.appendChild(style)
-    window.print()
-  }
+
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: C.cream, display: 'flex', alignItems: 'center', justifyContent: 'center', direction: 'rtl' }}>
@@ -166,10 +169,20 @@ function ReportContent() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.cream, direction: 'rtl' }}>
+      <style>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { background: #f5f0e8 !important; }
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+        }
+      `}</style>
       <div>
         {/* Header */}
         <div style={{ background: 'linear-gradient(135deg, #fff 60%, ' + C.tealLight + ')', padding: '32px 20px 28px', textAlign: 'center', boxShadow: '0 2px 24px rgba(0,0,0,0.07)', marginBottom: 28 }}>
-          <img src="/logo.png" style={{ height: 100, marginBottom: 12 }} alt="לוגו" />
+          <div style={{ marginBottom: 12 }}>
+          <img src="/logo.png" style={{ height: 100 }} alt="לוגו"
+            onError={function(e) { e.target.replaceWith(Object.assign(document.createElement('div'), {innerHTML:'🌿', style:'font-size:50px'}) )}} />
+        </div>
           <div style={{ fontSize: 24, fontWeight: 900, color: C.teal }}>בין הראש לצלחת</div>
           <div style={{ fontSize: 14, color: C.gray, marginTop: 4 }}>אתי אטל | יועצת בריאות ותזונה התנהגותית</div>
           {client && (
@@ -199,7 +212,10 @@ function ReportContent() {
                 </div>
               ))}
             </div>
-            <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 10 }}>
+            <div style={{ fontSize: 13, color: C.gray, textAlign: 'center', marginTop: 8, marginBottom: 4, lineHeight: 1.6 }}>
+            המטרה: להגדיל את חלק החלבון ולאזן את הפחמימות 🎯
+          </div>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', marginTop: 10 }}>
               {[{ l: 'פחמימות', c: '#f97316' }, { l: 'חלבון', c: C.teal }, { l: 'שומן', c: C.gold }].map(i => (
                 <div key={i.l} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                   <div style={{ width: 12, height: 12, borderRadius: 3, background: i.c }} />
@@ -222,7 +238,7 @@ function ReportContent() {
           {sections.map((section, i) => {
             const style = sectionStyle(section)
             const lines = section.split('\n')
-            const title = lines[0].replace(/\*\*/g, '').replace(/[🌟🔍🧠🎯🩸🥗💊💚📊✅⚡]/g, '').trim()
+            const title = lines[0].replace(/\*\*/g, '').replace(/[🌟🔍🧠🎯🩸🥗💊💚📊✅⚡]/g, '').replace(/^#+\s*/, '').trim()
             const body = lines.slice(1).join('\n').replace(/\*\*/g, '').trim()
             if (!body) return null
             return (
@@ -237,13 +253,9 @@ function ReportContent() {
 
       {/* Buttons */}
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '0 16px 50px' }}>
-        <button onClick={() => window.print()} style={{ width: '100%', padding: 18, borderRadius: 16, background: 'linear-gradient(135deg,' + C.teal + ',' + C.green + ')', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 17, marginBottom: 10 }}>
-          🖨️ שמרי / הדפסי את הדוח
-        </button>
-        <button onClick={() => window.print()} style={{ width: '100%', padding: 14, borderRadius: 16, background: 'transparent', color: C.teal, border: '2px solid ' + C.teal, cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
-          🖨️ הדפסי
-        </button>
-        <div style={{ textAlign: 'center', marginTop: 20, color: C.gray, fontSize: 12 }}>
+        
+
+        <div className='no-print' style={{ textAlign: 'center', marginTop: 20, color: C.gray, fontSize: 12 }}>
           בין הראש לצלחת · אתי אטל · 052-333-6766
         </div>
       </div>
