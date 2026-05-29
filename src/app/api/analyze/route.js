@@ -91,7 +91,11 @@ export async function POST(request) {
       const bloodText = formatBlood(p.blood_tests)
       const diary = foodDiary ? String(foodDiary).substring(0, 600) : ''
 
-      const instruction = `אתה אתי אטל — יועצת בריאות NLP. ניתוח ל-${name} בעברית, גוף שני נקבה, חם ואישי. costume-made. ללא טבלאות markdown. 2 משפטים ממוקדים לכל סעיף. כתבי רק על מה שקיים בנתונים — אל תמציאי ציטוטים.`
+      const instruction = `אתה אתי אטל — יועצת בריאות ותזונה התנהגותית בגישת NLP.
+כתבי ניתוח אישי עמוק ל-${name} בעברית, גוף שני נקבה.
+סגנון: חם, אינטימי, מחבק — כמו שיחה עם חברה שמבינה. לא רשמי.
+כתבי פסקאות קצרות וזורמות (3-4 משפטים לסעיף).
+חובה: כתבי רק על מה שקיים בנתונים. אל תמציאי ציטוטים שלא נאמרו. ללא טבלאות.`
 
       const baseData = `נתונים על ${name}:
 גיל ${s(p.age,'?')} | משקל ${s(p.weight,'?')} | מטרה: ${s(p.goal,'?')} | פעילות: ${s(p.exercise_type,'לא')}
@@ -105,8 +109,8 @@ ${diary ? 'אכילה: ' + diary : ''}`
 
       // חלק א — NLP ורגש
       const part1Promise = client.messages.create({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 1000,
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
         messages: [{ role: 'user', content: `${instruction}
 
 ${baseData}
@@ -123,8 +127,8 @@ ${isAthlete ? 'הסבירי את הלופ כעוגן רגשי לפיצוי על 
 
       // חלק ב — תזונה ופעולה
       const part2Promise = client.messages.create({
-        model: 'claude-sonnet-4-5',
-        max_tokens: 1000,
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 2000,
         messages: [{ role: 'user', content: `${instruction}
 
 ${baseData}
