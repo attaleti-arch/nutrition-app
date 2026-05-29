@@ -464,7 +464,7 @@ export default function AdminPage() {
       }
       // הכן את הנתונים לשליחה - בלי שדות שעלולים לשבור
       var profileData = {}
-      var allowedKeys = ['sleep_quality','sleep_issues','wake_time','sleep_time','digestion','smoking','menstrual_cycle','menstrual_days','medications','therapists','medical_history','family_history','diet_restrictions','breakfast_habits','lunch_habits','dinner_habits','snack_habits','food_sensitivities','avoided_foods','cooks_at_home','restaurants_per_week','water_intake','coffee_intake','alcohol_intake','emotional_eating','work_hours','stress_level','energy_level','mood_notes','exercise_type','pain_issues','main_goal','goal_obstacles','goal_motivation','success_vision','important_values','positive_memories','blood_tests']
+      var allowedKeys = ['sleep_quality','sleep_issues','wake_time','sleep_time','digestion','smoking','menstrual_cycle','menstrual_days','medications','therapists','medical_history','family_history','diet_restrictions','breakfast_habits','lunch_habits','dinner_habits','snack_habits','food_sensitivities','avoided_foods','cooks_at_home','restaurants_per_week','water_intake','coffee_intake','alcohol_intake','emotional_eating','work_hours','stress_level','energy_level','mood_notes','exercise_type','pain_issues','main_goal','goal_obstacles','goal_motivation','success_vision','important_values','positive_memories','blood_tests','extra_blood_notes']
       allowedKeys.forEach(function(k) { if (profile[k] !== undefined) profileData[k] = profile[k] })
       var clientData = { age: selectedClient.age, weight: selectedClient.weight, height: selectedClient.height, gender: selectedClient.gender, activity: selectedClient.activity, goal: selectedClient.goal, target_weight: selectedClient.target_weight }
       
@@ -851,12 +851,12 @@ export default function AdminPage() {
                   <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>משלב: שאלון 360 + בדיקות דם + רמות לוגיות NLP + 5 ימי אכילה</div>
 
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, color: '#0f4c2a' }}>🍽️ 5 ימי אכילה חופשיים (לפני התהליך)</div>
-                    <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 6 }}>הדביקי כאן תיאור של 5 ימי אכילה רגילים — ללא פורמט מיוחד</div>
+                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, color: '#0f4c2a' }}>🍽️ 3 ימי אכילה אופייניים (לפני התהליך)</div>
+                    <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 6 }}>הדביקי כאן תיאור של 3 ימי אכילה רגילים — ללא פורמט מיוחד</div>
                     <textarea
                       value={foodDiary}
                       onChange={e => setFoodDiary(e.target.value)}
-                      placeholder='הזיני כאן תיאור של 5 ימי אכילה רגילים...'
+                      placeholder='הזיני כאן תיאור של 3 ימי אכילה רגילים...'
                       rows={8}
                       style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7 }}
                     />
