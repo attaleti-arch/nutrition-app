@@ -420,8 +420,13 @@ export default function AdminPage() {
       var newTests = Object.assign({}, profile.blood_tests || {})
       Object.keys(parsed).forEach(function(k) { if (parsed[k] !== null && parsed[k] !== '') newTests[k] = String(parsed[k]) })
       setProfile(p => ({ ...p, blood_tests: newTests }))
+      if (data.extra && data.extra.trim()) {
+        setExtraBloodNotes(data.extra.trim())
+        alert('✅ הערכים חולצו! נמצאו גם ערכים חריגים נוספים שנשמרו אוטומטית בתיבת "ערכים חריגים נוספים". בדקי ושמרי.')
+      } else {
+        alert('✅ הערכים חולצו בהצלחה! בדקי את השדות ושמרי.')
+      }
       setBloodText('')
-      alert('✅ הערכים חולצו בהצלחה! בדקי את השדות ושמרי.')
     } catch(e) {
       alert('שגיאה: ' + e.message)
     }
