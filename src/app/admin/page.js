@@ -279,6 +279,7 @@ export default function AdminPage() {
   const [foodDiary, setFoodDiary] = useState('')
   const [bloodText, setBloodText] = useState('')
   const [bloodScanLoading, setBloodScanLoading] = useState(false)
+  const [extraBloodNotes, setExtraBloodNotes] = useState('')
   const [editableAnalysis, setEditableAnalysis] = useState('')
   const [sendingToClient, setSendingToClient] = useState(false)
   const [sentToClient, setSentToClient] = useState(false)
@@ -312,6 +313,7 @@ export default function AdminPage() {
     if (data) {
       setProfile(data)
       setFoodDiary(data.food_diary || '')
+      setExtraBloodNotes(data.extra_blood_notes || '')
       if (data.ai_report) {
         setAiAnalysis(data.ai_report)
         setEditableAnalysis(data.ai_report)
@@ -428,7 +430,7 @@ export default function AdminPage() {
 
   async function saveProfile() {
     setSaving(true)
-    var payload = { ...profile, food_diary: foodDiary, client_password: selectedClient.password, updated_at: new Date().toISOString() }
+    var payload = { ...profile, food_diary: foodDiary, extra_blood_notes: extraBloodNotes, client_password: selectedClient.password, updated_at: new Date().toISOString() }
     await supabase.from('client_profiles').upsert(payload, { onConflict: 'client_password' })
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000)
   }
@@ -785,6 +787,18 @@ export default function AdminPage() {
                   <button onClick={extractBloodFromText} disabled={bloodScanLoading || !bloodText.trim()} style={{ width: '100%', padding: 12, borderRadius: 10, background: bloodScanLoading ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
                     {bloodScanLoading ? '⏳ מחלץ ערכים...' : '🤖 חלצי ערכים אוטומטית'}
                   </button>
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>⚠️ ערכים חריגים נוספים (לא בטופס)</div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>הדביקי כאן ערכים חריגים שלא קיימים בטופס (IgG, FLC, גמא וכו') — ה-AI יפרש אותם בניתוח</div>
+                  <textarea
+                    value={extraBloodNotes}
+                    onChange={e => setExtraBloodNotes(e.target.value)}
+                    placeholder="לדוגמה: IgG 2328 (גבוה, נורמה עד 1631), FLC Kappa 30.87 (גבוה, נורמה עד 19.4), גמא 24.3% (גבוה)"
+                    rows={3}
+                    style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
+                  />
                 </div>
 
                 <div style={{ background: '#fff', borderRadius: 18, padding: 16, border: '1.5px solid #f0f0f0' }}>
