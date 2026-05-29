@@ -60,12 +60,15 @@ export async function POST(request) {
     if (mode === 'blood' && body.bloodText) {
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 800,
-        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם מהטקסט. החזר JSON בלבד עם 2 שדות:\n{"standard":{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null},"extra_abnormals":""}\nב-standard: מספרים בלבד. ב-extra_abnormals: טקסט חופשי עם ערכים חריגים שאינם בשדות הסטנדרטיים (IgG, FLC Kappa, גמא גלובולין וכו) עם הערך והטווח. אם אין - ריק.\nטקסט: ' + String(body.bloodText).substring(0, 2000) }]
+        max_tokens: 600,
+        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם. החזר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null,"extra_abnormals":""}\nב-extra_abnormals: כתוב כטקסט את כל הערכים החריגים שאינם בשאר השדות (IgG, FLC, גמא וכו) עם הערך והטווח הרגיל. מספרים בלבד בשאר השדות.\nטקסט: ' + String(body.bloodText).substring(0, 2000) }]
       })
       try {
-        const parsed = JSON.parse(msg.content[0].text.replace(/```json|```/g,'').trim())
-        return Response.json({ result: JSON.stringify(parsed.standard), extra: parsed.extra_abnormals || '' })
+        const text = msg.content[0].text.replace(/```json|```/g,'').trim()
+        const parsed = JSON.parse(text)
+        const extra = parsed.extra_abnormals || ''
+        delete parsed.extra_abnormals
+        return Response.json({ result: JSON.stringify(parsed), extra })
       } catch(e) {
         return Response.json({ result: msg.content[0].text, extra: '' })
       }
@@ -85,46 +88,47 @@ export async function POST(request) {
       const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(String(p.exercise_type)))
       const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
       const bloodText = formatBlood(p.blood_tests)
-      const diary = foodDiary ? String(foodDiary).substring(0, 350) : ''
-      const extraBlood = p.extra_blood_notes ? p.extra_blood_notes : ''
+      const diary = foodDiary ? String(foodDiary).substring(0, 400) : ''
+      const extraBlood = p.extra_blood_notes ? 'בדיקות חריגות נוספות (חשוב לציין בניתוח!): ' + p.extra_blood_notes : ''
       const stepsNote = isSedentary ? ', כולל 7,000 צעדים יומיים' : ''
 
-      const prompt = 'אתה אתי אטל - יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
-        + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
-        + 'סגנון: אינטימי, מחבק - כמו שיחה עם חברה. ללא טבלאות.\n'
-        + 'חובה: עברית תקנית. "את" לא "אתת". "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים.\n\n'
-        + 'נתונים:\n'
-        + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + '\n'
-        + 'פעילות: ' + s(p.exercise_type,'לא') + ' | שינה: ' + s(p.sleep_quality,'?') + ' | קימה: ' + s(p.wake_time,'?') + ' | לחץ: ' + s(p.stress_level,'?') + '/10\n'
+      const athleteSection = isAthlete
+        ? '**\u26a1 חלון ההזדמנויות הספורטיבי**\nתזונה לפני/אחרי אימון. מניעת קטבוליזם. חלבון. ספציפי לסוג האימון שלה.'
+        : '**\u26a1 תמיכה במטבוליזם ובאנרגיה**\nפחמימות עודפות + חלבון נמוך = קפיצות אינסולין שנועלות שריפת שומן. הגוף מפרק שריר גם בלי ספורט. BMR נמוך. התקפי רעב. חיבר לנתונים.'
+
+      const bloodSection = '**\ud83e\ude78 מה אומרות הבדיקות**\n'
+        + 'לכל ערך חריג: שם + ערך + טווח רצוי + הסבר + המלצה (תזונה/תוסף/רופא). כולל הבדיקות החריגות הנוספות אם קיימות. אם ערך דורש רופא — ציינו.'
+
+      const baseData = 'נתונים על ' + name + ':\n'
+        + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + ' | פעילות: ' + s(p.exercise_type,'לא') + '\n'
+        + 'שינה: ' + s(p.sleep_quality,'?') + ' | קימה: ' + s(p.wake_time,'?') + ' | לחץ: ' + s(p.stress_level,'?') + '/10\n'
         + 'בוקר: ' + s(p.breakfast_habits,'?') + ' | קפה: ' + s(p.coffee_intake,'?') + ' | מים: ' + s(p.water_intake,'?') + '\n'
         + 'אכילה רגשית: ' + s(p.emotional_eating,'?') + ' | מה מעכב: ' + s(p.goal_obstacles,'?') + '\n'
         + 'מה רוצה: ' + s(p.main_goal,'?') + ' | מה חשוב: ' + s(p.important_values,'?') + '\n'
         + 'רפואי: ' + s(p.medical_history,'אין') + ' | תרופות: ' + s(p.medications,'אין') + '\n'
-        + 'בדיקות רגילות: ' + bloodText + '\n'
-        + (extraBlood ? 'בדיקות חריגות נוספות (חשוב!): ' + extraBlood + '\n' : '')
+        + 'בדיקות: ' + bloodText + '\n'
+        + (extraBlood ? extraBlood + '\n' : '')
         + (diary ? 'אכילה (3 ימים): ' + diary + '\n' : '')
-        + '\nכתבי בדיוק 6 סעיפים לפי הסדר הזה. כל סעיף - פסקה חמה וספציפית.\n\n'
-        + '**\u2728 הקווים הזוהרים שלך**\n'
-        + 'חוזקות אמיתיות וספציפיות מהנתונים. העצמה. לא כללי.\n\n'
-        + '**\ud83d\udd0d מה באמת קורה**\n'
-        + 'ניתוח NLP של הדפוסים הרגשיים. הסבירי את הלופ (קפה/מתוק/עייפות). מה הצורך הרגשי האמיתי.\n\n'
-        + (isAthlete
-          ? '**\u26a1 חלון ההזדמנויות הספורטיבי**\nתזונה סביב אימון. מניעת קטבוליזם. חלבון לפני/אחרי. ספציפי לסוג האימון שלה.\n\n'
-          : '**\u26a1 תמיכה במטבוליזם ובאנרגיה**\nהסבירי: פחמימות מרובות + חלבון נמוך = קפיצות אינסולין שנועלות שריפת שומן. הגוף מפרק שריר. BMR יורד. התקפי רעב. חיבר לנתונים שלה.\n\n')
-        + '**\ud83e\ude78 מה אומרות הבדיקות**\n'
-        + 'פרטי רק ערכים חריגים. לכל אחד: שם + ערך + טווח רצוי + מה זה אומר לגוף + המלצה (תזונה/תוסף/רופא).\n'
-        + 'כלולי גם את הבדיקות החריגות הנוספות אם קיימות. אם ערך דורש רופא - ציינו.\n\n'
-        + '**\ud83e\udd57 המלצות תזונה ותוספים**\n'
-        + 'ספציפיות לפרופיל שלה. על בסיס מה שאכלה ומה חסר. אוכל ותוספים משולבים.\n\n'
-        + '**\ud83c\udfaf 3 צעדים למחר**\n'
-        + 'ממוספרים 1-2-3. קטנים, ריאליסטיים, ספציפיים' + stepsNote + '.'
 
-      const msg = await client.messages.create({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 2500,
-        messages: [{ role: 'user', content: prompt }]
-      })
-      return Response.json({ result: msg.content[0].text })
+      const systemPrompt = 'אתה אתי אטל - יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
+        + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
+        + 'סגנון: אינטימי, מחבק - כמו שיחה עם חברה. ללא טבלאות.\n'
+        + 'חובה: עברית תקנית. "את" לא "אתת". "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים.\n\n'
+
+      const [msg1, msg2] = await Promise.all([
+        client.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1500,
+          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד:\n\n**\u2728 הקווים הזוהרים שלך**\n**\ud83d\udd0d מה באמת קורה**\n' + athleteSection }]
+        }),
+        client.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 1500,
+          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד:\n\n' + bloodSection + '\n\n**\ud83e\udd57 המלצות תזונה ותוספים**\n\n**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
+        })
+      ])
+
+      return Response.json({ result: msg1.content[0].text + '\n\n' + msg2.content[0].text })
     }
 
     return Response.json({ result: 'לא התקבלו נתונים' })
