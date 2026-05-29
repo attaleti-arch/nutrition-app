@@ -460,6 +460,13 @@ export default function AdminPage() {
   async function runProfileAnalysis() {
     setAiLoading(true); setAiAnalysis(''); setEditableAnalysis('')
     try {
+      // שמרי extra_blood_notes ויומן לפני הניתוח
+      if (extraBloodNotes) {
+        await supabase.from('client_profiles').upsert(
+          { client_password: selectedClient.password, extra_blood_notes: extraBloodNotes, updated_at: new Date().toISOString() },
+          { onConflict: 'client_password' }
+        )
+      }
       // שמרי את יומן האכילה לפני הניתוח
       if (foodDiary && foodDiary.trim()) {
         await supabase.from('client_profiles').upsert(
