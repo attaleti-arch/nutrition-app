@@ -37,7 +37,7 @@ function formatBlood(blood_tests) {
     const range = BLOOD_RANGES[k]
     const val = parseFloat(v)
     if (range && !isNaN(val)) {
-      if (val < range[0] || val > range[1]) abnormal.push(name + ': ' + v + ' (חריג)')
+      if (val < range[0] || val > range[1]) abnormal.push(name + ': ' + v + ' חריג')
       else normal.push(name + ': ' + v)
     } else normal.push(name + ': ' + v)
   })
@@ -60,10 +60,11 @@ export async function POST(request) {
     if (mode === 'blood' && body.bloodText) {
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 500,
-        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם. החזר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null}\nמספרים בלבד. טקסט: ' + String(body.bloodText).substring(0, 2000) }]
+        max_tokens: 800,
+        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם מהטקסט. החזר JSON בלבד עם 2 שדות:\n{"standard":{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null},"extra_abnormals":""}\nב-standard: מספרים בלבד.\nב-extra_abnormals: כתוב כטקסט חופשי את כל הערכים החריגים שאינם בשדות הסטנדרטיים (למשל: IgG, IgG1, FLC Kappa, גמא גלובולין וכו) עם הערך והטווח הרצוי. אם אין חריגים נוספים - השאר ריק.\nטקסט: ' + String(body.bloodText).substring(0, 2000) }]
       })
-      return Response.json({ result: msg.content[0].text })
+      const parsed = JSON.parse(msg.content[0].text.replace(/```json|```/g,'').trim())
+      return Response.json({ result: JSON.stringify(parsed.standard), extra: parsed.extra_abnormals || '' })
     }
 
     if (logs && !mode) {
@@ -83,7 +84,19 @@ export async function POST(request) {
       const diary = foodDiary ? String(foodDiary).substring(0, 400) : ''
       const extraBlood = p.extra_blood_notes ? 'ערכים חריגים נוספים: ' + p.extra_blood_notes : ''
 
-      const baseData = 'נתונים:\n'
+      const athleteSection = isAthlete
+        ? '**\u26a1 חלון ההזדמנויות הספורטיבי**\nהסבירי: תזונה לפני/אחרי אימון חיונית. ריצה על ריק עם קפאין = הגוף מפרק שריר (קטבוליזם). חלבון אחרי אימון = שיקום ושמירה על מסת שריר.'
+        : '**\u26a1 תמיכה במטבוליזם ובאנרגיה**\nהסבירי: תזונה עתירת פחמימות ודלת חלבון גורמת לקפיצות אינסולין שנועלות שריפת שומן. הגוף שומר שומן ומפרק שריר גם בלי ספורט. חוסר חלבון = BMR נמוך, התקפי רעב ועייפות.'
+
+      const stepsNote = isSedentary ? ', כולל 7,000 צעדים יומיים' : ''
+
+      const bloodSection = '**\ud83e\ude78 מה אומרות הבדיקות**\nלכל ערך חריג בלבד, כתבי שורה בפורמט הזה: שם הבדיקה: ערך (טווח רצוי) - מה זה אומר + המלצה קצרה. לדוגמה: כולסטרול כללי: 217 (רצוי מתחת ל-200) - מעיד על עודף שומנים רוויים. הפחיתי גבינות שמנות והוסיפי אומגה 3. אם ערך דורש המשך בירור רפואי - ציינו. אם הכל תקין - משפט חיובי אחד.'
+
+      const basePrompt = 'אתה אתי אטל - יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
+        + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
+        + 'סגנון: אינטימי, מחבק - כמו שיחה עם חברה שמבינה. ללא טבלאות.\n'
+        + 'חובה: עברית תקנית. כתבי "את" לא "אתת". כתבי "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים שלא נכתבו.\n\n'
+        + 'נתונים:\n'
         + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + ' | פעילות: ' + s(p.exercise_type,'לא') + '\n'
         + 'שינה: ' + s(p.sleep_quality,'?') + ' | קימה: ' + s(p.wake_time,'?') + ' | לחץ: ' + s(p.stress_level,'?') + '/10\n'
         + 'בוקר: ' + s(p.breakfast_habits,'?') + ' | קפה: ' + s(p.coffee_intake,'?') + ' | מים: ' + s(p.water_intake,'?') + '\n'
@@ -94,32 +107,16 @@ export async function POST(request) {
         + (extraBlood ? extraBlood + '\n' : '')
         + (diary ? 'אכילה (3 ימים): ' + diary + '\n' : '')
 
-      const instruction = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
-        + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
-        + 'סגנון: אינטימי, מחבק — כמו שיחה עם חברה שמבינה. ללא טבלאות.\n'
-        + 'חובה: עברית תקנית בלבד. כתבי "את" לא "אתת". כתבי "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים שלא נכתבו.\n\n'
-
-      const athleteSection = isAthlete
-        ? '**⚡ חלון ההזדמנויות הספורטיבי**\nהסבירי: תזונה לפני/אחרי אימון חיונית. ריצה על ריק עם קפאין = הגוף מפרק שריר (קטבוליזם). חלבון אחרי אימון = שיקום ושמירה על מסת שריר.'
-        : '**⚡ תמיכה במטבוליזם ובאנרגיה**\nהסבירי: תזונה עתירת פחמימות ודלת חלבון גורמת לקפיצות אינסולין שנועלות שריפת שומן. הגוף שומר שומן ומפרק שריר גם בלי ספורט. חוסר חלבון = BMR נמוך, התקפי רעב ועייפות.'
-
-      const bloodInstruction = '**🩸 מה אומרות הבדיקות**\n'
-        + 'לכל ערך חריג בלבד, כתבי שורה בפורמט: "שם הבדיקה: ערך (טווח רצוי) — מה זה אומר + המלצה קצרה (תזונה/תוסף/רופא)."\n'
-        + 'לדוגמה: "כולסטרול כללי: 217 (רצוי מתחת ל-200) — מעיד על עודף שומנים רוויים. הפחיתי גבינות שמנות והוסיפי אומגה 3."\n'
-        + 'אם ערך דורש בדיקה נוספת מול רופא — ציינו. אם הכל תקין — משפט חיובי קצר.'
-
-      const stepsNote = isSedentary ? ', כולל 7,000 צעדים יומיים' : ''
-
       const [msg1, msg2] = await Promise.all([
         client.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 1500,
-          messages: [{ role: 'user', content: instruction + baseData + '\nכתבי 3 סעיפים:\n\n**✨ הקווים הזוהרים שלך**\n**🔍 מה באמת קורה**\n' + athleteSection }]
+          messages: [{ role: 'user', content: basePrompt + '\nכתבי 3 סעיפים:\n\n**\u2728 הקווים הזוהרים שלך**\n**\ud83d\udd0d מה באמת קורה**\n' + athleteSection }]
         }),
         client.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 1500,
-          messages: [{ role: 'user', content: instruction + baseData + '\nכתבי 3 סעיפים:\n\n' + bloodInstruction + '\n\n**🥗 המלצות תזונה ותוספים**\n\n**🎯 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
+          messages: [{ role: 'user', content: basePrompt + '\nכתבי 3 סעיפים:\n\n' + bloodSection + '\n\n**\ud83e\udd57 המלצות תזונה ותוספים**\n\n**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
         })
       ])
 
