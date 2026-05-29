@@ -61,7 +61,7 @@ export async function POST(request) {
 
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2500,
+        max_tokens: 4096,
         messages: [{ role: 'user', content: `אתה אתי אטל — יועצת בריאות NLP. ניתוח אישי עמוק ל-${name} בעברית, גוף שני נקבה, חם ואישי. costume-made. ללא טבלאות markdown. כל סעיף — 3-5 משפטים בלבד. קצר, ממוקד, עוצמתי.
 
 נתונים:
