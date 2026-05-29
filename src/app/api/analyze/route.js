@@ -26,7 +26,7 @@ const BLOOD_RANGES = {
   crp:[0,1.0],insulin:[2,25],zinc:[70,120],magnesium:[1.7,2.2]
 }
 
-function formatBlood(blood_tests) {
+function formatBlood(blood_tests, extraNotes) {
   if (!blood_tests) return 'לא הוזנו'
   const entries = Object.entries(blood_tests).filter(([k,v]) => v && v !== '')
   if (!entries.length) return 'לא הוזנו'
@@ -44,6 +44,7 @@ function formatBlood(blood_tests) {
   let r = ''
   if (abnormal.length) r += 'חריגות: ' + abnormal.join(' | ')
   if (normal.length) r += (r ? ' | תקינות: ' : 'תקינות: ') + normal.slice(0,5).join(' | ')
+  if (extraNotes && extraNotes.trim()) r += ' | ערכים חריגים נוספים: ' + extraNotes.trim()
   return r || 'לא הוזנו'
 }
 
@@ -87,7 +88,7 @@ export async function POST(request) {
       const p = profile
       const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(String(p.exercise_type)))
       const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
-      const bloodText = formatBlood(p.blood_tests)
+      const bloodText = formatBlood(p.blood_tests, p.extra_blood_notes)
       const diary = foodDiary ? String(foodDiary).substring(0, 400) : ''
       const extraBlood = p.extra_blood_notes ? '⚠️ חובה לציין בסעיף הבדיקות: ' + p.extra_blood_notes : ''
       const stepsNote = isSedentary ? ', כולל 7,000 צעדים יומיים' : ''
