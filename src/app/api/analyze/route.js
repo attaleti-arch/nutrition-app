@@ -19,11 +19,41 @@ const BLOOD_NAMES = {
   gluten_sensitivity:'רגישות גלוטן',celiac:'צליאק'
 }
 
+// בדיקות שחשובות לבריאות ומשקל
+const IMPORTANT_BLOOD = ['glucose','hba1c','cholesterol','hdl','ldl','triglycerides','hemoglobin','ferritin','iron','vitamin_b12','vitamin_d','tsh','crp','insulin','zinc','magnesium']
+
+const BLOOD_RANGES = {
+  glucose: [70,100], hba1c: [0,5.7], cholesterol: [0,200], hdl: [60,999],
+  ldl: [0,100], triglycerides: [0,150], hemoglobin: [12,16], ferritin: [12,150],
+  iron: [60,170], vitamin_b12: [200,900], vitamin_d: [30,100], tsh: [0.4,4.0],
+  crp: [0,1.0], insulin: [2,25], zinc: [70,120], magnesium: [1.7,2.2]
+}
+
 function formatBlood(blood_tests) {
   if (!blood_tests) return 'לא הוזנו'
   const entries = Object.entries(blood_tests).filter(([k,v]) => v && v !== '')
   if (!entries.length) return 'לא הוזנו'
-  return entries.map(([k,v]) => (BLOOD_NAMES[k]||k) + ': ' + v).join(' | ')
+
+  const abnormal = []
+  const normal = []
+
+  entries.forEach(([k,v]) => {
+    const name = BLOOD_NAMES[k] || k
+    const range = BLOOD_RANGES[k]
+    const val = parseFloat(v)
+    if (range && !isNaN(val)) {
+      const isNorm = val >= range[0] && val <= range[1]
+      if (!isNorm) abnormal.push(`${name}: ${v} ⚠️`)
+      else if (IMPORTANT_BLOOD.includes(k)) normal.push(`${name}: ${v} ✓`)
+    } else {
+      normal.push(`${name}: ${v}`)
+    }
+  })
+
+  let result = ''
+  if (abnormal.length) result += 'חריגות: ' + abnormal.join(' | ')
+  if (normal.length) result += (result ? '\nתקינות חשובות: ' : 'תקינות: ') + normal.join(' | ')
+  return result || 'לא הוזנו'
 }
 
 function s(val, fb) {
@@ -40,7 +70,7 @@ export async function POST(request) {
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 500,
-        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם. החזר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null}\nמספרים בלבד. טקסט: ' + String(body.bloodText).substring(0, 2000) }]
+        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם. החזר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null}\nמספרים בלבד. טקסט: ' + String(body.bloodText).substring(0, 2000) }]
       })
       return Response.json({ result: msg.content[0].text })
     }
@@ -61,76 +91,61 @@ export async function POST(request) {
       const bloodText = formatBlood(p.blood_tests)
       const diary = foodDiary ? String(foodDiary).substring(0, 600) : ''
 
+      const instruction = `אתה אתי אטל — יועצת בריאות NLP. ניתוח ל-${name} בעברית, גוף שני נקבה, חם ואישי. costume-made. ללא טבלאות markdown. 2 משפטים ממוקדים לכל סעיף. כתבי רק על מה שקיים בנתונים — אל תמציאי ציטוטים.`
+
       const baseData = `נתונים על ${name}:
 גיל ${s(p.age,'?')} | משקל ${s(p.weight,'?')} | מטרה: ${s(p.goal,'?')} | פעילות: ${s(p.exercise_type,'לא')}
 שינה: ${s(p.sleep_quality,'?')} | קימה: ${s(p.wake_time,'?')} | לחץ: ${s(p.stress_level,'?')}/10
 בוקר: ${s(p.breakfast_habits,'?')} | קפה: ${s(p.coffee_intake,'?')} | מים: ${s(p.water_intake,'?')}
 אכילה רגשית: ${s(p.emotional_eating,'?')} | מה מעכב: ${s(p.goal_obstacles,'?')}
+מה רוצה: ${s(p.main_goal,'?')} | מה חשוב: ${s(p.important_values,'?')}
 תרופות: ${s(p.medications,'אין')} | רפואי: ${s(p.medical_history,'אין')}
-בדיקות: ${bloodText}
+בדיקות דם: ${bloodText}
 ${diary ? 'אכילה: ' + diary : ''}`
 
-      const instruction = `אתה אתי אטל — יועצת בריאות ותזונה התנהגותית בגישת NLP.
-כתבי ניתוח אישי עמוק ל-${name} בעברית, גוף שני נקבה.
-הסגנון: חם, אינטימי, מאיר עיניים — כאילו את יושבת מולה בפגישה. לא רשמי, לא יבש.
-כתבי בפסקאות זורמות ועשירות — לא רשימות. ללא טבלאות.
-חשוב: כתבי רק על מה שקיים בנתונים. אל תמציאי ציטוטים שלא נאמרו.`
-
-      // חלק א' — NLP ורגש
+      // חלק א — NLP ורגש
       const part1Promise = client.messages.create({
         model: 'claude-sonnet-4-5',
-        max_tokens: 1500,
-        messages: [{ role: 'user', content: instruction + `
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: `${instruction}
 
-` + baseData + `
+${baseData}
 
-כתבי את הסעיפים הבאים. כל סעיף — פסקאות עשירות וזורמות, חמות ואישיות:
+כתבי 2 סעיפים בלבד, כל אחד 2 משפטים ממוקדים:
 
-**🌟 הקווים הזוהרים שלך — מה שרואים בך**
-חוזקות אמיתיות וספציפיות שעולות מהנתונים. שתרגיש שרואים אותה.
+**🌟 הקווים הזוהרים שלך**
+העצמה אמיתית על חוזקות ספציפיות שעולות מהנתונים.
 
 **🔍 מה באמת קורה — הגשר הטיפולי**
-${isAthlete ? 'הסבירי שהלופ של קפה/מתוק הוא עוגן רגשי לפיצוי על עייפות — לא חוסר רצון. זה מנגנון הישרדות.' : 'הסבירי שהלופ מהרגל, שעמום, או נפילת אנרגיה — לא חוסר רצון.'}
-חיבר בין ה-NLP לתזונה — למה היא אוכלת מה שאוכלת. מה הצורך הרגשי האמיתי שמסתתר שם.
-
-**🧠 האמונות המגבילות שזיהיתי**
-רק אם עולות בבירור מהנתונים. פרקי אותן בעדינות.
-
-**⚡ ${isAthlete ? 'חלון ההזדמנויות הספורטיבי' : 'תמיכה במטבוליזם ובאנרגיה היומית'}**
-${isAthlete ? 'חלון לפני/אחרי אימון. סכנת קטבוליזם. ספציפי לסוג האימון שלה.' : 'חוסר חלבון מאט BMR. גורם לרעב, עייפות, וחוסר ריכוז לאורך היום.'}` }]
+${isAthlete ? 'הסבירי את הלופ כעוגן רגשי לפיצוי על עייפות/שקט — לא חוסר רצון.' : 'הסבירי את הלופ כהרגל/שעמום/נפילת אנרגיה — לא חוסר רצון.'}
+אם עולות אמונות מגבילות מפורשות מהמילים שכתבה — הוסיפי אותן. אם לא — אל תמציאי.` }]
       })
 
-      // חלק ב' — תזונה ופעולה
+      // חלק ב — תזונה ופעולה
       const part2Promise = client.messages.create({
         model: 'claude-sonnet-4-5',
-        max_tokens: 1500,
-        messages: [{ role: 'user', content: instruction + `
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: `${instruction}
 
-` + baseData + `
+${baseData}
 
-כתבי את הסעיפים הבאים. כל סעיף — פסקאות עשירות וזורמות, חמות ואישיות:
+כתבי 4 סעיפים בלבד, כל אחד 2 משפטים ממוקדים:
 
-**🩸 מה אומרות הבדיקות שלך**
-פרשי כל ערך חריג בשפה פשוטה וחמה. חיבר כל ערך לאורח החיים שלה. רק ערכים שהוזנו.
+**⚡ ${isAthlete ? 'חלון ההזדמנויות הספורטיבי' : 'תמיכה במטבוליזם ובאנרגיה היומית'}**
+${isAthlete ? 'תזונה לפני/אחרי אימון, מניעת קטבוליזם, חלבון.' : 'קצב חילוף חומרים נמוך, גירעון חלבוני, התקפי רעב.'}
 
-**🥗 המלצות תזונה אישיות — בדיוק בשבילך**
-ספציפיות לפרופיל שלה, לשגרה, לקשיים, להגבלות.
+**🩸 מה אומרות הבדיקות**
+התמקדי רק בערכים החריגים (מסומנים ⚠️). פרשי בשפה פשוטה וחיבר לאורח החיים. אם אין חריגות — משפט אחד חיובי.
 
-**💊 תוספים ובדיקות לשקול**
-על בסיס הנתונים בלבד.
+**🥗 המלצות תזונה ותוספים**
+המלצות אוכל ותוספים ספציפיים לפרופיל שלה — משולב בסעיף אחד.
 
-**🎯 3 צעדים ראשונים — רק למחר בבוקר**
+**🎯 3 צעדים למחר**
 1. [צעד קטן וספציפי]
-2. [צעד קטן וספציפי]  
-3. [צעד קטן וספציפי]
-${isSedentary ? 'כלול התחלה ב-7,000 צעדים יומיים (לא 10,000 עדיין) + תרגיל ליבה אחד בבית.' : ''}
-3 בלבד. ריאליסטיים. לא מציפים.
-
-**💚 מסר אישי ממני אליך**
-חם, אמיתי, מעצים. שתרגיש שמישהי באמת רואה אותה ומאמינה בה. נחיתה רכה — 3 הצעדים הם כל מה שצריך.` }]
+2. [צעד קטן וספציפי]
+3. [צעד קטן וספציפי — ${isSedentary ? '7,000 צעדים יומיים להתחלה' : 'מותאם לה'}]` }]
       })
 
-      // הרץ את שניהם במקביל
       const [part1, part2] = await Promise.all([part1Promise, part2Promise])
       const combined = part1.content[0].text + '\n\n' + part2.content[0].text
 
