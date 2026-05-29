@@ -932,7 +932,7 @@ export default function AdminPage() {
                         {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
                       </button>
                     </div>
-                    {sentToClient && selectedClient.phone && (
+                    {editableAnalysis && selectedClient.phone && (
                       <button onClick={() => {
                         var phone = selectedClient.phone.replace(/^0/, '972')
                         var msg = 'היי ' + selectedClient.name + '! 🌿\n\nהדוח האישי שלך מוכן — לחצי כאן לצפייה:\nhttps://project-l990h.vercel.app/report?client=' + selectedClient.password
