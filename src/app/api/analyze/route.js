@@ -89,7 +89,7 @@ export async function POST(request) {
       const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
       const bloodText = formatBlood(p.blood_tests)
       const diary = foodDiary ? String(foodDiary).substring(0, 400) : ''
-      const extraBlood = p.extra_blood_notes ? 'בדיקות חריגות נוספות (חשוב לציין בניתוח!): ' + p.extra_blood_notes : ''
+      const extraBlood = p.extra_blood_notes ? '⚠️ חובה לציין בסעיף הבדיקות: ' + p.extra_blood_notes : ''
       const stepsNote = isSedentary ? ', כולל 7,000 צעדים יומיים' : ''
 
       const athleteSection = isAthlete
@@ -113,7 +113,7 @@ export async function POST(request) {
       const systemPrompt = 'אתה אתי אטל - יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
         + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
         + 'סגנון: אינטימי, מחבק - כמו שיחה עם חברה. ללא טבלאות.\n'
-        + 'חובה: עברית תקנית. "את" לא "אתת". "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים. כללים: (1) כל סעיף 3-4 משפטים בלבד. (2) אל תחזרי על ערכי מעבדה שבטבלה — רק פרשנות התנהגותית. (3) כל משפט חייב להיות שלם וסגור.\n\n'
+        + 'חובה: עברית תקנית. "את" לא "אתת". "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים. כללים: (1) כל סעיף 3-4 משפטים בלבד. (2) אל תחזרי על ערכי מעבדה שבטבלה — רק פרשנות התנהגותית. (3) כל משפט חייב להיות שלם וסגור. (4) אם יש ערכים חריגים נוספים (IgG, FLC וכו) חובה להזכיר אותם בסעיף הבדיקות.\n\n'
 
       const [msg1, msg2] = await Promise.all([
         client.messages.create({
