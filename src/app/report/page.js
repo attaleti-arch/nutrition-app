@@ -63,18 +63,37 @@ function BloodBar({ label, value, min, max, unit }) {
 
 function parseCards(feedback) {
   if (!feedback) return []
-  const sections = feedback.split(/(?=\*\*[🌟🔍⚡🩸🥗🎯])/).filter(s => s.trim())
-  return sections.slice(0, 6).map((section, i) => {
-    const lines = section.split('\n')
-    const titleLine = lines[0].replace(/\*\*/g, '').trim()
-    const icon = titleLine.match(/[🌟🔍⚡🩸🥗🎯]/)?.[0] || ''
-    const title = titleLine.replace(/[🌟🔍⚡🩸🥗🎯]/g, '').replace(/—.*/,'').trim()
-    const body = lines.slice(1)
-      .filter(l => l.trim() && !l.startsWith('|') && !l.match(/^[-|\s]{3,}$/) && l.trim() !== '--')
-      .map(l => l.replace(/\*\*/g, '').replace(/^[-•*]\s*/, '').replace(/\|/g, '').trim())
-      .filter(Boolean)
-    return { icon, title, body, style: CARD_STYLES[i] || CARD_STYLES[0] }
+  const ICONS = ['🌟','🔍','⚡','🩸','🥗','🎯']
+  const lines = feedback.split('\n')
+  const sections = []
+  let current = { icon: '🌟', body: [], index: 0 }
+
+  lines.forEach(line => {
+    const t = line.trim()
+    if (!t || t === '--') return
+    // זיהוי שורת כותרת: מתחילה ב-# או ** ומכילה אמוג'י
+    const isHeader = /^(#+|\*\*)/.test(t)
+    const emojiMatch = t.match(/[🌟🔍⚡🩸🥗🎯🧠💊💚🎯]/)
+    if (isHeader && emojiMatch) {
+      if (current.body.length > 0) sections.push({...current})
+      current = { icon: emojiMatch[0], body: [], index: sections.length }
+    } else if (!isHeader) {
+      const clean = t
+        .replace(/^#+\s*/, '')
+        .replace(/\*\*/g, '')
+        .replace(/^[-•*]\s*/, '')
+        .replace(/\|/g, '')
+        .trim()
+      if (clean) current.body.push(clean)
+    }
   })
+  if (current.body.length > 0) sections.push(current)
+
+  return sections.slice(0, 6).map((s, i) => ({
+    icon: s.icon,
+    body: s.body,
+    style: CARD_STYLES[i % 6]
+  }))
 }
 
 function InsightCard({ card }) {
@@ -82,13 +101,13 @@ function InsightCard({ card }) {
     <div style={{
       background: card.style.bg,
       border: '2px solid ' + card.style.border,
-      borderRadius: 20,
-      padding: '18px 16px',
-      boxShadow: '0 4px 16px rgba(0,0,0,0.06)',
+      borderRadius: 24,
+      padding: '22px 20px',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
     }}>
-      <div style={{ fontSize: 26, textAlign: 'center', marginBottom: 10 }}>{card.icon}</div>
+      <div style={{ fontSize: 30, textAlign: 'center', marginBottom: 14 }}>{card.icon}</div>
       {card.body.map((line, i) => (
-        <p key={i} style={{ fontSize: 14, lineHeight: 1.9, color: C.text, margin: '0 0 8px 0', textAlign: 'right' }}>
+        <p key={i} style={{ fontSize: 15, lineHeight: 1.9, color: C.text, margin: '0 0 10px 0', textAlign: 'right' }}>
           {line}
         </p>
       ))}
@@ -122,7 +141,7 @@ function ReportContent() {
   if (loading) return (
     <div style={{ minHeight: '100vh', background: C.cream, display: 'flex', alignItems: 'center', justifyContent: 'center', direction: 'rtl' }}>
       <div style={{ textAlign: 'center' }}>
-        <img src={LOGO} style={{ height: 80, marginBottom: 16 }} alt="לוגו" />
+        <img src={LOGO} style={{ height: 100, marginBottom: 16 }} alt="לוגו" />
         <div style={{ color: C.teal, fontWeight: 700 }}>טוענת את הדוח שלך...</div>
       </div>
     </div>
@@ -131,7 +150,7 @@ function ReportContent() {
   if (!log?.trainer_feedback || (!log?.report_approved && !isPreview)) return (
     <div style={{ minHeight: '100vh', background: C.cream, display: 'flex', alignItems: 'center', justifyContent: 'center', direction: 'rtl' }}>
       <div style={{ textAlign: 'center', padding: 30 }}>
-        <img src={LOGO} style={{ height: 80, marginBottom: 16 }} alt="לוגו" />
+        <img src={LOGO} style={{ height: 100, marginBottom: 16 }} alt="לוגו" />
         <div style={{ color: C.teal, fontWeight: 700, fontSize: 20 }}>הדוח שלך בהכנה 💚</div>
         <div style={{ color: C.gray, marginTop: 10 }}>אתי מכינה את הניתוח האישי שלך</div>
       </div>
@@ -161,7 +180,7 @@ function ReportContent() {
 
       {/* Header */}
       <div style={{ background: 'linear-gradient(135deg,#fff 60%,' + C.tealLight + ')', padding: '28px 20px', textAlign: 'center', boxShadow: '0 2px 24px rgba(0,0,0,0.06)', marginBottom: 24 }}>
-        <img src={LOGO} style={{ height: 90, marginBottom: 8 }} alt="לוגו אתי אטל" />
+        <img src={LOGO} style={{ height: 120, marginBottom: 10 }} alt="לוגו אתי אטל" />
         <div style={{ fontSize: 13, color: C.gray }}>אתי אטל | יועצת בריאות ותזונה התנהגותית</div>
         {client && (
           <div style={{ marginTop: 14, display: 'inline-block', background: C.goldLight, borderRadius: 16, padding: '10px 24px', border: '2px solid ' + C.gold }}>
@@ -224,7 +243,7 @@ function ReportContent() {
 
         {/* Cards Grid */}
         {cards.length > 0 && (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 14, marginBottom: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginBottom: 24 }}>
             {cards.map((card, i) => <InsightCard key={i} card={card} />)}
           </div>
         )}
