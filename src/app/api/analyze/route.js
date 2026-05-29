@@ -129,12 +129,20 @@ export async function POST(request) {
         }),
         client.messages.create({
           model: 'claude-sonnet-4-6',
-          max_tokens: 1400, // הוגדל כדי למנוע חיתוך בצעדים
+          max_tokens: 1400,
           messages: [{ role: 'user', content: systemPrompt + baseData + '\nחובה לפתוח כל סעיף בכותרת המדויקת שלו, ולהפריד בין הסעיפים באמצעות השורה המפרידה -- בלבד (ללא מפרידים נוספים). כתבי את 3 הסעיפים הבאים:\n\n**🩸 מה אומרות הבדיקות**\nהתייחסי לערכים חריגים מובנים, ובפרט לחריגות הנוספות שהוזנו ידנית בטקסט (כמו IgG, פוטסיום, גמא גלובולין, FLC וכו\'). הסבירי ברכות ובגובה העיניים את משמעות העומס הדלקתי והסטרס הפיזיולוגי, והנחי ברגישות להמשך בירור רפואי.\n\n--\n\n**🥗 המלצות תזונה ותוספים**\n[תוכן הסעיף]\n\n--\n\n**🎯 3 צעדים למחר**\n(ממוספרים, קצרים, ריאליסטיים ומנוסחים בעידוד חם' + stepsNote + ')' }]
         })
       ])
 
-      return Response.json({ result: msg1.content[0].text.trim() + '\n\n--\n\n' + msg2.content[0].text.trim() })
+      // התיקון לכפתור הוואטסאפ: מחזירים גם את ה-result המופרד ב-`--` בשביל הכרטיסיות, 
+      // וגם גרסה נקייה ללא המפרידים בתוך שדה נוסף שהקוד של האפליקציה אוהב לקרוא לשליחה.
+      const fullCleanText = msg1.content[0].text.trim() + '\n\n' + msg2.content[0].text.trim();
+      const tabbedText = msg1.content[0].text.trim() + '\n\n--\n\n' + msg2.content[0].text.trim();
+
+      return Response.json({ 
+        result: tabbedText,
+        whatsappText: fullCleanText // שדה גיבוי נקי לשתילה ישירה בוואטסאפ
+      })
     }
 
     return Response.json({ result: 'לא התקבלו נתונים' })
