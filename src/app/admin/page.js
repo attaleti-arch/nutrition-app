@@ -800,10 +800,19 @@ export default function AdminPage() {
                   <textarea
                     value={extraBloodNotes}
                     onChange={e => setExtraBloodNotes(e.target.value)}
+                    onBlur={async e => {
+                      if (selectedClient) {
+                        await supabase.from('client_profiles').upsert(
+                          { client_password: selectedClient.password, extra_blood_notes: e.target.value, updated_at: new Date().toISOString() },
+                          { onConflict: 'client_password' }
+                        )
+                      }
+                    }}
                     placeholder="לדוגמה: IgG 2328 (גבוה, נורמה עד 1631), FLC Kappa 30.87 (גבוה, נורמה עד 19.4), גמא 24.3% (גבוה)"
                     rows={3}
                     style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
                   />
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>נשמר אוטומטית בעזיבת השדה</div>
                 </div>
 
                 <div style={{ background: '#fff', borderRadius: 18, padding: 16, border: '1.5px solid #f0f0f0' }}>
