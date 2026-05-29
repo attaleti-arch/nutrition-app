@@ -312,6 +312,10 @@ export default function AdminPage() {
     if (data) {
       setProfile(data)
       setFoodDiary(data.food_diary || '')
+      if (data.ai_report) {
+        setAiAnalysis(data.ai_report)
+        setEditableAnalysis(data.ai_report)
+      }
     }
     else setProfile({ client_password: client.password, blood_tests: {} })
     const { data: nd } = await supabase.from('nutrition_data').select('*').order('id')
@@ -470,6 +474,13 @@ export default function AdminPage() {
     } else {
       setAiAnalysis(data.result)
       setEditableAnalysis(data.result)
+      // שמור ניתוח לפרופיל הלקוחה
+      await supabase.from('client_profiles').upsert({
+        ...profile,
+        ai_report: data.result,
+        client_password: selectedClient.password,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'client_password' })
     }
     setAiLoading(false)
   }
@@ -572,6 +583,7 @@ export default function AdminPage() {
                 { k: 'doctor', l: '📄 מכתב' },
                 { k: 'nutrition', l: '🥗 תזונה' },
                 { k: 'ai', l: '🧠 AI' },
+                { k: 'report', l: '📊 דוח' },
                 { k: 'newclient', l: '➕ לקוח' }
               ].map(function(t) {
                 return <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
@@ -848,6 +860,48 @@ export default function AdminPage() {
                         {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
                       </button>
                     </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {tab === 'report' && (
+              <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
+                <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4, color: '#0f4c2a' }}>📊 הדוח השמור של {selectedClient.name}</div>
+                <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 16 }}>הדוח נשמר אוטומטית בכל ניתוח AI — לא מתאפס</div>
+                {editableAnalysis ? (
+                  <>
+                    <textarea
+                      value={editableAnalysis}
+                      onChange={e => setEditableAnalysis(e.target.value)}
+                      rows={20}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8 }}
+                    />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <button onClick={() => window.open('/report?client=' + selectedClient.password + '&preview=true', '_blank')} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                        👁️ תצוגה מקדימה
+                      </button>
+                      <button onClick={sendAnalysisToClient} disabled={sendingToClient} style={{ flex: 2, padding: 14, borderRadius: 12, background: sentToClient ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                        {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
+                      </button>
+                    </div>
+                    {sentToClient && selectedClient.phone && (
+                      <button onClick={() => {
+                        var phone = selectedClient.phone.replace(/^0/, '972')
+                        var msg = 'היי ' + selectedClient.name + '! 🌿\n\nהדוח האישי שלך מוכן — לחצי כאן לצפייה:\nhttps://project-l990h.vercel.app/report?client=' + selectedClient.password
+                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+                      }} style={{ width: '100%', padding: 14, borderRadius: 12, marginTop: 8, background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                        📱 שלחי ללקוחה בוואטסאפ
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>
+                    <div style={{ fontSize: 40, marginBottom: 12 }}>🧠</div>
+                    <div>עדיין לא הופק ניתוח AI עבור {selectedClient.name}</div>
+                    <button onClick={() => setTab('ai')} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
+                      עברי לטאב AI להפקת ניתוח
+                    </button>
                   </div>
                 )}
               </div>
