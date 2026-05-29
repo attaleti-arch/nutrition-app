@@ -559,7 +559,7 @@ export default function AdminPage() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0fdf4', direction: 'rtl' }}>
       <div style={{ background: '#fff', borderRadius: 20, padding: 32, width: 300, textAlign: 'center', boxShadow: '0 8px 40px #0000000f' }}>
         <div style={{ fontSize: 32, marginBottom: 12 }}>⚙️</div>
-        <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 20 }}>ניהול מטופלים</div>
+        <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 20 }}>הלקוחות שלי</div>
         <input type="password" value={pin} onChange={e => setPin(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} placeholder="סיסמה..." style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 15, textAlign: 'center', outline: 'none', boxSizing: 'border-box', marginBottom: 10 }} />
         <button onClick={login} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>כניסה</button>
       </div>
@@ -572,12 +572,12 @@ export default function AdminPage() {
     <div style={{ minHeight: '100vh', background: '#f8fafc', direction: 'rtl' }}>
       <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '20px 24px', color: '#fff' }}>
         <div style={{ fontSize: 11, color: '#86efac' }}>בין הראש לצלחת</div>
-        <div style={{ fontSize: 22, fontWeight: 900 }}>⚙️ ניהול מטופלים</div>
+        <div style={{ fontSize: 22, fontWeight: 900 }}>⚙️ הלקוחות שלי</div>
       </div>
 
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '20px 16px' }}>
         <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 16, border: '1.5px solid #f0f0f0' }}>
-          <div style={{ fontWeight: 700, marginBottom: 10 }}>בחרי מטופל:</div>
+          <div style={{ fontWeight: 700, marginBottom: 10 }}>בחרי לקוח:</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {clients.map(c => (
               <button key={c.id} onClick={() => loadProfile(c)} style={{ padding: '10px 16px', borderRadius: 10, border: '2px solid ' + (selectedClient?.id === c.id ? '#0f4c2a' : '#e5e7eb'), background: selectedClient?.id === c.id ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 14, color: selectedClient?.id === c.id ? '#0f4c2a' : '#333' }}>
