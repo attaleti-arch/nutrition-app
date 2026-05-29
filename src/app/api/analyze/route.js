@@ -88,9 +88,13 @@ export async function POST(request) {
       const p = profile
       const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(String(p.exercise_type)))
       const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
-      const bloodText = formatBlood(p.blood_tests, p.extra_blood_notes)
+      
+      // התיקון הבטוח: תמיכה רחבה בשמות שונים של שדות החריגים כדי להתאים ב-100% לאדמין שלכם
+      const extraNotes = p.extra_blood_metrics || p.extra_blood_notes || p.extra_abnormals || '';
+      const bloodText = formatBlood(p.blood_tests, extraNotes)
+      
       const diary = foodDiary ? String(foodDiary).substring(0, 400) : ''
-      const extraBlood = p.extra_blood_notes ? '⚠️ חובה לציין בסעיף הבדיקות: ' + p.extra_blood_notes : ''
+      const extraBlood = extraNotes.trim() ? '⚠️ חובה לציין בסעיף הבדיקות ולהתייחס פיזיולוגית לחריגות הבאות: ' + extraNotes.trim() : ''
       const stepsNote = isSedentary ? ', כולל 7,000 צעדים יומיים' : ''
 
       const athleteSection = isAthlete
@@ -98,7 +102,7 @@ export async function POST(request) {
         : '**\u26a1 תמיכה במטבוליזם ובאנרגיה**\nפחמימות עודפות + חלבון נמוך = קפיצות אינסולין שנועלות שריפת שומן. הגוף מפרק שריר גם בלי ספורט. BMR נמוך. התקפי רעב. חיבר לנתונים.'
 
       const bloodSection = '**\ud83e\ude78 מה אומרות הבדיקות**\n'
-        + 'לכל ערך חריג: שם + ערך + טווח רצוי + הסבר + המלצה (תזונה/תוסף/רופא). כולל הבדיקות החריגות הנוספות אם קיימות. אם ערך דורש רופא — ציינו.'
+        + 'לכל ערך חריג: שם + ערך + טווח רצוי + הסבר + המלצה (תזונה/תוסף/רופא). חובה להתייחס בפירוט לבדיקות החריגות הנוספות שהוזנו ידנית (כמו IgG, פוטסיום, FLC, עומס דלקתי וכו\'). אם ערך דורש רופא — ציינו.'
 
       const baseData = 'נתונים על ' + name + ':\n'
         + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + ' | פעילות: ' + s(p.exercise_type,'לא') + '\n'
@@ -113,23 +117,23 @@ export async function POST(request) {
 
       const systemPrompt = 'אתה אתי אטל - יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
         + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
-        + 'סגנון: אינטימי, מחבק - כמו שיחה עם חברה. ללא טבלאות.\n'
-        + 'חובה: עברית תקנית. "את" לא "אתת". "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים. אל תכתבי כותרת ראשית בתחילת התשובה — התחילי ישר עם הסעיף הראשון. כתבי HDL לא BDL. כללים: (1) כל סעיף 3-4 משפטים בלבד, למעט סעיף הבדיקות שיכול להגיע ל-6 משפטים. (2) אל תחזרי על ערכי מעבדה שבטבלה — רק פרשנות התנהגותית. (3) כל משפט חייב להיות שלם וסגור. (4) אם יש ערכים חריגים נוספים (IgG, FLC וכו) חובה להזכיר אותם בסעיף הבדיקות.\n\n'
+        + 'סגנון: אינטימי, מחבק, קליני-התנהגותי מעצים - ללא טבלאות וללא סימני צינורות (|).\n'
+        + 'חובה: עברית תקנית. "את" לא "אתת". "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים. אל תכתבי כותרת ראשית בתחילת התשובה — התחילי ישר עם הסעיף הראשון. כתבי HDL לא BDL. כללים: (1) כל סעיף 3-4 משפטים בלבד, למעט סעיף הבדיקות שיכול להגיע ל-6 משפטים. (2) אל תחזרי על ערכי מעבדה שבטבלה — רק פרשנות התנהגותית וקלינית. (3) כל משפט חייב להיות שלם, רהוט וסגור. (4) חובה לשלב התייחסות מעמיקה לחריגות המיוחדות (IgG, FLC, פוטסיום וכו\') בסעיף הבדיקות.\n\n'
 
       const [msg1, msg2] = await Promise.all([
         client.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 1500,
-          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד:\n\n**\u2728 הקווים הזוהרים שלך**\n**\ud83d\udd0d מה באמת קורה**\n' + athleteSection }]
+          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד, והפרידי ביניהם באמצעות השורה המפרידה --:\n\n**\u2728 הקווים הזוהרים שלך**\n\n**\ud83d\udd0d מה באמת קורה**\n\n' + athleteSection }]
         }),
         client.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 1500,
-          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד:\n\n' + bloodSection + '\n\n**\ud83e\udd57 המלצות תזונה ותוספים**\n\n**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
+          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד, והפרידי ביניהם באמצעות השורה המפרידה --:\n\n' + bloodSection + '\n\n**\ud83e\udd57 המלצות תזונה ותוספים**\n\n**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
         })
       ])
 
-      return Response.json({ result: msg1.content[0].text + '\n\n' + msg2.content[0].text })
+      return Response.json({ result: msg1.content[0].text + '\n\n--\n\n' + msg2.content[0].text })
     }
 
     return Response.json({ result: 'לא התקבלו נתונים' })
