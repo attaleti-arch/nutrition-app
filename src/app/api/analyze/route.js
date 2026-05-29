@@ -26,10 +26,9 @@ function formatBlood(blood_tests) {
   return entries.map(([k,v]) => (BLOOD_NAMES[k]||k) + ': ' + v).join(' | ')
 }
 
-function safe(val, fallback) {
-  if (!val) return fallback || 'לא צוין'
-  const s = String(val)
-  return s.length > 200 ? s.substring(0, 200) + '...' : s
+function s(val, fb) {
+  if (!val) return fb || 'לא צוין'
+  return String(val).substring(0, 150)
 }
 
 export async function POST(request) {
@@ -50,7 +49,7 @@ export async function POST(request) {
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 800,
-        messages: [{ role: 'user', content: 'אתה אתי אטל — יועצת בריאות NLP. משוב שבועי קצר ל-' + name + ' בעברית. ללא טבלאות.\nיומן: ' + String(logs).substring(0, 2000) + '\n**📊 סיכום** | **✅ הצלחות** | **⚡ קשיים** | **🎯 3 צעדים** | **💚 מסר**' }]
+        messages: [{ role: 'user', content: 'אתה אתי אטל — יועצת בריאות NLP. משוב שבועי קצר ל-' + name + ' בעברית.\nיומן: ' + String(logs).substring(0, 1500) + '\n**📊 סיכום** | **✅ הצלחות** | **⚡ קשיים** | **🎯 3 צעדים** | **💚 מסר**' }]
       })
       return Response.json({ result: msg.content[0].text })
     }
@@ -60,36 +59,38 @@ export async function POST(request) {
       const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(String(p.exercise_type)))
       const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
       const bloodText = formatBlood(p.blood_tests)
-      const diary = foodDiary ? String(foodDiary).substring(0, 800) : ''
+      const diary = foodDiary ? String(foodDiary).substring(0, 600) : ''
 
-      const content = `אתה אתי אטל — יועצת בריאות NLP. ניתוח אישי ל-${name} בעברית, גוף שני נקבה, חם ואישי. costume-made. ללא טבלאות. כל סעיף 2-3 משפטים. כתבי רק על מה שקיים בנתונים.
-
-נתונים:
-גיל ${safe(p.age,'?')} | משקל ${safe(p.weight,'?')} | מטרה: ${safe(p.goal,'?')} | פעילות: ${safe(p.exercise_type,'לא')}
-שינה: ${safe(p.sleep_quality,'?')} | קימה: ${safe(p.wake_time,'?')} | לחץ: ${safe(p.stress_level,'?')}/10
-בוקר: ${safe(p.breakfast_habits,'?')} | קפה: ${safe(p.coffee_intake,'?')} | מים: ${safe(p.water_intake,'?')}
-אכילה רגשית: ${safe(p.emotional_eating,'?')} | מה מעכב: ${safe(p.goal_obstacles,'?')}
-תרופות: ${safe(p.medications,'אין')} | רפואי: ${safe(p.medical_history,'אין')}
+      const baseData = `נתונים על ${name}:
+גיל ${s(p.age,'?')} | משקל ${s(p.weight,'?')} | מטרה: ${s(p.goal,'?')} | פעילות: ${s(p.exercise_type,'לא')}
+שינה: ${s(p.sleep_quality,'?')} | קימה: ${s(p.wake_time,'?')} | לחץ: ${s(p.stress_level,'?')}/10
+בוקר: ${s(p.breakfast_habits,'?')} | קפה: ${s(p.coffee_intake,'?')} | מים: ${s(p.water_intake,'?')}
+אכילה רגשית: ${s(p.emotional_eating,'?')} | מה מעכב: ${s(p.goal_obstacles,'?')}
+תרופות: ${s(p.medications,'אין')} | רפואי: ${s(p.medical_history,'אין')}
 בדיקות: ${bloodText}
-${diary ? 'אכילה: ' + diary : ''}
+${diary ? 'אכילה: ' + diary : ''}`
 
-סעיפים:
-**🌟 הקווים הזוהרים שלך**
-**🔍 מה באמת קורה**
-**🧠 אמונות מגבילות** (רק אם עולות מהנתונים)
-**⚡ ${isAthlete ? 'חלון ההזדמנויות הספורטיבי' : 'תמיכה במטבוליזם ובאנרגיה'}**
-**🩸 מה אומרות הבדיקות** (רק ערכים חריגים)
-**🥗 המלצות תזונה**
-**💊 תוספים לשקול**
-**🎯 3 צעדים למחר** (ממוספרים${isSedentary ? ', כלול 7000 צעדים' : ''})
-**💚 מסר אישי**`
+      const instruction = 'אתה אתי אטל — יועצת בריאות NLP. ניתוח ל-' + name + ' בעברית, גוף שני נקבה, חם ואישי. costume-made. ללא טבלאות. כתבי רק על מה שקיים בנתונים.'
 
-      const msg = await client.messages.create({
+      // חלק א' — NLP ורגש
+      const part1Promise = client.messages.create({
         model: 'claude-sonnet-4-5',
-        max_tokens: 4096,
-        messages: [{ role: 'user', content: content }]
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: instruction + '\n\n' + baseData + '\n\nכתבי את הסעיפים הבאים בלבד (כל אחד 2-3 משפטים):\n**🌟 הקווים הזוהרים שלך**\n**🔍 מה באמת קורה — הגשר הטיפולי**\n**🧠 אמונות מגבילות** (רק אם עולות מהנתונים)\n**⚡ ' + (isAthlete ? 'חלון ההזדמנויות הספורטיבי' : 'תמיכה במטבוליזם ובאנרגיה') + '**' }]
       })
-      return Response.json({ result: msg.content[0].text })
+
+      // חלק ב' — תזונה ופעולה
+      const part2Promise = client.messages.create({
+        model: 'claude-sonnet-4-5',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: instruction + '\n\n' + baseData + '\n\nכתבי את הסעיפים הבאים בלבד (כל אחד 2-3 משפטים):\n**🩸 מה אומרות הבדיקות** (רק ערכים חריגים, בשפה פשוטה)\n**🥗 המלצות תזונה אישיות**\n**💊 תוספים לשקול**\n**🎯 3 צעדים למחר** (ממוספרים' + (isSedentary ? ', כולל 7000 צעדים' : '') + ')\n**💚 מסר אישי**' }]
+      })
+
+      // הרץ את שניהם במקביל
+      const [part1, part2] = await Promise.all([part1Promise, part2Promise])
+      const combined = part1.content[0].text + '\n\n' + part2.content[0].text
+
+      return Response.json({ result: combined })
     }
 
     return Response.json({ result: 'לא התקבלו נתונים' })
