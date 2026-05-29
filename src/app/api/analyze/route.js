@@ -89,7 +89,7 @@ export async function POST(request) {
       const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(String(p.exercise_type)))
       const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
       
-      // התיקון הבטוח: תמיכה רחבה בשמות שונים של שדות החריגים כדי להתאים ב-100% לאדמין שלכם
+      // סנכרון מלא לקריאת מדדים חריגים מהאדמין שלכם
       const extraNotes = p.extra_blood_metrics || p.extra_blood_notes || p.extra_abnormals || '';
       const bloodText = formatBlood(p.blood_tests, extraNotes)
       
@@ -117,22 +117,23 @@ export async function POST(request) {
 
       const systemPrompt = 'אתה אתי אטל - יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
         + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
-        + 'סגנון: אינטימי, מחבק, קליני-התנהגותי מעצים - ללא טבלאות וללא סימני צינורות (|).\n'
+        + 'סגנון: אינטימי, מחבק, קליני-התנהגותי מעצים - ללא טבלאות וללא רשימות סימני צינורות (|).\n'
         + 'חובה: עברית תקנית. "את" לא "אתת". "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים. אל תכתבי כותרת ראשית בתחילת התשובה — התחילי ישר עם הסעיף הראשון. כתבי HDL לא BDL. כללים: (1) כל סעיף 3-4 משפטים בלבד, למעט סעיף הבדיקות שיכול להגיע ל-6 משפטים. (2) אל תחזרי על ערכי מעבדה שבטבלה — רק פרשנות התנהגותית וקלינית. (3) כל משפט חייב להיות שלם, רהוט וסגור. (4) חובה לשלב התייחסות מעמיקה לחריגות המיוחדות (IgG, FLC, פוטסיום וכו\') בסעיף הבדיקות.\n\n'
 
       const [msg1, msg2] = await Promise.all([
         client.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 1500,
-          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד, והפרידי ביניהם באמצעות השורה המפרידה --:\n\n**\u2728 הקווים הזוהרים שלך**\n\n**\ud83d\udd0d מה באמת קורה**\n\n' + athleteSection }]
+          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד:\n\n**\u2728 הקווים הזוהרים שלך**\n\n**\ud83d\udd0d מה באמת קורה**\n\n' + athleteSection }]
         }),
         client.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 1500,
-          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד, והפרידי ביניהם באמצעות השורה המפרידה --:\n\n' + bloodSection + '\n\n**\ud83e\udd57 המלצות תזונה ותוספים**\n\n**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
+          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד:\n\n' + bloodSection + '\n\n**\ud83e\udd57 המלצות תזונה ותוספים**\n\n**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
         })
       ])
 
+      // חיבור שתי הריצות עם מפריד הכרטיסיות הרשמי המדויק --
       return Response.json({ result: msg1.content[0].text + '\n\n--\n\n' + msg2.content[0].text })
     }
 
