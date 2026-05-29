@@ -452,35 +452,47 @@ export default function AdminPage() {
 
   async function runProfileAnalysis() {
     setAiLoading(true); setAiAnalysis(''); setEditableAnalysis('')
-    // שמרי את יומן האכילה לפני הניתוח
-    if (foodDiary.trim()) {
-      await supabase.from('client_profiles').upsert(
-        { ...profile, food_diary: foodDiary, client_password: selectedClient.password, updated_at: new Date().toISOString() },
-        { onConflict: 'client_password' }
-      ).catch(e => console.log('save error:', e))
-    }
-    const res = await fetch('/api/analyze', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name: selectedClient.name,
-        mode: 'profile',
-        profile: { ...profile, ...selectedClient },
-        foodDiary: foodDiary,
+    try {
+      // שמרי את יומן האכילה לפני הניתוח
+      if (foodDiary && foodDiary.trim()) {
+        await supabase.from('client_profiles').upsert(
+          { client_password: selectedClient.password, food_diary: foodDiary, updated_at: new Date().toISOString() },
+          { onConflict: 'client_password' }
+        )
+      }
+      // הכן את הנתונים לשליחה - בלי שדות שעלולים לשבור
+      var profileData = {}
+      var allowedKeys = ['sleep_quality','sleep_issues','wake_time','sleep_time','digestion','smoking','menstrual_cycle','menstrual_days','medications','therapists','medical_history','family_history','diet_restrictions','breakfast_habits','lunch_habits','dinner_habits','snack_habits','food_sensitivities','avoided_foods','cooks_at_home','restaurants_per_week','water_intake','coffee_intake','alcohol_intake','emotional_eating','work_hours','stress_level','energy_level','mood_notes','exercise_type','pain_issues','main_goal','goal_obstacles','goal_motivation','success_vision','important_values','positive_memories','blood_tests']
+      allowedKeys.forEach(function(k) { if (profile[k] !== undefined) profileData[k] = profile[k] })
+      var clientData = { age: selectedClient.age, weight: selectedClient.weight, height: selectedClient.height, gender: selectedClient.gender, activity: selectedClient.activity, goal: selectedClient.goal, target_weight: selectedClient.target_weight }
+      
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: selectedClient.name,
+          mode: 'profile',
+          profile: { ...profileData, ...clientData },
+          foodDiary: foodDiary || '',
+        })
       })
-    })
-    const data = await res.json()
-    if (data.error) {
-      alert('שגיאה: ' + data.error)
-    } else {
-      setAiAnalysis(data.result)
-      setEditableAnalysis(data.result)
-      // שמור ניתוח לפרופיל הלקוחה
-      await supabase.from('client_profiles').upsert({
-        ...profile,
-        ai_report: data.result,
-        client_password: selectedClient.password,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'client_password' })
+      if (!res.ok) throw new Error('שגיאת שרת: ' + res.status)
+      const data = await res.json()
+      if (data.error) {
+        alert('שגיאה: ' + data.error)
+      } else {
+        setAiAnalysis(data.result)
+        setEditableAnalysis(data.result)
+        // שמור ניתוח
+        await supabase.from('client_profiles').upsert({
+          client_password: selectedClient.password,
+          ai_report: data.result,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'client_password' })
+      }
+    } catch(err) {
+      console.error('Analysis error:', err)
+      alert('שגיאה בניתוח: ' + err.message)
     }
     setAiLoading(false)
   }
