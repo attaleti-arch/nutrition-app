@@ -37,13 +37,13 @@ function formatBlood(blood_tests) {
     const range = BLOOD_RANGES[k]
     const val = parseFloat(v)
     if (range && !isNaN(val)) {
-      if (val < range[0] || val > range[1]) abnormal.push(name + ': ' + v + ' חריג')
+      if (val < range[0] || val > range[1]) abnormal.push(name + ': ' + v + ' (חריג)')
       else normal.push(name + ': ' + v)
     } else normal.push(name + ': ' + v)
   })
   let r = ''
   if (abnormal.length) r += 'חריגות: ' + abnormal.join(' | ')
-  if (normal.length) r += (r ? ' | תקינות: ' : 'תקינות: ') + normal.slice(0,6).join(' | ')
+  if (normal.length) r += (r ? ' | תקינות: ' : 'תקינות: ') + normal.slice(0,5).join(' | ')
   return r || 'לא הוזנו'
 }
 
@@ -61,10 +61,14 @@ export async function POST(request) {
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 800,
-        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם מהטקסט. החזר JSON בלבד עם 2 שדות:\n{"standard":{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null},"extra_abnormals":""}\nב-standard: מספרים בלבד.\nב-extra_abnormals: כתוב כטקסט חופשי את כל הערכים החריגים שאינם בשדות הסטנדרטיים (למשל: IgG, IgG1, FLC Kappa, גמא גלובולין וכו) עם הערך והטווח הרצוי. אם אין חריגים נוספים - השאר ריק.\nטקסט: ' + String(body.bloodText).substring(0, 2000) }]
+        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם מהטקסט. החזר JSON בלבד עם 2 שדות:\n{"standard":{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null},"extra_abnormals":""}\nב-standard: מספרים בלבד. ב-extra_abnormals: טקסט חופשי עם ערכים חריגים שאינם בשדות הסטנדרטיים (IgG, FLC Kappa, גמא גלובולין וכו) עם הערך והטווח. אם אין - ריק.\nטקסט: ' + String(body.bloodText).substring(0, 2000) }]
       })
-      const parsed = JSON.parse(msg.content[0].text.replace(/```json|```/g,'').trim())
-      return Response.json({ result: JSON.stringify(parsed.standard), extra: parsed.extra_abnormals || '' })
+      try {
+        const parsed = JSON.parse(msg.content[0].text.replace(/```json|```/g,'').trim())
+        return Response.json({ result: JSON.stringify(parsed.standard), extra: parsed.extra_abnormals || '' })
+      } catch(e) {
+        return Response.json({ result: msg.content[0].text, extra: '' })
+      }
     }
 
     if (logs && !mode) {
@@ -81,46 +85,46 @@ export async function POST(request) {
       const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(String(p.exercise_type)))
       const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
       const bloodText = formatBlood(p.blood_tests)
-      const diary = foodDiary ? String(foodDiary).substring(0, 400) : ''
-      const extraBlood = p.extra_blood_notes ? 'ערכים חריגים נוספים: ' + p.extra_blood_notes : ''
-
-      const athleteSection = isAthlete
-        ? '**\u26a1 חלון ההזדמנויות הספורטיבי**\nהסבירי: תזונה לפני/אחרי אימון חיונית. ריצה על ריק עם קפאין = הגוף מפרק שריר (קטבוליזם). חלבון אחרי אימון = שיקום ושמירה על מסת שריר.'
-        : '**\u26a1 תמיכה במטבוליזם ובאנרגיה**\nהסבירי: תזונה עתירת פחמימות ודלת חלבון גורמת לקפיצות אינסולין שנועלות שריפת שומן. הגוף שומר שומן ומפרק שריר גם בלי ספורט. חוסר חלבון = BMR נמוך, התקפי רעב ועייפות.'
-
+      const diary = foodDiary ? String(foodDiary).substring(0, 350) : ''
+      const extraBlood = p.extra_blood_notes ? p.extra_blood_notes : ''
       const stepsNote = isSedentary ? ', כולל 7,000 צעדים יומיים' : ''
 
-      const bloodSection = '**\ud83e\ude78 מה אומרות הבדיקות**\nלכל ערך חריג בלבד, כתבי שורה בפורמט הזה: שם הבדיקה: ערך (טווח רצוי) - מה זה אומר + המלצה קצרה. לדוגמה: כולסטרול כללי: 217 (רצוי מתחת ל-200) - מעיד על עודף שומנים רוויים. הפחיתי גבינות שמנות והוסיפי אומגה 3. אם ערך דורש המשך בירור רפואי - ציינו. אם הכל תקין - משפט חיובי אחד.'
-
-      const basePrompt = 'אתה אתי אטל - יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
+      const prompt = 'אתה אתי אטל - יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
         + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
-        + 'סגנון: אינטימי, מחבק - כמו שיחה עם חברה שמבינה. ללא טבלאות.\n'
-        + 'חובה: עברית תקנית. כתבי "את" לא "אתת". כתבי "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים שלא נכתבו.\n\n'
+        + 'סגנון: אינטימי, מחבק - כמו שיחה עם חברה. ללא טבלאות.\n'
+        + 'חובה: עברית תקנית. "את" לא "אתת". "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים.\n\n'
         + 'נתונים:\n'
-        + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + ' | פעילות: ' + s(p.exercise_type,'לא') + '\n'
-        + 'שינה: ' + s(p.sleep_quality,'?') + ' | קימה: ' + s(p.wake_time,'?') + ' | לחץ: ' + s(p.stress_level,'?') + '/10\n'
+        + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + '\n'
+        + 'פעילות: ' + s(p.exercise_type,'לא') + ' | שינה: ' + s(p.sleep_quality,'?') + ' | קימה: ' + s(p.wake_time,'?') + ' | לחץ: ' + s(p.stress_level,'?') + '/10\n'
         + 'בוקר: ' + s(p.breakfast_habits,'?') + ' | קפה: ' + s(p.coffee_intake,'?') + ' | מים: ' + s(p.water_intake,'?') + '\n'
         + 'אכילה רגשית: ' + s(p.emotional_eating,'?') + ' | מה מעכב: ' + s(p.goal_obstacles,'?') + '\n'
         + 'מה רוצה: ' + s(p.main_goal,'?') + ' | מה חשוב: ' + s(p.important_values,'?') + '\n'
         + 'רפואי: ' + s(p.medical_history,'אין') + ' | תרופות: ' + s(p.medications,'אין') + '\n'
-        + 'בדיקות: ' + bloodText + '\n'
-        + (extraBlood ? extraBlood + '\n' : '')
+        + 'בדיקות רגילות: ' + bloodText + '\n'
+        + (extraBlood ? 'בדיקות חריגות נוספות (חשוב!): ' + extraBlood + '\n' : '')
         + (diary ? 'אכילה (3 ימים): ' + diary + '\n' : '')
+        + '\nכתבי בדיוק 6 סעיפים לפי הסדר הזה. כל סעיף - פסקה חמה וספציפית.\n\n'
+        + '**\u2728 הקווים הזוהרים שלך**\n'
+        + 'חוזקות אמיתיות וספציפיות מהנתונים. העצמה. לא כללי.\n\n'
+        + '**\ud83d\udd0d מה באמת קורה**\n'
+        + 'ניתוח NLP של הדפוסים הרגשיים. הסבירי את הלופ (קפה/מתוק/עייפות). מה הצורך הרגשי האמיתי.\n\n'
+        + (isAthlete
+          ? '**\u26a1 חלון ההזדמנויות הספורטיבי**\nתזונה סביב אימון. מניעת קטבוליזם. חלבון לפני/אחרי. ספציפי לסוג האימון שלה.\n\n'
+          : '**\u26a1 תמיכה במטבוליזם ובאנרגיה**\nהסבירי: פחמימות מרובות + חלבון נמוך = קפיצות אינסולין שנועלות שריפת שומן. הגוף מפרק שריר. BMR יורד. התקפי רעב. חיבר לנתונים שלה.\n\n')
+        + '**\ud83e\ude78 מה אומרות הבדיקות**\n'
+        + 'פרטי רק ערכים חריגים. לכל אחד: שם + ערך + טווח רצוי + מה זה אומר לגוף + המלצה (תזונה/תוסף/רופא).\n'
+        + 'כלולי גם את הבדיקות החריגות הנוספות אם קיימות. אם ערך דורש רופא - ציינו.\n\n'
+        + '**\ud83e\udd57 המלצות תזונה ותוספים**\n'
+        + 'ספציפיות לפרופיל שלה. על בסיס מה שאכלה ומה חסר. אוכל ותוספים משולבים.\n\n'
+        + '**\ud83c\udfaf 3 צעדים למחר**\n'
+        + 'ממוספרים 1-2-3. קטנים, ריאליסטיים, ספציפיים' + stepsNote + '.'
 
-      const [msg1, msg2] = await Promise.all([
-        client.messages.create({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1500,
-          messages: [{ role: 'user', content: basePrompt + '\nכתבי 3 סעיפים:\n\n**\u2728 הקווים הזוהרים שלך**\n**\ud83d\udd0d מה באמת קורה**\n' + athleteSection }]
-        }),
-        client.messages.create({
-          model: 'claude-sonnet-4-6',
-          max_tokens: 1500,
-          messages: [{ role: 'user', content: basePrompt + '\nכתבי 3 סעיפים:\n\n' + bloodSection + '\n\n**\ud83e\udd57 המלצות תזונה ותוספים**\n\n**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
-        })
-      ])
-
-      return Response.json({ result: msg1.content[0].text + '\n\n' + msg2.content[0].text })
+      const msg = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+      return Response.json({ result: msg.content[0].text })
     }
 
     return Response.json({ result: 'לא התקבלו נתונים' })
