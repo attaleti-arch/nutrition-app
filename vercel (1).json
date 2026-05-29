@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "src/app/api/analyze/route.js": {
+      "maxDuration": 60
+    }
+  }
+}
