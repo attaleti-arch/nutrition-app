@@ -30,12 +30,12 @@ const BLOOD_RANGES = {
 }
 
 const CARD_STYLES = [
-  { border: '#c4956a', bg: '#fffbf5' },
-  { border: '#4a9b8e', bg: '#f0f9f7' },
-  { border: '#c4956a', bg: '#fffbf5' },
-  { border: '#e55a5a', bg: '#fff8f8' },
-  { border: '#7aab6e', bg: '#f5fbf3' },
-  { border: '#9333ea', bg: '#fdf8ff' },
+  { border: '#c4956a', bg: '#fffbf5', icon: '✨' },
+  { border: '#4a9b8e', bg: '#f0f9f7', icon: '🔍' },
+  { border: '#c4956a', bg: '#fffbf5', icon: '⚡' },
+  { border: '#e55a5a', bg: '#fff8f8', icon: '🩸' },
+  { border: '#7aab6e', bg: '#f5fbf3', icon: '🥗' },
+  { border: '#9333ea', bg: '#fdf8ff', icon: '🎯' },
 ]
 
 function BloodBar({ label, value, min, max, unit }) {
@@ -70,7 +70,7 @@ function parseCards(feedback) {
 
   lines.forEach(line => {
     const t = line.trim()
-    if (!t || t === '--') return
+    if (!t || /^[-—]{2,}$/.test(t)) return
     // זיהוי שורת כותרת: מתחילה ב-# או ** ומכילה אמוג'י
     const isHeader = /^(#+|\*\*)/.test(t)
     const emojiMatch = t.match(/[🌟🔍⚡🩸🥗🎯🧠💊💚🎯]/)
@@ -90,13 +90,15 @@ function parseCards(feedback) {
   if (current.body.length > 0) sections.push(current)
 
   return sections.slice(0, 6).map((s, i) => ({
-    icon: s.icon,
+    icon: CARD_STYLES[i % 6].icon,
     body: s.body,
     style: CARD_STYLES[i % 6]
   }))
 }
 
 function InsightCard({ card }) {
+  const lines = card.body.filter(l => l && l !== '--' && l !== '—' && !/^[-—]{2,}$/.test(l))
+  if (!lines.length) return null
   return (
     <div style={{
       background: card.style.bg,
@@ -106,7 +108,7 @@ function InsightCard({ card }) {
       boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
     }}>
       <div style={{ fontSize: 30, textAlign: 'center', marginBottom: 14 }}>{card.icon}</div>
-      {card.body.map((line, i) => (
+      {lines.map((line, i) => (
         <p key={i} style={{ fontSize: 15, lineHeight: 1.9, color: C.text, margin: '0 0 10px 0', textAlign: 'right' }}>
           {line}
         </p>
