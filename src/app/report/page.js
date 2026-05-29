@@ -77,13 +77,15 @@ function SectionBody({ text }) {
   return (
     <div>
       {paragraphs.map((p, i) => {
-        if (p.startsWith('|') || p.match(/^[-|\s]+$/) || p.startsWith('#')) return null
+        // סנן שורות markdown
+        if (p.startsWith('|') || p.match(/^[-|\s]{3,}$/) || p.startsWith('#')) return null
         const clean = p
           .replace(/^[-•*]\s*/, '')
           .replace(/\*\*/g, '')
           .replace(/^#+\s*/, '')
+          .replace(/\|/g, '') // הסר קווים אנכיים גם מאמצע שורה
           .trim()
-        if (!clean) return null
+        if (!clean || clean === '--') return null
         return (
           <p key={i} style={{ fontSize: 15, lineHeight: 1.9, color: C.text, marginBottom: 14, padding: 0 }}>
             {clean}
@@ -179,9 +181,9 @@ function ReportContent() {
       <div>
         {/* Header */}
         <div style={{ background: 'linear-gradient(135deg, #fff 60%, ' + C.tealLight + ')', padding: '32px 20px 28px', textAlign: 'center', boxShadow: '0 2px 24px rgba(0,0,0,0.07)', marginBottom: 28 }}>
-          <div style={{ marginBottom: 12 }}>
+          <div style={{ marginBottom: 12, height: 100, display:'flex', alignItems:'center', justifyContent:'center' }}>
           <img src="/logo.png" style={{ height: 100 }} alt="לוגו"
-            onError={function(e) { e.target.replaceWith(Object.assign(document.createElement('div'), {innerHTML:'🌿', style:'font-size:50px'}) )}} />
+            onError={function(e) { e.target.style.display='none' }} />
         </div>
           <div style={{ fontSize: 24, fontWeight: 900, color: C.teal }}>בין הראש לצלחת</div>
           <div style={{ fontSize: 14, color: C.gray, marginTop: 4 }}>אתי אטל | יועצת בריאות ותזונה התנהגותית</div>
