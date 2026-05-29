@@ -134,15 +134,9 @@ export async function POST(request) {
         })
       ])
 
-      // התיקון לכפתור הוואטסאפ: מחזירים גם את ה-result המופרד ב-`--` בשביל הכרטיסיות, 
-      // וגם גרסה נקייה ללא המפרידים בתוך שדה נוסף שהקוד של האפליקציה אוהב לקרוא לשליחה.
-      const fullCleanText = msg1.content[0].text.trim() + '\n\n' + msg2.content[0].text.trim();
-      const tabbedText = msg1.content[0].text.trim() + '\n\n--\n\n' + msg2.content[0].text.trim();
-
-      return Response.json({ 
-        result: tabbedText,
-        whatsappText: fullCleanText // שדה גיבוי נקי לשתילה ישירה בוואטסאפ
-      })
+      // מחזירים את הפורמט המשולב לתוך שדה ה-result הרגיל
+      const combinedText = msg1.content[0].text.trim() + '\n\n--\n\n' + msg2.content[0].text.trim();
+      return Response.json({ result: combinedText })
     }
 
     return Response.json({ result: 'לא התקבלו נתונים' })
