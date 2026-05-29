@@ -37,7 +37,7 @@ function formatBlood(blood_tests) {
     const range = BLOOD_RANGES[k]
     const val = parseFloat(v)
     if (range && !isNaN(val)) {
-      if (val < range[0] || val > range[1]) abnormal.push(name + ': ' + v + ' חריג')
+      if (val < range[0] || val > range[1]) abnormal.push(name + ': ' + v + ' (חריג)')
       else normal.push(name + ': ' + v)
     } else normal.push(name + ': ' + v)
   })
@@ -83,62 +83,43 @@ export async function POST(request) {
       const diary = foodDiary ? String(foodDiary).substring(0, 400) : ''
       const extraBlood = p.extra_blood_notes ? 'ערכים חריגים נוספים: ' + p.extra_blood_notes : ''
 
+      const baseData = 'נתונים:\n'
+        + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + ' | פעילות: ' + s(p.exercise_type,'לא') + '\n'
+        + 'שינה: ' + s(p.sleep_quality,'?') + ' | קימה: ' + s(p.wake_time,'?') + ' | לחץ: ' + s(p.stress_level,'?') + '/10\n'
+        + 'בוקר: ' + s(p.breakfast_habits,'?') + ' | קפה: ' + s(p.coffee_intake,'?') + ' | מים: ' + s(p.water_intake,'?') + '\n'
+        + 'אכילה רגשית: ' + s(p.emotional_eating,'?') + ' | מה מעכב: ' + s(p.goal_obstacles,'?') + '\n'
+        + 'מה רוצה: ' + s(p.main_goal,'?') + ' | מה חשוב: ' + s(p.important_values,'?') + '\n'
+        + 'רפואי: ' + s(p.medical_history,'אין') + ' | תרופות: ' + s(p.medications,'אין') + '\n'
+        + 'בדיקות: ' + bloodText + '\n'
+        + (extraBlood ? extraBlood + '\n' : '')
+        + (diary ? 'אכילה (3 ימים): ' + diary + '\n' : '')
+
+      const instruction = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
+        + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
+        + 'סגנון: אינטימי, מחבק — כמו שיחה עם חברה שמבינה. ללא טבלאות.\n'
+        + 'חובה: עברית תקנית בלבד. כתבי "את" לא "אתת". כתבי "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים שלא נכתבו.\n\n'
+
       const athleteSection = isAthlete
-        ? '**\u26a1 חלון ההזדמנויות הספורטיבי**\nהסבירי: תזונה לפני/אחרי אימון חיונית. ריצה על ריק עם קפאין = הגוף מפרק שריר (קטבוליזם). חלבון אחרי אימון = שיקום ושמירה על מסת שריר.'
-        : '**\u26a1 תמיכה במטבוליזם ובאנרגיה**\nהסבירי: תזונה עתירת פחמימות ודלת חלבון גורמת לקפיצות אינסולין שנועלות שריפת שומן. הגוף שומר שומן ומפרק שריר גם בלי ספורט. חוסר חלבון = BMR נמוך, התקפי רעב ועייפות.'
+        ? '**⚡ חלון ההזדמנויות הספורטיבי**\nהסבירי: תזונה לפני/אחרי אימון חיונית. ריצה על ריק עם קפאין = הגוף מפרק שריר (קטבוליזם). חלבון אחרי אימון = שיקום ושמירה על מסת שריר.'
+        : '**⚡ תמיכה במטבוליזם ובאנרגיה**\nהסבירי: תזונה עתירת פחמימות ודלת חלבון גורמת לקפיצות אינסולין שנועלות שריפת שומן. הגוף שומר שומן ומפרק שריר גם בלי ספורט. חוסר חלבון = BMR נמוך, התקפי רעב ועייפות.'
+
+      const bloodInstruction = '**🩸 מה אומרות הבדיקות**\n'
+        + 'לכל ערך חריג בלבד, כתבי שורה בפורמט: "שם הבדיקה: ערך (טווח רצוי) — מה זה אומר + המלצה קצרה (תזונה/תוסף/רופא)."\n'
+        + 'לדוגמה: "כולסטרול כללי: 217 (רצוי מתחת ל-200) — מעיד על עודף שומנים רוויים. הפחיתי גבינות שמנות והוסיפי אומגה 3."\n'
+        + 'אם ערך דורש בדיקה נוספת מול רופא — ציינו. אם הכל תקין — משפט חיובי קצר.'
 
       const stepsNote = isSedentary ? ', כולל 7,000 צעדים יומיים' : ''
-
-      const bloodSection = '**\ud83e\ude78 מה אומרות הבדיקות**\nלכל ערך חריג: ציינו שם הערך, הערך של הלקוחה, הטווח הרצוי, הסבר מה זה אומר לגוף, והמלצה (תזונה/תוסף/רופא). לדוגמה: כולסטרול כללי 217 (רצוי מתחת ל-200) — עודף שומנים רוויים. כדאי להפחית גבינות שמנות ולהוסיף אומגה 3. אם ערך דורש בירור רפואי — ציינו במפורש.'
-
-      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
-        + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
-        + 'סגנון: אינטימי, מחבק — כמו שיחה עם חברה. ללא טבלאות.\n'
-        + 'חובה: עברית תקנית. כתבי "את" ולא "אתת". כתבי "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים שלא נכתבו.\n\n'
-        + 'נתונים:\n'
-        + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + ' | פעילות: ' + s(p.exercise_type,'לא') + '\n'
-        + 'שינה: ' + s(p.sleep_quality,'?') + ' | קימה: ' + s(p.wake_time,'?') + ' | לחץ: ' + s(p.stress_level,'?') + '/10\n'
-        + 'בוקר: ' + s(p.breakfast_habits,'?') + ' | קפה: ' + s(p.coffee_intake,'?') + ' | מים: ' + s(p.water_intake,'?') + '\n'
-        + 'אכילה רגשית: ' + s(p.emotional_eating,'?') + ' | מה מעכב: ' + s(p.goal_obstacles,'?') + '\n'
-        + 'מה רוצה: ' + s(p.main_goal,'?') + ' | מה חשוב: ' + s(p.important_values,'?') + '\n'
-        + 'רפואי: ' + s(p.medical_history,'אין') + ' | תרופות: ' + s(p.medications,'אין') + '\n'
-        + 'בדיקות: ' + bloodText + '\n'
-        + (extraBlood ? extraBlood + '\n' : '')
-        + (diary ? 'אכילה (3 ימים): ' + diary + '\n' : '')
-        + '\nכתבי 6 סעיפים עם כותרת ** ואמוג\'י:\n\n'
-        + '**\ud83c\udf1f הקווים הזוהרים שלך**\n'
-        + '**\ud83d\udd0d מה באמת קורה**\n'
-        + athleteSection + '\n'
-        + bloodSection + '\n'
-        + '**\ud83e\udd57 המלצות תזונה ותוספים**\n'
-        + '**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')'
-
-      // 2 בקשות מקביליות — כל אחת ~20 שניות, ביחד ~20 שניות
-      const basePrompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
-        + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
-        + 'סגנון: אינטימי, מחבק — כמו שיחה עם חברה. ללא טבלאות.\n'
-        + 'חובה: עברית תקנית. כתבי "את" ולא "אתת". אל תמציאי פרטים שלא נכתבו.\n\n'
-        + 'נתונים:\n'
-        + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + ' | פעילות: ' + s(p.exercise_type,'לא') + '\n'
-        + 'שינה: ' + s(p.sleep_quality,'?') + ' | קימה: ' + s(p.wake_time,'?') + ' | לחץ: ' + s(p.stress_level,'?') + '/10\n'
-        + 'בוקר: ' + s(p.breakfast_habits,'?') + ' | קפה: ' + s(p.coffee_intake,'?') + ' | מים: ' + s(p.water_intake,'?') + '\n'
-        + 'אכילה רגשית: ' + s(p.emotional_eating,'?') + ' | מה מעכב: ' + s(p.goal_obstacles,'?') + '\n'
-        + 'מה רוצה: ' + s(p.main_goal,'?') + ' | מה חשוב: ' + s(p.important_values,'?') + '\n'
-        + 'רפואי: ' + s(p.medical_history,'אין') + ' | תרופות: ' + s(p.medications,'אין') + '\n'
-        + 'בדיקות: ' + bloodText + '\n'
-        + (extraBlood ? extraBlood + '\n' : '')
-        + (diary ? 'אכילה (3 ימים): ' + diary + '\n' : '')
 
       const [msg1, msg2] = await Promise.all([
         client.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 1500,
-          messages: [{ role: 'user', content: basePrompt + '\nכתבי 3 סעיפים:\n\n**\u2728 הקווים הזוהרים שלך**\n**\ud83d\udd0d מה באמת קורה**\n' + athleteSection }]
+          messages: [{ role: 'user', content: instruction + baseData + '\nכתבי 3 סעיפים:\n\n**✨ הקווים הזוהרים שלך**\n**🔍 מה באמת קורה**\n' + athleteSection }]
         }),
         client.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 1500,
-          messages: [{ role: 'user', content: basePrompt + '\nכתבי 3 סעיפים:\n\n' + bloodSection + '\n**\ud83e\udd57 המלצות תזונה ותוספים**\n**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
+          messages: [{ role: 'user', content: instruction + baseData + '\nכתבי 3 סעיפים:\n\n' + bloodInstruction + '\n\n**🥗 המלצות תזונה ותוספים**\n\n**🎯 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
         })
       ])
 
