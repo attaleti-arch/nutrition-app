@@ -23,7 +23,13 @@ function formatBlood(blood_tests) {
   if (!blood_tests) return 'לא הוזנו'
   const entries = Object.entries(blood_tests).filter(([k,v]) => v && v !== '')
   if (!entries.length) return 'לא הוזנו'
-  return entries.map(([k,v]) => (BLOOD_NAMES[k]||k) + ': ' + v).join('\n')
+  return entries.map(([k,v]) => (BLOOD_NAMES[k]||k) + ': ' + v).join(' | ')
+}
+
+function safe(val, fallback) {
+  if (!val) return fallback || 'לא צוין'
+  const s = String(val)
+  return s.length > 200 ? s.substring(0, 200) + '...' : s
 }
 
 export async function POST(request) {
@@ -35,9 +41,7 @@ export async function POST(request) {
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 500,
-        messages: [{ role: 'user', content: `חלץ ערכי בדיקות דם. החזר JSON בלבד ללא הסברים:
-{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null}
-מספרים בלבד ללא יחידות. טקסט: ${body.bloodText}` }]
+        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם. החזר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null}\nמספרים בלבד. טקסט: ' + String(body.bloodText).substring(0, 2000) }]
       })
       return Response.json({ result: msg.content[0].text })
     }
@@ -46,75 +50,51 @@ export async function POST(request) {
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 800,
-        messages: [{ role: 'user', content: `אתה אתי אטל — יועצת בריאות NLP. משוב שבועי קצר ל-${name} בעברית. ללא טבלאות.
-יומן: ${logs}
-**📊 סיכום** | **✅ הצלחות** | **⚡ קשיים** | **🎯 3 צעדים** | **💚 מסר**` }]
+        messages: [{ role: 'user', content: 'אתה אתי אטל — יועצת בריאות NLP. משוב שבועי קצר ל-' + name + ' בעברית. ללא טבלאות.\nיומן: ' + String(logs).substring(0, 2000) + '\n**📊 סיכום** | **✅ הצלחות** | **⚡ קשיים** | **🎯 3 צעדים** | **💚 מסר**' }]
       })
       return Response.json({ result: msg.content[0].text })
     }
 
     if (mode === 'profile' && profile) {
       const p = profile
-      const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(p.exercise_type))
+      const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(String(p.exercise_type)))
       const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
       const bloodText = formatBlood(p.blood_tests)
+      const diary = foodDiary ? String(foodDiary).substring(0, 800) : ''
+
+      const content = `אתה אתי אטל — יועצת בריאות NLP. ניתוח אישי ל-${name} בעברית, גוף שני נקבה, חם ואישי. costume-made. ללא טבלאות. כל סעיף 2-3 משפטים. כתבי רק על מה שקיים בנתונים.
+
+נתונים:
+גיל ${safe(p.age,'?')} | משקל ${safe(p.weight,'?')} | מטרה: ${safe(p.goal,'?')} | פעילות: ${safe(p.exercise_type,'לא')}
+שינה: ${safe(p.sleep_quality,'?')} | קימה: ${safe(p.wake_time,'?')} | לחץ: ${safe(p.stress_level,'?')}/10
+בוקר: ${safe(p.breakfast_habits,'?')} | קפה: ${safe(p.coffee_intake,'?')} | מים: ${safe(p.water_intake,'?')}
+אכילה רגשית: ${safe(p.emotional_eating,'?')} | מה מעכב: ${safe(p.goal_obstacles,'?')}
+תרופות: ${safe(p.medications,'אין')} | רפואי: ${safe(p.medical_history,'אין')}
+בדיקות: ${bloodText}
+${diary ? 'אכילה: ' + diary : ''}
+
+סעיפים:
+**🌟 הקווים הזוהרים שלך**
+**🔍 מה באמת קורה**
+**🧠 אמונות מגבילות** (רק אם עולות מהנתונים)
+**⚡ ${isAthlete ? 'חלון ההזדמנויות הספורטיבי' : 'תמיכה במטבוליזם ובאנרגיה'}**
+**🩸 מה אומרות הבדיקות** (רק ערכים חריגים)
+**🥗 המלצות תזונה**
+**💊 תוספים לשקול**
+**🎯 3 צעדים למחר** (ממוספרים${isSedentary ? ', כלול 7000 צעדים' : ''})
+**💚 מסר אישי**`
 
       const msg = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4096,
-        messages: [{ role: 'user', content: `אתה אתי אטל — יועצת בריאות NLP. ניתוח אישי עמוק ל-${name} בעברית, גוף שני נקבה, חם ואישי. costume-made. ללא טבלאות markdown. כל סעיף — 3-5 משפטים בלבד. קצר, ממוקד, עוצמתי.
-
-נתונים:
-גיל ${p.age||'?'} | משקל ${p.weight||'?'} | מטרה: ${p.goal||'?'} | פעילות: ${p.exercise_type||'לא'}
-שינה: ${p.sleep_quality||'?'} | קימה: ${p.wake_time||'?'} | לחץ: ${p.stress_level||'?'}/10
-בוקר: ${p.breakfast_habits||'?'} | קפה: ${p.coffee_intake||'?'} | מים: ${p.water_intake||'?'}
-אכילה רגשית: ${p.emotional_eating||'?'} | מה מעכב: ${p.goal_obstacles||'?'}
-תרופות: ${p.medications||'אין'} | רפואי: ${p.medical_history||'אין'}
-
-בדיקות דם:
-${bloodText}
-
-${foodDiary ? '5 ימי אכילה:\n' + foodDiary : ''}
-
-כתבי עם הסעיפים (כל אחד בפסקאות, ללא טבלאות):
-
-**🌟 הקווים הזוהרים שלך**
-2-3 חוזקות ספציפיות מהנתונים
-
-**🔍 מה באמת קורה — הגשר הטיפולי**
-${isAthlete ? 'הלופ של קפה/מתוק כעוגן רגשי לעייפות — לא חוסר רצון. מנגנון הישרדות.' : 'הלופ מהרגל, שעמום, או נפילת אנרגיה — לא חוסר רצון.'}
-הסבירי מה הצורך הרגשי האמיתי שמסתתר שם.
-
-**🧠 אמונות מגבילות שזיהיתי**
-ספציפיות לה
-
-**⚡ ${isAthlete ? 'חלון ההזדמנויות הספורטיבי' : 'תמיכה במטבוליזם ובאנרגיה היומית'}**
-${isAthlete ? 'חלון ההזדמנויות לפני/אחרי אימון. סכנת קטבוליזם מחוסר חלבון. ספציפי לסוג האימון שלה.' : 'חוסר חלבון מאט את ה-BMR (קצב חילוף חומרים במנוחה). גורם להתקפי רעב, עייפות, וחוסר ריכוז.'}
-
-**🩸 מה אומרות הבדיקות**
-פרשי כל ערך חריג בשפה פשוטה בפסקאות. חיבר לאורח החיים.
-
-**🥗 המלצות תזונה אישיות**
-ספציפיות לפרופיל שלה
-
-**💊 תוספים ובדיקות לשקול**
-
-**🎯 תוכנית פעולה — 3 צעדים למחר**
-1. [צעד ראשון קטן ומעשי]
-2. [צעד שני קטן ומעשי]
-3. [צעד שלישי קטן ומעשי]
-${isSedentary ? 'כלול: 7,000 צעדים יומיים (לא 10,000 עדיין) + תרגיל ליבה אחד בבית.' : ''}
-3 בלבד. ריאליסטיים. לא מציפים.
-
-**💚 מסר אישי — נחיתה רכה**
-חם, מעצים, מרגיע. שתרגיש שרואים אותה ומאמינים בה.` }]
+        messages: [{ role: 'user', content: content }]
       })
       return Response.json({ result: msg.content[0].text })
     }
 
     return Response.json({ result: 'לא התקבלו נתונים' })
   } catch(err) {
-    console.error('Error:', err)
+    console.error('API Error:', err.message)
     return Response.json({ result: 'שגיאה: ' + err.message }, { status: 500 })
   }
 }
