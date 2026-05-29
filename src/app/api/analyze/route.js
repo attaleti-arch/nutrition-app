@@ -37,7 +37,7 @@ function formatBlood(blood_tests) {
     const range = BLOOD_RANGES[k]
     const val = parseFloat(v)
     if (range && !isNaN(val)) {
-      if (val < range[0] || val > range[1]) abnormal.push(name + ': ' + v + ' ⚠️')
+      if (val < range[0] || val > range[1]) abnormal.push(name + ': ' + v + ' חריג')
       else normal.push(name + ': ' + v)
     } else normal.push(name + ': ' + v)
   })
@@ -81,40 +81,40 @@ export async function POST(request) {
       const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
       const bloodText = formatBlood(p.blood_tests)
       const diary = foodDiary ? String(foodDiary).substring(0, 400) : ''
+      const extraBlood = p.extra_blood_notes ? 'ערכים חריגים נוספים: ' + p.extra_blood_notes : ''
 
-      const prompt = `אתה אתי אטל — יועצת בריאות ותזונה התנהגותית בגישת NLP.
-כתבי ניתוח אישי חם ועמוק ל-${name} בעברית, גוף שני נקבה.
-סגנון: אינטימי, מחבק, ישיר — כמו שיחה עם חברה שמבינה אותך. ללא טבלאות. חשוב: כתבי 'את' ולא 'אתת' — עברית תקנית.
-כתבי רק על מה שקיים בנתונים. אל תמציאי ציטוטים.
+      const athleteSection = isAthlete
+        ? '**\u26a1 חלון ההזדמנויות הספורטיבי**\nהסבירי: תזונה לפני/אחרי אימון חיונית. ריצה על ריק עם קפאין = הגוף מפרק שריר (קטבוליזם). חלבון אחרי אימון = שיקום ושמירה על מסת שריר.'
+        : '**\u26a1 תמיכה במטבוליזם ובאנרגיה**\nהסבירי: תזונה עתירת פחמימות ודלת חלבון גורמת לקפיצות אינסולין שנועלות שריפת שומן. הגוף שומר שומן ומפרק שריר גם בלי ספורט. חוסר חלבון = BMR נמוך, התקפי רעב ועייפות.'
 
-נתונים:
-גיל ${s(p.age,'?')} | משקל ${s(p.weight,'?')} | מטרה: ${s(p.goal,'?')} | פעילות: ${s(p.exercise_type,'לא')}
-שינה: ${s(p.sleep_quality,'?')} | קימה: ${s(p.wake_time,'?')} | לחץ: ${s(p.stress_level,'?')}/10
-בוקר: ${s(p.breakfast_habits,'?')} | קפה: ${s(p.coffee_intake,'?')} | מים: ${s(p.water_intake,'?')}
-אכילה רגשית: ${s(p.emotional_eating,'?')} | מה מעכב: ${s(p.goal_obstacles,'?')}
-מה רוצה: ${s(p.main_goal,'?')} | מה חשוב: ${s(p.important_values,'?')}
-רפואי: ${s(p.medical_history,'אין')} | תרופות: ${s(p.medications,'אין')}
-בדיקות: ${bloodText}
-${p.extra_blood_notes ? 'ערכים חריגים נוספים: ' + p.extra_blood_notes : ''}
-${diary ? 'אכילה (3 ימים): ' + diary : ''}
+      const stepsNote = isSedentary ? ', כולל 7,000 צעדים יומיים' : ''
 
-כתבי 6 סעיפים. כל סעיף מתחיל בשורה עם ** ואמוג'י, אחריה פסקה חמה וספציפית:
+      const bloodSection = '**\ud83e\ude78 מה אומרות הבדיקות**\nלכל ערך חריג: ציינו שם הערך, הערך של הלקוחה, הטווח הרצוי, הסבר מה זה אומר לגוף, והמלצה (תזונה/תוסף/רופא). לדוגמה: כולסטרול כללי 217 (רצוי מתחת ל-200) — עודף שומנים רוויים. כדאי להפחית גבינות שמנות ולהוסיף אומגה 3. אם ערך דורש בירור רפואי — ציינו במפורש.'
 
-**🌟 הקווים הזוהרים שלך**
-**🔍 מה באמת קורה**
-${isAthlete ? '**⚡ חלון ההזדמנויות הספורטיבי**' : '**⚡ תמיכה במטבוליזם ובאנרגיה**'}
-**🩸 מה אומרות הבדיקות**
-לכל ערך חריג (מסומן ⚠️ או מהערכים החריגים הנוספים) כתבי:
-- שם הערך + הערך שלה + הטווח הרצוי
-- הסבר קצר מה זה אומר לגוף
-- המלצה: תזונה / תוסף / בדיקה רפואית
-דוגמה: "כולסטרול כללי 217 (רצוי מתחת ל-200) — מעיד על עודף שומנים רוויים. כדאי להפחית גבינות שמנות ולהוסיף אומגה 3."
-אם ערך דורש המשך בירור רפואי — ציינו במפורש.
-**🥗 המלצות תזונה ותוספים**
-**🎯 3 צעדים למחר** (ממוספרים, ריאליסטיים${isSedentary ? ', כולל 7000 צעדים' : ''})`
+      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
+        + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
+        + 'סגנון: אינטימי, מחבק — כמו שיחה עם חברה. ללא טבלאות.\n'
+        + 'חובה: עברית תקנית. כתבי "את" ולא "אתת". כתבי "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים שלא נכתבו.\n\n'
+        + 'נתונים:\n'
+        + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + ' | פעילות: ' + s(p.exercise_type,'לא') + '\n'
+        + 'שינה: ' + s(p.sleep_quality,'?') + ' | קימה: ' + s(p.wake_time,'?') + ' | לחץ: ' + s(p.stress_level,'?') + '/10\n'
+        + 'בוקר: ' + s(p.breakfast_habits,'?') + ' | קפה: ' + s(p.coffee_intake,'?') + ' | מים: ' + s(p.water_intake,'?') + '\n'
+        + 'אכילה רגשית: ' + s(p.emotional_eating,'?') + ' | מה מעכב: ' + s(p.goal_obstacles,'?') + '\n'
+        + 'מה רוצה: ' + s(p.main_goal,'?') + ' | מה חשוב: ' + s(p.important_values,'?') + '\n'
+        + 'רפואי: ' + s(p.medical_history,'אין') + ' | תרופות: ' + s(p.medications,'אין') + '\n'
+        + 'בדיקות: ' + bloodText + '\n'
+        + (extraBlood ? extraBlood + '\n' : '')
+        + (diary ? 'אכילה (3 ימים): ' + diary + '\n' : '')
+        + '\nכתבי 6 סעיפים עם כותרת ** ואמוג\'י:\n\n'
+        + '**\ud83c\udf1f הקווים הזוהרים שלך**\n'
+        + '**\ud83d\udd0d מה באמת קורה**\n'
+        + athleteSection + '\n'
+        + bloodSection + '\n'
+        + '**\ud83e\udd57 המלצות תזונה ותוספים**\n'
+        + '**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')'
 
       const msg = await client.messages.create({
-        model: 'claude-opus-4-5',
+        model: 'claude-sonnet-4-6',
         max_tokens: 2000,
         messages: [{ role: 'user', content: prompt }]
       })
