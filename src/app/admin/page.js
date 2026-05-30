@@ -283,6 +283,10 @@ export default function AdminPage() {
   const [editableAnalysis, setEditableAnalysis] = useState('')
   const [sendingToClient, setSendingToClient] = useState(false)
   const [sentToClient, setSentToClient] = useState(false)
+  // ── חדש: מלאי ומזווה ──
+  const [inventory, setInventory] = useState([])
+  const [newItemName, setNewItemName] = useState('')
+  const [addingItem, setAddingItem] = useState(false)
 
   const login = () => { if (pin === 'Esterika26') setAuth(true) }
 
@@ -309,6 +313,7 @@ export default function AdminPage() {
     setFilteredLogs([])
     setPatientId('')
     setSelectedTests({})
+    setInventory([])
     const { data } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
     if (data) {
       setProfile(data)
@@ -325,6 +330,13 @@ export default function AdminPage() {
     const { data: logsData } = await supabase.from('daily_logs').select('*').eq('client_name', client.password).order('log_date', { ascending: false }).limit(30)
     setLogs(logsData || [])
     applyFilter(logsData || [], 'week', '', '')
+    // ── טעינת מלאי ──
+    const { data: inventoryData } = await supabase
+      .from('inventory_items')
+      .select('*')
+      .eq('client_id', client.id)
+      .order('created_at', { ascending: false })
+    setInventory(inventoryData || [])
   }
 
   function applyFilter(allLogs, mode, from, to) {
@@ -349,53 +361,66 @@ export default function AdminPage() {
   function selectAllTests() { var all = {}; DOCTOR_TESTS.forEach(t => { all[t.key] = true }); setSelectedTests(all) }
   function clearAllTests() { setSelectedTests({}) }
 
+  // ── פונקציות מלאי חדשות ──
+  async function updateClientData(field, value) {
+    if (!selectedClient) return
+    const { error } = await supabase.from('clients').update({ [field]: value }).eq('id', selectedClient.id)
+    if (!error) setSelectedClient(prev => ({ ...prev, [field]: value }))
+  }
+
+  async function addItemToInventory() {
+    if (!newItemName.trim() || !selectedClient) return
+    setAddingItem(true)
+    const { data, error } = await supabase
+      .from('inventory_items')
+      .insert([{ client_id: selectedClient.id, name: newItemName.trim(), category: 'pantry', status: 'missing' }])
+      .select()
+    if (!error && data) { setInventory(prev => [data[0], ...prev]); setNewItemName('') }
+    setAddingItem(false)
+  }
+
+  async function deleteItem(itemId) {
+    const { error } = await supabase.from('inventory_items').delete().eq('id', itemId)
+    if (!error) setInventory(prev => prev.filter(item => item.id !== itemId))
+  }
+
+  async function toggleItemStatus(itemId, currentStatus) {
+    const newStatus = currentStatus === 'missing' ? 'pantry' : 'missing'
+    const { error } = await supabase.from('inventory_items').update({ status: newStatus }).eq('id', itemId)
+    if (!error) setInventory(prev => prev.map(item => item.id === itemId ? { ...item, status: newStatus } : item))
+  }
+
   function openDoctorLetter() {
     if (!selectedClient) return
     var today = new Date().toLocaleDateString('he-IL')
     var fullName = (selectedClient.name || '') + ' ' + (selectedClient.last_name || '')
     var id = selectedClient.id_number || patientId || '___________'
-    var tests = DOCTOR_TESTS.filter(t => selectedTests[t.key]).map(t => '<tr><td style="padding:6px 12px;font-size:14px;border-bottom:1px solid #f0f0f0;">❑ ' + t.label + '</td></tr>').join('')
+    var tests = DOCTOR_TESTS.filter(t => selectedTests[t.key]).map(t => '<tr><td style="padding:6px 12px;font-size:14px;border-bottom:1px solid #f0f0f0;">&#10061; ' + t.label + '</td></tr>').join('')
     if (!tests) { alert('בחרי לפחות בדיקה אחת'); return }
-
-    var html = '<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;direction:rtl;padding:40px;color:#222;max-width:700px;margin:0 auto}.header{text-align:center;margin-bottom:30px;border-bottom:2px solid #0f4c2a;padding-bottom:20px}.logo{height:80px;margin-bottom:10px}.name{font-size:22px;font-weight:bold;color:#0f4c2a}.title{font-size:13px;color:#666}table{width:100%;border-collapse:collapse;margin:16px 0}.signature{margin-top:40px;border-top:1px solid #e5e7eb;padding-top:20px}p{line-height:1.8;font-size:15px}</style></head><body>' +
-      '<div class="header">' +
-      '<img class="logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAABkCAYAAADDhn8LAAAnOElEQVR42u2dd3wU1drHn3POtG1phITe7AkoXkRAxQBSQge5u4ogKGpQJCCEEkSY7EVpGnq5YMEG6K7SpAQBQwRFFGxAvKAgHUJI2Wybes77RxKNKN573+v7XsD5fj75sMvOnpk5c37zlPPMWQALCwsLCwsLCwsLCwsLCwsLCwsLCwsLCwsLi/8nGANk9YKFxe9jicTC4rfIzR1js3rhygBbXfDfdqd8hDEZ+3w+AgCwdvOcjOtaNNyzYoUsMQaIMYby82XOcrss/uRCkfH8zfPF9dtzD3/+3Qq2Zuu8wQAAPp+b1NzG6inLglzzATirshYfbfMu2b/3+VfyPvjbbQh5aX1q1jeY3iAYCpkYaBsAQE7no9zpTWPHBrY/8/mR9co9jAHKz5c5qyctgVybkTcChjwekzFAwLTz9eo5HouvhT7esWPGbQJ1nGeMVXAiTwymHwcAdjPbtqJ+QylX04zbFZMdQwhYx45ew+pJSyDXJAfz5IQfPlmShBCwAr7z9COHAxvq1LHFYBaZ3qfP8AjHSUvDAeNsubPW8h82ZrdqmkAGhi+ESsuZy33bgNmnc8eMseXnL0u03C1LINeWa1UVS0iamlnXPFt0etOEj/qXbkz4aFfagJMnlftNk3sFAKBfpzF/K/qhOPXxex4P8gBlQc3++IEiaHtDzxnr8vJeGtR24HVFKgvv2LmzSUxlEG8F7/+nFt/qgv+/vmYM4PhOWUSRyGCnQFoKF0pzYgYtv1i9weq8xQ0JxS6ECEKImWeo/ezoHg9XVH++eWvu4Ng4sUVpIPxK764Tv2eMIYQQs7rWEsg1gc/nIx6Px6x+/86Hy9uaVO0KlN6GGI4lhNMwQwoDhDDhdJPpNgADqGmeJgg+PXSy9H3vcG8EAMDHfMSDfm7LwhLINSEOny/XhmP5kYBQb0B8EUU4LxINHhAoOTFQ/eQi8vh/GvSbN88XQwZLprxwI2DamWB2J0bkeyWqvTSo9zPfMyZjBF4GCCwrYgnkKo09GEMIEAAC9s7WhQ9ymMtkCL6JRvVlQ3qP+ubfE9kiJ58oDqIMBum6vv7B9BG5P+3DcrUsgVyV4qgauG9umP064cWGjOJnBvfMPFC9jSzLuEMq2F1YeUrCkFiuqH6d4eMuTLMFSXKVhzTfvQ/P2bF583yxR4/RKgDAW5vnx3DAzTaMaGzk3JEhw4cv1y2RWAK5ysQBKAdkBDmAm7WybwWAH4f2mfj4z9ZAFpq5+FrHCkvKmzRxLiSIFQlU/yyiqcMIZo0B45ccNvvZsEqnh3TyWIeBz3936T7e2vhSNgDcV3r0RK/SUQl6DuQwSySWQK6OmKMqiH5nyyKfycxzg3qMHs0YQ1veHuWK4cmzRLDXI0RgAZWtdrFI1pZCezev10vXvTLMVZvY69/96KJ/AADsX5OzQqfkI0aVFgLR4jRqlgeC0YXpw5aeAgBYnbdwIgGuuSf9qYcvTQJYWAK5ogPylZvmjUZAejzUM7Nbfr7MwXHgQChZTxDaa6oJczo+6i0HAPjkzadfQIgl3vXwkuE129njy36Aw8RTGokbEmPTriMoGMJMb68xPIwK9oFntdQij8djvvfh8tWmYWx7oMeI1yyRWAK54l0rhAB8G2cnqxRvU0Jq58cH3nARcg6xXc2NBygzb+3gmTnpYN7MaQ0S7A+cKQ6+ntpz8vTdK5+ZiZF4g6Hrk+4dOufIXt/ELMLxbcDQn0iIq5OWFGd7ozRilDXqMLLZ5+tyHjUZNGjXP2eaz+cjYfuF2hzTVkF5oN/gwTlBhBAAWJmtPwJrJv0PZudOmQAAo5hkYgxbn3hoctGWLec45PVSDut9XSK4tr8+6lbKYb+imfaUGxq8cOjDOQ/fM2heto1zzbJz8OzB98a+y1GWsL/4wqA7PLMCiYn196gm/pbwtjcBAOxJ9dczYCYAQErKIfJor5HnEeA85oy7HyHEZFkm1pWwLMiVm7kCgFWb5u01dPOZh/tl7QHIQbt8Si6P9SSe5z9XDP523YTtX56Of//BtPh7zxWXF5/54cs7BJ4l6qZYWicxmZw+fzJO5NltmmKQQCg69ZGpHxwa2jc2bkivXtnBKAuVKXGvNGld++LOnQA5OTnme9tfbWlq+pgHez41hDEZI+Sl1tWwLMiVJw6E2FtbFtQHxhwkon+HEGL5q8qfoKZWq517zqA7+s2af/eA+x7HhI/LysqK1r9j2NZTR7+9H3PcPRwnHgam33zm3LE0hrmjAnE+QTjulbgYx4srZ/SMf7Tfg3vbt7prYoeWt0yLQUVDO3b0GjkAFCHEHHq4EBOc4MvLTUDIS60arT8G67mCP5AcyEEAwEA3Gphg0sFHlMAgAACEump6eEb+2rlxhEaHINRxAQAs2rUyOx5FTeNC8GSH3iN99wAwWDN/4MVYB1kdVGBNl+HLAwCwZdPSR4dAONitcVLcjYZuV1W1nDgleGLT0iFh//nC12VZjvToMVpdtXFRgDH+egD4PCdHRgBeKw6xLMiVByGYIeB+yiQJgjMoCon1O/YfU84R86bPP8hZ+sW6ySt4pyPrnsdfDAJl5etyH+gPAIAEZ2sNxX5lArkXAGDj4kfGUcQf4InpiHXGUE3XiEYJaXHLHdel3XHHwriGibleb6U7hQBXmJTGAgDk5FjXwRLIlWdBKu/YBneKEI5b1zIuBgCAAnoZMWXytlefanZXvylPq0h8trRCGakbxsbtvqmjJbtjAhKkqWuXPPZQ/yeX5wKG3WoEnl8zd8BA04z06v3k8ukOm7OD05mIOVGC2PgkFJfQSJdEO2AaTaneP6VUQZQqlcdiYQnkSst4IMQYY+ihfplnMeJLDd5+EwDAvX+d9glidJpk42bu8Y+dTiIlg5Nr2acJxFwgIfRJj6dWFDpc8b0EjD3rFgxc1H3Y0hkOEkzFFIaeF492WTN/kCchIXHw6YsX4VTRCa6o5BycOneU33/gy6Pl5RXZjDEEAEBNDVNGi34hVgsrBrmS2LkzhwCAwUDfqzPaAwD2+nyy0N7j/UCW5U1dmwc7YkwaGhRf1E296B738/sAADo/MvcMAPRbO9cz44P5f91sGmY55l3PJERvfgUhdvbw6VN3LHr7zbNd7r2vtqaZ2M7z8M5np49s3Lg/wiYgtG/fMv4fJ8OizUCnqsVqXQ1LIFccxcWFDACAmVoeRWwSAEDt2h3owYMgFBammne7PTuqt9313hT/Ll/2JIDISmaaEiFSA612rynhA4s3YV78FoliFq/St1rf2VV18nRy1w7usnrtHnls99oZAzARf9z43NiIzycL4M7RD69beivCXKnHMypqzaZbLtYVi9vtowAAxMZ9b1Jaa8UKWerYsaPRvLlX83g85oYNyxLfe29RY8YAnaP4UQSmDVM8mwGfw3H4fla8fbYQ1/A08La7Adg3/Ua9vT0aCbXjCcQz0zj68Tvj7sZG+TisBy7IsozLyuoxhBDDBKVjxm2pPIZDlvWwLMiVjabqiBABH3NE6DsbFvRzOqWbFINKwYgahzj0IgADjweFAGBqze9t3rxZFJUt8xNj+M4leuy0At/4ORcvFoZOXuDekXihFgFzPGZsZNsB3tP5+TLXseNw/b0PXruBgS65+w/fJcvWJKFlQa5g/H4/ZowhkXO04LB03OvxagSb5yiwcmrqX4VwyeSH+mWeraqXQvly5aqJjAHatyyD79Gjh/ru/E8zo+FgBQscvTfNM3ssQtLnsc7YiGiL2Xv3A3P6t/Xk7vf5fKRjR6/x5tYXHaoefBwTtIwxhnJyrODc4gqmeglR/9alK/1blvb9rW0uM8uNfD432bcsg5eZjDcsdLfbvMBTsSF3YNqv91G5Qsqyt+bUfW31rImvr5p9K0Dlw1fWFfhjscoR/kCqa6BeWTO9ncQJCwQlePchNxiQA9ChA+Di4lTm8Xgo/IuVtvkrnmxr6PR9k8H49OHLVx30yUKqO0fPyclBTZu6bjcFdItp6jszHs4+bQXmlkCuCuvh8XjMlRte2qgq6qphnsmroLL4BF1OFFXl8WzZxM6xSXXjXuScsdcRQaI8sIOFB4/ltmzxFzMaLlqvqZF3+oxePcfncxO320+XL58ZM3x4dsDqdStIv5oiEAAA4DnyoxRjG7Dug3lUiypbPJ7sQNXN6FciQQiYLMu4YelexRSFOxrdeeft50MI7Eawc6rD9vjxIwfvrW3X2hMcu2f9fA/t6/HNY7KMh3urxCEzXNzTf0O0NFDcKP2JUgaAkPUsiBWkX4l4KpfsQZ4eY0ZRw1wpiNw9sTHi+3u3Ta+1b1kG93sxQo+FeapWEu157uuvD8cQDQKqDkREzgSXsKnH6DzNjmrdy4uuzHVLht2Eqmqvftw276GSzn//wsVr/6Ai7gEAsDPfehbEcrGuIvZ/MPmz4qg5ON0z84ff206WAXu9QF8e1Sa56V9unsqcsR2igYqozVTViij/XXmITKqfZHvANI2WPZ9c/vjxj5YNqBPDvycKCIpLw+URFJvS+N6HzwMwaxbdEsiVz759y/hg8Cyrf7F4sWRziCaVPitR8OY7PN6Tl1uip1ok1dZ9xdA04dE3CpS1i4a21MORDMTjdS5HzPD04S8POLf75a/r1Im/rfxi4NtINPp0/Y4jd1sPSlku1lXDHa2GGx07es2vWYcRiEJ/RvXrLzgTiioH8W/e4VFqqhsBAOxbKScyxuDRNwqUfDmN6z/yja8BYD5mNNNUyjUAQDplrxaVVAz6/EjpXfU7jtydny9zljgsripYVcxx2Ddy/OmNEz/+x/tZrRkDxC6JRap/UAcA4Dvf+D4H3ps8gfl8pHq+o3pl+C2LHvpy48KBm6urdy0sF+vqF4nPTZDHbx7fMP5xXdVGfsXOtnJDZb6rdu0UVP1jOMsyMvj2XROGg2k2tAnajCb95v+cwvW7MfL4zU2LBp81DTSuzzNvrVqb6xkQnxjX3TAMp66F/2FqrCCym33s8futuRBLIFeRQBhDkJODvrtHjBejFZ9c12fWzTWzsJ/6cm317SUPEGo8qVNWL0pJ55T7Zx5hsoxzACA1tRB5PH5z/Xz3DADu7r6jV9+7cekjyxo1TMgQXDGA7LGQaCew7+PPDr//1eEWdev2Mr1eLwMr1WsJ5GpBlmWcmpqKWnF7CnjMduvItgoTXI+n6r2gK60oFr+jRHzTJFhXFTpeA3VcWYKztNq6fLDgwVxdi7S/f9yGO9fO7jWv5W03jg5y8ZRhgpxOAZ3/8eTFM8cvdvFMWPU1k2VcnQa2sARy1QjE6/XSg29kNHI6RS/hxASG+DJg2j6lIrDuxodfOV297bfr5CcNTTv6F8+MbRsWDL0ZIDKXIXxCZfwspJnD7CTaSZDEWFdyg2aIE6LBkpJdR7468NyIBXsOXpIFs7AEcq3EKT4CtQ8hf3Eha0Jv6FGKa32inNnbSxDEZ0OqsZUQ6QiA3pxSbpt7zOtr0tLSuIduC9ULFgcj41YfuVhThFZvWlzVloT53ITJMmY+H8nPl7kaGSlUOdOOYNOCB17f9/bD7IMFD23wzR32yPoFj90ty5Up+ep/f45xZGxV8f7fYdVi/T+KAwAAefwmA0DAgHVEwAC8lQNdlhHyemnewoHrbJLQ4sxFs+vxo6Ufj16Yp17SErjdhSQlJYXl5OQwhJBlNSwX6+oURGFqKko5dIjVdH1qukKyLON69UA6e7ZC8nrnlq2f536aUDPri39oqd7lGyOb52eKp4MltzhI7IkYZ2Rocbny/rAp756quR+3z0fA7we/3/8vl9FbWAL5r+F2u4n/krmIYbPGuyIRe1M9clF4/8XF+2bMyI5vgEva7wjUPh3EUkumRsIkLG56JOXoR1GVTvxr1qp8AICswV0cLVskZTWqLfULhSOh8xXGgN3RZvVAlFzUgB/e8HrPXyoWv9tNwarFsgRy5UXaDNUcmP2fm3gbMPYXRllDgeM4DqOzLFixs3tieazLQZ6KqvqJrYfOzH26e+t5ReeLfHVttm2nIyV7guXhTmLtZjQSLHnMaSNNJGymEowSglF18azxa9++dVLWDbrDeSdi0IgaVNKpUc5Meoin6NNVM2eWXU6kFpZA/tv9yAAAuo4bPYTH+A5OFM4jk33FR/W9/rlzS+956qn4eCd/9/VQHu7UTD9dURp9tk687c5WzW9OKdh35Ou+Y1fevm7eQ1v63nZD7zc/PeBJTqp3512335pO9dBNSlhjcXaEdnzxzRs9R696ZPTooXHz579RDrKMPbp+J+NYG8ThmzHCxczAr73r9R63slqWQK4cywEAncaOrcfxeAmjbJ8GyssFLy05DwDQedSoRoLLNgYhbKjh8FfFpYHNf4073bLN9Ulv3digToPj54u1WslN1F1ffts61mVLi2rGcbvEN2t/511PJzml5qFg2DApRXGxMfSLA18VjV9zOqXJTden8TzXTCJk/7JpMz6pdK/chBy5uY9uwAhNVZd+MGP2Gksk/znWwzX/ORg6dmS3dEp7EwD8H87OXXTi0y9CabLM3dK6dVMmkOc5Tlq+cdrQd26LfO8MfLE22Ldz2oHrGtSKOVNcTuPiEhjHc1JZILhrUPa7K+9qfbMSI2q1bmuc/DSYvKozSjAnGjYJC4d/+H6dcvrUhi6NIfCPUMwe0S60adGmtT32vq5FrYtrs8Xy375r3O7uPEy4vze5o/Wu12bOvCjLMi4oKLBikv/1xbX4z6hcZgdxEl/fYXcVAgCkyLJQ+aHmoKrqCp08eRTOfn9Hcp062vXNmgsXK6KjvzlWtFpyJpqKpvB2pKC68U4ZAKhoE7h1eXu2fPbV1wWKUioyQyV2kYmff3Pw2NcnAtMb3HBjQtTZsOkjbeql/n3q86sk4I8kpaaynVXXMm/GjGKO58HhkuKsrJblYl0xWasek7PTEcaLQKeTNs2c6a/+vPOoEfdxhIywxbqOYASfNaSRU/O8874EAMgf0bhOKDY2Malxiwll5WXfdotunveO0bVuRdhhZMxbW7R2Wue7GHCNeUlyvbvj41VJtwzV6zgCjSa+sOLw/E2bxN2hkOGvsZJJ5wkTbkE8ms8zdGTz9JkjLRfLEsgVlcFKz8pqDTz3AmBECNDtYKLNm2bN+gYAoNeU7NaiaGunMmgE0UiMrqhhEwsnEG87H4noAXtCXEV9Lmg3ERfiAYBSon4fdF4sKaO6akbpkBs5kjOhaRFCv1zap9fYsYl8fHw3wKxvVNGampry+rZZLy0GWcZgicMSyJVCzbt1l6ysewWJewAJYntTEJyYoJ2GoecrgYofOV0PE8ZRCoZNJMRpB+TiRVEQJQlTzEcJQlTAWMe6HsZqKICUSEgj2IxIcbRY05wmpXUMqicLonAzsbk6mbpeVyDoKwxsg3nq7Psbly+PWJbDEsiVK5KcHFY9H+IeM8YWTkoYTwA9rYTDUWYapcxkZYxShRIcAU5QgBAFIVCxQQ3D0BBlJscYIoghxAkc4XheIhgLiIFgqBpHGbMDsAY2p72pZtCt4fLAxE/mzTt0qctnXQ1LIFe0UHYC4AJv5fMcKWkpzuRb7u5EEf4L4bl4IgiMcUQjHDERRYbBKjFMkzFKKQOgBCGCEEIYADAGjkOYYEJEAKRRah4tu1CS/9mrr/4AUFVuAgD+f2PVRgtLIFdE/7p9PlwzkO6SlZXEYdzI5KCBxHO1qa7XUhXDyXjObjKKmMkYRsAIQbqhmyHCkSDHoSIBc2dNE522Hz16otpCuH0+4j90iFmxhsXVLxS3m/xRZemtMjL4VhkZvNWtlgW5JvtclmVUWFiILqSkIACApMLKX6VKSUlhXgCQAaCwsBCB2w0XDh1CSamprKoqmMmyjKoDcLfbLfj9fs3qUosr5WaC/pff+8Nimyo3rWmPSROWdn9m1JMAgMBaBsiyIH+uuMWNLxxKQUmpqeyn+KVqXuOe0SPaCIJtlcRzo1rz0hYvAFgxiMV/nbS0NC49M1P8d28sbd1tbf/yTthl20WyLOO7xo93dcqeUJw2dvQjVS6WVUv3f8yfqRYLud1uUuWOoOoB5q6xqqHb5yPwcyCN3D4fqQ6GubZtXtMd0lsgy7hVRgb3i20ZQzUD8DRZ5oAxlD5pfJr9pg6H2ox6LBlkGafJMldzf7+y5qgyRZs2fvTAzt4pi7o8N+mvVe0Rr9dLY+3SC6IolhTMmf96q2XLfgrSayYA3D4fqSEclCbLP68qX3UMl3HJUM1zr/6OLMsYarz+neO3XKxrlksedvqtfuqak/MF4nB063NT2/+T/vypnS6TJg1mNuktV6AieW1u7oXf3T8AtPV44p0pN64DBnUpxp8KvDiElV3st/WleeuHynJcqcgXqRWhJ1VRfKt6juV3ApZ/Vmpy2R/1+QP665rhml+0obrsIj0z8zrT5ZoHHB+LTD0RCGGC3V5ClejSzQitHpSZGVMS63oJRCGFqlptk1FKePEwDoZeyMvN/QIhVIJ4sXP61Cl7KaUCZfCDHghMcVBajpKTNiNDGb5x2swvgDHUccKEaQioiCndBLwAQYHf2uXZiTpI9jCLRl7ePmPWqhqDDMk5OWjnzp2Y3NXmI1M1oqe+/qb5D3l5apcpz/VmwNUDACjStIcJQZxkmu996PUanTMyYqXE2Otq8fbC09HQA4SXniQCV5sJ/DGjtOSF7V5vQV95dFzEdDyBMb4fGEtkCCIYow3w/Y8v5q1cWQGMITknB3m9XtrtmWdSqSAsFoLB/kpMTBNHrGtuvKqnnw4EBmCXcxQDasOED4ESmf8hQu/+WURyzbtYXq+XAWMoapphkeO+RQS3p7rxLjPMbMbod0KtxFXdn504QEtIUChjrdSomkpNYxLTqRfzQgOcVDv//qysxmYoNJIGgwPUqDLPVLWFjJA2fIxzY5FhlDCemMwZuz5thNsJCDHE8/cjSeqonD//WfT8xR5KJDpdU43ZjMFxIS5+ZdqIES0BISZXujzE6/VS6Z52o3hBak5PHOr9Q16e2n7MmGdM3bCHQ6H3AQB0Sh9Rw+EPN7z4YvA+ecpLXJPGJ6ggbSwuKekBgL3UND82lOgMSsEmJtfdmZ6VlRIu1XszxoYaqr5Gi0ZkqhvvI8kxjjRPzU/PHBQDALCzagxI8a5mYlJSGuJ5F+FxYy42Nk0xjNocAd3U9JcjZRVPG4a+T6pT95307OyugBD7M7hbf4Zlf1haTg5XsGTJ+Z6Ts/MJkSZeh/GCpdOnlwHAB92mTk2ngB/xe73vd5s6hSFdL9g+Y/YaAIDHJk3KP+Nyng9xXJ/ts2YtBIDvqxvtM336dYpJxu1fvlzvnJHRGdWrdww7m7zd5sEHhxOOuwWZ5ogdb7yhAMCW6u/0zsrabwgJQ3iH1AgAvt4JgJMKC5nb7RbKKZuEopFpBas3XkzPmfoUZWxusPiCe8/fl13o/+yzdRWb9Be9IjAkbfy4PAB0J1OjGYJq7DhSVBRMPXRoo7+wsHo+5NX0HLnUwHhy/PniIbBj57s1PoOek7LWkITkA4qYPBQQWmjLzCQAYGCOUygzTU6SaCga1SOlZYxomrQ1d56vRl/u6pKT0xcTPBQAPrxw6BCyBHINuVqfM9aQiAIp1Sqcbre7IiUlhX1q6CUMIREAAIt8AsborNvtJuB2Q9yJE6FjZaWmzS7UrqqvEgAACrxexWRmNzDpfgBA25e/HGg7PKO7Lan2XlfzlDZaacXUgjmOZbIs48LCQnSqQQPhszlzFGPy5PswY9hhwlfVx+X3+81Ojz2WSBCupWvquc7ZE1cDJp3MSLD7niXL8gAAhajeHzQUAI5rKUq2TiU/HLp+/1v+k9VtFFYlBkL16qH9w4frTFOPI4Lq+v1+s+ffpj7fx+54TD11tr0SF3d0k9d7MP25yecIL9wKAADXV91FKEWmbhA9GgXOITEwDcNUlPI0WeZspaUEACCakGCamnaGIkgGAJSUmsosgVw7rhbtNWVKBQPGdMmG11TVM3WTp1IGlevZ6rpuGrrJ/H6/CX4/yLLM7A6H4bQJnHfsBJqxbJm5fPhwvcMzz/RkDFqxULhbZaDL4LNlyz7vOHliGpGc23WengLw0sJCN/H7fBQQirbds8eGenafQaPRd9bPmXMqTZa5DgA0edK4u1lM3MMKL5gh0xzOdG37j3m7rj/86afBrtnjXoid+dLUgCANoIa5CxCkMF3/qKY4qgPuAq/XBADmBiCqw34jVbUXAQBhjNYbgLKRQG4t8HoP9xk/3gUOW6IeDH0DAABVPwxnGAZoDIECEGPTaQGOBm7bvHBhcVX7PyUE0uUpdgTsWwBglgW5hugjj68X0c2WnKojO1Wi1f/P8zwPVZYBDCoh06ye64CjoRBiiQkiwdgGAHDy4EHc/W/y44DIy2pZ6Qs7cud+OFSWpVJNu5FyjBd1OB0NR2fHNm664r5nJ1L/9Flvuj0eUjo281bijFltauqZ4JmDGVUpVOr1etkDU8ZLlBrfM+A5joMl22bNfRUAoPPUZ3dripJ4DCAnURDuYUb0IcQgiXc4ltw3ceIwux2fImG1BVNLXls//43yNFnmCrxeoyw7O5PXTSyFo0sBgCHM3WUGK3Qzon4CAKAI+HkuqkRxWWAlAKBoQoIJAMAMoETAINk5sm1WbhgAvgMAaJ+RUVd0OBJ102QCzzsQwTcLDN7u+dRT8fbCwor/KBtmCeTKSOF2QIjun/LsQikm5j6luHjm27m5F6oHFNO0bwliKgCAgNARDdHD1WlSFUBXykoPh6PCMQAAm8veg4q2KVokOnRH7tw3gTFUOi6zri65/AjzYpQ3KGU0oIfCP3CAKl2Y2rVtRLC/Qk36Sdk3BzL3b9wY+ZSt/ykD9O60F3cAwI4uz01qIrjiXumeM2UwxqSpwWi06NDhdrUnje9pRsK8Whb4aPfSpYFuU59L5EVxmKlppziC1pfFNQmBLOMCr9ccOnSodFqL9gkHg323LF58oe/ooXGgqQ/yAJ6tixef7Z+V1VqhcG80WNEpf+nSMpBlnJRaWQeGMGY84YDDmAEAcssy7/d6NdFpf06Ic3UluqZTg4q6YZ7iJHEYOKSj/qX+tdbzJ9cIvTIy7P2zspIumQcAAMDVE2tut1uoOckGAJCeni5Wvx4qy5IM8PMEWhVuWRbcubm2obIsuceMsaX98saDaszA19wvVO2TpMkyBwDQbWJWz+7ylOe7TJo4GAB4AIDuz2Uf6DZx/PLqbf9ZnCX/nJlEbp+bZLRqVT2hiHplZNgvnXupbrO3PLlTt2l/M9KysprXPD+3200yMzNFtywLGRkZfKtWrfiUlBTBGlHXcLD+n7bxL6U3L5mtdvt85HdKSeC3ZrfdbjfpOmbUgF5yhh2qihKrZ8bdPh+53HFceo6XCqvm++rX6dnZXbu/8AK768knb/qj+sniKnO1frqDXzIYaw6G33z9zz6vsgpV7yvbv1yFbY1Sl19YFVnGbrebtMrI4H+nHORyAxf99Pdz+wh+u9IX/eJYqtrrNXZsYpexYx+5vobFhEsrmKvLTqrP0+La4hJX5xfuDUBlQSJUpUzThg6Vql2wS78vyzLuJcv2moOuS1aW4zIDFwMAqm77V1bipzW0LmOt5BHOysH8K1ftn3730mPpM2bkEwAAvceMeqzvxIktLj3vyx+DW/izCuKaP+nqIPK+zBHDXIm12kXDoX0iM47omhELki3dNFlEj4TXMWa4OCLFCJJISs8Xf5bYqN6gSEXF5ywSMTEv2KjA1bPFxbVgUXW3XnFxd2xS/aFKVCmynzzz6qkYiK2d0ODRqKEDiUY2mrzYGwzlC1M3k02bqy021QIxJq4P0rTvmap8CBTqbl26fFOf8WMHSbGxadGy8r1MVw8jypIiiqKBqRbydntnQbAXczypbwKxhwMX1zoS4p+MVkTyPly8bFuXkU92ctRKHMxU7VsjGj6GMA4ElRBvJ+KdBAtvG6A2twmiyCiVGKAT6+cs/LTX6JHPbZy38IWeE8cNsDsd7bRw5IASDJZRihpgia/gwIwyAl+AAXdtnr9k9X1PPjGAcZzJ2x29eWaeMJToBwhzjcHQjmKeJG+at3T7tb6CyrXvZ7rdAACQEBur4aiyVldVlVJIJ4QANozvgZkrBUlKczlcN2xftGQ1pWaDOKeUCBfLF+um3saZVOuYYJcaCpIUMkJhPzVpIm+Pvf7Uj6fmc4Srr6WkuOJQrF0vu/CugIkOksRxvFCKeVs7KtgoT/CPsfHJX2LT+NaFhQJBtPckkq0BAADHkbAWCGwgPIpwNrGT4HSEcGxMGo5LmMQ4gijB162ZPXeRaeqSGBMDrCiQI3FCNwCAGJurgtP1naauHcUcx6mMdeJERzskiSUmT1MxL9ZFvK0Rw6i+ZuqxAAAYsWDG8OHcptm57wWLy7wapbdrBG6wi+JKnnB1kN2RBMQxl3KcHQDAZpcaO5w2QxKEXaZpfklEsQWVpF5cTJwsSPbAn8GCXPsC8Vcucqhrus0AXeMoYKTBWi0Q/RgoSrTzXJADbFLGjK5jMjsC5lvqgtAvzNFkglEUmSyORwLhGJI4jE01qgYQx/WPiYtrbFIaTAbQDIHcqgnOtphBEY+5eIyBJxxHBY4zmWEKqqK4VEVHOmOawRgxq+63UUWLiWoqDiuKrmiaqlGzlUDwEQASpSb/IRctWQEASFXVKBg0niUn20GSCACAhvUYlRoSAIBJaRnmuF2iIErYEfcWxdyQqKJT1dA4jMhHkfLv8mVZxpRwrKxuXeR2uwmRyKMAZr7ICYbBcQ0YNWMJA5uqqSfCEeU8AIBRVPoKAXQOgV6bF/hinvBtCDW/VHQ9YET0kwBVtW7XMNy1rw8/BQAUUcJIdPAHQNEjDBnf8g6+GULm1+HTJWd0u7DXBEO38fYGxMa9G9U0HSguQoR9pip6S4xIMVCdM3npIDGVqBJlZ02dnQM9+lXZiVOGHiMeYYD4CmaASFEqiBLBprYLMa6YgHFWKy+/TgPji6iqnwXCdmOMygEAQoFyTDnxawfS4xEvnOMQsTNdORaKRPLBILHb3njrRwAAqmm7KWOxWDQHqgY9CwCgR9V6DON9nErLTTCaiQ5nUwpQpFw82xlJzuKooq1H1LwN2eBkwRsFSpI7iZAG9WwpAMZeQXBiTQtsmb9kXfqYMWk61e7HiuFjVIkzytVXKUBLAIC8lSsrOo98qg4hwhcCCx2nRNqOTX1/uCS8I0pIMgAUgSwjuMZFYnENxYjuMWMu9wQj6jEiow38e+lbK1P1Z+EXKdiqi3/pU3Ny1d9PacxL/7/q+3LNzy9Ns17aRnXKt+q9LMu4+hh+cUyX7ONX6dWqbarnLWq089M+akx4khrH97vp4l+c86/Pq+bTkpeetyUei2vyJmFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhAf8DxndN7V43erwAAAAASUVORK5CYII=" />' +
-      '<div class="name">אתי אטל</div>' +
-      '<div class="title">יועצת בריאות ותזונה התנהגותית</div>' +
-      '<div class="title">052-333-6766 | Attal.eti@gmail.com</div>' +
-      '</div>' +
-      '<p style="text-align:right;color:#666;font-size:14px;">' + today + '</p>' +
-      '<p>לכבוד רופא המשפחה</p>' +
-      '<p><strong>הנדון: המלצה לביצוע בדיקות מעבדה</strong></p>' +
-      '<p>' + fullName.trim() + ' (ת.ז: ' + id + ') הינו/ה הלקוח/ה שלי.<br/>בכדי שאוכל להמשיך את הליווי הבריאותי, אבקש לבצע את הבדיקות הבאות:</p>' +
-      '<table>' + tests + '</table>' +
-      '<div class="signature">' +
-      '<p>בתודה מראש,</p><br/>' +
-      '<p><strong>אתי אטל</strong><br/>יועצת בריאות ותזונה התנהגותית<br/>052-333-6766 | Attal.eti@gmail.com</p>' +
-      '</div>' +
-      '</body></html>'
-
+    var html = '<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;direction:rtl;padding:40px;color:#222;max-width:700px;margin:0 auto}.header{text-align:center;margin-bottom:30px;border-bottom:2px solid #0f4c2a;padding-bottom:20px}.logo{height:80px;margin-bottom:10px}.name{font-size:22px;font-weight:bold;color:#0f4c2a}.title{font-size:13px;color:#666}table{width:100%;border-collapse:collapse;margin:16px 0}.signature{margin-top:40px;border-top:1px solid #e5e7eb;padding-top:20px}p{line-height:1.8;font-size:15px}</style></head><body>'
+      + '<div class="header"><img class="logo" src="/logo.png" alt="logo" /><div class="name">אתי אטל</div><div class="title">יועצת בריאות ותזונה התנהגותית</div><div class="title">052-333-6766 | Attal.eti@gmail.com</div></div>'
+      + '<p style="text-align:right;color:#666;font-size:14px;">' + today + '</p>'
+      + '<p>לכבוד רופא המשפחה</p>'
+      + '<p><strong>הנדון: המלצה לביצוע בדיקות מעבדה</strong></p>'
+      + '<p>' + fullName.trim() + ' (ת.ז: ' + id + ') הינו/ה הלקוח/ה שלי.<br/>בכדי שאוכל להמשיך את הליווי הבריאותי, אבקש לבצע את הבדיקות הבאות:</p>'
+      + '<table>' + tests + '</table>'
+      + '<div class="signature"><p>בתודה מראש,</p><br/><p><strong>אתי אטל</strong><br/>יועצת בריאות ותזונה התנהגותית<br/>052-333-6766 | Attal.eti@gmail.com</p></div>'
+      + '</body></html>'
     var win = window.open('', '_blank')
-    win.document.write(html + '<div style="text-align:center;margin-top:30px"><button onclick="window.print()" style="padding:14px 30px;background:#0f4c2a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer">🖨️ שמור / הדפס PDF</button></div>')
+    win.document.write(html + '<div style="text-align:center;margin-top:30px"><button onclick="window.print()" style="padding:14px 30px;background:#0f4c2a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer">הדפס / שמור PDF</button></div>')
     win.document.close()
   }
-
 
   async function addClient() {
     if (!newClient.name || !newClient.password) { alert('שם וסיסמה הם שדות חובה'); return }
     setAddingClient(true)
     const { error } = await supabase.from('clients').insert([{
-      name: newClient.name,
-      last_name: newClient.last_name,
-      password: newClient.password,
-      phone: newClient.phone,
-      id_number: newClient.id_number || null,
+      name: newClient.name, last_name: newClient.last_name, password: newClient.password,
+      phone: newClient.phone, id_number: newClient.id_number || null,
       age: newClient.age ? parseInt(newClient.age) : null,
       weight: newClient.weight ? parseFloat(newClient.weight) : null,
       height: newClient.height ? parseFloat(newClient.height) : null,
-      goal: newClient.goal,
-      activity: newClient.activity,
-      gender: newClient.gender,
+      goal: newClient.goal, activity: newClient.activity, gender: newClient.gender,
     }])
     setAddingClient(false)
     if (error) { alert('שגיאה: ' + error.message); return }
@@ -405,31 +430,20 @@ export default function AdminPage() {
     loadClients()
   }
 
-
   async function extractBloodFromText() {
     if (!bloodText.trim()) return
     setBloodScanLoading(true)
     try {
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'blood', bloodText: bloodText })
-      })
+      const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'blood', bloodText: bloodText }) })
       const data = await res.json()
       var parsed = JSON.parse(data.result.replace(/```json|```/g, '').trim())
       var newTests = Object.assign({}, profile.blood_tests || {})
       Object.keys(parsed).forEach(function(k) { if (parsed[k] !== null && parsed[k] !== '') newTests[k] = String(parsed[k]) })
       setProfile(p => ({ ...p, blood_tests: newTests }))
-      if (data.extra && data.extra.trim()) {
-        setExtraBloodNotes(data.extra.trim())
-        alert('✅ הערכים חולצו! נמצאו גם ערכים חריגים נוספים שנשמרו אוטומטית בתיבת "ערכים חריגים נוספים". בדקי ושמרי.')
-      } else {
-        alert('✅ הערכים חולצו בהצלחה! בדקי את השדות ושמרי.')
-      }
+      if (data.extra && data.extra.trim()) { setExtraBloodNotes(data.extra.trim()); alert('✅ הערכים חולצו! נמצאו גם ערכים חריגים נוספים שנשמרו אוטומטית. בדקי ושמרי.') }
+      else alert('✅ הערכים חולצו בהצלחה! בדקי את השדות ושמרי.')
       setBloodText('')
-    } catch(e) {
-      alert('שגיאה: ' + e.message)
-    }
+    } catch(e) { alert('שגיאה: ' + e.message) }
     setBloodScanLoading(false)
   }
 
@@ -440,74 +454,42 @@ export default function AdminPage() {
     setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000)
   }
 
+  // ── תוקן: שמירת משוב כותבת לרשומת היום עם report_approved כדי שהלקוחה תראה ──
   async function saveFeedback(log) {
     setSavingFeedback(log.id)
-    await supabase.from('daily_logs').update({ trainer_feedback: feedback[log.id] }).eq('id', log.id)
+    const text = feedback[log.id] != null ? feedback[log.id] : (log.trainer_feedback || '')
+    await supabase.from('daily_logs').update({ trainer_feedback: text, report_approved: true }).eq('id', log.id)
     setSavingFeedback(null); setSentFeedback(log.id); setTimeout(() => setSentFeedback(null), 4000)
     const { data } = await supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).order('log_date', { ascending: false }).limit(30)
     setLogs(data || [])
-
   }
 
   function openWhatsApp(log) {
     var phone = selectedClient.phone
     if (!phone) { alert('אין מספר טלפון למטופל זה'); return }
+    phone = phone.replace(/^0/, '972')
     var fb = feedback[log.id] || log.trainer_feedback || ''
-    var msg = 'היי ' + selectedClient.name + '! 🌿\n\nמשוב מאתי על ' + log.log_date + ':\n\n' + fb + '\n\nכניסה ליומן: https://project-l990h.vercel.app'
+    var msg = 'היי ' + selectedClient.name + '! 🌿\n\nמשוב חדש מאתי מחכה לך באפליקציה 💚\nהיכנסי לצפייה: https://project-l990h.vercel.app'
     window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
   }
 
   async function runProfileAnalysis() {
     setAiLoading(true); setAiAnalysis(''); setEditableAnalysis('')
     try {
-      // שמרי extra_blood_notes ויומן לפני הניתוח
-      if (extraBloodNotes) {
-        await supabase.from('client_profiles').upsert(
-          { client_password: selectedClient.password, extra_blood_notes: extraBloodNotes, updated_at: new Date().toISOString() },
-          { onConflict: 'client_password' }
-        )
-      }
-      // שמרי את יומן האכילה לפני הניתוח
-      if (foodDiary && foodDiary.trim()) {
-        await supabase.from('client_profiles').upsert(
-          { client_password: selectedClient.password, food_diary: foodDiary, updated_at: new Date().toISOString() },
-          { onConflict: 'client_password' }
-        )
-      }
-      // הכן את הנתונים לשליחה - בלי שדות שעלולים לשבור
+      if (extraBloodNotes) await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, extra_blood_notes: extraBloodNotes, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
+      if (foodDiary && foodDiary.trim()) await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, food_diary: foodDiary, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
       var profileData = {}
       var allowedKeys = ['sleep_quality','sleep_issues','wake_time','sleep_time','digestion','smoking','menstrual_cycle','menstrual_days','medications','therapists','medical_history','family_history','diet_restrictions','breakfast_habits','lunch_habits','dinner_habits','snack_habits','food_sensitivities','avoided_foods','cooks_at_home','restaurants_per_week','water_intake','coffee_intake','alcohol_intake','emotional_eating','work_hours','stress_level','energy_level','mood_notes','exercise_type','pain_issues','main_goal','goal_obstacles','goal_motivation','success_vision','important_values','positive_memories','blood_tests','extra_blood_notes']
       allowedKeys.forEach(function(k) { if (profile[k] !== undefined) profileData[k] = profile[k] })
       var clientData = { age: selectedClient.age, weight: selectedClient.weight, height: selectedClient.height, gender: selectedClient.gender, activity: selectedClient.activity, goal: selectedClient.goal, target_weight: selectedClient.target_weight }
-      
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: selectedClient.name,
-          mode: 'profile',
-          profile: { ...profileData, ...clientData, extra_blood_notes: extraBloodNotes },
-          foodDiary: foodDiary || '',
-        })
-      })
+      const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: selectedClient.name, mode: 'profile', profile: { ...profileData, ...clientData, extra_blood_notes: extraBloodNotes }, foodDiary: foodDiary || '' }) })
       if (!res.ok) throw new Error('שגיאת שרת: ' + res.status)
       const data = await res.json()
-      if (data.error) {
-        alert('שגיאה: ' + data.error)
-      } else {
-        setAiAnalysis(data.result)
-        setEditableAnalysis(data.result)
-        // שמור ניתוח
-        await supabase.from('client_profiles').upsert({
-          client_password: selectedClient.password,
-          ai_report: data.result,
-          updated_at: new Date().toISOString()
-        }, { onConflict: 'client_password' })
+      if (data.error) { alert('שגיאה: ' + data.error) } else {
+        setAiAnalysis(data.result); setEditableAnalysis(data.result)
+        await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, ai_report: data.result, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
       }
-    } catch(err) {
-      console.error('Analysis error:', err)
-      alert('שגיאה בניתוח: ' + err.message)
-    }
+    } catch(err) { console.error('Analysis error:', err); alert('שגיאה בניתוח: ' + err.message) }
     setAiLoading(false)
   }
 
@@ -515,17 +497,8 @@ export default function AdminPage() {
     if (!editableAnalysis || !selectedClient) return
     setSendingToClient(true)
     const today = new Date().toLocaleDateString('sv-SE')
-    await supabase.from('daily_logs').upsert({
-      client_name: selectedClient.password,
-      log_date: today,
-      trainer_feedback: editableAnalysis,
-      report_approved: true,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: 'client_name,log_date' })
-    setSendingToClient(false)
-    setSentToClient(true)
-    setTimeout(() => setSentToClient(false), 4000)
-
+    await supabase.from('daily_logs').upsert({ client_name: selectedClient.password, log_date: today, trainer_feedback: editableAnalysis, report_approved: true, updated_at: new Date().toISOString() }, { onConflict: 'client_name,log_date' })
+    setSendingToClient(false); setSentToClient(true); setTimeout(() => setSentToClient(false), 4000)
   }
 
   async function runLogsAnalysis() {
@@ -534,16 +507,9 @@ export default function AdminPage() {
     var targets = calcTargets(selectedClient)
     var summary = filteredLogs.map(function(l) {
       var nut = calcNutrition(l, nutritionData)
-      return 'תאריך: ' + l.log_date +
-        ' | קלוריות: ' + Math.round(nut.calories) + (targets ? ' (יעד: ' + targets.calories + ')' : '') +
-        ' | חלבון: ' + Math.round(nut.protein) + 'g | שומן: ' + Math.round(nut.fat) + 'g' +
-        ' | מים: ' + (l.water || 0) + ' | צעדים: ' + (l.steps || 0) +
-        ' | הערה: ' + (l.note || '')
+      return 'תאריך: ' + l.log_date + ' | קלוריות: ' + Math.round(nut.calories) + (targets ? ' (יעד: ' + targets.calories + ')' : '') + ' | חלבון: ' + Math.round(nut.protein) + 'g | שומן: ' + Math.round(nut.fat) + 'g | מים: ' + (l.water || 0) + ' | צעדים: ' + (l.steps || 0) + ' | הערה: ' + (l.note || '')
     }).join('\n')
-    const res = await fetch('/api/analyze', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: selectedClient.name, logs: summary, nlpSummary: filteredLogs.map(function(l) { var m = l.nlp_metrics || {}; if (!m.stress && !m.fatigue && !m.hunger && !m.mood) return null; return l.log_date + ': לחץ ' + (m.stress||0) + '/5, עייפות ' + (m.fatigue||0) + '/5, רעב ' + (m.hunger||0) + '/5, מצב רוח: ' + (m.mood||'לא צוין') }).filter(Boolean).join(' | ') })
-    })
+    const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: selectedClient.name, logs: summary, nlpSummary: filteredLogs.map(function(l) { var m = l.nlp_metrics || {}; if (!m.stress && !m.fatigue && !m.hunger && !m.mood) return null; return l.log_date + ': לחץ ' + (m.stress||0) + '/5, עייפות ' + (m.fatigue||0) + '/5, רעב ' + (m.hunger||0) + '/5, מצב רוח: ' + (m.mood||'לא צוין') }).filter(Boolean).join(' | ') }) })
     const data = await res.json()
     setAiAnalysis(data.result); setAiLoading(false)
   }
@@ -551,13 +517,8 @@ export default function AdminPage() {
   async function scanBloodTests(file) {
     setScanLoading(true)
     try {
-      var base64 = await new Promise(function(res, rej) {
-        var r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = () => rej(new Error('Read failed')); r.readAsDataURL(file)
-      })
-      var response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } }, { type: 'text', text: 'זהו דף בדיקות דם. חלץ את הערכים ותחזיר JSON בלבד עם כל המפתחות הבאים:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"iron":null,"transferrin":null,"folic_acid":null,"vitamin_b12":null,"vitamin_b6":null,"vitamin_d":null,"calcium":null,"zinc":null,"magnesium":null,"tsh":null,"t3":null,"t4":null,"crp":null,"esr":null,"homocysteine":null,"alt":null,"ast":null,"creatinine":null,"urea":null,"uric_acid":null,"estrogen":null,"progesterone":null,"testosterone":null,"insulin":null,"wbc":null,"rbc":null,"platelets":null}\nהחזר רק מספרים ללא יחידות.' }] }] })
-      })
+      var base64 = await new Promise(function(res, rej) { var r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = () => rej(new Error('Read failed')); r.readAsDataURL(file) })
+      var response = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } }, { type: 'text', text: 'זהו דף בדיקות דם. חלץ את הערכים ותחזיר JSON בלבד עם המפתחות: glucose,hba1c,cholesterol,hdl,ldl,triglycerides,hemoglobin,ferritin,iron,transferrin,folic_acid,vitamin_b12,vitamin_b6,vitamin_d,calcium,zinc,magnesium,tsh,t3,t4,crp,esr,homocysteine,alt,ast,creatinine,urea,uric_acid,estrogen,progesterone,testosterone,insulin,wbc,rbc,platelets. החזר רק מספרים ללא יחידות, null אם חסר.' }] }] }) })
       var data = await response.json()
       var parsed = JSON.parse(data.content[0].text.replace(/```json|```/g, '').trim())
       var newTests = Object.assign({}, profile.blood_tests || {})
@@ -611,7 +572,8 @@ export default function AdminPage() {
                 { k: 'ai', l: '🧠 AI' },
                 { k: 'report', l: '📊 דוח' },
                 { k: 'stage', l: '🏆 שלב' },
-                { k: 'newclient', l: '➕ לקוח' }
+                { k: 'newclient', l: '➕ לקוח' },
+                { k: 'pantry', l: '🛒 מזווה' },
               ].map(function(t) {
                 return <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
               })}
@@ -635,7 +597,6 @@ export default function AdminPage() {
                   )}
                   <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>מציג {filteredLogs.length} רשומות</div>
                 </div>
-
                 {filteredLogs.map(function(log) {
                   var nut = calcNutrition(log, nutritionData)
                   return (
@@ -653,10 +614,11 @@ export default function AdminPage() {
                         <NutritionBar label="חלבון (g)" value={nut.protein} max={targets ? targets.protein : 100} color="#16a34a" />
                         <NutritionBar label="שומן (g)" value={nut.fat} max={targets ? targets.fat : 70} color="#9333ea" />
                         {log.note && <div style={{ padding: '8px 12px', background: '#fffbeb', borderRadius: 10, fontSize: 13, color: '#78350f', marginTop: 8 }}>💬 {log.note}</div>}
-                        <textarea value={feedback[log.id] != null ? feedback[log.id] : (log.trainer_feedback || '')} onChange={e => setFeedback(f => ({ ...f, [log.id]: e.target.value }))} placeholder="כתבי משוב..." rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginTop: 10 }} />
+                        <textarea value={feedback[log.id] != null ? feedback[log.id] : (log.trainer_feedback || '')} onChange={e => setFeedback(f => ({ ...f, [log.id]: e.target.value }))} placeholder="כתבי משוב..." rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginTop: 10 }} />
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>💡 המשוב יופיע ללקוחה כ<strong>כרטיס מעוצב</strong> עם הלוגו שלך</div>
                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                           <button onClick={() => saveFeedback(log)} style={{ flex: 1, padding: 10, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                            {savingFeedback === log.id ? '⏳...' : '✉️ שמרי משוב'}
+                            {savingFeedback === log.id ? '⏳...' : sentFeedback === log.id ? '✅ נשלח!' : '💚 שלחי משוב ללקוחה'}
                           </button>
                           {sentFeedback === log.id && selectedClient.phone && (
                             <button onClick={() => openWhatsApp(log)} style={{ padding: '10px 14px', borderRadius: 10, background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>📱 WA</button>
@@ -666,15 +628,12 @@ export default function AdminPage() {
                     </div>
                   )
                 })}
-
                 {filteredLogs.length > 0 && (
                   <button onClick={runLogsAnalysis} disabled={aiLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: aiLoading ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginTop: 4 }}>
                     {aiLoading ? '⏳ מנתח...' : '🤖 נתחי עם AI'}
                   </button>
                 )}
-                {aiAnalysis && tab === 'logs' && (
-                  <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0', fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', marginTop: 12 }}>{aiAnalysis}</div>
-                )}
+                {aiAnalysis && tab === 'logs' && <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0', fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', marginTop: 12 }}>{aiAnalysis}</div>}
               </div>
             )}
 
@@ -687,8 +646,6 @@ export default function AdminPage() {
                     <div style={{ fontSize: 13, color: '#9ca3af' }}>יועצת בריאות ותזונה התנהגותית</div>
                     <div style={{ fontSize: 12, color: '#9ca3af' }}>052-333-6766 | Attal.eti@gmail.com</div>
                   </div>
-                  <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>📄 מכתב לרופא המשפחה</div>
-                  <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>בחרי את הבדיקות הנדרשות ושלחי ב-WhatsApp</div>
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>תעודת זהות מטופל/ת</div>
                     <input type="text" value={patientId} onChange={e => setPatientId(e.target.value)} placeholder="הזיני ת.ז..." style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
@@ -708,15 +665,9 @@ export default function AdminPage() {
                     )
                   })}
                 </div>
-                <button onClick={openDoctorLetter} style={{ width: '100%', padding: 14, borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16, marginBottom: 8 }}>
-                  📄 פתחי מכתב לרופא
-                </button>
+                <button onClick={openDoctorLetter} style={{ width: '100%', padding: 14, borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16, marginBottom: 8 }}>📄 פתחי מכתב לרופא</button>
                 {selectedClient.phone && (
-                  <button onClick={() => {
-                    var phone = selectedClient.phone
-                    var msg = 'היי ' + selectedClient.name + '! 🌿\n\nמצורף מכתב לרופא המשפחה.\n\nכניסה ליומן: https://project-l990h.vercel.app'
-                    window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                  }} style={{ width: '100%', padding: 14, borderRadius: 12, background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
+                  <button onClick={() => { var phone = selectedClient.phone.replace(/^0/,'972'); var msg = 'היי ' + selectedClient.name + '! 🌿\n\nמצורף מכתב לרופא המשפחה.\n\nכניסה ליומן: https://project-l990h.vercel.app'; window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank') }} style={{ width: '100%', padding: 14, borderRadius: 12, background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
                     📱 שלחי ב-WhatsApp
                   </button>
                 )}
@@ -734,10 +685,7 @@ export default function AdminPage() {
                 ].map(function(s) {
                   const isActive = (selectedClient.current_stage || 1) === s.stage
                   return (
-                    <div key={s.stage} onClick={async function() {
-                      await supabase.from('clients').update({ current_stage: s.stage }).eq('id', selectedClient.id)
-                      setSelectedClient(c => ({ ...c, current_stage: s.stage }))
-                    }} style={{ padding: 16, borderRadius: 14, border: '2px solid ' + (isActive ? s.color : '#e5e7eb'), background: isActive ? s.bg : '#fafafa', cursor: 'pointer', marginBottom: 10 }}>
+                    <div key={s.stage} onClick={async function() { await supabase.from('clients').update({ current_stage: s.stage }).eq('id', selectedClient.id); setSelectedClient(c => ({ ...c, current_stage: s.stage })) }} style={{ padding: 16, borderRadius: 14, border: '2px solid ' + (isActive ? s.color : '#e5e7eb'), background: isActive ? s.bg : '#fafafa', cursor: 'pointer', marginBottom: 10 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <div style={{ width: 22, height: 22, borderRadius: 99, border: '2px solid ' + (isActive ? s.color : '#d1d5db'), background: isActive ? s.color : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           {isActive && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
@@ -822,40 +770,16 @@ export default function AdminPage() {
                 </div>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 700, marginBottom: 8 }}>📋 הדבקת טקסט מבדיקות דם</div>
-                  <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>העתיקי והדביקי את טקסט הבדיקות — ה-AI יחלץ את הערכים אוטומטית</div>
-                  <textarea
-                    value={bloodText}
-                    onChange={e => setBloodText(e.target.value)}
-                    placeholder="הדביקי כאן את תוצאות הבדיקות כטקסט חופשי..."
-                    rows={5}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginBottom: 8 }}
-                  />
+                  <textarea value={bloodText} onChange={e => setBloodText(e.target.value)} placeholder="הדביקי כאן את תוצאות הבדיקות כטקסט חופשי..." rows={5} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginBottom: 8 }} />
                   <button onClick={extractBloodFromText} disabled={bloodScanLoading || !bloodText.trim()} style={{ width: '100%', padding: 12, borderRadius: 10, background: bloodScanLoading ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
                     {bloodScanLoading ? '⏳ מחלץ ערכים...' : '🤖 חלצי ערכים אוטומטית'}
                   </button>
                 </div>
-
                 <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 700, marginBottom: 8 }}>⚠️ ערכים חריגים נוספים (לא בטופס)</div>
-                  <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>הדביקי כאן ערכים חריגים שלא קיימים בטופס (IgG, FLC, גמא וכו') — ה-AI יפרש אותם בניתוח</div>
-                  <textarea
-                    value={extraBloodNotes}
-                    onChange={e => setExtraBloodNotes(e.target.value)}
-                    onBlur={async e => {
-                      if (selectedClient) {
-                        await supabase.from('client_profiles').upsert(
-                          { client_password: selectedClient.password, extra_blood_notes: e.target.value, updated_at: new Date().toISOString() },
-                          { onConflict: 'client_password' }
-                        )
-                      }
-                    }}
-                    placeholder="לדוגמה: IgG 2328 (גבוה, נורמה עד 1631), FLC Kappa 30.87 (גבוה, נורמה עד 19.4), גמא 24.3% (גבוה)"
-                    rows={3}
-                    style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }}
-                  />
+                  <textarea value={extraBloodNotes} onChange={e => setExtraBloodNotes(e.target.value)} onBlur={async e => { if (selectedClient) await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, extra_blood_notes: e.target.value, updated_at: new Date().toISOString() }, { onConflict: 'client_password' }) }} placeholder="לדוגמה: IgG 2328 (גבוה), FLC Kappa 30.87..." rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                   <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>נשמר אוטומטית בעזיבת השדה</div>
                 </div>
-
                 <div style={{ background: '#fff', borderRadius: 18, padding: 16, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 700, marginBottom: 12 }}>🩸 ערכי בדיקות דם</div>
                   <Field label="תאריך הבדיקות" value={profile.blood_tests_date} onChange={v => updateProfile('blood_tests_date', v)} type="date" />
@@ -863,10 +787,7 @@ export default function AdminPage() {
                     var val = (profile.blood_tests || {})[test.key] || ''
                     return (
                       <div key={test.key} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 8, alignItems: 'center', marginBottom: 8, padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 600 }}>{test.label}</div>
-                          <div style={{ fontSize: 11, color: '#9ca3af' }}>תקין: {test.normal} {test.unit}</div>
-                        </div>
+                        <div><div style={{ fontSize: 13, fontWeight: 600 }}>{test.label}</div><div style={{ fontSize: 11, color: '#9ca3af' }}>תקין: {test.normal} {test.unit}</div></div>
                         <input type={['lactose_sensitivity','gluten_sensitivity','celiac','blood_type','urine_general','urine_culture'].includes(test.key) ? 'text' : 'number'} value={val} onChange={e => updateBloodTest(test.key, e.target.value)} placeholder="ערך" style={{ padding: '6px 8px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, textAlign: 'center', outline: 'none', width: '100%', boxSizing: 'border-box' }} />
                         <div style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center' }}>{test.unit}</div>
                       </div>
@@ -882,19 +803,10 @@ export default function AdminPage() {
             {tab === 'nutrition' && (
               <div style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', border: '1.5px solid #f0f0f0' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '10px 16px', background: '#f8fafc', fontWeight: 700, fontSize: 13, color: '#555', borderBottom: '1.5px solid #f0f0f0' }}>
-                  <div>פריט</div>
-                  <div style={{ textAlign: 'center' }}>קלוריות</div>
-                  <div style={{ textAlign: 'center' }}>חלבון</div>
-                  <div style={{ textAlign: 'center' }}>שומן</div>
-                  <div style={{ textAlign: 'center' }}>סיבים</div>
-                  <div></div>
+                  <div>פריט</div><div style={{ textAlign: 'center' }}>קלוריות</div><div style={{ textAlign: 'center' }}>חלבון</div><div style={{ textAlign: 'center' }}>שומן</div><div style={{ textAlign: 'center' }}>סיבים</div><div></div>
                 </div>
                 {nutritionItems.map(function(item) {
-                  return <NutritionRow key={item.id} item={item} onSave={async function(updated) {
-                    await supabase.from('nutrition_data').upsert(updated, { onConflict: 'id' })
-                    const { data } = await supabase.from('nutrition_data').select('*').order('id')
-                    setNutritionItems(data || [])
-                  }} />
+                  return <NutritionRow key={item.id} item={item} onSave={async function(updated) { await supabase.from('nutrition_data').upsert(updated, { onConflict: 'id' }); const { data } = await supabase.from('nutrition_data').select('*').order('id'); setNutritionItems(data || []) }} />
                 })}
               </div>
             )}
@@ -903,40 +815,21 @@ export default function AdminPage() {
               <div>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0', marginBottom: 12 }}>
                   <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>🧠 ניתוח AI מקיף</div>
-                  <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>משלב: שאלון 360 + בדיקות דם + רמות לוגיות NLP + 5 ימי אכילה</div>
-
+                  <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>משלב: שאלון 360 + בדיקות דם + NLP + ימי אכילה</div>
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, color: '#0f4c2a' }}>🍽️ 3 ימי אכילה אופייניים (לפני התהליך)</div>
-                    <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 6 }}>הדביקי כאן תיאור של 3 ימי אכילה רגילים — ללא פורמט מיוחד</div>
-                    <textarea
-                      value={foodDiary}
-                      onChange={e => setFoodDiary(e.target.value)}
-                      placeholder='הזיני כאן תיאור של 3 ימי אכילה רגילים...'
-                      rows={8}
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7 }}
-                    />
+                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 8, color: '#0f4c2a' }}>🍽️ 3 ימי אכילה אופייניים</div>
+                    <textarea value={foodDiary} onChange={e => setFoodDiary(e.target.value)} placeholder='הזיני כאן תיאור של 3 ימי אכילה רגילים...' rows={8} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7 }} />
                   </div>
-
                   <button onClick={runProfileAnalysis} disabled={aiLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: aiLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: aiLoading ? 'default' : 'pointer', fontWeight: 700, fontSize: 16 }}>
                     {aiLoading ? '⏳ מנתחת... (עד דקה)' : '🧠 הפעילי ניתוח מקיף'}
                   </button>
                 </div>
-
-
                 {editableAnalysis && (
                   <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
-                    <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4, color: '#0f4c2a' }}>✏️ ניתוח — ערכי לפני שליחה</div>
-                    <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>את יכולה לערוך, להוסיף או למחוק לפני שהלקוחה רואה</div>
-                    <textarea
-                      value={editableAnalysis}
-                      onChange={e => setEditableAnalysis(e.target.value)}
-                      rows={20}
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8 }}
-                    />
+                    <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4, color: '#0f4c2a' }}>✏️ ערכי לפני שליחה</div>
+                    <textarea value={editableAnalysis} onChange={e => setEditableAnalysis(e.target.value)} rows={20} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8 }} />
                     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                      <button onClick={() => window.open('/report?client=' + selectedClient.password + '&preview=true', '_blank')} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
-                        👁️ תצוגה מקדימה
-                      </button>
+                      <button onClick={() => window.open('/report?client=' + selectedClient.password + '&preview=true', '_blank')} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה</button>
                       <button onClick={sendAnalysisToClient} disabled={sendingToClient} style={{ flex: 2, padding: 14, borderRadius: 12, background: sentToClient ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
                         {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
                       </button>
@@ -952,26 +845,15 @@ export default function AdminPage() {
                 <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 16 }}>הדוח נשמר אוטומטית בכל ניתוח AI — לא מתאפס</div>
                 {editableAnalysis ? (
                   <>
-                    <textarea
-                      value={editableAnalysis}
-                      onChange={e => setEditableAnalysis(e.target.value)}
-                      rows={20}
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8 }}
-                    />
+                    <textarea value={editableAnalysis} onChange={e => setEditableAnalysis(e.target.value)} rows={20} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8 }} />
                     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                      <button onClick={() => window.open('/report?client=' + selectedClient.password + '&preview=true', '_blank')} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
-                        👁️ תצוגה מקדימה
-                      </button>
+                      <button onClick={() => window.open('/report?client=' + selectedClient.password + '&preview=true', '_blank')} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה</button>
                       <button onClick={sendAnalysisToClient} disabled={sendingToClient} style={{ flex: 2, padding: 14, borderRadius: 12, background: sentToClient ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
                         {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
                       </button>
                     </div>
-                    {editableAnalysis && selectedClient.phone && (
-                      <button onClick={() => {
-                        var phone = selectedClient.phone.replace(/^0/, '972')
-                        var msg = 'היי ' + selectedClient.name + '! 🌿\n\nהדוח האישי שלך מוכן — לחצי כאן לצפייה:\nhttps://project-l990h.vercel.app/report?client=' + selectedClient.password
-                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                      }} style={{ width: '100%', padding: 14, borderRadius: 12, marginTop: 8, background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                    {selectedClient.phone && (
+                      <button onClick={() => { var phone = selectedClient.phone.replace(/^0/,'972'); var msg = 'היי ' + selectedClient.name + '! 🌿\n\nהדוח האישי שלך מוכן — לחצי כאן לצפייה:\nhttps://project-l990h.vercel.app/report?client=' + selectedClient.password; window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank') }} style={{ width: '100%', padding: 14, borderRadius: 12, marginTop: 8, background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
                         📱 שלחי ללקוחה בוואטסאפ
                       </button>
                     )}
@@ -980,9 +862,7 @@ export default function AdminPage() {
                   <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>
                     <div style={{ fontSize: 40, marginBottom: 12 }}>🧠</div>
                     <div>עדיין לא הופק ניתוח AI עבור {selectedClient.name}</div>
-                    <button onClick={() => setTab('ai')} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
-                      עברי לטאב AI להפקת ניתוח
-                    </button>
+                    <button onClick={() => setTab('ai')} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}>עברי לטאב AI</button>
                   </div>
                 )}
               </div>
@@ -1004,25 +884,76 @@ export default function AdminPage() {
                 </div>
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>מגדר</div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {['נקבה', 'זכר'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, gender: g}))} style={{ flex: 1, padding: 8, borderRadius: 10, border: '2px solid ' + (newClient.gender === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.gender === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: newClient.gender === g ? '#0f4c2a' : '#555' }}>{g}</button>)}
-                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>{['נקבה', 'זכר'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, gender: g}))} style={{ flex: 1, padding: 8, borderRadius: 10, border: '2px solid ' + (newClient.gender === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.gender === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: newClient.gender === g ? '#0f4c2a' : '#555' }}>{g}</button>)}</div>
                 </div>
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>מטרה</div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {['ירידה במשקל', 'שמירה על משקל', 'עלייה במסה'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, goal: g}))} style={{ flex: 1, padding: 8, borderRadius: 10, border: '2px solid ' + (newClient.goal === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.goal === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: newClient.goal === g ? '#0f4c2a' : '#555', minWidth: 100 }}>{g}</button>)}
-                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{['ירידה במשקל', 'שמירה על משקל', 'עלייה במסה'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, goal: g}))} style={{ flex: 1, padding: 8, borderRadius: 10, border: '2px solid ' + (newClient.goal === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.goal === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: newClient.goal === g ? '#0f4c2a' : '#555', minWidth: 100 }}>{g}</button>)}</div>
                 </div>
                 <div style={{ marginBottom: 16 }}>
                   <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>רמת פעילות</div>
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    {['יושבני', 'קל', 'בינוני', 'פעיל', 'מאוד פעיל'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, activity: g}))} style={{ padding: '6px 10px', borderRadius: 10, border: '2px solid ' + (newClient.activity === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.activity === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: newClient.activity === g ? '#0f4c2a' : '#555' }}>{g}</button>)}
-                  </div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{['יושבני', 'קל', 'בינוני', 'פעיל', 'מאוד פעיל'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, activity: g}))} style={{ padding: '6px 10px', borderRadius: 10, border: '2px solid ' + (newClient.activity === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.activity === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: newClient.activity === g ? '#0f4c2a' : '#555' }}>{g}</button>)}</div>
                 </div>
                 <button onClick={addClient} disabled={addingClient} style={{ width: '100%', padding: 14, borderRadius: 12, background: addingClient ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
                   {addingClient ? '⏳ מוסיפה...' : '➕ הוסיפי לקוחה'}
                 </button>
+              </div>
+            )}
+
+            {tab === 'pantry' && (
+              <div>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8, color: '#0f4c2a' }}>🎥 וידאו אישי למטופלת</div>
+                  <input value={selectedClient.video_url || ''} onChange={e => setSelectedClient(prev => ({ ...prev, video_url: e.target.value }))} onBlur={e => updateClientData('video_url', e.target.value)} placeholder="הכניסי קישור YouTube או Vimeo..." style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                  {selectedClient.video_url && (
+                    <div style={{ marginTop: 12, borderRadius: 12, overflow: 'hidden' }}>
+                      <iframe src={selectedClient.video_url.replace('watch?v=', 'embed/')} width="100%" height="200" frameBorder="0" allowFullScreen style={{ borderRadius: 12, display: 'block' }} />
+                    </div>
+                  )}
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>נשמר אוטומטית בעזיבת השדה</div>
+                </div>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8, color: '#0f4c2a' }}>📝 הנחיות מזווה</div>
+                  <textarea value={selectedClient.pantry_notes || ''} onChange={e => setSelectedClient(prev => ({ ...prev, pantry_notes: e.target.value }))} onBlur={e => updateClientData('pantry_notes', e.target.value)} placeholder="כתבי הנחיות מזווה אישיות למטופלת..." style={{ width: '100%', height: 200, padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7 }} />
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>נשמר אוטומטית בעזיבת השדה</div>
+                </div>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 12, color: '#0f4c2a' }}>🛒 ניהול מלאי וקניות</div>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                    <input value={newItemName} onChange={e => setNewItemName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItemToInventory()} placeholder="שם המוצר (לדוגמה: עדשים)" style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    <button onClick={addItemToInventory} disabled={addingItem || !newItemName.trim()} style={{ padding: '10px 18px', borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, whiteSpace: 'nowrap' }}>
+                      {addingItem ? '⏳' : '+ הוסיפי'}
+                    </button>
+                  </div>
+                  {inventory.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: 24, color: '#9ca3af', fontSize: 14 }}>עדיין אין פריטים — הוסיפי מוצר ראשון 👆</div>
+                  ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc' }}>
+                          <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 13, color: '#555', fontWeight: 700 }}>מוצר</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: 13, color: '#555', fontWeight: 700 }}>סטטוס</th>
+                          <th style={{ padding: '8px 12px', textAlign: 'center', fontSize: 13, color: '#555', fontWeight: 700 }}>פעולות</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {inventory.map(item => (
+                          <tr key={item.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                            <td style={{ padding: '10px 12px', fontSize: 14, color: '#222' }}>{item.name}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                              <button onClick={() => toggleItemStatus(item.id, item.status)} style={{ padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', background: item.status === 'missing' ? '#fef2f2' : '#dcfce7', color: item.status === 'missing' ? '#ef4444' : '#16a34a' }}>
+                                {item.status === 'missing' ? '❌ חסר' : '✅ קיים'}
+                              </button>
+                            </td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                              <button onClick={() => deleteItem(item.id)} style={{ padding: '4px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer', border: '1px solid #fca5a5', background: '#fff', color: '#ef4444', fontWeight: 700 }}>מחק</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
               </div>
             )}
           </>
