@@ -1,12 +1,8 @@
-```javascript
 import Anthropic from '@anthropic-ai/sdk'
 
 export const maxDuration = 60
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
-
-// כאן נמצא קישור הלוגו הירוק והיפה שלך - הוא יופיע אוטומטית בראש המשובים והדוחות
-const LOGO_URL = 'https://i.ibb.co/ykK6yXG/eti-logo.png'; 
 
 const BLOOD_NAMES = {
   glucose:'סוכר בצום',hba1c:'המוגלובין A1C',cholesterol:'כולסטרול כללי',
@@ -62,10 +58,9 @@ export async function POST(request) {
     const body = await request.json()
     const { name, logs, mode, profile, foodDiary } = body
 
-    // 1. חילוץ ערכי בדיקות דם מטקסט חופשי (מצב blood)
     if (mode === 'blood' && body.bloodText) {
       const msg = await client.messages.create({
-        model: 'claude-3-5-haiku-latest',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 600,
         messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם. החזר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null,"extra_abnormals":""}\nב-extra_abnormals: כתוב כטקסט את כל הערכים החריגים שאינם בשאר השדות (IgG, FLC, גמא וכו) עם הערך והטווח הרגיל. מספרים בלבד בשאר השדות.\nטקסט: ' + String(body.bloodText).substring(0, 2000) }]
       })
@@ -80,42 +75,40 @@ export async function POST(request) {
       }
     }
 
-    // 2. הפקת משוב שבועי/יומי משודרג ובטוח ל-JSON (מצב logs)
+    // שלב ג': הפקת משוב שבועי מעוצב ואותנטי (כולל גרף ויזואלי מבוסס נתונים)
     if (logs && !mode) {
       const nlpSummary = body.nlpSummary || ''
       const msg = await client.messages.create({
-        model: 'claude-3-5-haiku-latest',
+        model: 'claude-haiku-4-5-20251001',
         max_tokens: 1000,
         messages: [{ 
           role: 'user', 
-          content: 'אתה אתי אטל — יועצת בריאות, מומחית לתזונה התנהגותית ו-NLP Master. כתבי משוב חם, חכם, קצר ומעצים ל-' + name + ' בעברית, גוף שני נקבה בלבד (את, שלך, עשית - ללא שגיאות מגדר, ללא פניות בזכר).\n'
+          content: 'אתה אתי אטל — יועצת בריאות, מומחית לתזונה התנהגותית ו-NLP Master. כתבי משוב שבועי חם, חכם, קצר ומעצים ל-' + name + ' בעברית, גוף שני נקבה בלבד (את, שלך, עשית - ללא בלבול מגדר, ללא פניות בזכר).\n'
           + 'סגנון: בוטיק, אינטימי, מחבק, גובה העיניים, ללא שפה ארגונית מנוכרת.\n'
-          + 'פתחי את המשוב עם הלוגו שלך בצורה הממורכזת הבאה בדיוק: <div align="center"><img src="' + LOGO_URL + '" width="180" style="max-width:100%; height:auto; margin-bottom: 20px;" /></div>\n\n'
-          + (nlpSummary ? 'מדדי NLP (מתח, עייפות וכו\'): ' + nlpSummary + '\n' : '') 
-          + 'נתוני יומן אכילה בפועל מול יעדים: ' + String(logs).substring(0, 1400) + '\n\n'
+          + (nlpSummary ? 'מדדי NLP השבוע (מתח, עייפות וכו\'): ' + nlpSummary + '\n' : '') 
+          + 'נתוני יומן אכילה השבוע בפועל מול יעדים: ' + String(logs).substring(0, 1400) + '\n\n'
           + 'בני את המשוב בדיוק במבנה הבא (השתמשי בכותרות ובקווים המפרידים):\n\n'
           + '# 📋 המשוב השבועי שלך, ' + name + ' 💚\n\n'
           + '--- \n\n'
-          + '### 📊 תמונת המצב: יעד מול ביצוע\n'
+          + '### 📊 תמונת המצב השבועית: יעד מול ביצוע\n'
           + '> **איך לקרוא את הגרף?** הקו המקווקו מייצג את יעד המודל האישי שלך, והגרף המלא מראה איפה היית בפועל השבוע.\n\n'
-          + 'בני כאן גרף טקסטואלי נקי (בתוך בלוק קוד של סימני `) שמציג את אחוזי הביצוע באמצעות אמוג\'ים של ריבועים צבעוניים. השתמשי בריבועים ירוקים 🟩 לביצוע, וריבועים לבנים ⬜ לחלק הנותר (סך הכל 10 ריבועים בכל שורה). דוגמה מדויקת למבנה: \n'
-          + 'קלוריות    [🟩🟩🟩🟩🟩🟩⬜⬜⬜⬜] 60%\n'
-          + 'חלבון      [🟩🟩🟩🟩🟩🟩🟩🟩🟩🟩] 100% (עמידה מלאה ביעד!)\n\n'
+          + 'בני כאן גרף טקסטואלי נקי (בתוך בלוק קוד של סימני `) שמציג את אחוזי הביצוע של המטופלת עבור המדדים שהוזנו ביומן (כגון קלוריות, חלבון, מים, צעדים). דוגמה למבנה: \n'
+          + 'קלוריות    [████████████░░░░] 74% (חוסר של 540 קלוריות)\n'
+          + 'חלבון      [████████████████] 100% (עמידה מלאה ביעד!)\n\n'
           + '--- \n\n'
           + '## 🔍 מה באמת קורה (הראש והצלחת)\n'
-          + 'כתבי פסקה אחת ממוקדת בת 3-4 משפטים. חברי בין הנתונים הפיזיולוגיים היבשים (אכילה, מים) לבין המצב המנטלי, רמות הסטרס והעייפות שלה (למשל, זיהוי אכילה רגשית הפוכה או צמצום מתוך מתח). תני לה הוקרה וקרדיט אמיתי וספציפי על מה שכן עבד.\n\n'
+          + 'כתבי פסקה אחת ממוקדת בת 3-4 משפטים. חברי בין הנתונים הפיזיולוגיים היבשים (אכילה, מים) לבין המצב המנטלי, רמות הסטרס והעייפות שלה (למשל, זיהוי אכילה רגשית הפוכה או צמצום מתוך מתח). תני לה הוקרה וקרדיט אמיתי וספציפי על מה שכן עבד השבוע.\n\n'
           + '--- \n\n'
           + '## 🎯 3 צעדים קטנים למחר\n'
-          + 'כתבי 3 פעולות ממוקדות, ריאליסטיות, קצרות ופשוטות לביצוע שיעזרו לה לאזן את הימים הבאים, מנוסחות בחום ובגוף שני נקבה בלבד (לדוגמה: 💧 עוגן מים יומיומי...).\n\n'
+          + 'כתבי 3 פעולות ממוקדות, ריאליסטיות, קצרות ופשוטות לביצוע שיעזרו לה לאזן את השבוע הבא, מנוסחות בחום ובגוף שני נקבה בלבד (לדוגמה: 💧 עוגן מים יומיומי...).\n\n'
           + '--- \n\n'
           + '## 💚 מסר בשבילך\n'
-          + '> משפט השראה חם, אישי ומעצים שמתכתב עם מה שעברה.'
+          + '> משפט השראה חם, אישי ומעצים שמתכתב עם השבוע שעברה.'
         }]
       })
       return Response.json({ result: msg.content[0].text })
     }
 
-    // 3. ניתוח פרופיל עמוק חגיגי (מצב profile)
     if (mode === 'profile' && profile) {
       const p = profile
       const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(String(p.exercise_type)))
@@ -126,33 +119,38 @@ export async function POST(request) {
       const stepsNote = isSedentary ? ', כולל 7,000 צעדים יומיים' : ''
 
       const athleteSection = isAthlete
-        ? '**⚡ חלון ההזדמנויות הספורטיבי והמנטלי**\nהחיבור בין דלק לגוף לביצועים ומוטיבציה. חלבון ותמיכה במניעת קטבוליזם.'
-        : '**⚡ תמיכה במטבוליזם וניהול דחפים**\nאיך פחמימות עודפות וחלבון נמוך משפיעים על קפיצות אינסולין ועל תחושת השובע והשליטה.';
+        ? '**\u26a1 חלון ההזדמנויות הספורטיבי**\nתזונה לפני/אחרי אימון. מניעת קטבוליזם. חלבון. ספציפי לסוג האימון שלה.'
+        : '**\u26a1 תמיכה במטבוליזם ובאנרגיה**\nפחמימות עודפות + חלבון נמוך = קפיצות אינסולין שנועלות שריפת שומן. הגוף מפרק שריר גם בלי ספורט. BMR נמוך. התקפי רעב. חיבר לנתונים.'
 
-      const bloodSection = '**🩸 מה אומרות הבדיקות**\n'
-        + 'פרשנות חמה לערכים חריגים, חיבור לתחושות היומיומיות והמלצות פרקטיות.';
+      const bloodSection = '**\ud83e\ude78 מה אומרות הבדיקות**\n'
+        + 'לכל ערך חריג: שם + ערך + טווח רצוי + הסבר + המלצה (תזונה/תוסף/רופא). כולל הבדיקות החריגות הנוספות אם קיימות. אם ערך דורש רופא — ציינו.'
 
       const baseData = 'נתונים על ' + name + ':\n'
-        + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + '\n'
-        + 'לחץ: ' + s(p.stress_level,'?') + '/10 | אכילה רגשית: ' + s(p.emotional_eating,'?') + '\n'
-        + 'ערכים חשובים: ' + s(p.important_values,'?') + '\n'
+        + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + ' | פעילות: ' + s(p.exercise_type,'לא') + '\n'
+        + 'שינה: ' + s(p.sleep_quality,'?') + ' | קימה: ' + s(p.wake_time,'?') + ' | לחץ: ' + s(p.stress_level,'?') + '/10\n'
+        + 'בוקר: ' + s(p.breakfast_habits,'?') + ' | קפה: ' + s(p.coffee_intake,'?') + ' | מים: ' + s(p.water_intake,'?') + '\n'
+        + 'אכילה רגשית: ' + s(p.emotional_eating,'?') + ' | מה מעכב: ' + s(p.goal_obstacles,'?') + '\n'
+        + 'מה רוצה: ' + s(p.main_goal,'?') + ' | מה חשוב: ' + s(p.important_values,'?') + '\n'
+        + 'רפואי: ' + s(p.medical_history,'אין') + ' | תרופות: ' + s(p.medications,'אין') + '\n'
         + 'בדיקות: ' + bloodText + '\n'
+        + (extraBlood ? extraBlood + '\n' : '')
+        + (diary ? 'אכילה (3 ימים): ' + diary + '\n' : '')
 
-      const systemPrompt = 'אתה אתי אטל - יועצת בריאות NLP Master.\n'
-        + 'פתחי את הדו"ח עם הלוגו שלך ממורכז: <div align="center"><img src="' + LOGO_URL + '" width="200" style="max-width:100%; height:auto;" /></div>\n\n'
-        + 'כתבי ניתוח חם ועמוק ל-' + name + ' בעברית (גוף שני נקבה). סגנון בוטיק יוקרתי, אינטימי ומחבק.\n'
-        + 'חובה: עברית תקנית. לא להמציא פרטים. התחילי ישר מהלוגו והסעיף הראשון.\n\n'
+      const systemPrompt = 'אתה אתי אטל - יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
+        + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
+        + 'סגנון: אינטימי, מחבק - כמו שיחה עם חברה. ללא טבלאות.\n'
+        + 'חובה: עברית תקנית. "את" לא "אתת". "כולסטרול" לא "קוליסטרול". אל תמציאי פרטים. אל תכתבי כותרת ראשית בתחילת התשובה — התחילי ישר עם הסעיף הראשון. כתבי HDL לא BDL. כללים: (1) כל סעיף 3-4 משפטים בלבד, למעט סעיף הבדיקות שיכול להגיע ל-6 משפטים. (2) אל תחזרי על ערכי מעבדה שבטבלה — רק פרשנות התנהגותית. (3) כל משפט חייב להיות שלם וסגור. (4) אם יש ערכים חריגים נוספים (IgG, FLC וכו) חובה להזכיר אותם בסעיף הבדיקות.\n\n'
 
       const [msg1, msg2] = await Promise.all([
         client.messages.create({
-          model: 'claude-3-5-sonnet-latest',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1500,
-          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים:\n\n**✨ הקווים הזוהרים שלך**\n**🔍 מה באמת קורה**\n' + athleteSection }]
+          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד:\n\n**\u2728 הקווים הזוהרים שלך**\n**\ud83d\udd0d מה באמת קורה**\n' + athleteSection }]
         }),
         client.messages.create({
-          model: 'claude-3-5-sonnet-latest',
+          model: 'claude-sonnet-4-6',
           max_tokens: 1500,
-          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים:\n\n' + bloodSection + '\n\n**🥗 המלצות תזונה ותוספים**\n\n**🎯 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
+          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד:\n\n' + bloodSection + '\n\n**\ud83e\udd57 המלצות תזונה ותוספים**\n\n**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
         })
       ])
 
@@ -165,5 +163,3 @@ export async function POST(request) {
     return Response.json({ result: 'שגיאה: ' + err.message }, { status: 500 })
   }
 }
-
-```
