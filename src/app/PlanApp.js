@@ -340,9 +340,9 @@ function MealScanner({ gender, onAdd }) {
   if (!editing || !result) {
     return (
       <div style={{ marginTop: 10 }}>
-        <input type="file" accept="image/*" capture="environment" ref={inputRef} style={{ display: 'none' }} onChange={e => e.target.files[0] && handleFile(e.target.files[0])} />
+        <input type="file" accept="image/*" ref={inputRef} style={{ display: 'none' }} onChange={e => e.target.files[0] && handleFile(e.target.files[0])} />
         <button onClick={() => inputRef.current?.click()} disabled={scanning} style={{ width: '100%', padding: '10px', borderRadius: 10, background: scanning ? '#9ca3af' : '#eff6ff', color: scanning ? '#fff' : '#0284c7', border: '1.5px dashed #93c5fd', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-          {scanning ? '⏳ מנתח...' : fem ? '📸 צלמי את הצלחת — AI יזהה' : '📸 צלם את הצלחת — AI יזהה'}
+          {scanning ? '⏳ מנתח...' : fem ? '📸 צלמי או העלי תמונה — AI יזהה' : '📸 צלם או העלה תמונה — AI יזהה'}
         </button>
       </div>
     )
