@@ -36,6 +36,12 @@ const GOALS_SPLIT = {
   'עלייה במסה': { protein: 30, carbs: 50, fat: 20 },
 }
 
+const BONUS_RECIPES = [
+  { title: 'כדורי אנרגיה מעוררים', cal: '85 קל ליחידה', ingredients: 'תמרים, אגוזי מלך, קקאו איכותי, מעט קוקוס' },
+  { title: 'מאפי חלבון אקספרס', cal: '140 קל למאפה', ingredients: 'גבינה לבנה 5%, ביצה, קמח כוסמין, שום שמיר' },
+  { title: 'שייק ירוק מרענן ומאזן', cal: '180 קל למנה', ingredients: 'חופן תרד, חצי תפוח ירוק, משקה שקדים, מנת חלבון' }
+]
+
 const PLAN = {
   bokerSnack: 'לפני: נס קפה + חטיף בריאות עד 99 קל',
   boker: [
@@ -151,8 +157,19 @@ function shouldHide(item, dietType, restrictions) {
   return false
 }
 
-function Section({ title, icon, accent, light, children, defaultOpen, badge }) {
+function Section({ title, icon, accent, light, children, defaultOpen, badge, isLocked, lockMessage }) {
   const [open, setOpen] = useState(defaultOpen || false)
+  if (isLocked) {
+    return (
+      <div style={{ background: '#fafafa', borderRadius: 18, overflow: 'hidden', border: '1.5px dashed #d1d5db', marginBottom: 10, opacity: 0.75 }}>
+        <div style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', background: '#f3f4f6' }}>
+          <span style={{ fontSize: 20 }}>🔒</span>
+          <span style={{ flex: 1, fontWeight: 700, fontSize: 15, color: '#6b7280', textAlign: 'right' }}>{title}</span>
+          <span style={{ fontSize: 11, background: '#e5e7eb', color: '#4b5563', borderRadius: 99, padding: '2px 8px', fontWeight: 600 }}>{lockMessage || 'נעול'}</span>
+        </div>
+      </div>
+    )
+  }
   return (
     <div style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', border: '1.5px solid #f0f0f0', marginBottom: 10 }}>
       <button onClick={function() { setOpen(function(o) { return !o }) }} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', background: open ? light : '#fff', border: 'none', cursor: 'pointer' }}>
@@ -189,7 +206,7 @@ function RadioRow({ id, text, accent, selected, onSelect }) {
 
 function FreeText({ value, onChange, placeholder }) {
   return (
-    <textarea value={value} onChange={function(e) { onChange(e.target.value) }} placeholder={placeholder || 'הוסיפי פרטים נוספים...'} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginTop: 8, color: '#555' }} />
+    <textarea value={value} onChange={function(e) { onChange(e.target.value) }} placeholder={placeholder || 'הוסף/י פרטים נוספים...'} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginTop: 8, color: '#555' }} />
   )
 }
 
@@ -211,12 +228,40 @@ function YesNo({ value, onChange, labelYes, labelNo, accent }) {
   )
 }
 
+function NlpSelector({ label, value, onChange, max, lowLabel, highLabel, accent }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 4 }}>
+        <span>{label}</span>
+        <span style={{ color: accent, fontWeight: 900 }}>{value || 0}/{max}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 4 }}>
+        {Array.from({ length: max }).map(function(_, i) {
+          const num = i + 1
+          const isActive = value === num
+          return (
+            <button key={num} onClick={function() { onChange(num) }} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1.5px solid ' + (isActive ? accent : '#e5e7eb'), background: isActive ? accent : '#fff', color: isActive ? '#fff' : '#555', fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s' }}>
+              {num}
+            </button>
+          )
+        })}
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
+        <span>{lowLabel}</span>
+        <span>{highLabel}</span>
+      </div>
+    </div>
+  )
+}
 
 export default function PlanApp({ clientName, userPassword }) {
   const displayName = clientName || userPassword || ''
   const dbKey = userPassword || clientName || ''
   const today = new Date().toLocaleDateString('he-IL')
   const todayKey = new Date().toLocaleDateString('sv-SE')
+
+  const [currentStage, setCurrentStage] = useState(1)
+  const [stageName, setStageName] = useState('שלב הניצוץ · מודעות')
 
   const [dietType, setDietType] = useState(null)
   const [restrictions, setRestrictions] = useState({})
@@ -246,6 +291,12 @@ export default function PlanApp({ clientName, userPassword }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [nutritionData, setNutritionData] = useState({})
+
+  const [stressLevel, setStressLevel] = useState(0)
+  const [fatigueLevel, setFatigueLevel] = useState(0)
+  const [hungerLevel, setHungerLevel] = useState(0)
+  const [userMood, setUserMood] = useState(null)
+
   const [userWeight, setUserWeight] = useState('')
   const [userHeight, setUserHeight] = useState('')
   const [userAge, setUserAge] = useState('')
@@ -253,6 +304,10 @@ export default function PlanApp({ clientName, userPassword }) {
   const [userActivity, setUserActivity] = useState('בינוני')
   const [userGoal, setUserGoal] = useState('ירידה במשקל')
   const [userTargetWeight, setUserTargetWeight] = useState('')
+
+  // פונקציית עזר למגדר — gf(נקבה, זכר)
+  const fem = userGender !== 'זכר'
+  const gf = function(f, m) { return fem ? f : m }
 
   useEffect(function() {
     async function loadNutrition() {
@@ -275,6 +330,13 @@ export default function PlanApp({ clientName, userPassword }) {
         if (client.data.activity) setUserActivity(client.data.activity)
         if (client.data.goal) setUserGoal(client.data.goal)
         if (client.data.target_weight) setUserTargetWeight(String(client.data.target_weight))
+        if (client.data.current_stage) {
+          const stg = client.data.current_stage
+          setCurrentStage(stg)
+          if (stg === 1) setStageName('שלב הניצוץ · מודעות')
+          if (stg === 2) setStageName('שלב העוגן · עיצוב סביבה')
+          if (stg === 3) setStageName('שלב החופש · דרך חיים')
+        }
       }
       var r = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).order('log_date', { ascending: false }).limit(1).maybeSingle()
       if (r.data) {
@@ -303,6 +365,13 @@ export default function PlanApp({ clientName, userPassword }) {
         setHadBenayim(todayLog.data.had_benayim ?? null)
         setFeedback(todayLog.data.trainer_feedback)
         setReportApproved(todayLog.data.report_approved || false)
+        if (todayLog.data.nlp_metrics) {
+          const m = todayLog.data.nlp_metrics
+          setStressLevel(m.stress || 0)
+          setFatigueLevel(m.fatigue || 0)
+          setHungerLevel(m.hunger || 0)
+          setUserMood(m.mood || null)
+        }
       }
     }
     if (dbKey) load()
@@ -349,6 +418,7 @@ export default function PlanApp({ clientName, userPassword }) {
     setBokerFree(''); setLunchFree(''); setErevFree('')
     setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
     setHadSnack(null); setHadBenayim(null)
+    setStressLevel(0); setFatigueLevel(0); setHungerLevel(0); setUserMood(null)
   }
 
   const toggleRestriction = function(key) {
@@ -384,6 +454,12 @@ export default function PlanApp({ clientName, userPassword }) {
       had_benayim: hadBenayim,
       diet_type: dietType,
       restrictions: restrictions,
+      nlp_metrics: {
+        stress: stressLevel,
+        fatigue: fatigueLevel,
+        hunger: hungerLevel,
+        mood: userMood
+      },
       updated_at: new Date().toISOString(),
     }
     const { error } = await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
@@ -391,9 +467,8 @@ export default function PlanApp({ clientName, userPassword }) {
     setSaving(false)
     setSaved(true)
     setTimeout(function() { setSaved(false) }, 3000)
-    // התראה לאתי - קישור ישיר ללקוחה
     var trainerPhone = '972523336766'
-    var notifyMsg = 'יומן חדש! 🌿\n' + (clientName || dbKey) + ' מילאה את היומן היום.\nhttps://project-l990h.vercel.app/admin'
+    var notifyMsg = 'יומן חדש! 🌿\n' + (clientName || dbKey) + ' מילא/ה את היומן היום.\nhttps://project-l990h.vercel.app/admin'
     var trainerLink = document.createElement('a')
     trainerLink.href = 'https://wa.me/' + trainerPhone + '?text=' + encodeURIComponent(notifyMsg)
     trainerLink.target = '_blank'
@@ -418,9 +493,9 @@ export default function PlanApp({ clientName, userPassword }) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f0fdf4', padding: 24, direction: 'rtl' }}>
         <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 6 }}>היי {displayName.split(' ')[0]}!</div>
-        <div style={{ fontSize: 14, color: '#555', marginBottom: 24 }}>בואי נתאים את התפריט עבורך</div>
+        <div style={{ fontSize: 14, color: '#555', marginBottom: 24 }}>{gf('בואי', 'בוא')} נתאים את התפריט עבורך</div>
         <div style={{ width: '100%', maxWidth: 340, background: '#fff', borderRadius: 20, padding: 20, marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12, textAlign: 'right' }}>סוג תזונה (בחרי אחת):</div>
+          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12, textAlign: 'right' }}>סוג תזונה (בחר/י אחד):</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {DIET_TYPES.map(function(d) {
               return (
@@ -444,7 +519,7 @@ export default function PlanApp({ clientName, userPassword }) {
           </div>
         </div>
         <button onClick={function() { if (dietType) setSetupDone(true) }} disabled={!dietType} style={{ padding: '14px 40px', borderRadius: 14, fontSize: 16, fontWeight: 800, background: dietType ? C.greenMid : '#e5e7eb', color: dietType ? '#fff' : '#9ca3af', border: 'none', cursor: dietType ? 'pointer' : 'default', width: '100%', maxWidth: 340 }}>
-          בואי נתחיל!
+          {gf('בואי', 'בוא')} נתחיל!
         </button>
       </div>
     )
@@ -497,26 +572,31 @@ export default function PlanApp({ clientName, userPassword }) {
           </div>
         </div>
         <button onClick={saveProfile} disabled={!userWeight || !userHeight || !userAge} style={{ padding: '14px 40px', borderRadius: 14, fontSize: 16, fontWeight: 800, background: (userWeight && userHeight && userAge) ? C.greenMid : '#e5e7eb', color: (userWeight && userHeight && userAge) ? '#fff' : '#9ca3af', border: 'none', cursor: 'pointer', width: '100%', maxWidth: 340 }}>
-          שמרי פרטים
+          {gf('שמרי', 'שמור')} פרטים
         </button>
         <button onClick={function() { setProfileDone(true) }} style={{ marginTop: 10, background: 'transparent', border: 'none', color: '#9ca3af', fontSize: 13, cursor: 'pointer' }}>
-          דלגי בינתיים
+          {gf('דלגי', 'דלג')} בינתיים
         </button>
       </div>
     )
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', direction: 'rtl' }}>
       <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '24px 18px 20px', color: '#fff' }}>
         <div style={{ maxWidth: 520, margin: '0 auto' }}>
-          <div style={{ fontSize: 11, color: '#86efac', marginBottom: 2 }}>בין הראש לצלחת · אתי אטל</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+            <div style={{ fontSize: 11, color: '#86efac' }}>בין הראש לצלחת · אתי אטל</div>
+            <div style={{ fontSize: 11, background: '#ffffff25', color: '#fff', padding: '3px 10px', borderRadius: 99, fontWeight: 700 }}>
+              🏆 {stageName}
+            </div>
+          </div>
           <div style={{ fontSize: 22, fontWeight: 900 }}>היי {displayName.split(' ')[0]}!</div>
           <div style={{ fontSize: 12, color: '#bbf7d0', marginTop: 2 }}>{today}</div>
           {targets && (
             <div style={{ marginTop: 10, background: '#ffffff20', borderRadius: 12, padding: '10px 14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#86efac', marginBottom: 6 }}>
-                <span>🔥 {Math.round(eatenCalories)} קל אכלת</span>
+                <span>🔥 {Math.round(eatenCalories)} קל אכל{gf('ת', '')}</span>
                 <span>יעד: {targets.calories} קל</span>
               </div>
               <div style={{ height: 8, background: '#ffffff20', borderRadius: 99, overflow: 'hidden' }}>
@@ -534,7 +614,6 @@ export default function PlanApp({ clientName, userPassword }) {
         </div>
       </div>
 
-      {/* Tabs */}
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '10px 14px 0' }}>
         <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
           <button onClick={function() { setActiveTab('diary') }} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: '2px solid ' + (activeTab === 'diary' ? '#16a34a' : '#e5e7eb'), background: activeTab === 'diary' ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: activeTab === 'diary' ? '#0f4c2a' : '#555' }}>
@@ -563,13 +642,37 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ background: '#f5f0e8', border: '2px solid #4a9b8e', borderRadius: 14, padding: '12px 16px', marginBottom: 12 }}>
             <div style={{ fontWeight: 700, fontSize: 13, color: '#4a9b8e', marginBottom: 4 }}>💚 הודעה מאתי:</div>
             <div style={{ fontSize: 14, color: '#444', lineHeight: 1.7 }}>{feedback.substring(0, 120)}{feedback.length > 120 ? '...' : ''}</div>
-
           </div>
         )}
 
+        <div style={{ background: '#fff', borderRadius: 18, padding: 18, border: '1.5px solid #e2e8f0', marginBottom: 14 }}>
+          <div style={{ fontWeight: 800, fontSize: 15, color: C.greenDark, marginBottom: 12, textAlign: 'right' }}>🧠 מודעות והקשבה לגוף (NLP)</div>
+          <div style={{ marginBottom: 12 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 6 }}>מה מצב הרוח הדומיננטי שלך היום?</div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {[
+                { k: 'calm', l: gf('😌 רגועה', '😌 רגוע') },
+                { k: 'stressed', l: '🤯 בסטרס' },
+                { k: 'tired', l: gf('🥱 עייפה', '🥱 עייף') },
+                { k: 'bored', l: gf('😐 משועממת', '😐 משועמם') }
+              ].map(function(m) {
+                const isSel = userMood === m.k
+                return (
+                  <button key={m.k} onClick={function() { setUserMood(m.k) }} style={{ flex: 1, padding: '8px 4px', borderRadius: 10, border: '1.5px solid ' + (isSel ? C.greenMid : '#e5e7eb'), background: isSel ? C.greenLight : '#fafafa', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+                    {m.l}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+          <NlpSelector label="רמת לחץ וסטרס כללית:" value={stressLevel} onChange={setStressLevel} max={5} lowLabel={gf('רגועה לחלוטין', 'רגוע לחלוטין')} highLabel="עומס מטורף" accent="#ef4444" />
+          <NlpSelector label="רמת עייפות וחוסר אנרגיה:" value={fatigueLevel} onChange={setFatigueLevel} max={5} lowLabel={gf('אנרגטית', 'אנרגטי')} highLabel={gf('סחוטה מעייפות', 'סחוט מעייפות')} accent={C.orange} />
+          <NlpSelector label="רמת רעב ממוצעת לאורך היום:" value={hungerLevel} onChange={setHungerLevel} max={5} lowLabel={gf('שבעה ונינוחה', 'שבע ונינוח')} highLabel="רעב קיצוני" accent={C.blue} />
+        </div>
+
         <Section title="ארוחת בוקר" icon="☀️" accent={C.orange} light={C.orangeLight} defaultOpen={true}>
           <div style={{ fontSize: 12, color: '#9ca3af', padding: '8px 0 4px', textAlign: 'right' }}>{PLAN.bokerSnack}</div>
-          <YesNo value={hadSnack} onChange={setHadSnack} labelYes="✅ אכלתי חטיף" labelNo="❌ דילגתי" accent={C.orange} />
+          <YesNo value={hadSnack} onChange={setHadSnack} labelYes={gf('✅ אכלתי חטיף', '✅ אכלתי חטיף')} labelNo="❌ דילגתי" accent={C.orange} />
           {filteredBoker.map(function(item) {
             return <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={toggleCheck} />
           })}
@@ -608,7 +711,7 @@ export default function PlanApp({ clientName, userPassword }) {
         </Section>
 
         <Section title="ביניים" icon="🌤" accent={C.blue} light={C.blueLight}>
-          <div style={{ fontWeight: 700, fontSize: 12, color: C.blue, padding: '8px 0 4px', textAlign: 'right' }}>בחרי ביניים:</div>
+          <div style={{ fontWeight: 700, fontSize: 12, color: C.blue, padding: '8px 0 4px', textAlign: 'right' }}>בחר/י ביניים:</div>
           {filteredBenayim.map(function(o) { return <RadioRow key={o.id} id={o.id} text={o.text} accent={C.blue} selected={benayimSel} onSelect={setBenayimSel} /> })}
           <YesNo value={hadBenayim} onChange={setHadBenayim} labelYes="✅ אכלתי ביניים" labelNo="❌ דילגתי" accent={C.blue} />
         </Section>
@@ -632,6 +735,55 @@ export default function PlanApp({ clientName, userPassword }) {
           <ExtraCal value={erevExtraCal} onChange={setErevExtraCal} />
         </Section>
 
+        <Section
+          title="🥫 המזווה ועוגני ההתארגנות שלי"
+          icon="🛒"
+          accent={C.teal}
+          light={C.tealLight}
+          isLocked={currentStage < 2}
+          lockMessage="ייפתח חגיגית לאחר פגישת המזווה שלנו! 🔒"
+        >
+          <div style={{ paddingTop: 6 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.teal, marginBottom: 4 }}>💡 עוגן שבועי — מקרר מנצח:</div>
+            <div style={{ fontSize: 13, color: '#444', background: C.tealLight, padding: 10, borderRadius: 10, lineHeight: 1.6, marginBottom: 12 }}>
+              ההתארגנות מראש מנצחת את הדחף הפיזיולוגי. {gf('הקפידי', 'הקפד')} שבכל סופ"ש יהיו לך לפחות 3 מקורות חלבון מבושלים במקרר וירקות שטופים וחתוכים בקופסאות זכוכית.
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 6 }}>צ'ק-ליסט רשימת קניות חכמה לסופר:</div>
+            {[
+              { id: 'shop1', text: 'עלים ירוקים וירקות קשים לחיתוך מהיר' },
+              { id: 'shop2', text: 'שמן זית כתית מעולה חומציות נמוכה' },
+              { id: 'shop3', text: 'מקורות חלבון נקיים (טופו/חזה עוף/דגים/ביצים)' },
+              { id: 'shop4', text: 'אגוזי מלך ושקדים טבעיים (לא קלויים!)' }
+            ].map(function(item) {
+              return <CheckRow key={item.id} id={item.id} text={item.text} accent={C.teal} checked={!!checks[item.id]} onToggle={toggleCheck} />
+            })}
+          </div>
+        </Section>
+
+        <Section
+          title="🧁 ספר המתכונים והנשנושים של אתי"
+          icon="✨"
+          accent={C.purple}
+          light={C.purpleLight}
+          isLocked={currentStage < 3}
+          lockMessage="ייפתח חגיגית לאחר סדנת הנשנושים! 🔒"
+        >
+          <div style={{ paddingTop: 6 }}>
+            <div style={{ fontSize: 13, color: '#555', marginBottom: 10 }}>כל המתכונים, הטעמים והנשנושים הבריאים שישמרו עלייך שבע/ה ומאוזנ/ת מבלי להקפיץ אינסולין:</div>
+            {BONUS_RECIPES.map(function(rec, idx) {
+              return (
+                <div key={idx} style={{ background: '#fff', padding: 10, borderRadius: 10, border: '1px solid #e9d5ff', marginBottom: 8, boxShadow: '0 1px 3px rgba(0,0,0,0.02)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontWeight: 700, fontSize: 13, color: C.purple }}>{rec.title}</span>
+                    <span style={{ fontSize: 11, background: C.purpleLight, color: C.purple, padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>{rec.cal}</span>
+                  </div>
+                  <div style={{ fontSize: 12, color: '#666' }}><span style={{ fontWeight: 600 }}>רכיבים:</span> {rec.ingredients}</div>
+                </div>
+              )
+            })}
+          </div>
+        </Section>
+
         <Section title="מעקב שתייה" icon="💧" accent={C.blue} light={C.blueLight}>
           <div style={{ padding: '10px 0' }}>
             <div style={{ fontSize: 13, color: '#555', marginBottom: 8, textAlign: 'right' }}>{water}/8 כוסות</div>
@@ -645,7 +797,7 @@ export default function PlanApp({ clientName, userPassword }) {
 
         <Section title="מעקב צעדים" icon="🚶" accent={C.purple} light={C.purpleLight}>
           <div style={{ padding: '10px 0' }}>
-            <input type="number" value={steps} onChange={function(e) { setSteps(e.target.value) }} placeholder="הכניסי מספר צעדים..." style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, outline: 'none', boxSizing: 'border-box', textAlign: 'right' }} />
+            <input type="number" value={steps} onChange={function(e) { setSteps(e.target.value) }} placeholder="הכניס/י מספר צעדים..." style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, outline: 'none', boxSizing: 'border-box', textAlign: 'right' }} />
             <div style={{ marginTop: 8, height: 8, background: '#f3f4f6', borderRadius: 99 }}>
               <div style={{ width: Math.min(100, Math.round((parseInt(steps) || 0) / 10000 * 100)) + '%', height: '100%', background: C.purple, borderRadius: 99 }} />
             </div>
@@ -667,23 +819,23 @@ export default function PlanApp({ clientName, userPassword }) {
 
         <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', border: '1.5px solid #f0f0f0', marginBottom: 10 }}>
           <div style={{ fontWeight: 700, fontSize: 15, color: '#111', marginBottom: 10, textAlign: 'right' }}>הערה יומית לאתי</div>
-          <textarea value={note} onChange={function(e) { setNote(e.target.value) }} placeholder="כתבי כאן איך הרגשת היום, קשיים, שאלות..." rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+          <textarea value={note} onChange={function(e) { setNote(e.target.value) }} placeholder={gf('כתבי כאן איך הרגשת היום, קשיים, שאלות...', 'כתוב כאן איך הרגשת היום, קשיים, שאלות...')} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
         </div>
 
         <button onClick={handleSave} disabled={saving} style={{ width: '100%', padding: 16, borderRadius: 16, background: saved ? '#16a34a' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 17 }}>
-          {saving ? 'שומרת...' : saved ? 'נשמר! אתי תראה את זה' : 'שמרי את היום שלי'}
+          {saving ? 'שומר/ת...' : saved ? 'נשמר! אתי תראה את זה' : gf('שמרי', 'שמור') + ' את היום שלי'}
         </button>
 
         <button onClick={resetDay} style={{ width: '100%', padding: 10, borderRadius: 12, marginTop: 8, background: 'transparent', border: '1px solid #fca5a5', color: '#ef4444', cursor: 'pointer', fontSize: 13 }}>
-          🔄 אפסי את היום
+          🔄 {gf('אפסי', 'אפס')} את היום
         </button>
 
         <button onClick={function() { setSetupDone(false) }} style={{ width: '100%', padding: 10, borderRadius: 12, marginTop: 6, background: 'transparent', border: '1px solid #e5e7eb', color: '#9ca3af', cursor: 'pointer', fontSize: 13 }}>
-          עדכני העדפות תזונה
+          {gf('עדכני', 'עדכן')} העדפות תזונה
         </button>
 
         <button onClick={function() { setProfileDone(false) }} style={{ width: '100%', padding: 10, borderRadius: 12, marginTop: 6, background: 'transparent', border: '1px solid #e5e7eb', color: '#9ca3af', cursor: 'pointer', fontSize: 13 }}>
-          עדכני פרטים אישיים
+          {gf('עדכני', 'עדכן')} פרטים אישיים
         </button>
       </div>
     </div>
