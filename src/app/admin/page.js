@@ -283,6 +283,12 @@ export default function AdminPage() {
   const [editableAnalysis, setEditableAnalysis] = useState('')
   const [sendingToClient, setSendingToClient] = useState(false)
   const [sentToClient, setSentToClient] = useState(false)
+  // ── משוב יומי: preview ועריכה ──
+  const [dailyPreview, setDailyPreview] = useState('')
+  const [dailyEditing, setDailyEditing] = useState(false)
+  const [dailyTargetLog, setDailyTargetLog] = useState(null)
+  const [sendingDaily, setSendingDaily] = useState(false)
+  const [sentDaily, setSentDaily] = useState(null)
   // ── חדש: מלאי ומזווה ──
   const [inventory, setInventory] = useState([])
   const [newItemName, setNewItemName] = useState('')
@@ -501,17 +507,54 @@ export default function AdminPage() {
     setSendingToClient(false); setSentToClient(true); setTimeout(() => setSentToClient(false), 4000)
   }
 
-  async function runLogsAnalysis() {
+  async function runLogsAnalysis(targetLog) {
     if (!filteredLogs.length) return
-    setAiLoading(true); setAiAnalysis('')
+    setAiLoading(true); setAiAnalysis(''); setDailyPreview(''); setDailyEditing(false); setDailyTargetLog(targetLog || null)
     var targets = calcTargets(selectedClient)
     var summary = filteredLogs.map(function(l) {
       var nut = calcNutrition(l, nutritionData)
-      return 'תאריך: ' + l.log_date + ' | קלוריות: ' + Math.round(nut.calories) + (targets ? ' (יעד: ' + targets.calories + ')' : '') + ' | חלבון: ' + Math.round(nut.protein) + 'g | שומן: ' + Math.round(nut.fat) + 'g | מים: ' + (l.water || 0) + ' | צעדים: ' + (l.steps || 0) + ' | הערה: ' + (l.note || '')
+      return 'תאריך: ' + l.log_date
+        + ' | קלוריות: ' + Math.round(nut.calories) + (targets ? ' (יעד: ' + targets.calories + ')' : '')
+        + ' | חלבון: ' + Math.round(nut.protein) + 'g (יעד: ' + (targets ? targets.protein : '?') + 'g)'
+        + ' | שומן: ' + Math.round(nut.fat) + 'g'
+        + ' | מים: ' + (l.water || 0) + ' כוסות'
+        + ' | צעדים: ' + (l.steps || 0)
+        + ' | הערה: ' + (l.note || '')
     }).join('\n')
-    const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: selectedClient.name, logs: summary, nlpSummary: filteredLogs.map(function(l) { var m = l.nlp_metrics || {}; if (!m.stress && !m.fatigue && !m.hunger && !m.mood) return null; return l.log_date + ': לחץ ' + (m.stress||0) + '/5, עייפות ' + (m.fatigue||0) + '/5, רעב ' + (m.hunger||0) + '/5, מצב רוח: ' + (m.mood||'לא צוין') }).filter(Boolean).join(' | ') }) })
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: selectedClient.name,
+        gender: selectedClient.gender || 'נקבה',
+        logs: summary,
+        nlpSummary: filteredLogs.map(function(l) {
+          var m = l.nlp_metrics || {}
+          if (!m.stress && !m.fatigue && !m.hunger && !m.mood) return null
+          return l.log_date + ': לחץ ' + (m.stress||0) + '/5, עייפות ' + (m.fatigue||0) + '/5, רעב ' + (m.hunger||0) + '/5, מצב רוח: ' + (m.mood||'לא צוין')
+        }).filter(Boolean).join(' | ')
+      })
+    })
     const data = await res.json()
-    setAiAnalysis(data.result); setAiLoading(false)
+    setDailyPreview(data.result)
+    setDailyEditing(true)
+    setAiLoading(false)
+  }
+
+  async function sendDailyFeedback() {
+    if (!dailyPreview || !dailyTargetLog) return
+    setSendingDaily(true)
+    await supabase.from('daily_logs')
+      .update({ trainer_feedback: dailyPreview, report_approved: true })
+      .eq('id', dailyTargetLog.id)
+    setSendingDaily(false)
+    setSentDaily(dailyTargetLog.id)
+    setDailyEditing(false)
+    setDailyPreview('')
+    setDailyTargetLog(null)
+    setTimeout(() => setSentDaily(null), 4000)
+    const { data } = await supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).order('log_date', { ascending: false }).limit(30)
+    setLogs(data || [])
   }
 
   async function scanBloodTests(file) {
@@ -629,11 +672,68 @@ export default function AdminPage() {
                   )
                 })}
                 {filteredLogs.length > 0 && (
-                  <button onClick={runLogsAnalysis} disabled={aiLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: aiLoading ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginTop: 4 }}>
-                    {aiLoading ? '⏳ מנתח...' : '🤖 נתחי עם AI'}
+                  <button onClick={() => runLogsAnalysis(filteredLogs[0])} disabled={aiLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: aiLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginTop: 4 }}>
+                    {aiLoading ? '⏳ מנתח ומכין דוח...' : '🤖 הפק דוח ביצועים עם AI'}
                   </button>
                 )}
-                {aiAnalysis && tab === 'logs' && <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0', fontSize: 14, lineHeight: 1.8, whiteSpace: 'pre-wrap', marginTop: 12 }}>{aiAnalysis}</div>}
+
+                {/* ── Preview + עריכה לפני שליחה ── */}
+                {dailyEditing && dailyPreview && (
+                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #16a34a', overflow: 'hidden', marginTop: 12 }}>
+                    {/* כותרת Preview */}
+                    <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <img src="/logo.png" alt="לוגו" style={{ height: 36, width: 36, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: 14 }}>👁️ תצוגה מקדימה — כך יראה הלקוח/ה</div>
+                        <div style={{ fontSize: 11, color: '#86efac' }}>ערכי את הטקסט ואז אשרי לשליחה</div>
+                      </div>
+                    </div>
+
+                    {/* עורך טקסט */}
+                    <div style={{ padding: 16 }}>
+                      <textarea
+                        value={dailyPreview}
+                        onChange={e => setDailyPreview(e.target.value)}
+                        rows={14}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }}
+                      />
+                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>ערכי חופשי — שינויים כאן לא ישפיעו על ה-AI בפעם הבאה</div>
+                    </div>
+
+                    {/* כפתורי פעולה */}
+                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                      <button
+                        onClick={() => { setDailyEditing(false); setDailyPreview(''); setDailyTargetLog(null) }}
+                        style={{ flex: 1, padding: 12, borderRadius: 10, background: '#fef2f2', color: '#ef4444', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}
+                      >
+                        ✕ ביטול
+                      </button>
+                      <button
+                        onClick={sendDailyFeedback}
+                        disabled={sendingDaily}
+                        style={{ flex: 2, padding: 12, borderRadius: 10, background: sendingDaily ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}
+                      >
+                        {sendingDaily ? '⏳ שולח...' : '✅ אשרי ושלחי ללקוח/ה'}
+                      </button>
+                      {dailyTargetLog && selectedClient?.phone && (
+                        <button
+                          onClick={() => {
+                            var phone = selectedClient.phone.replace(/^0/, '972')
+                            var msg = 'היי ' + selectedClient.name + '! 🌿
+דוח הביצועים שלך מחכה באפליקציה 💚
+https://project-l990h.vercel.app'
+                            window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+                          }}
+                          style={{ padding: '12px 14px', borderRadius: 10, background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}
+                        >
+                          📱
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {sentDaily && <div style={{ background: '#dcfce7', color: '#166534', borderRadius: 12, padding: '12px 16px', marginTop: 8, fontWeight: 700, textAlign: 'center', fontSize: 14 }}>✅ הדוח נשלח ללקוח/ה בהצלחה!</div>}
               </div>
             )}
 
