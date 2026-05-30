@@ -719,9 +719,7 @@ export default function AdminPage() {
                         <button
                           onClick={() => {
                             var phone = selectedClient.phone.replace(/^0/, '972')
-                            var msg = 'היי ' + selectedClient.name + '! 🌿
-דוח הביצועים שלך מחכה באפליקציה 💚
-https://project-l990h.vercel.app'
+                            var msg = 'היי ' + selectedClient.name + '! 🌿\nדוח הביצועים שלך מחכה באפליקציה 💚\nhttps://project-l990h.vercel.app'
                             window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
                           }}
                           style={{ padding: '12px 14px', borderRadius: 10, background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}
