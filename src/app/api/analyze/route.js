@@ -30,8 +30,7 @@ function formatBlood(blood_tests, extraNotes) {
   if (!blood_tests) return 'לא הוזנו'
   const entries = Object.entries(blood_tests).filter(([k,v]) => v && v !== '')
   if (!entries.length) return 'לא הוזנו'
-  const abnormal = []
-  const normal = []
+  const abnormal = [], normal = []
   entries.forEach(([k,v]) => {
     const name = BLOOD_NAMES[k] || k
     const range = BLOOD_RANGES[k]
@@ -58,12 +57,24 @@ export async function POST(request) {
     const body = await request.json()
     const { name, logs, mode, profile, foodDiary } = body
 
-    // ── חילוץ בדיקות דם ──
-    if (mode === 'blood' && body.bloodText) {
+    // ── סריקת בדיקות דם מתמונה — עכשיו דרך השרת בבטחה ──
+    if (mode === 'bloodImage' && body.imageBase64) {
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 600,
-        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם. החזר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null,"extra_abnormals":""}\nב-extra_abnormals: כתוב כטקסט את כל הערכים החריגים שאינם בשאר השדות עם הערך והטווח הרגיל. מספרים בלבד בשאר השדות.\nטקסט: ' + String(body.bloodText).substring(0, 2000) }]
+        max_tokens: 800,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: body.mediaType || 'image/jpeg', data: body.imageBase64 }
+            },
+            {
+              type: 'text',
+              text: 'זהו דף בדיקות דם. חלץ את הערכים ותחזיר JSON בלבד (null אם לא קיים):\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"iron":null,"folic_acid":null,"vitamin_b12":null,"vitamin_b6":null,"vitamin_d":null,"calcium":null,"zinc":null,"magnesium":null,"tsh":null,"t3":null,"t4":null,"crp":null,"esr":null,"homocysteine":null,"alt":null,"ast":null,"creatinine":null,"urea":null,"uric_acid":null,"estrogen":null,"progesterone":null,"testosterone":null,"insulin":null,"wbc":null,"rbc":null,"platelets":null,"extra_abnormals":""}\nמספרים בלבד ללא יחידות. extra_abnormals: ערכים חריגים שאינם בשדות האחרים.'
+            }
+          ]
+        }]
       })
       try {
         const text = msg.content[0].text.replace(/```json|```/g,'').trim()
@@ -76,15 +87,59 @@ export async function POST(request) {
       }
     }
 
-    // ── משוב יומי/שבועי — פרקטי, מכוון, עם נתונים אמיתיים ──
+    // ── חילוץ בדיקות דם מטקסט ──
+    if (mode === 'blood' && body.bloodText) {
+      const msg = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 600,
+        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם. החזר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null,"extra_abnormals":""}\nב-extra_abnormals: ערכים חריגים שאינם בשאר השדות עם הערך והטווח. מספרים בלבד בשאר השדות.\nטקסט: ' + String(body.bloodText).substring(0, 2000) }]
+      })
+      try {
+        const text = msg.content[0].text.replace(/```json|```/g,'').trim()
+        const parsed = JSON.parse(text)
+        const extra = parsed.extra_abnormals || ''
+        delete parsed.extra_abnormals
+        return Response.json({ result: JSON.stringify(parsed), extra })
+      } catch(e) {
+        return Response.json({ result: msg.content[0].text, extra: '' })
+      }
+    }
+
+    // ── צילום צלחת — זיהוי אוכל וחישוב קלוריות ──
+    if (mode === 'scanMeal' && body.imageBase64) {
+      const msg = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 600,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: { type: 'base64', media_type: body.mediaType || 'image/jpeg', data: body.imageBase64 }
+            },
+            {
+              type: 'text',
+              text: 'זוהי תמונה של ארוחה. נתח אותה והחזר JSON בלבד:\n{\n  "description": "תיאור קצר של הארוחה בעברית",\n  "items": [\n    {"name": "שם המאכל בעברית", "amount": "כמות משוערת", "calories": 0, "protein": 0}\n  ],\n  "total_calories": 0,\n  "total_protein": 0,\n  "confidence": "high/medium/low"\n}\nהיה מדויק. אם לא ניתן לזהות — confidence: low. ספור קלוריות ריאלי לפי כמויות.'
+            }
+          ]
+        }]
+      })
+      try {
+        const text = msg.content[0].text.replace(/```json|```/g,'').trim()
+        const parsed = JSON.parse(text)
+        return Response.json({ result: parsed })
+      } catch(e) {
+        return Response.json({ result: { description: 'לא הצלחתי לזהות את הארוחה בבירור', items: [], total_calories: 0, total_protein: 0, confidence: 'low' } })
+      }
+    }
+
+    // ── משוב יומי/שבועי ──
     if (logs && !mode) {
       const nlpSummary = body.nlpSummary || ''
       const gender = body.gender || 'נקבה'
       const isMale = gender === 'זכר'
-      // כינוי מגדרי נכון
-      const pronoun = isMale ? 'אתה' : 'את'
       const genderNote = isMale
-        ? 'הלקוח הוא גבר. השתמש בגוף שני זכר בלבד: אתה, שלך, אכלת, שתית, הלכת. אסור לכתוב "את" או "אכלתי".'
+        ? 'הלקוח הוא גבר. השתמש בגוף שני זכר בלבד: אתה, שלך, אכלת, שתית, הלכת. אסור לכתוב "את".'
         : 'הלקוחה היא אישה. השתמש בגוף שני נקבה בלבד: את, שלך, אכלת, שתית, הלכת. אסור לכתוב "אתה".'
 
       const msg = await client.messages.create({
@@ -93,25 +148,20 @@ export async function POST(request) {
         messages: [{ role: 'user', content:
           'אתה אתי אטל — יועצת תזונה התנהגותית. כתוב משוב קצר, פרקטי ומכוון ל-' + name + ' בעברית.\n'
           + genderNote + '\n'
-          + 'חשוב: בסס את המשוב על הנתונים האמיתיים שלהלן. אל תמציא. ציין מספרים ספציפיים.\n'
+          + 'חשוב: בסס את המשוב על הנתונים האמיתיים. אל תמציא. ציין מספרים ספציפיים.\n'
           + (nlpSummary ? 'מדדי NLP: ' + nlpSummary + '\n' : '')
           + 'נתוני יומן: ' + String(logs).substring(0, 900) + '\n\n'
           + 'כתוב בדיוק 4 חלקים:\n\n'
-          + '**✨ מה עבד השבוע**\n'
-          + 'משפט אחד ספציפי על הצלחה אמיתית מהנתונים (לדוגמה: "הגעת ל-X צעדים ביום Y" או "שתית X כוסות מים").\n\n'
-          + '**🎯 משימות לדיוק**\n'
-          + 'ציין בדיוק מה היה בפועל מול היעד (לדוגמה: "אכלת 500 קל מתוך יעד של 1800 — זה פחות מ-30% מהיעד"). '
-          + 'הסבר בקצרה מה קורה פיזיולוגית כשאוכלים כך, ומה הבחירה הטובה יותר.\n\n'
-          + '**🚀 3 צעדים קטנים**\n'
-          + 'שלושה צעדים פרקטיים וספציפיים לשבוע הבא, עם מספרים ברורים (לדוגמה: "הוסף 200 קל לארוחת הבוקר", "שתה 6 כוסות מים ביום").\n\n'
-          + '**💚 מסר**\n'
-          + 'משפט אחד קצר ומעצים.'
+          + '**✨ מה עבד השבוע** — משפט אחד ספציפי על הצלחה אמיתית מהנתונים.\n\n'
+          + '**🎯 משימות לדיוק** — ציין מה היה בפועל מול היעד עם מספרים. הסבר פיזיולוגית ומה הבחירה הטובה יותר.\n\n'
+          + '**🚀 3 צעדים קטנים** — פרקטיים וספציפיים עם מספרים ברורים.\n\n'
+          + '**💚 מסר** — משפט אחד קצר ומעצים.'
         }]
       })
       return Response.json({ result: msg.content[0].text })
     }
 
-    // ── ניתוח פרופיל 360 (דוח מקיף) — לא נוגעים ──
+    // ── ניתוח פרופיל 360 ──
     if (mode === 'profile' && profile) {
       const p = profile
       const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(String(p.exercise_type)))
@@ -142,7 +192,7 @@ export async function POST(request) {
       const systemPrompt = 'אתה אתי אטל - יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
         + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
         + 'סגנון: אינטימי, מחבק - כמו שיחה עם חברה. ללא טבלאות.\n'
-        + 'חובה: עברית תקנית. אל תמציאי פרטים. אל תכתבי כותרת ראשית בתחילת התשובה. כללים: (1) כל סעיף 3-4 משפטים בלבד, למעט סעיף הבדיקות שיכול להגיע ל-6 משפטים. (2) אל תחזרי על ערכי מעבדה — רק פרשנות התנהגותית. (3) כל משפט חייב להיות שלם וסגור. (4) אם יש ערכים חריגים נוספים חובה להזכיר אותם בסעיף הבדיקות.\n\n'
+        + 'חובה: עברית תקנית. אל תמציאי פרטים. אל תכתבי כותרת ראשית בתחילת התשובה. כללים: (1) כל סעיף 3-4 משפטים, למעט בדיקות שמגיע ל-6. (2) אל תחזרי על ערכי מעבדה — רק פרשנות התנהגותית. (3) כל משפט שלם וסגור. (4) ערכים חריגים נוספים — חובה להזכיר בסעיף הבדיקות.\n\n'
 
       const [msg1, msg2] = await Promise.all([
         client.messages.create({
