@@ -560,13 +560,29 @@ export default function AdminPage() {
   async function scanBloodTests(file) {
     setScanLoading(true)
     try {
-      var base64 = await new Promise(function(res, rej) { var r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = () => rej(new Error('Read failed')); r.readAsDataURL(file) })
-      var response = await fetch('https://api.anthropic.com/v1/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1000, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: file.type, data: base64 } }, { type: 'text', text: 'זהו דף בדיקות דם. חלץ את הערכים ותחזיר JSON בלבד עם המפתחות: glucose,hba1c,cholesterol,hdl,ldl,triglycerides,hemoglobin,ferritin,iron,transferrin,folic_acid,vitamin_b12,vitamin_b6,vitamin_d,calcium,zinc,magnesium,tsh,t3,t4,crp,esr,homocysteine,alt,ast,creatinine,urea,uric_acid,estrogen,progesterone,testosterone,insulin,wbc,rbc,platelets. החזר רק מספרים ללא יחידות, null אם חסר.' }] }] }) })
+      var base64 = await new Promise(function(res, rej) {
+        var r = new FileReader()
+        r.onload = () => res(r.result.split(',')[1])
+        r.onerror = () => rej(new Error('Read failed'))
+        r.readAsDataURL(file)
+      })
+      // ── שולח דרך השרת — API key מוגן ──
+      var response = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'bloodImage', imageBase64: base64, mediaType: file.type })
+      })
       var data = await response.json()
-      var parsed = JSON.parse(data.content[0].text.replace(/```json|```/g, '').trim())
+      var parsed = JSON.parse(data.result.replace(/```json|```/g, '').trim())
       var newTests = Object.assign({}, profile.blood_tests || {})
       Object.keys(parsed).forEach(function(k) { if (parsed[k] !== null) newTests[k] = String(parsed[k]) })
       setProfile(p => ({ ...p, blood_tests: newTests }))
+      if (data.extra && data.extra.trim()) {
+        setExtraBloodNotes(data.extra.trim())
+        alert('✅ הערכים חולצו! נמצאו גם ערכים חריגים נוספים.')
+      } else {
+        alert('✅ הערכים חולצו בהצלחה! בדקי את השדות ושמרי.')
+      }
     } catch(e) { alert('שגיאה בסריקה: ' + e.message) }
     setScanLoading(false)
   }
