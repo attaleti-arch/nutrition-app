@@ -893,6 +893,23 @@ export default function PlanApp({ clientName, userPassword }) {
               <div style={{ fontSize: 13, color: '#9ca3af' }}>ייפתח לאחר פגישת המזווה שלנו בבית 🏡</div>
             </div>
           )}
+          {/* חוברת מתכונים — שלב 3 */}
+          {currentStage >= 3 && (
+            <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
+              <div style={{ padding: '14px 18px', background: C.purpleLight, borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 22 }}>📚</span>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: C.purple }}>חוברת המתכונים של אתי</div>
+                  <div style={{ fontSize: 12, color: '#9ca3af' }}>20 מתכונים · ללא קמח · ללא סוכר · חלבון גבוה</div>
+                </div>
+              </div>
+              <div style={{ padding: 14 }}>
+                <a href="/recipes_guide.html" target="_blank" style={{ display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: C.purple, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+                  פתחי את החוברת 📚
+                </a>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
