@@ -542,7 +542,7 @@ export default function AdminPage() {
     }).join('\n')
     const res = await fetch('/api/analyze', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: selectedClient.name, logs: summary })
+      body: JSON.stringify({ name: selectedClient.name, logs: summary, nlpSummary: filteredLogs.map(function(l) { var m = l.nlp_metrics || {}; if (!m.stress && !m.fatigue && !m.hunger && !m.mood) return null; return l.log_date + ': לחץ ' + (m.stress||0) + '/5, עייפות ' + (m.fatigue||0) + '/5, רעב ' + (m.hunger||0) + '/5, מצב רוח: ' + (m.mood||'לא צוין') }).filter(Boolean).join(' | ') })
     })
     const data = await res.json()
     setAiAnalysis(data.result); setAiLoading(false)
@@ -610,6 +610,7 @@ export default function AdminPage() {
                 { k: 'nutrition', l: '🥗 תזונה' },
                 { k: 'ai', l: '🧠 AI' },
                 { k: 'report', l: '📊 דוח' },
+                { k: 'stage', l: '🏆 שלב' },
                 { k: 'newclient', l: '➕ לקוח' }
               ].map(function(t) {
                 return <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
@@ -719,6 +720,39 @@ export default function AdminPage() {
                     📱 שלחי ב-WhatsApp
                   </button>
                 )}
+              </div>
+            )}
+
+            {tab === 'stage' && (
+              <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
+                <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4, color: '#0f4c2a' }}>🏆 שלב הלקוחה בתוכנית</div>
+                <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 20 }}>שינוי השלב יפתח/יסגור תכנים באפליקציית הלקוחה</div>
+                {[
+                  { stage: 1, title: 'שלב 1 — הניצוץ', desc: 'מודעות ואיזון קליני. יומן + NLP בסיסי.', color: '#f97316', bg: '#fff7ed' },
+                  { stage: 2, title: 'שלב 2 — העוגן', desc: 'עיצוב סביבה. נפתח: מדריך מזווה + רשימת קניות.', color: '#0d9488', bg: '#f0fdfa' },
+                  { stage: 3, title: 'שלב 3 — החופש', desc: 'דרך חיים. נפתח: ספר מתכונים + נשנושים.', color: '#9333ea', bg: '#faf5ff' },
+                ].map(function(s) {
+                  const isActive = (selectedClient.current_stage || 1) === s.stage
+                  return (
+                    <div key={s.stage} onClick={async function() {
+                      await supabase.from('clients').update({ current_stage: s.stage }).eq('id', selectedClient.id)
+                      setSelectedClient(c => ({ ...c, current_stage: s.stage }))
+                    }} style={{ padding: 16, borderRadius: 14, border: '2px solid ' + (isActive ? s.color : '#e5e7eb'), background: isActive ? s.bg : '#fafafa', cursor: 'pointer', marginBottom: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 22, height: 22, borderRadius: 99, border: '2px solid ' + (isActive ? s.color : '#d1d5db'), background: isActive ? s.color : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {isActive && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: 14, color: isActive ? s.color : '#333' }}>{s.title}</div>
+                          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{s.desc}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+                <div style={{ marginTop: 8, padding: 12, background: '#f0fdf4', borderRadius: 10, fontSize: 12, color: '#166534' }}>
+                  💡 השלב הנוכחי: <strong>שלב {selectedClient.current_stage || 1}</strong> — נשמר אוטומטית בלחיצה
+                </div>
               </div>
             )}
 
