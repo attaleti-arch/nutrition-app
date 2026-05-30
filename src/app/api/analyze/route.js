@@ -58,11 +58,12 @@ export async function POST(request) {
     const body = await request.json()
     const { name, logs, mode, profile, foodDiary } = body
 
+    // ── חילוץ בדיקות דם ──
     if (mode === 'blood' && body.bloodText) {
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 600,
-        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם. החזר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null,"extra_abnormals":""}\nב-extra_abnormals: כתוב כטקסט את כל הערכים החריגים שאינם בשאר השדות (IgG, FLC, גמא וכו) עם הערך והטווח הרגיל. מספרים בלבד בשאר השדות.\nטקסט: ' + String(body.bloodText).substring(0, 2000) }]
+        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם. החזר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null,"extra_abnormals":""}\nב-extra_abnormals: כתוב כטקסט את כל הערכים החריגים שאינם בשאר השדות עם הערך והטווח הרגיל. מספרים בלבד בשאר השדות.\nטקסט: ' + String(body.bloodText).substring(0, 2000) }]
       })
       try {
         const text = msg.content[0].text.replace(/```json|```/g,'').trim()
@@ -75,40 +76,28 @@ export async function POST(request) {
       }
     }
 
-    // שלב ג': הפקת משוב שבועי מעוצב ואותנטי (כולל גרף ויזואלי מבוסס נתונים)
+    // ── משוב יומי/שבועי — מהיר וממוקד ──
     if (logs && !mode) {
       const nlpSummary = body.nlpSummary || ''
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1000,
-        messages: [{ 
-          role: 'user', 
-          content: 'אתה אתי אטל — יועצת בריאות, מומחית לתזונה התנהגותית ו-NLP Master. כתבי משוב שבועי חם, חכם, קצר ומעצים ל-' + name + ' בעברית, גוף שני נקבה בלבד (את, שלך, עשית - ללא בלבול מגדר, ללא פניות בזכר).\n'
-          + 'סגנון: בוטיק, אינטימי, מחבק, גובה העיניים, ללא שפה ארגונית מנוכרת.\n'
-          + (nlpSummary ? 'מדדי NLP השבוע (מתח, עייפות וכו\'): ' + nlpSummary + '\n' : '') 
-          + 'נתוני יומן אכילה השבוע בפועל מול יעדים: ' + String(logs).substring(0, 1400) + '\n\n'
-          + 'בני את המשוב בדיוק במבנה הבא (השתמשי בכותרות ובקווים המפרידים):\n\n'
-          + '# 📋 המשוב השבועי שלך, ' + name + ' 💚\n\n'
-          + '--- \n\n'
-          + '### 📊 תמונת המצב השבועית: יעד מול ביצוע\n'
-          + '> **איך לקרוא את הגרף?** הקו המקווקו מייצג את יעד המודל האישי שלך, והגרף המלא מראה איפה היית בפועל השבוע.\n\n'
-          + 'בני כאן גרף טקסטואלי נקי (בתוך בלוק קוד של סימני `) שמציג את אחוזי הביצוע של המטופלת עבור המדדים שהוזנו ביומן (כגון קלוריות, חלבון, מים, צעדים). דוגמה למבנה: \n'
-          + 'קלוריות    [████████████░░░░] 74% (חוסר של 540 קלוריות)\n'
-          + 'חלבון      [████████████████] 100% (עמידה מלאה ביעד!)\n\n'
-          + '--- \n\n'
-          + '## 🔍 מה באמת קורה (הראש והצלחת)\n'
-          + 'כתבי פסקה אחת ממוקדת בת 3-4 משפטים. חברי בין הנתונים הפיזיולוגיים היבשים (אכילה, מים) לבין המצב המנטלי, רמות הסטרס והעייפות שלה (למשל, זיהוי אכילה רגשית הפוכה או צמצום מתוך מתח). תני לה הוקרה וקרדיט אמיתי וספציפי על מה שכן עבד השבוע.\n\n'
-          + '--- \n\n'
-          + '## 🎯 3 צעדים קטנים למחר\n'
-          + 'כתבי 3 פעולות ממוקדות, ריאליסטיות, קצרות ופשוטות לביצוע שיעזרו לה לאזן את השבוע הבא, מנוסחות בחום ובגוף שני נקבה בלבד (לדוגמה: 💧 עוגן מים יומיומי...).\n\n'
-          + '--- \n\n'
-          + '## 💚 מסר בשבילך\n'
-          + '> משפט השראה חם, אישי ומעצים שמתכתב עם השבוע שעברה.'
+        max_tokens: 600,
+        messages: [{ role: 'user', content:
+          'אתה אתי אטל — יועצת בריאות NLP. כתבי משוב קצר, חם ואישי ל-' + name + ' בעברית, גוף שני נקבה.\n'
+          + 'סגנון: אינטימי, מחבק, מעצים. ללא גרפים. ללא מספרים יבשים.\n'
+          + (nlpSummary ? 'מדדי NLP: ' + nlpSummary + '\n' : '')
+          + 'יומן: ' + String(logs).substring(0, 800) + '\n\n'
+          + 'כתבי בדיוק 4 חלקים:\n\n'
+          + '**✨ מה עבד השבוע** — משפט אחד חם וספציפי על מה שהצליחה.\n\n'
+          + '**🎯 משימות לדיוק** — משפט אחד עם כיוון לשיפור, בלי מילת "חוסר" או "כישלון".\n\n'
+          + '**🚀 3 צעדים קטנים** — שלושה צעדים קצרים וריאליסטיים לשבוע הבא.\n\n'
+          + '**💚 מסר בשבילך** — משפט השראה אחד אישי.'
         }]
       })
       return Response.json({ result: msg.content[0].text })
     }
 
+    // ── ניתוח פרופיל 360 (דוח מקיף) — נשאר כמו שהיה ──
     if (mode === 'profile' && profile) {
       const p = profile
       const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(String(p.exercise_type)))
@@ -119,10 +108,10 @@ export async function POST(request) {
       const stepsNote = isSedentary ? ', כולל 7,000 צעדים יומיים' : ''
 
       const athleteSection = isAthlete
-        ? '**\u26a1 חלון ההזדמנויות הספורטיבי**\nתזונה לפני/אחרי אימון. מניעת קטבוליזם. חלבון. ספציפי לסוג האימון שלה.'
-        : '**\u26a1 תמיכה במטבוליזם ובאנרגיה**\nפחמימות עודפות + חלבון נמוך = קפיצות אינסולין שנועלות שריפת שומן. הגוף מפרק שריר גם בלי ספורט. BMR נמוך. התקפי רעב. חיבר לנתונים.'
+        ? '**⚡ חלון ההזדמנויות הספורטיבי**\nתזונה לפני/אחרי אימון. מניעת קטבוליזם. חלבון. ספציפי לסוג האימון שלה.'
+        : '**⚡ תמיכה במטבוליזם ובאנרגיה**\nפחמימות עודפות + חלבון נמוך = קפיצות אינסולין שנועלות שריפת שומן. הגוף מפרק שריר גם בלי ספורט. BMR נמוך. התקפי רעב. חיבר לנתונים.'
 
-      const bloodSection = '**\ud83e\ude78 מה אומרות הבדיקות**\n'
+      const bloodSection = '**🩺 מה אומרות הבדיקות**\n'
         + 'לכל ערך חריג: שם + ערך + טווח רצוי + הסבר + המלצה (תזונה/תוסף/רופא). כולל הבדיקות החריגות הנוספות אם קיימות. אם ערך דורש רופא — ציינו.'
 
       const baseData = 'נתונים על ' + name + ':\n'
@@ -145,12 +134,12 @@ export async function POST(request) {
         client.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 1500,
-          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד:\n\n**\u2728 הקווים הזוהרים שלך**\n**\ud83d\udd0d מה באמת קורה**\n' + athleteSection }]
+          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד:\n\n**✨ הקווים הזוהרים שלך**\n**🔍 מה באמת קורה**\n' + athleteSection }]
         }),
         client.messages.create({
           model: 'claude-sonnet-4-6',
           max_tokens: 1500,
-          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד:\n\n' + bloodSection + '\n\n**\ud83e\udd57 המלצות תזונה ותוספים**\n\n**\ud83c\udfaf 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
+          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בלבד:\n\n' + bloodSection + '\n\n**🥗 המלצות תזונה ותוספים**\n\n**🎯 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
         })
       ])
 
