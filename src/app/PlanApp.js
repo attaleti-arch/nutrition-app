@@ -863,7 +863,7 @@ export default function PlanApp({ clientName, userPassword }) {
               </div>
             </div>
             <div style={{ padding: 14 }}>
-              <a href="/guides/shopping" target="_blank" style={{ display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: C.teal, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+              <a href="/shopping_guide.html" target="_blank" style={{ display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: C.teal, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
                 פתחי את המדריך 🛒
               </a>
             </div>
@@ -881,7 +881,7 @@ export default function PlanApp({ clientName, userPassword }) {
               </div>
               <div style={{ padding: 14 }}>
                 <div style={{ fontSize: 14, color: '#444', lineHeight: 1.7, marginBottom: 12 }}>{pantryNotes}</div>
-                <a href="/guides/pantry" target="_blank" style={{ display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: C.orange, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
+                <a href="/pantry_guide.html" target="_blank" style={{ display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: C.orange, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>
                   פתחי את המדריך המלא 🏡
                 </a>
               </div>
