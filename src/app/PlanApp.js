@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from './supabase'
+import WelcomeDocument from './WelcomeDocument'
 
 const C = {
   greenDark: '#0f4c2a', greenMid: '#16a34a', greenLight: '#dcfce7',
@@ -124,7 +125,6 @@ const PLAN = {
   ],
 }
 
-// ── Agent System Prompt (מלא) ──
 const AGENT_SYSTEM_PROMPT = `אתה "עוזר החירום" של תוכנית "בין הראש לצלחת" – מבוסס שיטת אתי אטל ו-NLP של שירלי.
 
 ## זהותך
@@ -178,7 +178,6 @@ const AGENT_QUICK = [
   "😔 אכלתי ריגשית — מה עכשיו?",
 ]
 
-// ── Agent Chat Component ──
 function AgentChat({ clientName, gender }) {
   const fem = gender !== 'זכר'
   const [messages, setMessages] = useState([{
@@ -202,7 +201,6 @@ function AgentChat({ clientName, gender }) {
     setMessages(newMessages)
     setLoading(true)
     try {
-      // קריאה דרך ה-route עם היסטוריה מלאה
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -230,7 +228,6 @@ function AgentChat({ clientName, gender }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 200px)', maxWidth: 520, margin: '0 auto' }}>
-      {/* Header */}
       <div style={{ background: 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', borderRadius: '16px 16px 0 0', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 0 }}>
         <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#fff2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🌿</div>
         <div>
@@ -242,8 +239,6 @@ function AgentChat({ clientName, gender }) {
           <span style={{ fontSize: 11, color: '#fff', fontWeight: 600 }}>פעיל</span>
         </div>
       </div>
-
-      {/* Messages */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 8px', display: 'flex', flexDirection: 'column', gap: 10, background: '#f8f4ef', border: '1px solid #e8f5f2', borderTop: 'none' }}>
         {messages.map((msg, i) => (
           <div key={i} style={{ display: 'flex', flexDirection: msg.role === 'user' ? 'row-reverse' : 'row', alignItems: 'flex-end', gap: 8, animation: 'fadeUp 0.25s ease' }}>
@@ -252,83 +247,55 @@ function AgentChat({ clientName, gender }) {
             )}
             <div
               style={msg.role === 'user' ? {
-                background: 'linear-gradient(135deg,#0f4c2a,#16a34a)',
-                color: '#fff',
-                borderRadius: '18px 18px 4px 18px',
-                padding: '11px 15px',
-                maxWidth: '78%',
-                fontSize: 14,
-                lineHeight: 1.7,
-                boxShadow: '0 2px 10px rgba(15,76,42,0.25)',
+                background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff',
+                borderRadius: '18px 18px 4px 18px', padding: '11px 15px', maxWidth: '78%',
+                fontSize: 14, lineHeight: 1.7, boxShadow: '0 2px 10px rgba(15,76,42,0.25)',
               } : {
-                background: '#fff',
-                color: '#1a1a1a',
-                borderRadius: '18px 18px 18px 4px',
-                padding: '11px 15px',
-                maxWidth: '82%',
-                fontSize: 14,
-                lineHeight: 1.7,
-                border: '1px solid rgba(74,155,142,0.12)',
+                background: '#fff', color: '#1a1a1a',
+                borderRadius: '18px 18px 18px 4px', padding: '11px 15px', maxWidth: '82%',
+                fontSize: 14, lineHeight: 1.7, border: '1px solid rgba(74,155,142,0.12)',
                 boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
               }}
               dangerouslySetInnerHTML={{ __html: fmt(msg.content) }}
             />
           </div>
         ))}
-
         {loading && (
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
             <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>🌿</div>
             <div style={{ background: '#fff', borderRadius: '18px 18px 18px 4px', padding: '14px 16px', border: '1px solid rgba(74,155,142,0.12)', display: 'flex', gap: 5 }}>
-              {[0,1,2].map(i => (
-                <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: '#4a9b8e', animation: `bounce 1.2s ${i*0.2}s infinite` }} />
-              ))}
+              {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: '#4a9b8e', animation: `bounce 1.2s ${i*0.2}s infinite` }} />)}
             </div>
           </div>
         )}
         <div ref={endRef} />
       </div>
-
-      {/* Quick chips */}
       {showQuick && (
         <div style={{ padding: '8px 14px', background: '#f8f4ef', borderLeft: '1px solid #e8f5f2', borderRight: '1px solid #e8f5f2' }}>
           <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 6 }}>שאלות נפוצות:</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
             {AGENT_QUICK.map((q, i) => (
-              <button key={i} onClick={() => send(q)} style={{ padding: '5px 11px', borderRadius: 20, border: '1.5px solid rgba(74,155,142,0.3)', background: '#fff', color: '#3a7a6e', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
-                {q}
-              </button>
+              <button key={i} onClick={() => send(q)} style={{ padding: '5px 11px', borderRadius: 20, border: '1.5px solid rgba(74,155,142,0.3)', background: '#fff', color: '#3a7a6e', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{q}</button>
             ))}
           </div>
         </div>
       )}
-
-      {/* Input */}
       <div style={{ padding: '10px 14px 14px', background: '#fff', borderRadius: '0 0 16px 16px', border: '1px solid #e8f5f2', borderTop: '1px solid #f0f0f0' }}>
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
           <textarea
-            ref={inputRef}
-            value={input}
-            onChange={e => setInput(e.target.value)}
+            ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
             placeholder={fem ? 'שאלי כל שאלה תזונתית...' : 'שאל כל שאלה תזונתית...'}
-            rows={1}
-            disabled={loading}
+            rows={1} disabled={loading}
             style={{ flex: 1, padding: '10px 14px', borderRadius: 20, border: '1.5px solid rgba(74,155,142,0.25)', fontSize: 14, fontFamily: 'inherit', direction: 'rtl', resize: 'none', outline: 'none', background: '#f8f4ef', maxHeight: 90, overflow: 'auto', lineHeight: 1.5 }}
           />
-          <button
-            onClick={() => send()}
-            disabled={!input.trim() || loading}
-            style={{ width: 42, height: 42, borderRadius: '50%', background: !input.trim() || loading ? '#e5e7eb' : 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', color: !input.trim() || loading ? '#9ca3af' : '#fff', border: 'none', cursor: !input.trim() || loading ? 'not-allowed' : 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'rotate(180deg)', flexShrink: 0, transition: 'all 0.2s', boxShadow: !input.trim() || loading ? 'none' : '0 3px 10px rgba(74,155,142,0.4)' }}
-          >
+          <button onClick={() => send()} disabled={!input.trim() || loading}
+            style={{ width: 42, height: 42, borderRadius: '50%', background: !input.trim() || loading ? '#e5e7eb' : 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', color: !input.trim() || loading ? '#9ca3af' : '#fff', border: 'none', cursor: !input.trim() || loading ? 'not-allowed' : 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'rotate(180deg)', flexShrink: 0, transition: 'all 0.2s', boxShadow: !input.trim() || loading ? 'none' : '0 3px 10px rgba(74,155,142,0.4)' }}>
             ➤
           </button>
         </div>
-        <p style={{ fontSize: 10, color: '#ccc', textAlign: 'center', marginTop: 6, marginBottom: 0 }}>
-          ⚠️ לתסמינים דחופים פני למיון · ייעוץ תזונתי בלבד
-        </p>
+        <p style={{ fontSize: 10, color: '#ccc', textAlign: 'center', marginTop: 6, marginBottom: 0 }}>⚠️ לתסמינים דחופים פני למיון · ייעוץ תזונתי בלבד</p>
       </div>
-
       <style>{`
         @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-5px)} }
         @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
@@ -379,9 +346,7 @@ function Confetti() {
         var left = (i * 37 + 13) % 100
         var delay = (i * 0.08) % 2
         var size = 6 + (i % 4) * 3
-        return (
-          <div key={i} style={{ position: 'absolute', top: -20, left: left + '%', width: size, height: size, background: color, borderRadius: i % 3 === 0 ? '50%' : 2, animation: 'fall ' + (2 + (i % 3) * 0.5) + 's ' + delay + 's ease-in forwards', opacity: 0.9 }} />
-        )
+        return <div key={i} style={{ position: 'absolute', top: -20, left: left + '%', width: size, height: size, background: color, borderRadius: i % 3 === 0 ? '50%' : 2, animation: 'fall ' + (2 + (i % 3) * 0.5) + 's ' + delay + 's ease-in forwards', opacity: 0.9 }} />
       })}
       <style>{`@keyframes fall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`}</style>
     </div>
@@ -617,6 +582,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const [pantryNotes, setPantryNotes] = useState('')
   const [showStage2Welcome, setShowStage2Welcome] = useState(false)
   const [showConfetti, setShowConfetti] = useState(false)
+  const [showWelcomeDoc, setShowWelcomeDoc] = useState(false)
   const [dietType, setDietType] = useState(null)
   const [restrictions, setRestrictions] = useState({})
   const [setupDone, setSetupDone] = useState(false)
@@ -711,6 +677,10 @@ export default function PlanApp({ clientName, userPassword }) {
           }
         }
       }
+
+      // ── שינוי 3: הצג מסמך פתיחה אם לא נראה עדיין ──
+      if (!localStorage.getItem('welcome_doc_' + dbKey)) setShowWelcomeDoc(true)
+
       var r = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).order('log_date', { ascending: false }).limit(1).maybeSingle()
       if (r.data) {
         if (r.data.diet_type) { setDietType(r.data.diet_type); setSetupDone(true) }
@@ -854,6 +824,11 @@ export default function PlanApp({ clientName, userPassword }) {
     )
   }
 
+  // ── שינוי 4: מסך מסמך פתיחה ──
+  if (showWelcomeDoc) return (
+    <WelcomeDocument clientPassword={dbKey} clientName={displayName} onContinue={() => setShowWelcomeDoc(false)} />
+  )
+
   if (showStage2Welcome) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', direction: 'rtl', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, color: '#fff' }}>
@@ -917,7 +892,10 @@ export default function PlanApp({ clientName, userPassword }) {
               🏡 מדריכים
             </button>
           )}
-          {/* ── Agent Tab — זמין תמיד ── */}
+          {/* ── שינוי 5: כפתור מסמך ── */}
+          <button onClick={() => setShowWelcomeDoc(true)} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid #e5e7eb', background: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#555' }}>
+            🌿 מסמך
+          </button>
           <button onClick={() => setActiveTab('agent')} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (activeTab === 'agent' ? C.agent : '#e5e7eb'), background: activeTab === 'agent' ? C.agentLight : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: activeTab === 'agent' ? C.agent : '#555', position: 'relative' }}>
             🤖 Agent
             <span style={{ position: 'absolute', top: 4, left: 4, width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 4px #4ade80' }} />
@@ -930,21 +908,18 @@ export default function PlanApp({ clientName, userPassword }) {
         </div>
       </div>
 
-      {/* ── AGENT TAB ── */}
       {activeTab === 'agent' && (
         <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px' }}>
           <AgentChat clientName={displayName} gender={userGender} />
         </div>
       )}
 
-      {/* REPORT TAB */}
       {activeTab === 'report' && reportApproved && (
         <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px' }}>
           <iframe src={'/report?client=' + dbKey} style={{ width: '100%', height: '85vh', border: 'none', borderRadius: 16, boxShadow: '0 2px 20px rgba(0,0,0,0.08)' }} title="הדוח שלי" />
         </div>
       )}
 
-      {/* GUIDES TAB */}
       {activeTab === 'guides' && currentStage >= 2 && (
         <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px' }}>
           {videoUrl && (
@@ -990,11 +965,9 @@ export default function PlanApp({ clientName, userPassword }) {
         </div>
       )}
 
-      {/* DIARY TAB */}
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '14px 14px 80px', display: activeTab === 'diary' ? 'block' : 'none' }}>
         {feedback && <FeedbackCard feedback={feedback} clientName={displayName} logDate={today} onOpenFull={reportApproved ? () => setActiveTab('report') : undefined} />}
 
-        {/* NLP */}
         <div style={{ background: '#fff', borderRadius: 18, padding: 18, border: '1.5px solid #e2e8f0', marginBottom: 14 }}>
           <div style={{ fontWeight: 800, fontSize: 15, color: C.greenDark, marginBottom: 12, textAlign: 'right' }}>🧠 מודעות והקשבה לגוף</div>
           <div style={{ marginBottom: 12 }}>
@@ -1011,7 +984,6 @@ export default function PlanApp({ clientName, userPassword }) {
           <NlpSelector label="רעב ממוצע:" value={hungerLevel} onChange={setHungerLevel} max={5} lowLabel={gf('שבעה', 'שבע')} highLabel="רעב קיצוני" accent={C.blue} />
         </div>
 
-        {/* ספורט */}
         {currentStage >= 2 && (
           <div style={{ background: '#fff', borderRadius: 18, padding: 18, border: '1.5px solid #e2e8f0', marginBottom: 14 }}>
             <div style={{ fontWeight: 800, fontSize: 15, color: C.purple, marginBottom: 12, textAlign: 'right' }}>🏃 ספורט שבועי</div>
@@ -1043,7 +1015,6 @@ export default function PlanApp({ clientName, userPassword }) {
           </div>
         )}
 
-        {/* ארוחות */}
         <Section title="ארוחת בוקר" icon="☀️" accent={C.orange} light={C.orangeLight} defaultOpen={true}>
           <div style={{ fontSize: 12, color: '#9ca3af', padding: '8px 0 4px', textAlign: 'right' }}>{PLAN.bokerSnack}</div>
           <YesNo value={hadSnack} onChange={setHadSnack} labelYes="✅ אכלתי חטיף" labelNo="❌ דילגתי" accent={C.orange} />
