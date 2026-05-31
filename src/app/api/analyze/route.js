@@ -187,7 +187,6 @@ export async function POST(request) {
       const extraBlood = pr.extra_blood_notes || ''
       const clientName = body.clientName || cl.name || ''
 
-      // זיהוי ערכים חריגים
       const abnormals = []
       Object.entries(bloodTests).forEach(([k, v]) => {
         if (!v || v === '') return
@@ -270,8 +269,7 @@ export async function POST(request) {
 - מחלת לב → exercise: אירובי מתון 50-70% דופק, לא HIIT, לא אימוני כוח עצימים.
 - בלוטת תריס → exercise: יוגה, פילאטיס, הליכות. לא HIIT.
 - עיכול → exercise: יוגה, פילאטיס.
-- סוכרת/אינסולין → plate: protein 40, fat 30, carbs 20, veggies 50 (סכום 140? לא! — ירקות כבר ב-50, שאר 50 מחולקים בין חלבון/שומן/פחמימה).
-  תיקון: veggies=50, protein=25, carbs=15, fat=10 (סכום=100).
+- סוכרת/אינסולין → plate: veggies=50, protein=25, carbs=15, fat=10 (סכום=100).
 - צבעים לדוגמה: לב="#e53e3e" light="#fff5f5", סוכרת="#d97706" light="#fffbeb", תריס="#0d9488" light="#f0fdfa", עיכול="#7c3aed" light="#faf5ff", כליות="#2563eb" light="#eff6ff", אונקולוגי="#059669" light="#ecfdf5"`
 
       const msg = await client.messages.create({
