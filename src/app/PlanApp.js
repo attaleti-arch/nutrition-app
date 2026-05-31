@@ -677,7 +677,7 @@ export default function PlanApp({ clientName, userPassword }) {
           }
         }
       }
-if (profileDone && !localStorage.getItem('welcome_doc_' + dbKey)) setShowWelcomeDoc(true)
+
       // ── שינוי 3: הצג מסמך פתיחה אם לא נראה עדיין ──
       if (!localStorage.getItem('welcome_doc_' + dbKey)) setShowWelcomeDoc(true)
 
