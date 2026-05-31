@@ -92,6 +92,20 @@ function MacroPieChart({ actual, target }) {
     { name: 'שומן', value: target.fatPct, color: '#9333ea' },
     { name: 'פחמימות', value: target.carbsPct, color: '#f97316' },
   ] : null
+
+  function renderLabel({ cx, cy, midAngle, innerRadius, outerRadius, value }) {
+    if (value < 8) return null
+    var RADIAN = Math.PI / 180
+    var radius = innerRadius + (outerRadius - innerRadius) * 0.5
+    var x = cx + radius * Math.cos(-midAngle * RADIAN)
+    var y = cy + radius * Math.sin(-midAngle * RADIAN)
+    return (
+      <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={800}>
+        {value}%
+      </text>
+    )
+  }
+
   return (
     <div style={{ background: '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 10 }}>
       <div style={{ display: 'flex', gap: 12 }}>
@@ -99,10 +113,9 @@ function MacroPieChart({ actual, target }) {
           <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>בפועל</div>
           <ResponsiveContainer width="100%" height={100}>
             <PieChart>
-              <Pie data={actualData} cx="50%" cy="50%" innerRadius={22} outerRadius={44} dataKey="value" paddingAngle={3}>
+              <Pie data={actualData} cx="50%" cy="50%" innerRadius={22} outerRadius={44} dataKey="value" paddingAngle={3} labelLine={false} label={renderLabel}>
                 {actualData.map(function(e, i) { return <Cell key={i} fill={e.color} stroke="none" /> })}
               </Pie>
-              <Tooltip formatter={function(v) { return v + '%' }} />
             </PieChart>
           </ResponsiveContainer>
           <div style={{ fontSize: 12, fontWeight: 700, color: '#555' }}>{Math.round(actual.calories)} קל</div>
@@ -112,10 +125,9 @@ function MacroPieChart({ actual, target }) {
             <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>יעד</div>
             <ResponsiveContainer width="100%" height={100}>
               <PieChart>
-                <Pie data={targetData} cx="50%" cy="50%" innerRadius={22} outerRadius={44} dataKey="value" paddingAngle={3}>
+                <Pie data={targetData} cx="50%" cy="50%" innerRadius={22} outerRadius={44} dataKey="value" paddingAngle={3} labelLine={false} label={renderLabel}>
                   {targetData.map(function(e, i) { return <Cell key={i} fill={e.color} stroke="none" /> })}
                 </Pie>
-                <Tooltip formatter={function(v) { return v + '%' }} />
               </PieChart>
             </ResponsiveContainer>
             <div style={{ fontSize: 12, fontWeight: 700, color: '#555' }}>{target.calories} קל יעד</div>
