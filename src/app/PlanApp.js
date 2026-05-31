@@ -308,12 +308,21 @@ function FeedbackCard({ feedback, clientName, logDate, onOpenFull }) {
 }
 
 // ── רכיב צילום צלחת ──
-function MealScanner({ gender, onAdd }) {
+function MealScanner({ gender, onAdd, joinedDate }) {
   const [scanning, setScanning] = useState(false)
   const [result, setResult] = useState(null)
   const [editing, setEditing] = useState(false)
+  const [editDesc, setEditDesc] = useState('')
+  const [editCal, setEditCal] = useState(0)
+  const [editProtein, setEditProtein] = useState(0)
+  const [editFat, setEditFat] = useState(0)
+  const [editCarbs, setEditCarbs] = useState(0)
   const inputRef = useRef(null)
   const fem = gender !== 'זכר'
+
+  // ── נעול 7 ימים ראשונים ──
+  var daysInApp = joinedDate ? Math.floor((Date.now() - new Date(joinedDate).getTime()) / (1000*60*60*24)) : 99
+  var isLocked = daysInApp < 7
 
   async function handleFile(file) {
     if (!file) return
@@ -331,10 +340,24 @@ function MealScanner({ gender, onAdd }) {
         body: JSON.stringify({ mode: 'scanMeal', imageBase64: base64, mediaType: file.type, gender: gender })
       })
       var data = await res.json()
-      setResult(data.result)
+      var r2 = data.result
+      setResult(r2)
+      setEditDesc(r2.description || '')
+      setEditCal(r2.total_calories || 0)
+      setEditProtein(r2.total_protein || 0)
+      setEditFat(r2.total_fat || 0)
+      setEditCarbs(r2.total_carbs || 0)
       setEditing(true)
     } catch(e) { alert('שגיאה בסריקה') }
     setScanning(false)
+  }
+
+  if (isLocked) {
+    return (
+      <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 10, background: '#f3f4f6', border: '1.5px dashed #d1d5db', textAlign: 'center' }}>
+        <span style={{ fontSize: 12, color: '#9ca3af' }}>📸 צילום צלחת יפתח בעוד {7 - daysInApp} ימים</span>
+      </div>
+    )
   }
 
   if (!editing || !result) {
@@ -350,23 +373,40 @@ function MealScanner({ gender, onAdd }) {
 
   return (
     <div style={{ marginTop: 10, background: '#eff6ff', borderRadius: 14, padding: 14, border: '1.5px solid #93c5fd' }}>
-      <div style={{ fontWeight: 800, fontSize: 14, color: '#1e40af', marginBottom: 8 }}>🤖 AI זיהה:</div>
-      <div style={{ fontSize: 13, color: '#1e3a8a', marginBottom: 10, lineHeight: 1.6 }}>{result.description}</div>
-      {result.items && result.items.map(function(item, i) {
-        return (
-          <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: '1px solid #dbeafe', fontSize: 13 }}>
-            <span style={{ color: '#1e40af', fontWeight: 600 }}>{item.name}</span>
-            <span style={{ color: '#374151' }}>{item.amount} · {item.calories} קל · {item.protein}g חלבון</span>
-          </div>
-        )
-      })}
-      <div style={{ marginTop: 8, fontWeight: 700, fontSize: 14, color: '#1e40af' }}>
-        סה"כ: {result.total_calories} קל · {result.total_protein}g חלבון
-        {result.confidence === 'low' && <span style={{ fontSize: 11, color: '#9ca3af', marginRight: 6 }}>(הערכה בלבד)</span>}
+      <div style={{ fontWeight: 800, fontSize: 14, color: '#1e40af', marginBottom: 8 }}>🤖 AI זיהה — {fem ? 'תקני' : 'תקן'} אם לא מדויק:</div>
+
+      {/* תיאור ניתן לעריכה */}
+      <input value={editDesc} onChange={e => setEditDesc(e.target.value)}
+        style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1.5px solid #bfdbfe', fontSize: 13, marginBottom: 10, boxSizing: 'border-box', textAlign: 'right' }} />
+
+      {/* ערכים עריכה */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 10 }}>
+        {[
+          { label: '🔥 קל', val: editCal, set: setEditCal },
+          { label: '💪 חלבון', val: editProtein, set: setEditProtein },
+          { label: '🍞 פחמימה', val: editCarbs, set: setEditCarbs },
+          { label: '🫒 שומן', val: editFat, set: setEditFat },
+        ].map(function(f) {
+          return (
+            <div key={f.label} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 3 }}>{f.label}</div>
+              <input type="number" value={f.val} onChange={e => f.set(Number(e.target.value) || 0)}
+                style={{ width: '100%', padding: '6px 4px', borderRadius: 8, border: '1.5px solid #bfdbfe', fontSize: 13, textAlign: 'center', boxSizing: 'border-box' }} />
+            </div>
+          )
+        })}
       </div>
-      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-        <button onClick={() => { onAdd(result.total_calories, result.description); setEditing(false); setResult(null) }} style={{ flex: 2, padding: 10, borderRadius: 10, background: '#0284c7', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-          ✅ הוסיפי לוגיסטיות
+
+      {result.confidence === 'low' && (
+        <div style={{ fontSize: 11, color: '#f59e0b', marginBottom: 8 }}>⚠️ ביטחון נמוך — {fem ? 'כדאי לתקן' : 'כדאי לתקן'}</div>
+      )}
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={() => {
+          onAdd(editCal, editDesc, editProtein, editFat, editCarbs)
+          setEditing(false); setResult(null)
+        }} style={{ flex: 2, padding: 10, borderRadius: 10, background: '#0284c7', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+          ✅ {fem ? 'הוסיפי' : 'הוסף'} לארוחה
         </button>
         <button onClick={() => { setEditing(false); setResult(null) }} style={{ flex: 1, padding: 10, borderRadius: 10, background: '#fff', color: '#ef4444', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
           ✕ ביטול
@@ -502,6 +542,10 @@ export default function PlanApp({ clientName, userPassword }) {
   const [erevExtraCal, setErevExtraCal] = useState(0)
   const [scanCalories, setScanCalories] = useState(0)
   const [scanDesc, setScanDesc] = useState('')
+  const [scanProtein, setScanProtein] = useState(0)
+  const [scanFat, setScanFat] = useState(0)
+  const [scanCarbs, setScanCarbs] = useState(0)
+  const [joinedDate, setJoinedDate] = useState(null)
   const [feedback, setFeedback] = useState(null)
   const [reportApproved, setReportApproved] = useState(false)
   const [activeTab, setActiveTab] = useState('diary')
@@ -557,6 +601,7 @@ export default function PlanApp({ clientName, userPassword }) {
         if (d.target_weight) setUserTargetWeight(String(d.target_weight))
         if (d.video_url) setVideoUrl(d.video_url)
         if (d.pantry_notes) setPantryNotes(d.pantry_notes)
+        if (d.created_at) setJoinedDate(d.created_at)
         if (d.sport_type) setSportType(d.sport_type)
         if (d.sport_commit_days) setSportCommitDays(d.sport_commit_days)
         if (d.current_stage) {
@@ -591,7 +636,9 @@ export default function PlanApp({ clientName, userPassword }) {
         setBokerExtraCal(t.boker_extra_cal || 0); setLunchExtraCal(t.lunch_extra_cal || 0); setErevExtraCal(t.erev_extra_cal || 0)
         setHadSnack(t.had_snack ?? null); setHadBenayim(t.had_benayim ?? null)
         setSportDoneToday(t.sport_done_today || false)
-        setSportDaysThisWeek(t.sport_days_week || 0)
+        // ── מתאפס כל יום ראשון (תחילת שבוע) ──
+        var dayOfWeek = new Date().getDay()
+        setSportDaysThisWeek(dayOfWeek === 0 ? 0 : (t.sport_days_week || 0))
         setScanCalories(t.scan_calories || 0); setScanDesc(t.scan_desc || '')
         setFeedback(t.trainer_feedback || null)
         setReportApproved(t.report_approved || false)
@@ -637,7 +684,7 @@ export default function PlanApp({ clientName, userPassword }) {
     setBokerFree(''); setLunchFree(''); setErevFree('')
     setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
     setHadSnack(null); setHadBenayim(null)
-    setSportDoneToday(false); setScanCalories(0); setScanDesc('')
+    setSportDoneToday(false); setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0)
     setStressLevel(0); setFatigueLevel(0); setHungerLevel(0); setUserMood(null)
     setFeedback(null); setReportApproved(false)
   }
@@ -653,7 +700,7 @@ export default function PlanApp({ clientName, userPassword }) {
       boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
       had_snack: hadSnack, had_benayim: hadBenayim,
       sport_done_today: sportDoneToday, sport_days_week: sportDaysThisWeek,
-      scan_calories: scanCalories || 0, scan_desc: scanDesc || '',
+      scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
       diet_type: dietType, restrictions,
       nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood },
       updated_at: new Date().toISOString(),
@@ -758,7 +805,7 @@ export default function PlanApp({ clientName, userPassword }) {
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', direction: 'rtl', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, color: '#fff' }}>
         {showConfetti && <Confetti />}
         <div style={{ fontSize: 60, marginBottom: 16 }}>🎉</div>
-        <div style={{ fontWeight: 900, fontSize: 28, textAlign: 'center', marginBottom: 8 }}>ברוכ{gf('ה', '') + ' הבא' + gf('ה', '')} לשלב 2!</div>
+        <div style={{ fontWeight: 900, fontSize: 28, textAlign: 'center', marginBottom: 8 }}>{gf('ברוכה הבאה', 'ברוך הבא')} לשלב 2!</div>
         <div style={{ fontSize: 16, color: '#bbf7d0', textAlign: 'center', marginBottom: 24, lineHeight: 1.7 }}>
           שלב העוגן · עיצוב הסביבה 🏡<br/>
           עברת על הבסיס — עכשיו הופכים אותו לדרך חיים
@@ -800,8 +847,11 @@ export default function PlanApp({ clientName, userPassword }) {
                 <span>🔥 {Math.round(eatenCalories)} קל אכל{gf('ת', '')}</span>
                 <span>יעד: {targets.calories} קל</span>
               </div>
-              <div style={{ height: 8, background: '#ffffff20', borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{ width: Math.min(100, Math.round((eatenCalories / targets.calories) * 100)) + '%', height: '100%', background: eatenCalories >= targets.calories ? '#fbbf24' : '#4ade80', borderRadius: 99, transition: 'width 0.3s' }} />
+              <div style={{ position: 'relative', height: 18, background: '#ffffff20', borderRadius: 99, overflow: 'hidden' }}>
+                <div style={{ width: Math.min(100, Math.round((eatenCalories / targets.calories) * 100)) + '%', height: '100%', background: eatenCalories >= targets.calories ? '#fbbf24' : '#4ade80', borderRadius: 99, transition: 'width 0.3s', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingLeft: 6 }} />
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
+                  {Math.min(100, Math.round((eatenCalories / targets.calories) * 100))}%
+                </div>
               </div>
               <div style={{ fontSize: 11, color: '#bbf7d0', marginTop: 4 }}>
                 {eatenCalories >= targets.calories ? '✅ הגעת ליעד!' : 'נשאר ' + (targets.calories - Math.round(eatenCalories)) + ' קל'}
@@ -1007,7 +1057,7 @@ export default function PlanApp({ clientName, userPassword }) {
           {filteredBoker.map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
           <FreeText value={bokerFree} onChange={setBokerFree} placeholder="אכלתי גם / פרטים נוספים..." />
           <ExtraCal value={bokerExtraCal} onChange={setBokerExtraCal} />
-          <MealScanner gender={userGender} onAdd={(cal, desc) => { setBokerExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc) }} />
+          <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setBokerExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
         </Section>
 
         {/* ── ארוחת צהריים ── */}
@@ -1035,7 +1085,7 @@ export default function PlanApp({ clientName, userPassword }) {
           {PLAN.veggieOptions.map(o => <RadioRow key={o.id} id={o.id} text={o.text} accent={C.teal} selected={veggieSel} onSelect={setVeggieSel} />)}
           <FreeText value={lunchFree} onChange={setLunchFree} placeholder="פרטים נוספים על הצהריים..." />
           <ExtraCal value={lunchExtraCal} onChange={setLunchExtraCal} />
-          <MealScanner gender={userGender} onAdd={(cal, desc) => { setLunchExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc) }} />
+          <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setLunchExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
         </Section>
 
         {/* ── ביניים ── */}
@@ -1059,7 +1109,7 @@ export default function PlanApp({ clientName, userPassword }) {
           ))}
           <FreeText value={erevFree} onChange={setErevFree} placeholder="פרטים נוספים על הערב..." />
           <ExtraCal value={erevExtraCal} onChange={setErevExtraCal} />
-          <MealScanner gender={userGender} onAdd={(cal, desc) => { setErevExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc) }} />
+          <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setErevExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
         </Section>
 
         {/* ── מזווה (שלב 2) ── */}
