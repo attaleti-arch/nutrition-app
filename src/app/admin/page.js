@@ -513,12 +513,21 @@ export default function AdminPage() {
     var targets = calcTargets(selectedClient)
     var summary = filteredLogs.map(function(l) {
       var nut = calcNutrition(l, nutritionData)
+      var scanExtra = ''
+      if (l.scan_calories > 0) {
+        scanExtra = ' | 📸 צילום צלחת: ' + l.scan_calories + ' קל'
+        if (l.scan_protein > 0) scanExtra += ', חלבון ' + l.scan_protein + 'g'
+        if (l.scan_fat > 0) scanExtra += ', שומן ' + l.scan_fat + 'g'
+        if (l.scan_carbs > 0) scanExtra += ', פחמימה ' + l.scan_carbs + 'g'
+        if (l.scan_desc) scanExtra += ' (' + l.scan_desc + ')'
+      }
       return 'תאריך: ' + l.log_date
         + ' | קלוריות: ' + Math.round(nut.calories) + (targets ? ' (יעד: ' + targets.calories + ')' : '')
         + ' | חלבון: ' + Math.round(nut.protein) + 'g (יעד: ' + (targets ? targets.protein : '?') + 'g)'
         + ' | שומן: ' + Math.round(nut.fat) + 'g'
         + ' | מים: ' + (l.water || 0) + ' כוסות'
         + ' | צעדים: ' + (l.steps || 0)
+        + scanExtra
         + ' | הערה: ' + (l.note || '')
     }).join('\n')
     const res = await fetch('/api/analyze', {
