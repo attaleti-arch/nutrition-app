@@ -377,7 +377,19 @@ export default function AdminPage() {
   }
 
   // ✅ חדש: הפעלה/כיבוי מסמך פתיחה
-  async function toggleWelcomeDoc() {
+  // ✅ רענון מסמך — מוחק את השמור ומייצר חדש
+  async function refreshWelcomeDoc() {
+    if (!selectedClient) return
+    if (!window.confirm('למחוק את המסמך הקיים ולייצר חדש? זה ייקח כ-30 שניות.')) return
+    setTogglingDoc(true)
+    const sb = (await import('../supabase')).supabase
+    await sb.from('client_profiles').update({
+      welcome_doc_json: null,
+      welcome_doc_generated_at: null
+    }).eq('client_password', selectedClient.password)
+    setTogglingDoc(false)
+    alert('✅ המסמך נמחק — בפתיחה הבאה ייווצר חדש')
+  }
     if (!selectedClient) return
     setTogglingDoc(true)
     const newVal = !selectedClient.welcome_doc_enabled
@@ -621,6 +633,11 @@ export default function AdminPage() {
                   {selectedClient.welcome_doc_enabled ? '✅ פעיל — הלקוחה יכולה לפתוח' : '🔒 כבוי — הכפתור אפור אצלה'}
                 </div>
               </div>
+
+              {/* כפתור רענון מסמך */}
+              <button onClick={refreshWelcomeDoc} disabled={togglingDoc} style={{ padding: '10px 14px', borderRadius: 12, background: '#fff7ed', color: '#f97316', border: '1.5px solid #fed7aa', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                🔄 רענן
+              </button>
 
               {/* כפתור תצוגה מקדימה */}
               <button onClick={() => setPreviewDoc(true)} style={{ padding: '10px 16px', borderRadius: 12, background: '#eff6ff', color: '#0284c7', border: '1.5px solid #93c5fd', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
