@@ -20,30 +20,6 @@ const BLOOD_NAMES = {
   gluten_sensitivity:'רגישות גלוטן',celiac:'צליאק'
 }
 
-const COACH_SYSTEM_PROMPT = `אתה מאמן NLP מומחה בשיטת אתי אטל. נתח תשובות של לקוחה והפק JSON למעטפת NLP מובנית:
-{
-  "well_formed_outcome": { "vision": "תיאור חושי ומפורט של המטרה", "sensory_evidence": "איך היא תדע שהיא שם" },
-  "limiting_beliefs_map": [{ "original_quote": "ציטוט הלקוחה", "belief_type": "חוסר אונים/ערך/שייכות", "challenge_question": "שאלת ערעור כירורגית" }],
-  "ecology_and_buffers": { "secondary_gain": "הרווח המשני שלה", "replacement_anchor": "הצעה לפעולה או משפט עוגן" }
-}`;
-
-async function analyzeClientResponses(responses) {
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-  
-  const response = await anthropic.messages.create({
-    model: 'claude-3-5-sonnet-20240620',
-    max_tokens: 1024,
-    system: COACH_SYSTEM_PROMPT,
-    messages: [{ role: 'user', content: JSON.stringify(responses) }]
-  });
-
-  const content = response.content[0];
-  if (content.type === 'text') {
-    return JSON.parse(content.text);
-  }
-  throw new Error('Unexpected response format from Anthropic');
-}
-
 const BLOOD_RANGES = {
   glucose:[70,100],hba1c:[0,5.7],cholesterol:[0,200],hdl:[60,999],
   ldl:[0,100],triglycerides:[0,150],hemoglobin:[12,16],ferritin:[12,150],
@@ -412,13 +388,6 @@ export async function POST(request) {
 
     // ── ניתוח פרופיל מלא ──
     if (mode === 'profile' && profile) {
-      // --- הוספה ל-NLP ---
-      try {
-        const nlpEnvelope = await analyzeClientResponses(profile)
-        await sb.from('client_profiles').update({ nlp_envelope: nlpEnvelope }).eq('client_password', body.clientPassword)
-      } catch (e) { console.error('NLP Error:', e) }
-      // --------------------
-
       const p = profile
       const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(String(p.exercise_type)))
       const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
