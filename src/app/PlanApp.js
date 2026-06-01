@@ -632,6 +632,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const [userActivity, setUserActivity] = useState('בינוני')
   const [userGoal, setUserGoal] = useState('ירידה במשקל')
   const [userTargetWeight, setUserTargetWeight] = useState('')
+  const [clientData, setClientData] = useState(null) // ✅ נתוני הלקוח המלאים
 
   const fem = userGender !== 'זכר'
   const gf = (f, m) => fem ? f : m
@@ -651,6 +652,7 @@ export default function PlanApp({ clientName, userPassword }) {
       var client = await supabase.from('clients').select('*').eq('password', dbKey).maybeSingle()
       if (client.data) {
         var d = client.data
+        setClientData(d) // ✅ שמירת כל נתוני הלקוח
         if (d.weight) { setUserWeight(String(d.weight)); setProfileDone(true) }
         if (d.height) setUserHeight(String(d.height))
         if (d.age) setUserAge(String(d.age))
@@ -663,6 +665,7 @@ export default function PlanApp({ clientName, userPassword }) {
         if (d.created_at) setJoinedDate(d.created_at)
         if (d.sport_type) setSportType(d.sport_type)
         if (d.sport_commit_days) setSportCommitDays(d.sport_commit_days)
+        // welcome_doc_enabled נטען ישירות מ-client.data
 
         // ✅ תיקון: טעינת העדפות תזונה מ-clients (לא מ-daily_logs)
         if (d.diet_type) { setDietType(d.diet_type); setSetupDone(true) }
@@ -682,10 +685,7 @@ export default function PlanApp({ clientName, userPassword }) {
           }
         }
 
-        // ✅ תיקון: WelcomeDocument מוצג רק אחרי שהפרופיל מלא
-        if (d.weight && !localStorage.getItem('welcome_doc_' + dbKey)) {
-          setShowWelcomeDoc(true)
-        }
+        // WelcomeDocument נפתח רק דרך כפתור ידני — לא אוטומטי
       }
 
       var todayLog = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
@@ -848,13 +848,7 @@ export default function PlanApp({ clientName, userPassword }) {
     )
   }
 
-  // ✅ WelcomeDocument — רק אחרי setup + profile
-  if (showWelcomeDoc) return (
-    <WelcomeDocument clientPassword={dbKey} clientName={displayName} onContinue={() => {
-      localStorage.setItem('welcome_doc_' + dbKey, '1')
-      setShowWelcomeDoc(false)
-    }} />
-  )
+  // WelcomeDocument נפתח רק דרך כפתור ידני בטאבים
 
   if (showStage2Welcome) {
     return (
@@ -919,9 +913,16 @@ export default function PlanApp({ clientName, userPassword }) {
               🏡 מדריכים
             </button>
           )}
-          <button onClick={() => setShowWelcomeDoc(true)} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid #e5e7eb', background: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#555' }}>
-            🌿 מסמך
-          </button>
+          {/* ✅ כפתור מסמך — פעיל רק אם welcome_doc_enabled */}
+          {clientData?.welcome_doc_enabled ? (
+            <button onClick={() => setShowWelcomeDoc(true)} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (showWelcomeDoc ? '#4a9b8e' : '#e5e7eb'), background: showWelcomeDoc ? '#e8f5f2' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: showWelcomeDoc ? '#4a9b8e' : '#555' }}>
+              🌿 מסמך
+            </button>
+          ) : (
+            <button disabled style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid #e5e7eb', background: '#f3f4f6', cursor: 'not-allowed', fontWeight: 700, fontSize: 12, color: '#d1d5db' }}>
+              🔒 מסמך
+            </button>
+          )}
           <button onClick={() => setActiveTab('agent')} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (activeTab === 'agent' ? C.agent : '#e5e7eb'), background: activeTab === 'agent' ? C.agentLight : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: activeTab === 'agent' ? C.agent : '#555', position: 'relative' }}>
             🤖 Agent
             <span style={{ position: 'absolute', top: 4, left: 4, width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 4px #4ade80' }} />
@@ -933,6 +934,17 @@ export default function PlanApp({ clientName, userPassword }) {
           )}
         </div>
       </div>
+
+      {/* ✅ מסמך פתיחה — overlay על גבי האפליקציה */}
+      {showWelcomeDoc && (
+        <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto' }}>
+          <WelcomeDocument
+            clientPassword={dbKey}
+            clientName={displayName}
+            onContinue={() => setShowWelcomeDoc(false)}
+          />
+        </div>
+      )}
 
       {activeTab === 'agent' && (
         <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px' }}>
