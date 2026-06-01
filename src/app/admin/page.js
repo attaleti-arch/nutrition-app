@@ -380,25 +380,25 @@ export default function AdminPage() {
   // ✅ חדש: הפעלה/כיבוי מסמך פתיחה
   // ✅ רענון מסמך — מוחק את השמור ומייצר חדש
   async function refreshWelcomeDoc() {
-    if (!selectedClient) return
-    if (!window.confirm('למחוק את המסמך הקיים ולייצר חדש? זה ייקח כ-30 שניות.')) return
-    setTogglingDoc(true)
-    const sb = (await import('../supabase')).supabase
-    await sb.from('client_profiles').update({
-      welcome_doc_json: null,
-      welcome_doc_generated_at: null
-    }).eq('client_password', selectedClient.password)
-    setTogglingDoc(false)
-    alert('✅ המסמך נמחק — בפתיחה הבאה ייווצר חדש')
-  }
-    if (!selectedClient) return
-    setTogglingDoc(true)
-    const newVal = !selectedClient.welcome_doc_enabled
-    await supabase.from('clients').update({ welcome_doc_enabled: newVal }).eq('id', selectedClient.id)
-    setSelectedClient(prev => ({ ...prev, welcome_doc_enabled: newVal }))
-    setTogglingDoc(false)
-  }
+  if (!selectedClient) return
+  if (!window.confirm('למחוק את המסמך הקיים ולייצר חדש?')) return
+  setTogglingDoc(true)
+  await supabase.from('client_profiles').update({
+    welcome_doc_json: null,
+    welcome_doc_generated_at: null
+  }).eq('client_password', selectedClient.password)
+  setTogglingDoc(false)
+  alert('✅ המסמך נמחק — בפתיחה הבאה ייווצר חדש')
+}
 
+async function toggleWelcomeDoc() {
+  if (!selectedClient) return
+  setTogglingDoc(true)
+  const newVal = !selectedClient.welcome_doc_enabled
+  await supabase.from('clients').update({ welcome_doc_enabled: newVal }).eq('id', selectedClient.id)
+  setSelectedClient(prev => ({ ...prev, welcome_doc_enabled: newVal }))
+  setTogglingDoc(false)
+}
   async function addItemToInventory() {
     if (!newItemName.trim() || !selectedClient) return
     setAddingItem(true)
