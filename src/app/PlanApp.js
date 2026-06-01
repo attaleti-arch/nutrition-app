@@ -954,7 +954,20 @@ export default function PlanApp({ clientName, userPassword }) {
 
       {activeTab === 'report' && reportApproved && (
         <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px' }}>
-          <iframe src={'/report?client=' + dbKey} style={{ width: '100%', height: '85vh', border: 'none', borderRadius: 16, boxShadow: '0 2px 20px rgba(0,0,0,0.08)' }} title="הדוח שלי" />
+          <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+              <div>
+                <div style={{ fontWeight: 900, fontSize: 15 }}>הדוח האישי שלך 💚</div>
+                <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · אתי אטל</div>
+              </div>
+            </div>
+          </div>
+          <div style={{ background: '#fff', borderRadius: 18, padding: '20px 18px', border: '1.5px solid #f0f0f0' }}>
+            <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>
+              {feedback}
+            </div>
+          </div>
         </div>
       )}
 
