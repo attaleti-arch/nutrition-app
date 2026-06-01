@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
-
+import { analyzeClientResponses } from '@/lib/nlpCoach'
 export const maxDuration = 60
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -388,6 +388,13 @@ export async function POST(request) {
 
     // ── ניתוח פרופיל מלא ──
     if (mode === 'profile' && profile) {
+      // --- הוספה ל-NLP ---
+      try {
+        const nlpEnvelope = await analyzeClientResponses(profile)
+        await sb.from('client_profiles').update({ nlp_envelope: nlpEnvelope }).eq('client_password', body.clientPassword)
+      } catch (e) { console.error('NLP Error:', e) }
+      // --------------------
+
       const p = profile
       const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(String(p.exercise_type)))
       const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
