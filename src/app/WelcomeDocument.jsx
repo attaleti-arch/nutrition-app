@@ -87,7 +87,7 @@ function SmartPlate({ protein, carbs, fat, veggies }) {
   )
 }
 
-function MedicalCard({ title, icon, physio, eat, avoid, exercise, color, light }) {
+function MedicalCard({ title, icon, physio, eat, avoid, color, light }) {
   return (
     <div style={{ background: '#fff', borderRadius: 18, border: `1.5px solid ${color}30`, overflow: 'hidden', marginBottom: 12 }}>
       <div style={{ background: `linear-gradient(135deg,${color}15,${light})`, padding: '14px 18px', borderBottom: `1px solid ${color}20` }}>
@@ -112,12 +112,6 @@ function MedicalCard({ title, icon, physio, eat, avoid, exercise, color, light }
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
               {avoid.map((item, i) => <span key={i} style={{ fontSize: 12, background: '#fef2f2', color: '#991b1b', borderRadius: 20, padding: '3px 10px', border: '1px solid #fecaca', fontWeight: 500 }}>{item}</span>)}
             </div>
-          </div>
-        )}
-        {exercise && (
-          <div style={{ background: `${color}10`, borderRadius: 10, padding: '10px 14px' }}>
-            <div style={{ fontSize: 11, fontWeight: 700, color: color, marginBottom: 4 }}>🏃 המלצות כושר</div>
-            <div style={{ fontSize: 13, color: '#444', lineHeight: 1.6 }}>{exercise}</div>
           </div>
         )}
       </div>
@@ -186,7 +180,7 @@ function DefaultDocument({ clientName, onClose }) {
 }
 
 function DocContent({ data, onContinue, generatedAt }) {
-  const { plate, medicalCards, bloodDeficits, greeting, name } = data
+  const { plate, medicalCards, bloodDeficits, greeting, name, exerciseSummary } = data
   return (
     <div style={{ direction: 'rtl', fontFamily: 'sans-serif', maxWidth: 520, margin: '0 auto', padding: '0 14px 100px' }}>
       <div style={{ background: 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', borderRadius: '0 0 24px 24px', padding: '28px 24px 32px', marginBottom: 20, color: '#fff', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
@@ -220,6 +214,45 @@ function DocContent({ data, onContinue, generatedAt }) {
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontWeight: 800, fontSize: 16, color: '#1a1a1a', marginBottom: 12 }}>💊 פרוטוקול אישי לפי המצב הרפואי</div>
           {medicalCards.map((card, i) => <MedicalCard key={i} {...card} />)}
+        </div>
+      )}
+
+      {/* ✅ כרטיס כושר מרוכז */}
+      {exerciseSummary && (
+        <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #c4b5fd', overflow: 'hidden', marginBottom: 16 }}>
+          <div style={{ background: 'linear-gradient(135deg,#7c3aed15,#faf5ff)', padding: '14px 18px', borderBottom: '1px solid #e9d5ff' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 24 }}>🏃</span>
+              <div style={{ fontWeight: 800, fontSize: 15, color: '#1a1a1a' }}>{exerciseSummary.title || 'המלצות כושר מותאמות אישית'}</div>
+            </div>
+          </div>
+          <div style={{ padding: '14px 18px' }}>
+            {exerciseSummary.recommendation && (
+              <div style={{ fontSize: 13, color: '#444', lineHeight: 1.7, marginBottom: 14, background: '#f5f3ff', borderRadius: 10, padding: '10px 14px' }}>
+                {exerciseSummary.recommendation}
+              </div>
+            )}
+            {exerciseSummary.do && exerciseSummary.do.length > 0 && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', marginBottom: 6 }}>✅ מומלץ לשלב</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {exerciseSummary.do.map((item, i) => (
+                    <span key={i} style={{ fontSize: 12, background: '#f0fdf4', color: '#166534', borderRadius: 20, padding: '3px 10px', border: '1px solid #bbf7d0', fontWeight: 500 }}>{item}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {exerciseSummary.avoid && exerciseSummary.avoid.length > 0 && (
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: '#dc2626', marginBottom: 6 }}>⚠️ רצוי להימנע</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {exerciseSummary.avoid.map((item, i) => (
+                    <span key={i} style={{ fontSize: 12, background: '#fef2f2', color: '#991b1b', borderRadius: 20, padding: '3px 10px', border: '1px solid #fecaca', fontWeight: 500 }}>{item}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
