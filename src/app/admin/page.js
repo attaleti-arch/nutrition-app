@@ -382,7 +382,17 @@ export default function AdminPage() {
     if (!selectedClient) return
     if (!window.confirm('למחוק את המסמך הקיים ולייצר חדש? זה ייקח כ-30 שניות.')) return
     setTogglingDoc(true)
-    const sb = (await import('../supabase')).supabase
+    async function refreshWelcomeDoc() {
+  if (!selectedClient) return
+  if (!window.confirm('למחוק את המסמך הקיים ולייצר חדש?')) return
+  setTogglingDoc(true)
+  await supabase.from('client_profiles').update({
+    welcome_doc_json: null,
+    welcome_doc_generated_at: null
+  }).eq('client_password', selectedClient.password)
+  setTogglingDoc(false)
+  alert('✅ המסמך נמחק — בפתיחה הבאה ייווצר חדש')
+}
     await sb.from('client_profiles').update({
       welcome_doc_json: null,
       welcome_doc_generated_at: null
