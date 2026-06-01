@@ -9,10 +9,18 @@ const COACH_SYSTEM_PROMPT = `אתה מאמן NLP מומחה בשיטת אתי א
 
 export async function analyzeClientResponses(responses: any) {
   const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  
   const response = await anthropic.messages.create({
     model: 'claude-3-5-sonnet-20240620',
+    max_tokens: 1024,
     system: COACH_SYSTEM_PROMPT,
     messages: [{ role: 'user', content: JSON.stringify(responses) }]
   });
-  return JSON.parse(response.content[0].text);
+
+  // מניחים שהתוכן הוא טקסט (Claude מחזיר מערך של blocks)
+  const content = response.content[0];
+  if (content.type === 'text') {
+    return JSON.parse(content.text);
+  }
+  return null;
 }
