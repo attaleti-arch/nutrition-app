@@ -663,6 +663,11 @@ export default function PlanApp({ clientName, userPassword }) {
         if (d.created_at) setJoinedDate(d.created_at)
         if (d.sport_type) setSportType(d.sport_type)
         if (d.sport_commit_days) setSportCommitDays(d.sport_commit_days)
+
+        // ✅ תיקון: טעינת העדפות תזונה מ-clients (לא מ-daily_logs)
+        if (d.diet_type) { setDietType(d.diet_type); setSetupDone(true) }
+        if (d.restrictions) setRestrictions(d.restrictions)
+
         if (d.current_stage) {
           const stg = d.current_stage
           setCurrentStage(stg)
@@ -676,16 +681,13 @@ export default function PlanApp({ clientName, userPassword }) {
             setTimeout(() => setShowConfetti(false), 4000)
           }
         }
+
+        // ✅ תיקון: WelcomeDocument מוצג רק אחרי שהפרופיל מלא
+        if (d.weight && !localStorage.getItem('welcome_doc_' + dbKey)) {
+          setShowWelcomeDoc(true)
+        }
       }
 
-      // ── שינוי 3: הצג מסמך פתיחה אם לא נראה עדיין ──
-      if (!localStorage.getItem('welcome_doc_' + dbKey)) setShowWelcomeDoc(true)
-
-      var r = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).order('log_date', { ascending: false }).limit(1).maybeSingle()
-      if (r.data) {
-        if (r.data.diet_type) { setDietType(r.data.diet_type); setSetupDone(true) }
-        if (r.data.restrictions) setRestrictions(r.data.restrictions)
-      }
       var todayLog = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
       if (todayLog.data) {
         var t = todayLog.data
@@ -718,9 +720,22 @@ export default function PlanApp({ clientName, userPassword }) {
     return total
   }
 
+  // ✅ תיקון: saveProfile שומר גם diet_type ו-restrictions
   const saveProfile = async function() {
     if (!userWeight || !userHeight || !userAge) return
-    await supabase.from('clients').update({ weight: parseFloat(userWeight), height: parseFloat(userHeight), age: parseInt(userAge), gender: userGender, activity: userActivity, goal: userGoal, target_weight: userTargetWeight ? parseFloat(userTargetWeight) : null, sport_type: sportType, sport_commit_days: sportCommitDays }).eq('password', dbKey)
+    await supabase.from('clients').update({
+      weight: parseFloat(userWeight),
+      height: parseFloat(userHeight),
+      age: parseInt(userAge),
+      gender: userGender,
+      activity: userActivity,
+      goal: userGoal,
+      target_weight: userTargetWeight ? parseFloat(userTargetWeight) : null,
+      sport_type: sportType,
+      sport_commit_days: sportCommitDays,
+      diet_type: dietType,
+      restrictions: restrictions,
+    }).eq('password', dbKey)
     setProfileDone(true)
   }
 
@@ -770,6 +785,10 @@ export default function PlanApp({ clientName, userPassword }) {
   const checkedCount = Object.values(checks).filter(Boolean).length
   const totalItems = filteredBoker.length + filteredErev.length
 
+  // ─────────────────────────────────────────────
+  // ✅ סדר זרימה נכון: setup → profile → welcome → stage2 → app
+  // ─────────────────────────────────────────────
+
   if (!setupDone) {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f0fdf4', padding: 24, direction: 'rtl' }}>
@@ -787,7 +806,12 @@ export default function PlanApp({ clientName, userPassword }) {
             {RESTRICTIONS.map(r => <button key={r.key} onClick={() => setRestrictions(prev => { var n = {...prev}; n[r.key] = !n[r.key]; return n })} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'right', border: '2px solid ' + (restrictions[r.key] ? C.blue : '#e5e7eb'), background: restrictions[r.key] ? C.blueLight : '#fafafa', color: restrictions[r.key] ? C.blue : '#333' }}>{r.icon} {r.label} {restrictions[r.key] ? '✓' : ''}</button>)}
           </div>
         </div>
-        <button onClick={() => { if (dietType) setSetupDone(true) }} disabled={!dietType} style={{ padding: '14px 40px', borderRadius: 14, fontSize: 16, fontWeight: 800, background: dietType ? C.greenMid : '#e5e7eb', color: dietType ? '#fff' : '#9ca3af', border: 'none', cursor: 'pointer', width: '100%', maxWidth: 340 }}>
+        {/* ✅ תיקון: שמירת העדפות תזונה ל-clients בלחיצה */}
+        <button onClick={async () => {
+          if (!dietType) return
+          await supabase.from('clients').update({ diet_type: dietType, restrictions }).eq('password', dbKey)
+          setSetupDone(true)
+        }} disabled={!dietType} style={{ padding: '14px 40px', borderRadius: 14, fontSize: 16, fontWeight: 800, background: dietType ? C.greenMid : '#e5e7eb', color: dietType ? '#fff' : '#9ca3af', border: 'none', cursor: 'pointer', width: '100%', maxWidth: 340 }}>
           {gf('בואי', 'בוא')} נתחיל!
         </button>
       </div>
@@ -824,9 +848,12 @@ export default function PlanApp({ clientName, userPassword }) {
     )
   }
 
-  // ── שינוי 4: מסך מסמך פתיחה ──
+  // ✅ WelcomeDocument — רק אחרי setup + profile
   if (showWelcomeDoc) return (
-    <WelcomeDocument clientPassword={dbKey} clientName={displayName} onContinue={() => setShowWelcomeDoc(false)} />
+    <WelcomeDocument clientPassword={dbKey} clientName={displayName} onContinue={() => {
+      localStorage.setItem('welcome_doc_' + dbKey, '1')
+      setShowWelcomeDoc(false)
+    }} />
   )
 
   if (showStage2Welcome) {
@@ -892,7 +919,6 @@ export default function PlanApp({ clientName, userPassword }) {
               🏡 מדריכים
             </button>
           )}
-          {/* ── שינוי 5: כפתור מסמך ── */}
           <button onClick={() => setShowWelcomeDoc(true)} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid #e5e7eb', background: '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: '#555' }}>
             🌿 מסמך
           </button>
