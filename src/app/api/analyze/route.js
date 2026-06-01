@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
-import { analyzeClientResponses } from '../../../../lib/nlpCoach'
+import { analyzeClientResponses } from '@/lib/nlpCoach'
 export const maxDuration = 60
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
