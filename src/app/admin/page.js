@@ -376,13 +376,8 @@ export default function AdminPage() {
     if (!error) setSelectedClient(prev => ({ ...prev, [field]: value }))
   }
 
-  // ✅ חדש: הפעלה/כיבוי מסמך פתיחה
-  // ✅ רענון מסמך — מוחק את השמור ומייצר חדש
-  async function refreshWelcomeDoc() {
-    if (!selectedClient) return
-    if (!window.confirm('למחוק את המסמך הקיים ולייצר חדש? זה ייקח כ-30 שניות.')) return
-    setTogglingDoc(true)
-    async function refreshWelcomeDoc() {
+ // ✅ רענון מסמך
+async function refreshWelcomeDoc() {
   if (!selectedClient) return
   if (!window.confirm('למחוק את המסמך הקיים ולייצר חדש?')) return
   setTogglingDoc(true)
@@ -393,29 +388,16 @@ export default function AdminPage() {
   setTogglingDoc(false)
   alert('✅ המסמך נמחק — בפתיחה הבאה ייווצר חדש')
 }
-    await sb.from('client_profiles').update({
-      welcome_doc_json: null,
-      welcome_doc_generated_at: null
-    }).eq('client_password', selectedClient.password)
-    setTogglingDoc(false)
-    alert('✅ המסמך נמחק — בפתיחה הבאה ייווצר חדש')
-  }
-    if (!selectedClient) return
-    setTogglingDoc(true)
-    const newVal = !selectedClient.welcome_doc_enabled
-    await supabase.from('clients').update({ welcome_doc_enabled: newVal }).eq('id', selectedClient.id)
-    setSelectedClient(prev => ({ ...prev, welcome_doc_enabled: newVal }))
-    setTogglingDoc(false)
-  }
 
-  async function addItemToInventory() {
-    if (!newItemName.trim() || !selectedClient) return
-    setAddingItem(true)
-    const { data, error } = await supabase.from('inventory_items').insert([{ client_id: selectedClient.id, name: newItemName.trim(), category: 'pantry', status: 'missing' }]).select()
-    if (!error && data) { setInventory(prev => [data[0], ...prev]); setNewItemName('') }
-    setAddingItem(false)
-  }
-
+// ✅ הפעלה/כיבוי מסמך פתיחה
+async function toggleWelcomeDoc() {
+  if (!selectedClient) return
+  setTogglingDoc(true)
+  const newVal = !selectedClient.welcome_doc_enabled
+  await supabase.from('clients').update({ welcome_doc_enabled: newVal }).eq('id', selectedClient.id)
+  setSelectedClient(prev => ({ ...prev, welcome_doc_enabled: newVal }))
+  setTogglingDoc(false)
+}
   async function deleteItem(itemId) {
     const { error } = await supabase.from('inventory_items').delete().eq('id', itemId)
     if (!error) setInventory(prev => prev.filter(item => item.id !== itemId))
