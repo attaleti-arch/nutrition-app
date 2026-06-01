@@ -187,6 +187,33 @@ export async function POST(request) {
       const extraBlood = pr.extra_blood_notes || ''
       const clientName = body.clientName || cl.name || ''
 
+      // ── נתוני לקוח מ-clients ──
+      const age = cl.age || ''
+      const weight = cl.weight || ''
+      const height = cl.height || ''
+      const goal = cl.goal || 'ירידה במשקל'
+      const targetWeight = cl.target_weight || ''
+      const gender = cl.gender || 'נקבה'
+      const activityLevel = cl.activity || ''
+
+      // ── נתוני פרופיל מ-client_profiles ──
+      const medicalHistory = pr.medical_history || cl.medical_history || ''
+      const medications = pr.medications || ''
+      const exerciseType = pr.exercise_type || ''
+      const stressLevel = pr.stress_level || ''
+      const emotionalEating = pr.emotional_eating || ''
+      const sleepQuality = pr.sleep_quality || ''
+      const digestion = pr.digestion || ''
+      const foodSensitivities = pr.food_sensitivities || ''
+      const avoidedFoods = pr.avoided_foods || pr.diet_restrictions || ''
+      const waterIntake = pr.water_intake || ''
+      const goalObstacles = pr.goal_obstacles || ''
+      const painIssues = pr.pain_issues || ''
+      const familyHistory = pr.family_history || ''
+      const breakfastHabits = pr.breakfast_habits || ''
+      const snackHabits = pr.snack_habits || ''
+
+      // ── בדיקות דם חריגות ──
       const abnormals = []
       Object.entries(bloodTests).forEach(([k, v]) => {
         if (!v || v === '') return
@@ -208,43 +235,48 @@ export async function POST(request) {
         `${a.name}: ${a.value} (${a.isLow ? 'נמוך מ-' + a.low : 'גבוה מ-' + a.high}, תקין: ${a.low}-${a.high})`
       ).join(' | ')
 
-      const medicalHistory = pr.medical_history || cl.medical_history || ''
-      const medications = pr.medications || ''
-      const goal = cl.goal || 'ירידה במשקל'
-      const activity = pr.exercise_type || cl.activity || ''
-      const stressLevel = pr.stress_level || ''
-      const emotionalEating = pr.emotional_eating || ''
-
       const prompt = `אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. בנה מסמך פתיחה אישי עבור ${clientName}.
 
 נתוני הלקוחה:
-- שם: ${clientName}
-- מטרה: ${goal}
-- מחלות רקע / היסטוריה רפואית: ${medicalHistory || 'לא צוין'}
+- שם: ${clientName} | מגדר: ${gender}
+- גיל: ${age} | משקל: ${weight}ק"ג | גובה: ${height}ס"מ
+- מטרה: ${goal}${targetWeight ? ' (יעד: ' + targetWeight + 'ק"ג)' : ''}
+- רמת פעילות כללית: ${activityLevel || 'לא צוין'}
+- סוג פעילות גופנית: ${exerciseType || 'לא צוין'}
+- כאבים / מגבלות גופניות: ${painIssues || 'לא צוין'}
+- מחלות רקע: ${medicalHistory || 'לא צוין'}
+- היסטוריה משפחתית: ${familyHistory || 'לא צוין'}
 - תרופות: ${medications || 'לא צוין'}
-- פעילות גופנית: ${activity || 'לא צוין'}
+- רגישויות למזון: ${foodSensitivities || 'לא צוין'}
+- מזונות שנמנעים: ${avoidedFoods || 'לא צוין'}
+- עיכול: ${digestion || 'לא צוין'}
+- הרגלי בוקר: ${breakfastHabits || 'לא צוין'}
+- נשנושים: ${snackHabits || 'לא צוין'}
+- שינה: ${sleepQuality || 'לא צוין'}
+- שתייה: ${waterIntake || 'לא צוין'}
 - רמת לחץ: ${stressLevel || 'לא צוין'}/10
 - אכילה רגשית: ${emotionalEating || 'לא צוין'}
+- מה מעכב: ${goalObstacles || 'לא צוין'}
 - בדיקות דם חריגות: ${bloodSummary || 'לא נמצאו חריגות'}
 - ערכים חריגים נוספים: ${extraBlood || 'אין'}
 
 החזר JSON בלבד, ללא backticks, במבנה הבא:
 {
-  "greeting": "משפט פתיחה חם ואישי ל${clientName} — 2 משפטים",
+  "greeting": "משפט פתיחה אחד חם בלבד",
   "plate": {
     "veggies": 50,
-    "protein": 30,
-    "carbs": 20,
-    "fat": 15
+    "protein": 25,
+    "carbs": 15,
+    "fat": 10
   },
   "bloodDeficits": [
     {
       "name": "שם הערך",
       "value": "הערך שנמדד",
       "normal": "טווח תקין",
-      "icon": "אמוג'י מתאים",
-      "meaning": "מה זה אומר פיזיולוגית — 2 משפטים בלבד",
-      "recommendation": "מה לאכול / מה לקחת"
+      "icon": "אמוג'י",
+      "meaning": "משפט קליני אחד בלבד",
+      "recommendation": "פעולה אחת ספציפית בלבד"
     }
   ],
   "medicalCards": [
@@ -253,25 +285,29 @@ export async function POST(request) {
       "icon": "אמוג'י",
       "color": "#hex",
       "light": "#hex_בהיר",
-      "physio": "הסבר קצר — 2 משפטים",
-      "eat": ["מאכל 1", "מאכל 2", "עד 6"],
-      "avoid": ["דבר 1", "דבר 2", "עד 4"],
-      "exercise": "המלצות כושר ספציפיות"
+      "physio": "2 משפטים קליניים בלבד, ללא שפה רגשית",
+      "eat": ["מאכל 1", "מאכל 2", "עד 6 — מילים בודדות"],
+      "avoid": ["דבר 1", "דבר 2", "עד 4 — מילים בודדות"],
+      "exercise": "המלצת כושר ספציפית לפי המצב הרפואי והכאבים"
     }
   ]
 }
 
 כללים חשובים:
-- plate: התאם אחוזים לפרוטוקול הקליני. סכום = 100.
-- bloodDeficits: רק ערכים חריגים בפועל. אם אין — [].
-- medicalCards: רק לפי מחלות רקע. אם אין — כרטיס אחד "ירידה במשקל בריאה".
+- plate: התאם אחוזים לפרוטוקול הקליני לפי המחלות. סכום חייב להיות 100.
+- bloodDeficits: רק ערכים שבאמת חריגים. אם אין — [].
+- medicalCards: לפי מחלות הרקע בלבד. אם אין מחלות — כרטיס אחד "ירידה במשקל בריאה".
 - greeting: משפט אחד חם בלבד, ללא עידוד מוגזם.
 - physio: עובדות קליניות בלבד, 2 משפטים קצרים, ללא שפה רגשית.
 - eat ו-avoid: מילים בודדות או 2-3 מילים לכל פריט, ללא הסברים.
 - recommendation בבדיקות דם: פעולה אחת ספציפית בלבד.
-- אירוע מוחי/כריש → exercise: מתיחות, הליכות, שחייה מתונה. לא קפיצות.
+- exercise: חובה להתאים לפי כאבים/מגבלות גופניות ומחלות רקע.
+- אירוע מוחי → exercise: מתיחות, הליכות, שחייה מתונה. לא קפיצות.
 - מחלת לב → exercise: אירובי מתון 50-70% דופק, לא HIIT.
-- בלוטת תריס → exercise: יוגה, פילאטיס, הליכות. לא HIIT.`
+- בלוטת תריס → exercise: יוגה, פילאטיס, הליכות. לא HIIT.
+- עיכול → exercise: יוגה, פילאטיס.
+- סוכרת/אינסולין → plate: veggies=50, protein=25, carbs=15, fat=10 (סכום=100).
+- צבעים: לב="#e53e3e" light="#fff5f5", סוכרת="#d97706" light="#fffbeb", תריס="#0d9488" light="#f0fdfa", עיכול="#7c3aed" light="#faf5ff", כליות="#2563eb" light="#eff6ff", אונקולוגי="#059669" light="#ecfdf5"`
 
       const msg = await client.messages.create({
         model: 'claude-sonnet-4-6',
