@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
-import { analyzeClientResponses } from '@/lib/nlpCoach'
+
 export const maxDuration = 60
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -18,6 +18,30 @@ const BLOOD_NAMES = {
   insulin:'אינסולין',wbc:'WBC',rbc:'RBC',platelets:'טסיות',
   blood_type:'סוג דם',lactose_sensitivity:'רגישות לקטוז',
   gluten_sensitivity:'רגישות גלוטן',celiac:'צליאק'
+}
+
+const COACH_SYSTEM_PROMPT = `אתה מאמן NLP מומחה בשיטת אתי אטל. נתח תשובות של לקוחה והפק JSON למעטפת NLP מובנית:
+{
+  "well_formed_outcome": { "vision": "תיאור חושי ומפורט של המטרה", "sensory_evidence": "איך היא תדע שהיא שם" },
+  "limiting_beliefs_map": [{ "original_quote": "ציטוט הלקוחה", "belief_type": "חוסר אונים/ערך/שייכות", "challenge_question": "שאלת ערעור כירורגית" }],
+  "ecology_and_buffers": { "secondary_gain": "הרווח המשני שלה", "replacement_anchor": "הצעה לפעולה או משפט עוגן" }
+}`;
+
+async function analyzeClientResponses(responses) {
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  
+  const response = await anthropic.messages.create({
+    model: 'claude-3-5-sonnet-20240620',
+    max_tokens: 1024,
+    system: COACH_SYSTEM_PROMPT,
+    messages: [{ role: 'user', content: JSON.stringify(responses) }]
+  });
+
+  const content = response.content[0];
+  if (content.type === 'text') {
+    return JSON.parse(content.text);
+  }
+  throw new Error('Unexpected response format from Anthropic');
 }
 
 const BLOOD_RANGES = {
