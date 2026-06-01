@@ -13,11 +13,7 @@ function LoadingSteps() {
     const t = setInterval(() => setStep(s => Math.min(s + 1, steps.length - 1)), 6000)
     return () => clearInterval(t)
   }, [])
-  return (
-    <div style={{ fontSize: 13, color: '#9ca3af', transition: 'opacity 0.3s' }}>
-      {steps[step]}
-    </div>
-  )
+  return <div style={{ fontSize: 13, color: '#9ca3af', transition: 'opacity 0.3s' }}>{steps[step]}</div>
 }
 
 function SmartPlate({ protein, carbs, fat, veggies }) {
@@ -118,7 +114,12 @@ function MedicalCard({ title, icon, physio, eat, avoid, exercise, color, light }
             </div>
           </div>
         )}
-        {exercise && <div style={{ background: `${color}10`, borderRadius: 10, padding: '10px 14px' }}><div style={{ fontSize: 11, fontWeight: 700, color: color, marginBottom: 4 }}>🏃 המלצות כושר</div><div style={{ fontSize: 13, color: '#444', lineHeight: 1.6 }}>{exercise}</div></div>}
+        {exercise && (
+          <div style={{ background: `${color}10`, borderRadius: 10, padding: '10px 14px' }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: color, marginBottom: 4 }}>🏃 המלצות כושר</div>
+            <div style={{ fontSize: 13, color: '#444', lineHeight: 1.6 }}>{exercise}</div>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -184,43 +185,8 @@ function DefaultDocument({ clientName, onClose }) {
   )
 }
 
-export default function WelcomeDocument({ clientPassword, clientName, onContinue }) {
-  const [loading, setLoading] = useState(true)
-  const [data, setData] = useState(null)
-
-  useEffect(() => {
-    generateDocument()
-  }, [clientPassword])
-
-  async function generateDocument() {
-    setLoading(true)
-    try {
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'welcomeDoc', clientPassword, clientName })
-      })
-      const result = await res.json()
-      if (result.data) setData(result.data)
-      else setData(null)
-    } catch (e) {
-      setData(null)
-    }
-    setLoading(false)
-  }
-
-  if (loading) return (
-    <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-      <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg,#4a9b8e,#3a7a6e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>🌿</div>
-      <div style={{ fontWeight: 700, fontSize: 15, color: '#3a7a6e' }}>מכינה את המסמך האישי שלך...</div>
-      <LoadingSteps />
-    </div>
-  )
-
-  if (!data) return <DefaultDocument clientName={clientName} onClose={onContinue} />
-
+function DocContent({ data, onContinue, generatedAt }) {
   const { plate, medicalCards, bloodDeficits, greeting, name } = data
-
   return (
     <div style={{ direction: 'rtl', fontFamily: 'sans-serif', maxWidth: 520, margin: '0 auto', padding: '0 14px 100px' }}>
       <div style={{ background: 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', borderRadius: '0 0 24px 24px', padding: '28px 24px 32px', marginBottom: 20, color: '#fff', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
@@ -228,8 +194,13 @@ export default function WelcomeDocument({ clientPassword, clientName, onContinue
         <div style={{ position: 'absolute', bottom: -30, left: -10, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
         <img src="/logo.png" alt="אתי אטל" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,0.4)', marginBottom: 12, background: '#fff' }} />
         <div style={{ fontWeight: 900, fontSize: 22, marginBottom: 4 }}>מסמך הפתיחה שלך 🌿</div>
-        <div style={{ fontSize: 13, color: '#b2dfdb', lineHeight: 1.6 }}>{greeting || `היי ${name || clientName}!`}</div>
+        <div style={{ fontSize: 13, color: '#b2dfdb', lineHeight: 1.6 }}>{greeting || `היי ${name}!`}</div>
         <div style={{ marginTop: 10, fontSize: 11, color: '#80cbc4' }}>שיטת אתי אטל · מבוסס שאלון 360 ובדיקות דם</div>
+        {generatedAt && (
+          <div style={{ marginTop: 6, fontSize: 10, color: '#80cbc4' }}>
+            הופק: {new Date(generatedAt).toLocaleDateString('he-IL')}
+          </div>
+        )}
       </div>
 
       <div style={{ background: '#fff', borderRadius: 20, border: '1.5px solid #f0f0f0', padding: '20px 18px', marginBottom: 16 }}>
@@ -259,4 +230,64 @@ export default function WelcomeDocument({ clientPassword, clientName, onContinue
       </div>
     </div>
   )
+}
+
+export default function WelcomeDocument({ clientPassword, clientName, onContinue }) {
+  const [loading, setLoading] = useState(true)
+  const [data, setData] = useState(null)
+  const [generatedAt, setGeneratedAt] = useState(null)
+
+  useEffect(() => {
+    loadDocument()
+  }, [clientPassword])
+
+  async function loadDocument() {
+    setLoading(true)
+    try {
+      // ✅ שלב 1: נסה לטעון מהמסמך השמור — מהיר
+      const cachedRes = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'welcomeDocCached', clientPassword, clientName })
+      })
+      const cachedResult = await cachedRes.json()
+
+      if (cachedResult.data) {
+        // ✅ יש מסמך שמור — מציג מיד
+        setData(cachedResult.data)
+        setGeneratedAt(cachedResult.generatedAt)
+        setLoading(false)
+        return
+      }
+
+      // ✅ שלב 2: אין מסמך שמור — מייצר חדש
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'welcomeDoc', clientPassword, clientName })
+      })
+      const result = await res.json()
+      if (result.data) {
+        setData(result.data)
+        setGeneratedAt(new Date().toISOString())
+      } else {
+        setData(null)
+      }
+    } catch (e) {
+      setData(null)
+    }
+    setLoading(false)
+  }
+
+  if (loading) return (
+    <div style={{ minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+      <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'linear-gradient(135deg,#4a9b8e,#3a7a6e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>🌿</div>
+      <div style={{ fontWeight: 700, fontSize: 15, color: '#3a7a6e' }}>מכינה את המסמך האישי שלך...</div>
+      <LoadingSteps />
+    </div>
+  )
+
+  if (!data) return <DefaultDocument clientName={clientName} onClose={onContinue} />
+
+  return <DocContent data={data} onContinue={onContinue} generatedAt={generatedAt} />
 }
