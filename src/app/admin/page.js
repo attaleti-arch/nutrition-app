@@ -380,25 +380,25 @@ export default function AdminPage() {
   // ✅ חדש: הפעלה/כיבוי מסמך פתיחה
   // ✅ רענון מסמך — מוחק את השמור ומייצר חדש
   async function refreshWelcomeDoc() {
-  if (!selectedClient) return
-  if (!window.confirm('למחוק את המסמך הקיים ולייצר חדש?')) return
-  setTogglingDoc(true)
-  await supabase.from('client_profiles').update({
-    welcome_doc_json: null,
-    welcome_doc_generated_at: null
-  }).eq('client_password', selectedClient.password)
-  setTogglingDoc(false)
-  alert('✅ המסמך נמחק — בפתיחה הבאה ייווצר חדש')
-}
+    if (!selectedClient) return
+    if (!window.confirm('למחוק את המסמך הקיים ולייצר חדש? זה ייקח כ-30 שניות.')) return
+    setTogglingDoc(true)
+    const sb = (await import('../supabase')).supabase
+    await sb.from('client_profiles').update({
+      welcome_doc_json: null,
+      welcome_doc_generated_at: null
+    }).eq('client_password', selectedClient.password)
+    setTogglingDoc(false)
+    alert('✅ המסמך נמחק — בפתיחה הבאה ייווצר חדש')
+  }
+    if (!selectedClient) return
+    setTogglingDoc(true)
+    const newVal = !selectedClient.welcome_doc_enabled
+    await supabase.from('clients').update({ welcome_doc_enabled: newVal }).eq('id', selectedClient.id)
+    setSelectedClient(prev => ({ ...prev, welcome_doc_enabled: newVal }))
+    setTogglingDoc(false)
+  }
 
-async function toggleWelcomeDoc() {
-  if (!selectedClient) return
-  setTogglingDoc(true)
-  const newVal = !selectedClient.welcome_doc_enabled
-  await supabase.from('clients').update({ welcome_doc_enabled: newVal }).eq('id', selectedClient.id)
-  setSelectedClient(prev => ({ ...prev, welcome_doc_enabled: newVal }))
-  setTogglingDoc(false)
-}
   async function addItemToInventory() {
     if (!newItemName.trim() || !selectedClient) return
     setAddingItem(true)
@@ -945,15 +945,24 @@ async function toggleWelcomeDoc() {
                       <button onClick={sendAnalysisToClient} disabled={sendingToClient} style={{ flex: 2, padding: 14, borderRadius: 12, background: sentToClient ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
                         {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
                       </button>
-                    </div> (
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {tab === 'report' && (
               <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
                 <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4, color: '#0f4c2a' }}>📊 הדוח השמור</div>
                 {editableAnalysis ? (
                   <>
                     <textarea value={editableAnalysis} onChange={e => setEditableAnalysis(e.target.value)} rows={20} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8 }} />
-                    <button onClick={sendAnalysisToClient} disabled={sendingToClient} style={{ width: '100%', padding: 14, borderRadius: 12, marginTop: 12, background: sentToClient ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
-                      {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
-                    </button>
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <button onClick={() => setPreviewReport(true)} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#eff6ff', color: '#0284c7', border: '1.5px solid #93c5fd', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה</button>
+                      <button onClick={sendAnalysisToClient} disabled={sendingToClient} style={{ flex: 2, padding: 14, borderRadius: 12, background: sentToClient ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                        {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
+                      </button>
+                    </div>
                   </>
                 ) : (
                   <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>
