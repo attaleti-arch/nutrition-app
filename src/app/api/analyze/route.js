@@ -169,6 +169,20 @@ export async function POST(request) {
       return Response.json({ result: msg.content[0].text })
     }
 
+    // ── טעינת מסמך פתיחה שמור (מהיר) ──
+    if (mode === 'welcomeDocCached' && body.clientPassword) {
+      const sb = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      )
+      const { data } = await sb.from('client_profiles').select('welcome_doc_json, welcome_doc_generated_at').eq('client_password', body.clientPassword).maybeSingle()
+      if (data?.welcome_doc_json) {
+        const clientName = body.clientName || ''
+        return Response.json({ data: { ...data.welcome_doc_json, name: clientName }, cached: true, generatedAt: data.welcome_doc_generated_at })
+      }
+      return Response.json({ data: null })
+    }
+
     // ── מסמך פתיחה אישי ──
     if (mode === 'welcomeDoc' && body.clientPassword) {
       const sb = createClient(
@@ -318,6 +332,13 @@ export async function POST(request) {
       try {
         const text = msg.content[0].text.replace(/```json|```/g, '').trim()
         const parsed = JSON.parse(text)
+        // ✅ שמירת המסמך ב-Supabase לטעינה מהירה בעתיד
+        await sb.from('client_profiles').upsert({
+          client_password: body.clientPassword,
+          welcome_doc_json: parsed,
+          welcome_doc_generated_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'client_password' })
         return Response.json({ data: { ...parsed, name: clientName } })
       } catch(e) {
         console.error('welcomeDoc parse error:', e.message)
