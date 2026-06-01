@@ -12,14 +12,6 @@ const GOALS_SPLIT = {
 const ACTIVITY_MULT = {
   'יושבני': 1.2, 'קל': 1.375, 'בינוני': 1.55, 'פעיל': 1.725, 'מאוד פעיל': 1.9
 }
-const PROT_NAMES = {
-  p1: 'דג לבן', p2: 'סלמון', p3: 'טופו', p4: 'סינטה/פרגית',
-  p5: 'ירך עוף/הודו', p6: 'המבורגר צמחוני', p7: 'דג שמן', p8: 'ביצים', p9: 'טונה/סרדינים'
-}
-const CARB_NAMES = {
-  c1: 'אורז/קינואה', c2: 'בורגול/כוסמת', c3: 'פתיתים/קוסקוס',
-  c4: 'תפוחי אדמה/בטטה', c5: 'כרובית/ברוקולי', c6: 'עדשים/חומוס', c7: 'שעועית'
-}
 
 const DOCTOR_TESTS = [
   { key: 'blood_count', label: 'ספירת דם מלאה' },
@@ -300,10 +292,8 @@ export default function AdminPage() {
   const [inventory, setInventory] = useState([])
   const [newItemName, setNewItemName] = useState('')
   const [addingItem, setAddingItem] = useState(false)
-
-  // ✅ חדש: תצוגה מקדימה של מסמך פתיחה
   const [previewDoc, setPreviewDoc] = useState(false)
-  const [previewReport, setPreviewReport] = useState(false) // ✅ תצוגה מקדימה דוח
+  const [previewReport, setPreviewReport] = useState(false)
   const [togglingDoc, setTogglingDoc] = useState(false)
 
   const login = () => { if (pin === 'Esterika26') setAuth(true) }
@@ -377,20 +367,19 @@ export default function AdminPage() {
     if (!error) setSelectedClient(prev => ({ ...prev, [field]: value }))
   }
 
-  // ✅ חדש: הפעלה/כיבוי מסמך פתיחה
-  // ✅ רענון מסמך — מוחק את השמור ומייצר חדש
   async function refreshWelcomeDoc() {
     if (!selectedClient) return
-    if (!window.confirm('למחוק את המסמך הקיים ולייצר חדש? זה ייקח כ-30 שניות.')) return
+    if (!window.confirm('למחוק את המסמך הקיים ולייצר חדש?')) return
     setTogglingDoc(true)
-    const sb = (await import('../supabase')).supabase
-    await sb.from('client_profiles').update({
+    await supabase.from('client_profiles').update({
       welcome_doc_json: null,
       welcome_doc_generated_at: null
     }).eq('client_password', selectedClient.password)
     setTogglingDoc(false)
     alert('✅ המסמך נמחק — בפתיחה הבאה ייווצר חדש')
   }
+
+  async function toggleWelcomeDoc() {
     if (!selectedClient) return
     setTogglingDoc(true)
     const newVal = !selectedClient.welcome_doc_enabled
@@ -535,10 +524,7 @@ export default function AdminPage() {
     var summary = filteredLogs.map(function(l) {
       var nut = calcNutrition(l, nutritionData)
       var scanExtra = ''
-      if (l.scan_calories > 0) {
-        scanExtra = ' | 📸 צילום: ' + l.scan_calories + ' קל'
-        if (l.scan_desc) scanExtra += ' (' + l.scan_desc + ')'
-      }
+      if (l.scan_calories > 0) { scanExtra = ' | 📸 צילום: ' + l.scan_calories + ' קל'; if (l.scan_desc) scanExtra += ' (' + l.scan_desc + ')' }
       return 'תאריך: ' + l.log_date + ' | קלוריות: ' + Math.round(nut.calories) + (targets ? ' (יעד: ' + targets.calories + ')' : '') + ' | חלבון: ' + Math.round(nut.protein) + 'g | שומן: ' + Math.round(nut.fat) + 'g | מים: ' + (l.water || 0) + ' | צעדים: ' + (l.steps || 0) + scanExtra + ' | הערה: ' + (l.note || '')
     }).join('\n')
     const res = await fetch('/api/analyze', {
@@ -591,29 +577,19 @@ export default function AdminPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', direction: 'rtl' }}>
 
-      {/* ✅ תצוגה מקדימה מסמך — overlay מלא */}
       {previewDoc && selectedClient && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 9999, overflowY: 'auto' }}>
           <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 10000 }}>
-            <button onClick={() => setPreviewDoc(false)} style={{ padding: '10px 20px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
-              ✕ סגרי תצוגה מקדימה
-            </button>
+            <button onClick={() => setPreviewDoc(false)} style={{ padding: '10px 20px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>✕ סגרי תצוגה מקדימה</button>
           </div>
-          <WelcomeDocument
-            clientPassword={selectedClient.password}
-            clientName={selectedClient.name + ' ' + (selectedClient.last_name || '')}
-            onContinue={() => setPreviewDoc(false)}
-          />
+          <WelcomeDocument clientPassword={selectedClient.password} clientName={selectedClient.name + ' ' + (selectedClient.last_name || '')} onContinue={() => setPreviewDoc(false)} />
         </div>
       )}
 
-      {/* ✅ תצוגה מקדימה דוח אישי */}
       {previewReport && editableAnalysis && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 9999, overflowY: 'auto', direction: 'rtl' }}>
           <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 10000 }}>
-            <button onClick={() => setPreviewReport(false)} style={{ padding: '10px 20px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>
-              ✕ סגרי תצוגה מקדימה
-            </button>
+            <button onClick={() => setPreviewReport(false)} style={{ padding: '10px 20px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>✕ סגרי תצוגה מקדימה</button>
           </div>
           <div style={{ maxWidth: 520, margin: '0 auto', padding: '70px 20px 40px' }}>
             <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
@@ -626,9 +602,7 @@ export default function AdminPage() {
               </div>
             </div>
             <div style={{ background: '#fff', borderRadius: 18, padding: '20px 18px', border: '1.5px solid #f0f0f0' }}>
-              <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>
-                {editableAnalysis}
-              </div>
+              <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>{editableAnalysis}</div>
             </div>
           </div>
         </div>
@@ -653,7 +627,6 @@ export default function AdminPage() {
 
         {selectedClient && (
           <>
-            {/* ✅ כרטיס מסמך פתיחה */}
             <div style={{ background: '#fff', borderRadius: 18, padding: '14px 18px', marginBottom: 16, border: '1.5px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 180 }}>
                 <div style={{ fontWeight: 800, fontSize: 14, color: '#1a1a1a', marginBottom: 2 }}>🌿 מסמך פתיחה אישי</div>
@@ -661,36 +634,15 @@ export default function AdminPage() {
                   {selectedClient.welcome_doc_enabled ? '✅ פעיל — הלקוחה יכולה לפתוח' : '🔒 כבוי — הכפתור אפור אצלה'}
                 </div>
               </div>
-
-              {/* כפתור רענון מסמך */}
-              <button onClick={refreshWelcomeDoc} disabled={togglingDoc} style={{ padding: '10px 14px', borderRadius: 12, background: '#fff7ed', color: '#f97316', border: '1.5px solid #fed7aa', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                🔄 רענן
-              </button>
-
-              {/* כפתור תצוגה מקדימה */}
-              <button onClick={() => setPreviewDoc(true)} style={{ padding: '10px 16px', borderRadius: 12, background: '#eff6ff', color: '#0284c7', border: '1.5px solid #93c5fd', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                👁️ תצוגה מקדימה
-              </button>
-
-              {/* טוגל הפעלה */}
-              <button onClick={toggleWelcomeDoc} disabled={togglingDoc} style={{ padding: '10px 18px', borderRadius: 12, background: selectedClient.welcome_doc_enabled ? '#dcfce7' : '#f3f4f6', color: selectedClient.welcome_doc_enabled ? '#0f4c2a' : '#6b7280', border: '2px solid ' + (selectedClient.welcome_doc_enabled ? '#16a34a' : '#d1d5db'), cursor: 'pointer', fontWeight: 700, fontSize: 13, transition: 'all 0.2s' }}>
+              <button onClick={refreshWelcomeDoc} disabled={togglingDoc} style={{ padding: '10px 14px', borderRadius: 12, background: '#fff7ed', color: '#f97316', border: '1.5px solid #fed7aa', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>🔄 רענן</button>
+              <button onClick={() => setPreviewDoc(true)} style={{ padding: '10px 16px', borderRadius: 12, background: '#eff6ff', color: '#0284c7', border: '1.5px solid #93c5fd', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>👁️ תצוגה מקדימה</button>
+              <button onClick={toggleWelcomeDoc} disabled={togglingDoc} style={{ padding: '10px 18px', borderRadius: 12, background: selectedClient.welcome_doc_enabled ? '#dcfce7' : '#f3f4f6', color: selectedClient.welcome_doc_enabled ? '#0f4c2a' : '#6b7280', border: '2px solid ' + (selectedClient.welcome_doc_enabled ? '#16a34a' : '#d1d5db'), cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                 {togglingDoc ? '⏳' : selectedClient.welcome_doc_enabled ? '✅ הפעיל' : '🔒 כבוי'}
               </button>
             </div>
 
             <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
-              {[
-                { k: 'logs', l: '📅 יומן' },
-                { k: 'questionnaire', l: '📋 שאלון' },
-                { k: 'blood', l: '🩸 בדיקות' },
-                { k: 'doctor', l: '📄 מכתב' },
-                { k: 'nutrition', l: '🥗 תזונה' },
-                { k: 'ai', l: '🧠 AI' },
-                { k: 'report', l: '📊 דוח' },
-                { k: 'stage', l: '🏆 שלב' },
-                { k: 'newclient', l: '➕ לקוח' },
-                { k: 'pantry', l: '🛒 מזווה' },
-              ].map(function(t) {
+              {[{ k: 'logs', l: '📅 יומן' }, { k: 'questionnaire', l: '📋 שאלון' }, { k: 'blood', l: '🩸 בדיקות' }, { k: 'doctor', l: '📄 מכתב' }, { k: 'nutrition', l: '🥗 תזונה' }, { k: 'ai', l: '🧠 AI' }, { k: 'report', l: '📊 דוח' }, { k: 'stage', l: '🏆 שלב' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'pantry', l: '🛒 מזווה' }].map(function(t) {
                 return <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
               })}
             </div>
