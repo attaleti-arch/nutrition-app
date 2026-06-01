@@ -1,15 +1,12 @@
 'use client'
 import { useState, useEffect } from 'react'
 
-// ── צלחת חכמה ויזואלית ──
 function SmartPlate({ protein, carbs, fat, veggies }) {
-  // ברירת מחדל לפי שיטת אתי
   const p = protein || 30
   const c = carbs || 20
   const f = fat || 15
   const v = veggies || 50
 
-  // הצלחת מחולקת לפי אחוזים
   const segments = [
     { label: 'ירקות', pct: v, color: '#4a9b8e', emoji: '🥦' },
     { label: 'חלבון', pct: p, color: '#c4956a', emoji: '🍗' },
@@ -17,7 +14,6 @@ function SmartPlate({ protein, carbs, fat, veggies }) {
     { label: 'שומן', pct: f, color: '#7ab87a', emoji: '🫒' },
   ]
 
-  // SVG Pie chart
   function polarToCartesian(cx, cy, r, angle) {
     const rad = (angle - 90) * Math.PI / 180
     return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) }
@@ -42,15 +38,11 @@ function SmartPlate({ protein, carbs, fat, veggies }) {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-      {/* צלחת SVG */}
       <div style={{ position: 'relative', width: 220, height: 220 }}>
-        {/* צל צלחת */}
         <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', background: 'rgba(0,0,0,0.08)', transform: 'translateY(6px) scale(0.95)', filter: 'blur(8px)' }} />
         <svg width="220" height="220" viewBox="0 0 200 200" style={{ position: 'relative', zIndex: 1 }}>
-          {/* רקע צלחת */}
           <circle cx="100" cy="100" r="96" fill="#f8f4ef" stroke="#e8e0d5" strokeWidth="2" />
           <circle cx="100" cy="100" r="88" fill="white" />
-          {/* סגמנטים */}
           {paths.map((seg, i) => (
             <g key={i}>
               <path d={seg.path} fill={seg.color} opacity="0.85" />
@@ -59,16 +51,13 @@ function SmartPlate({ protein, carbs, fat, veggies }) {
               </text>
             </g>
           ))}
-          {/* מרכז צלחת */}
           <circle cx="100" cy="100" r="28" fill="white" stroke="#f0ebe3" strokeWidth="2" />
           <text x="100" y="97" textAnchor="middle" fontSize="9" fill="#9aa" fontWeight="600" fontFamily="sans-serif">הצלחת</text>
           <text x="100" y="108" textAnchor="middle" fontSize="9" fill="#9aa" fontWeight="600" fontFamily="sans-serif">החכמה</text>
-          {/* מסגרת חיצונית */}
           <circle cx="100" cy="100" r="96" fill="none" stroke="#e8e0d5" strokeWidth="2" />
         </svg>
       </div>
 
-      {/* מקרא */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 20px', width: '100%', maxWidth: 280 }}>
         {segments.map((seg, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -79,7 +68,6 @@ function SmartPlate({ protein, carbs, fat, veggies }) {
         ))}
       </div>
 
-      {/* סדר אכילה */}
       <div style={{ background: 'linear-gradient(135deg,#f0fdf4,#e8f5f2)', borderRadius: 12, padding: '10px 16px', width: '100%', maxWidth: 280, textAlign: 'center' }}>
         <div style={{ fontSize: 11, color: '#4a9b8e', fontWeight: 700, marginBottom: 4 }}>סדר אכילה מומלץ</div>
         <div style={{ fontSize: 13, color: '#333' }}>חלבון + ירקות → שומן → פחמימה</div>
@@ -88,7 +76,6 @@ function SmartPlate({ protein, carbs, fat, veggies }) {
   )
 }
 
-// ── כרטיס בעיה רפואית ──
 function MedicalCard({ title, icon, physio, eat, avoid, exercise, color, light }) {
   return (
     <div style={{ background: '#fff', borderRadius: 18, border: `1.5px solid ${color}30`, overflow: 'hidden', marginBottom: 12 }}>
@@ -136,7 +123,6 @@ function MedicalCard({ title, icon, physio, eat, avoid, exercise, color, light }
   )
 }
 
-// ── כרטיס חסר מבדיקות דם ──
 function BloodDeficitCard({ name, value, normal, meaning, recommendation, icon }) {
   return (
     <div style={{ background: '#fffbeb', borderRadius: 14, border: '1.5px solid #fcd34d', padding: '12px 16px', marginBottom: 8 }}>
@@ -164,11 +150,15 @@ export default function WelcomeDocument({ clientPassword, clientName, onContinue
   const [seen, setSeen] = useState(false)
 
   useEffect(() => {
-    // בדיקה אם כבר ראתה את המסמך
     const seenKey = 'welcome_doc_' + clientPassword
+
+    // ✅ תיקון: אם כבר ראתה — עוברת ישר הלאה, לא יוצרת מסמך
     if (localStorage.getItem(seenKey)) {
       setSeen(true)
+      onContinue && onContinue()
+      return
     }
+
     generateDocument()
   }, [clientPassword])
 
@@ -254,7 +244,7 @@ export default function WelcomeDocument({ clientPassword, clientName, onContinue
         </div>
       )}
 
-      {/* כרטיסי מחלות / מדדים */}
+      {/* כרטיסי מחלות */}
       {medicalCards && medicalCards.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontWeight: 800, fontSize: 16, color: '#1a1a1a', marginBottom: 12 }}>💊 פרוטוקול אישי לפי המצב הרפואי</div>
@@ -270,7 +260,7 @@ export default function WelcomeDocument({ clientPassword, clientName, onContinue
           onClick={markSeen}
           style={{ width: '100%', maxWidth: 520, margin: '0 auto', display: 'block', padding: '15px', borderRadius: 16, background: 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 16, boxShadow: '0 4px 20px rgba(74,155,142,0.4)' }}
         >
-          {seen ? '📋 לצפייה חוזרת — המשיכי ליומן' : 'הבנתי! נתחיל 🚀'}
+          הבנתי! נתחיל 🚀
         </button>
       </div>
     </div>
