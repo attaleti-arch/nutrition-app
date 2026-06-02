@@ -614,6 +614,9 @@ export default function PlanApp({ clientName, userPassword }) {
   const [feedback, setFeedback] = useState(null)
   const [reportApproved, setReportApproved] = useState(false)
   const [activeTab, setActiveTab] = useState('diary')
+  const [showDocsMenu, setShowDocsMenu] = useState(false)
+  const [showInitialReport, setShowInitialReport] = useState(false)
+  const [showOutcomeDoc, setShowOutcomeDoc] = useState(false)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [nutritionData, setNutritionData] = useState({})
@@ -913,61 +916,112 @@ export default function PlanApp({ clientName, userPassword }) {
               🏡 מדריכים
             </button>
           )}
-          {/* ✅ כפתור מסמך — פעיל רק אם welcome_doc_enabled */}
-          {clientData?.welcome_doc_enabled ? (
-            <button onClick={() => setShowWelcomeDoc(true)} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (showWelcomeDoc ? '#4a9b8e' : '#e5e7eb'), background: showWelcomeDoc ? '#e8f5f2' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: showWelcomeDoc ? '#4a9b8e' : '#555' }}>
-              🌿 מסמך
-            </button>
-          ) : (
-            <button disabled style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid #e5e7eb', background: '#f3f4f6', cursor: 'not-allowed', fontWeight: 700, fontSize: 12, color: '#d1d5db' }}>
-              🔒 מסמך
-            </button>
-          )}
           <button onClick={() => setActiveTab('agent')} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (activeTab === 'agent' ? C.agent : '#e5e7eb'), background: activeTab === 'agent' ? C.agentLight : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: activeTab === 'agent' ? C.agent : '#555', position: 'relative' }}>
             🤖 Agent
             <span style={{ position: 'absolute', top: 4, left: 4, width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 4px #4ade80' }} />
           </button>
-          {reportApproved && (
-            <button onClick={() => setActiveTab('report')} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (activeTab === 'report' ? '#4a9b8e' : '#e5e7eb'), background: activeTab === 'report' ? '#e8f5f2' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: activeTab === 'report' ? '#4a9b8e' : '#555' }}>
-              🌿 הדוח
-            </button>
-          )}
+          {/* ✅ כפתור "המסמכים שלי" — תמיד נגיש */}
+          <button onClick={() => setShowDocsMenu(!showDocsMenu)} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (showDocsMenu ? '#7c3aed' : '#e5e7eb'), background: showDocsMenu ? '#faf5ff' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: showDocsMenu ? '#7c3aed' : '#555', position: 'relative' }}>
+            📂 המסמכים
+          </button>
         </div>
+
+        {/* ✅ תפריט מסמכים */}
+        {showDocsMenu && (
+          <div style={{ background: '#fff', borderRadius: 16, border: '1.5px solid #e9d5ff', padding: '12px', marginBottom: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {/* מסמך פתיחה */}
+            {clientData?.welcome_doc_enabled ? (
+              <button onClick={() => { setShowWelcomeDoc(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#e8f5f2,#f0fdf4)', border: '1.5px solid #4a9b8e', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#3a7a6e', textAlign: 'right' }}>
+                🌿 מסמך הפתיחה שלי — תזונה ומחלות
+              </button>
+            ) : (
+              <div style={{ padding: '12px 16px', borderRadius: 12, background: '#f3f4f6', border: '1.5px solid #e5e7eb', fontSize: 13, color: '#9ca3af', textAlign: 'right' }}>
+                🔒 מסמך הפתיחה — יפתח בקרוב
+              </div>
+            )}
+            {/* ניתוח התחלתי */}
+            {feedback ? (
+              <button onClick={() => { setShowInitialReport(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#eff6ff,#f0fdf4)', border: '1.5px solid #0284c7', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#0f4c2a', textAlign: 'right' }}>
+                📊 הניתוח האישי שלי — 360 ובדיקות דם
+              </button>
+            ) : (
+              <div style={{ padding: '12px 16px', borderRadius: 12, background: '#f3f4f6', border: '1.5px solid #e5e7eb', fontSize: 13, color: '#9ca3af', textAlign: 'right' }}>
+                📊 הניתוח האישי — יתווסף לאחר הפגישה הראשונה
+              </div>
+            )}
+            {/* מסמך מטרה */}
+            {clientData?.outcome_doc ? (
+              <button onClick={() => { setShowOutcomeDoc(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#faf5ff,#eff6ff)', border: '1.5px solid #7c3aed', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#7c3aed', textAlign: 'right' }}>
+                🧭 המטרה שלי — מסע התוצאה
+              </button>
+            ) : (
+              <div style={{ padding: '12px 16px', borderRadius: 12, background: '#f3f4f6', border: '1.5px solid #e5e7eb', fontSize: 13, color: '#9ca3af', textAlign: 'right' }}>
+                🧭 המטרה שלי — יתווסף לאחר פגישה 2
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* ✅ מסמך פתיחה — overlay על גבי האפליקציה */}
+      {/* ✅ מסמך פתיחה — overlay */}
       {showWelcomeDoc && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto' }}>
-          <WelcomeDocument
-            clientPassword={dbKey}
-            clientName={displayName}
-            onContinue={() => setShowWelcomeDoc(false)}
-          />
+          <div style={{ position: 'fixed', top: 12, left: 12, zIndex: 201 }}>
+            <button onClick={() => setShowWelcomeDoc(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
+          </div>
+          <WelcomeDocument clientPassword={dbKey} clientName={displayName} onContinue={() => setShowWelcomeDoc(false)} />
+        </div>
+      )}
+
+      {/* ✅ ניתוח התחלתי — overlay */}
+      {showInitialReport && feedback && (
+        <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
+          <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
+            <button onClick={() => setShowInitialReport(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
+          </div>
+          <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontWeight: 900, fontSize: 15 }}>הניתוח האישי שלך 💚</div>
+                  <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · אתי אטל</div>
+                </div>
+              </div>
+            </div>
+            <div style={{ background: '#fff', borderRadius: 18, padding: '20px 18px', border: '1.5px solid #f0f0f0' }}>
+              <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>{feedback}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ✅ מסמך מטרה — overlay */}
+      {showOutcomeDoc && clientData?.outcome_doc && (
+        <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
+          <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
+            <button onClick={() => setShowOutcomeDoc(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
+          </div>
+          <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#7c3aed,#9333ea)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'cover', border: '2px solid #e9d5ff', background: '#fff', flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontWeight: 900, fontSize: 15 }}>המטרה שלך — מסע התוצאה 🧭</div>
+                  <div style={{ fontSize: 11, color: '#e9d5ff' }}>{displayName.split(' ')[0]} · אתי אטל</div>
+                </div>
+              </div>
+            </div>
+            <div style={{ background: '#fff', borderRadius: 18, padding: '20px 18px', border: '1.5px solid #e9d5ff' }}>
+              <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>{clientData.outcome_doc}</div>
+            </div>
+          </div>
         </div>
       )}
 
       {activeTab === 'agent' && (
         <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px' }}>
           <AgentChat clientName={displayName} gender={userGender} />
-        </div>
-      )}
-
-      {activeTab === 'report' && reportApproved && (
-        <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px' }}>
-          <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
-              <div>
-                <div style={{ fontWeight: 900, fontSize: 15 }}>הדוח האישי שלך 💚</div>
-                <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · אתי אטל</div>
-              </div>
-            </div>
-          </div>
-          <div style={{ background: '#fff', borderRadius: 18, padding: '20px 18px', border: '1.5px solid #f0f0f0' }}>
-            <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>
-              {feedback}
-            </div>
-          </div>
         </div>
       )}
 
