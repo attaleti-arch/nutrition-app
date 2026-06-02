@@ -375,23 +375,36 @@ export async function POST(request) {
 ${clientProfile ? 'פרופיל: ' + clientProfile : ''}
 
 תשובות הלקוחה לשאלון:
-חלק 1 — חזון:
+חלק 1 — הגדרת המטרה:
+- מה הביא אותה לכאן: ${answers.goal_reason || 'לא מולא'}
+- מה היא רוצה: ${answers.goal_what || 'לא מולא'}
+- הקשר (מתי/עם מי/איפה): ${answers.goal_context || 'לא מולא'}
+- למה זה חשוב לה: ${answers.goal_why || 'לא מולא'}
+- ההוכחה להצלחה: ${answers.goal_proof || 'לא מולא'}
+
+חלק 2 — חזון סנסורי:
 - מה רואה בבוקר השינוי: ${answers.vision_see || 'לא מולא'}
 - מה שומעת: ${answers.vision_hear || 'לא מולא'}
 - תחושה גופנית: ${answers.vision_feel || 'לא מולא'}
 
-חלק 2 — אקולוגיה:
+חלק 3 — אקולוגיה:
 - מה חשוב לשמור: ${answers.ecology_keep || 'לא מולא'}
-- איך לשלב: ${answers.ecology_harmony || 'לא מולא'}
+- איך לשמור בתוך השינוי: ${answers.ecology_harmony || 'לא מולא'}
+- במי תלויה ההשגה: ${answers.ecology_who || 'לא מולא'}
 
-חלק 3 — אמונות:
+חלק 4 — אמונות:
 - מה קשה/בלתי אפשרי: ${answers.belief_hard || 'לא מולא'}
 - מתי החליטה שזה המצב: ${answers.belief_when || 'לא מולא'}
 
-חלק 4 — חיסונים:
+חלק 5 — משאבים:
+- משאבים קיימים: ${answers.resources_has || 'לא מולא'}
+- רגע הצלחה מהעבר: ${answers.resources_past || 'לא מולא'}
+
+חלק 6 — חיסונים:
 - הרגע הכי קשה ביום: ${answers.vaccine_moment || 'לא מולא'}
 - הפעולה הקטנה שמתחייבת: ${answers.vaccine_action || 'לא מולא'}
 - משפט העוגן: ${answers.vaccine_anchor || 'לא מולא'}
+- הצעד הראשון לשבוע הקרוב: ${answers.first_step || 'לא מולא'}
 
 הפק ניתוח מפורט לאתי לקראת הפגישה. כתוב בעברית, בשפה ישירה ומקצועית. כלול:
 
