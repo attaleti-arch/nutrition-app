@@ -10,4 +10,9 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/logo-full.png" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body style={{margin:0,padding:0,fontFamily:'Arial,sans-serif',direction:'rtl',background
+      <body style={{margin:0,padding:0,fontFamily:'Arial,sans-serif',direction:'rtl',background:'#fafafc'}}>
+        {children}
+      </body>
+    </html>
+  )
+}
