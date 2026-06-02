@@ -6,9 +6,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="he" dir="rtl">
-      <body style={{margin:0,padding:0,fontFamily:'Arial,sans-serif',direction:'rtl',background:'#f8fafc'}}>
-        {children}
-      </body>
-    </html>
-  )
-}
+      <head>
+        <link rel="apple-touch-icon" href="/logo.png" />
+        <link rel="manifest" href="/manifest.json" />
+      </head>
+      <body style={{margin:0,padding:0,fontFamily:'Arial,sans-serif',direction:'rtl',background
