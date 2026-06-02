@@ -76,15 +76,21 @@ const PLAN = {
     { id: 'c7', text: '100 גרם שעועית לבנה / אדומה', tags: ['vegan'] },
   ],
   protOptions: [
-    { id: 'p1', text: '200 גרם דג לבן', hide: ['vegan', 'vegetarian', 'no_fish'] },
-    { id: 'p2', text: '100 גרם סלמון', hide: ['vegan', 'vegetarian', 'no_fish'] },
-    { id: 'p3', text: '150 גרם טופו', tags: ['vegan'] },
-    { id: 'p10', text: '150 גרם חזה עוף', hide: ['vegan', 'vegetarian'] },
+    { id: 'p1', text: '200 גרם דג לבן (אמנון / בקלה)', hide: ['vegan', 'no_fish'] },
+    { id: 'p2', text: '100 גרם סלמון', hide: ['vegan', 'no_fish'] },
+    { id: 'p9', text: '100 גרם טונה / סרדינים', hide: ['vegan', 'no_fish'] },
+    { id: 'p12', text: '150 גרם חזה עוף', hide: ['vegan', 'vegetarian'] },
     { id: 'p5', text: '140 גרם ירך עוף / 100 גרם הודו טחון', hide: ['vegan', 'vegetarian'] },
-    { id: 'p11', text: '150 גרם מגדרה', tags: ['vegan'] },
-    { id: 'p6', text: '2 המבורגר צמחוני 99 קל', tags: ['vegan'] },
+    { id: 'p3', text: '150 גרם טופו', tags: ['vegan'] },
     { id: 'p8', text: '3 ביצים / אומלט', hide: ['vegan', 'no_eggs'] },
-    { id: 'p9', text: '100 גרם טונה / סרדינים', hide: ['vegan', 'vegetarian', 'no_fish'] },
+    { id: 'p11', text: '150 גרם מג׳דרה (עדשים + אורז)', tags: ['vegan'] },
+    { id: 'p6', text: '2 המבורגר צמחוני', tags: ['vegan'] },
+    { id: 'p13', text: '200 גרם גרגירי חומוס מבושל', tags: ['vegan'] },
+    { id: 'p14', text: '200 גרם עדשים מבושלות', tags: ['vegan'] },
+    { id: 'p15', text: '150 גרם שעועית / פול מבושל', tags: ['vegan'] },
+    { id: 'p16', text: '150 גרם אדממה', tags: ['vegan'] },
+    { id: 'p17', text: '200 גרם קוטג׳ 3% / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'] },
+    { id: 'p18', text: '200 גרם יוגורט יווני 0%', hide: ['vegan', 'no_lactose'] },
   ],
   fatOptions: [
     { id: 'f1', text: 'כף שמן זית', tags: ['vegan', 'keto'] },
@@ -612,6 +618,30 @@ export default function PlanApp({ clientName, userPassword }) {
   const [water, setWater] = useState(0)
   const [steps, setSteps] = useState('')
   const [note, setNote] = useState('')
+  const [showWAButton, setShowWAButton] = useState(false)
+
+  // ✅ שמירה אוטומטית — 3 שניות אחרי כל שינוי
+  const autoSaveRef = useRef(null)
+  useEffect(() => {
+    if (!dbKey || !todayKey || !profileDone) return
+    if (autoSaveRef.current) clearTimeout(autoSaveRef.current)
+    autoSaveRef.current = setTimeout(async () => {
+      var payload = {
+        client_name: dbKey, log_date: todayKey, checks,
+        carb_sel: carbSel, prot_sel: protSel, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
+        water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
+        boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
+        had_snack: hadSnack, had_benayim: hadBenayim,
+        sport_done_today: sportDoneToday, sport_days_week: sportDaysThisWeek,
+        scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
+        diet_type: dietType, restrictions,
+        nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood },
+        updated_at: new Date().toISOString(),
+      }
+      await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
+    }, 3000)
+    return () => clearTimeout(autoSaveRef.current)
+  }, [checks, carbSel, protSel, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, stressLevel, fatigueLevel, hungerLevel, userMood])
   const [bokerFree, setBokerFree] = useState('')
   const [lunchFree, setLunchFree] = useState('')
   const [erevFree, setErevFree] = useState('')
@@ -782,12 +812,16 @@ export default function PlanApp({ clientName, userPassword }) {
       updated_at: new Date().toISOString(),
     }
     const { error } = await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
-    if (error) console.error('שגיאה:', error.message)
-    setSaving(false); setSaved(true)
+    if (error) {
+      console.error('שגיאה בשמירה:', error.message)
+      alert('שגיאה בשמירה: ' + error.message)
+      setSaving(false)
+      return
+    }
+    setSaving(false)
+    setSaved(true)
+    setShowWAButton(true) // ✅ מציג כפתור WA נפרד — לא מנווט אוטומטית
     setTimeout(() => setSaved(false), 3000)
-    var trainerPhone = '972523336766'
-    var notifyMsg = 'יומן חדש! 🌿\n' + (clientName || dbKey) + ' מילא/ה את היומן היום.\nhttps://project-l990h.vercel.app/admin'
-    var a = document.createElement('a'); a.href = 'https://wa.me/' + trainerPhone + '?text=' + encodeURIComponent(notifyMsg); a.target = '_blank'; a.rel = 'noopener'; a.click()
   }
 
   const targets = calcTargets(parseFloat(userWeight), parseFloat(userHeight), parseInt(userAge), userGender, userActivity, userGoal)
@@ -1232,8 +1266,16 @@ export default function PlanApp({ clientName, userPassword }) {
         </div>
 
         <button onClick={handleSave} disabled={saving} style={{ width: '100%', padding: 16, borderRadius: 16, background: saved ? '#16a34a' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 17 }}>
-          {saving ? 'שומר...' : saved ? 'נשמר! אתי תראה את זה' : gf('שמרי', 'שמור') + ' את היום שלי'}
+          {saving ? 'שומר...' : saved ? '✅ נשמר!' : gf('שמרי', 'שמור') + ' את היום שלי'}
         </button>
+        {showWAButton && (
+          <a href={'https://wa.me/972523336766?text=' + encodeURIComponent('יומן חדש! 🌿\n' + (displayName || dbKey) + ' מילאה את היומן היום.\nhttps://project-l990h.vercel.app/admin')}
+            target="_blank" rel="noopener noreferrer"
+            onClick={() => setShowWAButton(false)}
+            style={{ display: 'block', width: '100%', padding: 12, borderRadius: 14, marginTop: 8, background: '#25D366', color: '#fff', textAlign: 'center', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
+            📱 שלחי הודעה לאתי
+          </a>
+        )}
         <button onClick={resetDay} style={{ width: '100%', padding: 10, borderRadius: 12, marginTop: 8, background: 'transparent', border: '1px solid #fca5a5', color: '#ef4444', cursor: 'pointer', fontSize: 13 }}>🔄 {gf('אפסי', 'אפס')} את היום</button>
         <button onClick={() => setSetupDone(false)} style={{ width: '100%', padding: 10, borderRadius: 12, marginTop: 6, background: 'transparent', border: '1px solid #e5e7eb', color: '#9ca3af', cursor: 'pointer', fontSize: 13 }}>{gf('עדכני', 'עדכן')} העדפות תזונה</button>
         <button onClick={() => setProfileDone(false)} style={{ width: '100%', padding: 10, borderRadius: 12, marginTop: 6, background: 'transparent', border: '1px solid #e5e7eb', color: '#9ca3af', cursor: 'pointer', fontSize: 13 }}>{gf('עדכני', 'עדכן')} פרטים אישיים</button>
