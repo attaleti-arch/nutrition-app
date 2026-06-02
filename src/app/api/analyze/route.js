@@ -482,14 +482,15 @@ ${sessionNotes ? 'מה גילינו בפגישה (מאתי): ' + sessionNotes : 
       const gender = body.gender || 'נקבה'
       const isMale = gender === 'זכר'
       const genderNote = isMale
-        ? 'הלקוח הוא גבר. גוף שני זכר בלבד.'
-        : 'הלקוחה היא אישה. גוף שני נקבה בלבד.'
+        ? 'הלקוח הוא גבר. השתמש בגוף שני זכר בלבד: "אתה", "עשית", "תוכל". אסור לכתוב "אתת" או צורת נקבה.'
+        : 'הלקוחה היא אישה. השתמשי בגוף שני נקבה בלבד: "את", "עשית", "תוכלי". אסור לכתוב "אתת".'
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 700,
         messages: [{ role: 'user', content:
-          'אתה אתי אטל — יועצת תזונה התנהגותית. כתוב משוב קצר ל-' + name + ' בעברית.\n'
+          'אתה אתי אטל — יועצת תזונה התנהגותית. כתוב משוב קצר ל-' + name + ' בעברית תקנית.\n'
           + genderNote + '\n'
+          + 'חובה: עברית תקנית בלבד. "מדהים" ולא "אגודה". "נהדר" ולא מילים שגויות. בדוק שכל מילה היא מילה עברית אמיתית.\n'
           + 'בסס על נתונים אמיתיים בלבד. ציין מספרים ספציפיים.\n'
           + (body.nlpSummary ? 'NLP: ' + body.nlpSummary + '\n' : '')
           + 'יומן: ' + String(logs).substring(0, 900) + '\n\n'
@@ -507,14 +508,18 @@ ${sessionNotes ? 'מה גילינו בפגישה (מאתי): ' + sessionNotes : 
       const p = profile
       const isAthlete = !!(p.exercise_type && /ריצ|כוח|אימון|ספורט|כושר/.test(String(p.exercise_type)))
       const isSedentary = p.activity === 'יושבני' || p.activity === 'קל'
-      const bloodText = formatBlood(p.blood_tests, p.extra_blood_notes)
+
+      const extraNotes = p.extra_blood_notes || ''
+      const bloodText = formatBlood(p.blood_tests, extraNotes)
+
       const diary = foodDiary ? String(foodDiary).substring(0, 400) : ''
-      const extraBlood = p.extra_blood_notes ? '⚠️ חובה לציין בסעיף הבדיקות: ' + p.extra_blood_notes : ''
+      const extraBlood = extraNotes.trim() ? '⚠️ דגש קריטי לחריגות הבאות: ' + extraNotes.trim() : ''
       const stepsNote = isSedentary ? ', כולל 7,000 צעדים יומיים' : ''
+
       const athleteSection = isAthlete
-        ? '**⚡ חלון ההזדמנויות הספורטיבי**\nתזונה לפני/אחרי אימון. מניעת קטבוליזם. חלבון ספציפי לסוג האימון.'
-        : '**⚡ תמיכה במטבוליזם ובאנרגיה**\nפחמימות עודפות + חלבון נמוך = קפיצות אינסולין. הגוף מפרק שריר. BMR נמוך.'
-      const bloodSection = '**🩺 מה אומרות הבדיקות**\nלכל ערך חריג: שם + ערך + טווח + הסבר + המלצה. אם דורש רופא — ציינו.'
+        ? '**⚡ חלון ההזדמנויות הספורטיבי**\nתזונה לפני/אחרי אימון. מניעת קטבוליזם. חלבון. ספציפי לסוג האימון שלה.'
+        : '**⚡ תמיכה במטבוליזם ובאנרגיה**\nפחמימות עודפות + חלבון נמוך = קפיצות אינסולין שנועלות שריפת שומן. הגוף מפרק שריר גם בלי ספורט. BMR נמוך. התקפי רעב. חיבר לנתונים.'
+
       const baseData = 'נתונים על ' + name + ':\n'
         + 'גיל ' + s(p.age,'?') + ' | משקל ' + s(p.weight,'?') + ' | מטרה: ' + s(p.goal,'?') + ' | פעילות: ' + s(p.exercise_type,'לא') + '\n'
         + 'שינה: ' + s(p.sleep_quality,'?') + ' | קימה: ' + s(p.wake_time,'?') + ' | לחץ: ' + s(p.stress_level,'?') + '/10\n'
@@ -525,23 +530,28 @@ ${sessionNotes ? 'מה גילינו בפגישה (מאתי): ' + sessionNotes : 
         + 'בדיקות: ' + bloodText + '\n'
         + (extraBlood ? extraBlood + '\n' : '')
         + (diary ? 'אכילה (3 ימים): ' + diary + '\n' : '')
+
       const systemPrompt = 'אתה אתי אטל - יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
-        + 'כתבי ניתוח אישי חם ועמוק ל-' + name + ' בעברית, גוף שני נקבה.\n'
-        + 'סגנון: אינטימי, מחבק. ללא טבלאות. עברית תקנית. אל תמציאי.\n'
-        + 'כל סעיף 3-4 משפטים (בדיקות עד 6).\n\n'
+        + 'כתבי ניתוח אישי חם, עמוק, אמפתי ומחבק מאוד ל-' + name + ' בעברית, גוף שני נקבה.\n'
+        + 'סגנון: אינטימי, מעצים, רגיש ומלא אהבה — כמו שיחה אישית עמוקה עם חברה טובה, ללא טון רפואי מנוכר, ללא טבלאות.\n'
+        + 'חובה: עברית תקנית בלבד. "את" ולא "אתת". אל תמציאי פרטים. אל תכתבי כותרת ראשית בתחילת התשובה — התחילי ישר עם הסעיף הראשון.\n'
+        + 'כללי מבנה: כל סעיף 3-4 משפטים (בדיקות עד 5). כל משפט שלם וסגור.\n'
+        + 'פורמט קבוע: כל סעיף מתחיל בכותרת **אמוג׳י כותרת** ואחריה תוכן. בין סעיפים — שורה ריקה בלבד.\n\n'
+
       const [msg1, msg2] = await Promise.all([
         client.messages.create({
           model: 'claude-sonnet-4-6',
-          max_tokens: 1500,
-          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים:\n\n**✨ הקווים הזוהרים שלך**\n**🔍 מה באמת קורה**\n' + athleteSection }]
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בדיוק:\n\n**✨ הקווים הזוהרים שלך**\n\n**🔍 מה באמת קורה**\n\n' + athleteSection }]
         }),
         client.messages.create({
           model: 'claude-sonnet-4-6',
-          max_tokens: 1500,
-          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים:\n\n' + bloodSection + '\n\n**🥗 המלצות תזונה ותוספים**\n\n**🎯 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
+          max_tokens: 1400,
+          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בדיוק:\n\n**🩺 מה אומרות הבדיקות**\nלכל ערך חריג: שם + ערך + הסבר + המלצה. אם יש חריגות נוספות (IgG, FLC וכו) — חובה לציין. אם דורש רופא — ציינו.\n\n**🥗 המלצות תזונה ותוספים**\n\n**🎯 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
         })
       ])
-      return Response.json({ result: msg1.content[0].text + '\n\n' + msg2.content[0].text })
+
+      return Response.json({ result: msg1.content[0].text.trim() + '\n\n' + msg2.content[0].text.trim() })
     }
 
     return Response.json({ result: 'לא התקבלו נתונים' })
