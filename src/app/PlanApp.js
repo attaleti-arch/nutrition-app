@@ -1241,4 +1241,3 @@ export default function PlanApp({ clientName, userPassword }) {
     </div>
   )
 }
-
