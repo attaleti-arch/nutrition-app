@@ -295,7 +295,15 @@ export default function AdminPage() {
   const [previewDoc, setPreviewDoc] = useState(false)
   const [previewReport, setPreviewReport] = useState(false)
   const [togglingDoc, setTogglingDoc] = useState(false)
-  const [journeyAnswers, setJourneyAnswers] = useState({ vision_see: '', vision_hear: '', vision_feel: '', ecology_keep: '', ecology_harmony: '', belief_hard: '', belief_when: '', vaccine_moment: '', vaccine_action: '', vaccine_anchor: '' })
+  const [journeyAnswers, setJourneyAnswers] = useState({
+    goal_reason: '', goal_what: '', goal_context: '', goal_why: '', goal_proof: '',
+    vision_see: '', vision_hear: '', vision_feel: '',
+    ecology_keep: '', ecology_harmony: '', ecology_who: '',
+    belief_hard: '', belief_when: '',
+    resources_has: '', resources_past: '',
+    vaccine_moment: '', vaccine_action: '', vaccine_anchor: '',
+    first_step: ''
+  })
   const [journeyAnalysis, setJourneyAnalysis] = useState('')
   const [journeyLoading, setJourneyLoading] = useState(false)
   const [sessionNotes, setSessionNotes] = useState('')
@@ -607,9 +615,21 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
-            <div style={{ background: '#fff', borderRadius: 18, padding: '20px 18px', border: '1.5px solid #f0f0f0' }}>
-              <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>{editableAnalysis}</div>
-            </div>
+            {editableAnalysis.split(/\n(?=\*\*[✨🔍⚡🩺🥗🎯💚])/).map((section, i) => {
+              const lines = section.split('\n')
+              const title = lines[0].replace(/\*\*/g, '').trim()
+              const body = lines.slice(1).join('\n').trim()
+              const colors = ['#16a34a','#0284c7','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
+              const color = colors[i % colors.length]
+              return (
+                <div key={i} style={{ background: '#fff', borderRadius: 18, padding: '18px', marginBottom: 12, border: `1.5px solid ${color}25` }}>
+                  {title && <div style={{ fontWeight: 900, fontSize: 15, color, marginBottom: 10, borderBottom: `2px solid ${color}20`, paddingBottom: 8 }}>{title}</div>}
+                  <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, textAlign: 'right' }}
+                    dangerouslySetInnerHTML={{ __html: body.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }}
+                  />
+                </div>
+              )
+            })}
           </div>
         </div>
       )}
@@ -1011,59 +1031,113 @@ export default function AdminPage() {
                   <div style={{ fontSize: 12, color: '#9ca3af' }}>מלאי יחד עם הלקוחה בפגישה הראשונה</div>
                 </div>
 
-                {/* חלק 1 — חזון */}
+                {/* עזרה: הנחיות ניסוח */}
+                <div style={{ background: '#fffbeb', borderRadius: 14, padding: '12px 16px', marginBottom: 16, border: '1.5px solid #fcd34d' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#92400e', marginBottom: 6 }}>💡 הנחיות ניסוח — לשמור בראש</div>
+                  <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.8 }}>
+                    • <strong>בחיוב בלבד</strong> — "אני רוצה להרגיש..." ולא "אני לא רוצה להיות..."<br/>
+                    • <strong>בזמן הווה</strong> — "אני חשה", "אני בוחרת", "אני יודעת"<br/>
+                    • <strong>בשליטתה</strong> — תלוי בה ולא באחרים<br/>
+                    • אם אומרת שלילי — שאלי: "את זה את לא רוצה — מה כן?"<br/>
+                    • אם בורחת מסבל — שאלי: "לאן את הולכת? מה במקום?"
+                  </div>
+                </div>
+
+                {/* חלק 0 — פתיחה והגדרת המטרה */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
-                  <div style={{ fontWeight: 800, fontSize: 14, color: '#0f4c2a', marginBottom: 12 }}>✨ חלק 1 — החזון הסנסורי</div>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#0f4c2a', marginBottom: 12 }}>🌱 חלק 1 — הגדרת המטרה</div>
                   {[
-                    { key: 'vision_see', label: 'מה היא רואה בבוקר שהשינוי קרה?' },
-                    { key: 'vision_hear', label: 'מה היא שומעת מסביבה?' },
-                    { key: 'vision_feel', label: 'מהי התחושה הגופנית של הביטחון?' },
+                    { key: 'goal_reason', label: 'מה הביא אותך לכאן?', hint: 'שאלה פתוחה — הקשיבי, אל תמהרי קדימה' },
+                    { key: 'goal_what', label: 'מה את רוצה? איך את רוצה להשתנות?', hint: 'בחיוב, ספציפית, בשליטתה. אם שלילי — "מה כן?"' },
+                    { key: 'goal_context', label: 'באיזה הקשר? מתי? עם מי? איפה?', hint: 'מדייקת את המטרה לסיטואציה אמיתית' },
+                    { key: 'goal_why', label: 'למה זה חשוב לך?', hint: 'אם בורחת מסבל — "לאן? מה במקום?"' },
+                    { key: 'goal_proof', label: 'איך תדעי שהגעת? מה תהיה ההוכחה?', hint: 'מה היא תראה/תרגיש/תשמע כשתצליח?' },
                   ].map(q => (
-                    <div key={q.key} style={{ marginBottom: 12 }}>
-                      <div style={{ fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 600 }}>{q.label}</div>
+                    <div key={q.key} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
+                      {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
                       <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
 
-                {/* חלק 2 — אקולוגיה */}
+                {/* חלק 2 — חזון סנסורי */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
-                  <div style={{ fontWeight: 800, fontSize: 14, color: '#0d9488', marginBottom: 12 }}>🌿 חלק 2 — הרמוניה ואיזון</div>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#0284c7', marginBottom: 12 }}>✨ חלק 2 — החזון הסנסורי</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 12, fontStyle: 'italic' }}>דמייני את הבוקר שהשינוי כבר קרה — בלשון הווה, מפורט ככל האפשר</div>
                   {[
-                    { key: 'ecology_keep', label: 'מה חשוב לה לשמור גם תוך כדי השינוי?' },
-                    { key: 'ecology_harmony', label: 'איך תשלב את זה בדרך?' },
+                    { key: 'vision_see', label: 'מה את רואה סביבך כשאת פוקחת עיניים?', hint: 'פרטים ויזואליים — מה בדיוק?' },
+                    { key: 'vision_hear', label: 'מה את שומעת? מה אומרים לך? מה את אומרת לעצמך?', hint: 'קולות, מילים, משפטים' },
+                    { key: 'vision_feel', label: 'מהי התחושה הגופנית המדויקת? איפה היא בגוף?', hint: 'קלה, יציבה, חמה — ספציפי' },
                   ].map(q => (
-                    <div key={q.key} style={{ marginBottom: 12 }}>
-                      <div style={{ fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 600 }}>{q.label}</div>
+                    <div key={q.key} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
+                      {q.hint && <div style={{ fontSize: 11, color: '#0284c7', marginBottom: 4, fontStyle: 'italic' }}>💙 {q.hint}</div>}
                       <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
 
-                {/* חלק 3 — אמונות */}
+                {/* חלק 3 — אקולוגיה */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
-                  <div style={{ fontWeight: 800, fontSize: 14, color: '#dc2626', marginBottom: 12 }}>🔍 חלק 3 — חשיפת היתד</div>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#0d9488', marginBottom: 12 }}>🌿 חלק 3 — הרמוניה ואיזון</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 12, fontStyle: 'italic' }}>אם עולה התנגדות — שאלי: "מה הכוונה החיובית? איך לשמור עליה בדרך החדשה?"</div>
                   {[
-                    { key: 'belief_hard', label: 'מה גורם לה להרגיש שזה קשה/בלתי אפשרי?' },
-                    { key: 'belief_when', label: 'מתי החליטה שזה המצב?' },
+                    { key: 'ecology_keep', label: 'כשתשיגי את המטרה — האם תפסידי משהו שחשוב לך?', hint: 'רווח משני — מה המצב הנוכחי נותן לה?' },
+                    { key: 'ecology_harmony', label: 'איך תשמרי על מה שחשוב לך בתוך השינוי?', hint: 'עדכני את המטרה אם עלתה התנגדות' },
+                    { key: 'ecology_who', label: 'במי תלויה השגת המטרה?', hint: 'חשוב — התוצאה חייבת להיות בשליטתה' },
                   ].map(q => (
-                    <div key={q.key} style={{ marginBottom: 12 }}>
-                      <div style={{ fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 600 }}>{q.label}</div>
+                    <div key={q.key} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
+                      {q.hint && <div style={{ fontSize: 11, color: '#0d9488', marginBottom: 4, fontStyle: 'italic' }}>💚 {q.hint}</div>}
                       <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
 
-                {/* חלק 4 — חיסונים */}
+                {/* חלק 4 — אמונות */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#dc2626', marginBottom: 12 }}>🔍 חלק 4 — חשיפת היתד</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 12, fontStyle: 'italic' }}>הקשיבי למילים: "תמיד", "אף פעם", "חייבת", "אי אפשר", "כי..."</div>
+                  {[
+                    { key: 'belief_hard', label: 'מה גורם לך להרגיש שזה קשה או בלתי אפשרי?', hint: 'ציטוט מדויק — מה המשפט שעולה לה?' },
+                    { key: 'belief_when', label: 'מתי החלטת שזה המצב?', hint: 'מחפשת את שורש האמונה — גיל? אירוע?' },
+                  ].map(q => (
+                    <div key={q.key} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
+                      {q.hint && <div style={{ fontSize: 11, color: '#dc2626', marginBottom: 4, fontStyle: 'italic' }}>❤️ {q.hint}</div>}
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    </div>
+                  ))}
+                </div>
+
+                {/* חלק 5 — משאבים */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#d97706', marginBottom: 12 }}>💎 חלק 5 — ארגז הכלים שלה</div>
+                  {[
+                    { key: 'resources_has', label: 'אילו משאבים כבר יש לה? (יכולות, אנשים, ידע)', hint: 'מה היא כבר עושה טוב? מה עזר לה בעבר?' },
+                    { key: 'resources_past', label: 'זכרי רגע שהיית מרוצה מעצמך — מה היה שם? מה עשית?', hint: 'מחלצת עוגני כוח מהעבר' },
+                  ].map(q => (
+                    <div key={q.key} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
+                      {q.hint && <div style={{ fontSize: 11, color: '#d97706', marginBottom: 4, fontStyle: 'italic' }}>🧡 {q.hint}</div>}
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    </div>
+                  ))}
+                </div>
+
+                {/* חלק 6 — חיסונים */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #f0f0f0' }}>
-                  <div style={{ fontWeight: 800, fontSize: 14, color: '#7c3aed', marginBottom: 12 }}>🛡️ חלק 4 — החיסונים</div>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#7c3aed', marginBottom: 12 }}>🛡️ חלק 6 — החיסונים וההתחייבות</div>
                   {[
-                    { key: 'vaccine_moment', label: 'מהו הרגע הכי קשה ביום?' },
-                    { key: 'vaccine_action', label: 'הפעולה הקטנה שמתחייבת גם ביום קשה' },
-                    { key: 'vaccine_anchor', label: 'משפט העוגן שתגיד לעצמה' },
+                    { key: 'vaccine_moment', label: 'מהו הרגע הכי קשה ביום — מתי הכי קשה לשמור על המטרה?', hint: 'ספציפי — שעה? סיטואציה? אחרי מה?' },
+                    { key: 'vaccine_action', label: 'מהי הפעולה הקטנה שמתחייבת לעשות גם ביום הכי קשה?', hint: 'קטנה ומציאותית — לא מושלמת, רק אפשרית' },
+                    { key: 'vaccine_anchor', label: 'איזה משפט תגידי לעצמך ברגעים של עומס?', hint: 'בשפתה שלה — לא סיסמה, אלא משפט שמרגיש אמיתי' },
+                    { key: 'first_step', label: 'מהו הצעד הראשון שמתחייבת לשבוע הקרוב?', hint: 'מחויבות קונקרטית — מה? מתי? איך?' },
                   ].map(q => (
-                    <div key={q.key} style={{ marginBottom: 12 }}>
-                      <div style={{ fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 600 }}>{q.label}</div>
+                    <div key={q.key} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
+                      {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
                       <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
@@ -1081,7 +1155,6 @@ export default function AdminPage() {
                   {journeyLoading ? '⏳ מנתח...' : '🔍 הפק ניתוח לפגישה (לעיניך בלבד)'}
                 </button>
 
-                {/* ניתוח לפגישה */}
                 {journeyAnalysis && (
                   <div style={{ background: '#fff', borderRadius: 18, padding: '18px', marginBottom: 16, border: '2px solid #7c3aed' }}>
                     <div style={{ fontWeight: 800, fontSize: 15, color: '#7c3aed', marginBottom: 12 }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
@@ -1089,7 +1162,6 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {/* מה גילינו + הפקת מסמך ללקוחה */}
                 {journeyAnalysis && (
                   <div style={{ background: '#fff', borderRadius: 18, padding: '18px', border: '1.5px solid #e9d5ff' }}>
                     <div style={{ fontWeight: 800, fontSize: 14, color: '#7c3aed', marginBottom: 8 }}>📝 מה גילינו בפגישה 2</div>
@@ -1120,3 +1192,4 @@ export default function AdminPage() {
     </div>
   )
 }
+
