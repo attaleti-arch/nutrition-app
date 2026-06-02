@@ -637,6 +637,8 @@ export default function PlanApp({ clientName, userPassword }) {
   const [showDocsMenu, setShowDocsMenu] = useState(false)
   const [showInitialReport, setShowInitialReport] = useState(false)
   const [showOutcomeDoc, setShowOutcomeDoc] = useState(false)
+  const [showDailyFeedback, setShowDailyFeedback] = useState(false)
+  const [guideUrl, setGuideUrl] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [nutritionData, setNutritionData] = useState({})
@@ -1010,6 +1012,53 @@ export default function PlanApp({ clientName, userPassword }) {
         )}
       </div>
 
+      {/* ✅ משוב יומי מלא — overlay */}
+      {showDailyFeedback && feedback && (
+        <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
+          <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
+            <button onClick={() => setShowDailyFeedback(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
+          </div>
+          <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontWeight: 900, fontSize: 15 }}>המשוב האישי שלך 💚</div>
+                  <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · {today} · אתי אטל</div>
+                </div>
+              </div>
+            </div>
+            {feedback.split(/\n(?=\*\*[✨🔍⚡🩺🥗🎯💚📊✅🚀])/).map((section, i) => {
+              const lines = section.split('\n')
+              const title = lines[0].replace(/\*\*/g, '').trim()
+              const body = lines.slice(1).join('\n').trim()
+              const colors = ['#16a34a','#0284c7','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
+              const color = colors[i % colors.length]
+              if (!body && !title) return null
+              return (
+                <div key={i} style={{ background: '#fff', borderRadius: 18, padding: '18px', marginBottom: 12, border: `1.5px solid ${color}25` }}>
+                  {title && <div style={{ fontWeight: 900, fontSize: 15, color, marginBottom: 10, borderBottom: `2px solid ${color}20`, paddingBottom: 8 }}>{title}</div>}
+                  <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, textAlign: 'right' }}
+                    dangerouslySetInnerHTML={{ __html: (body || section).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ✅ מדריך HTML — overlay עם סגירה */}
+      {guideUrl && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: '#fff', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0f4c2a', color: '#fff' }}>
+            <button onClick={() => setGuideUrl(null)} style={{ padding: '8px 18px', borderRadius: 10, background: '#fff', color: '#0f4c2a', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>✕ סגרי</button>
+            <span style={{ fontWeight: 700, fontSize: 14 }}>בין הראש לצלחת</span>
+          </div>
+          <iframe src={guideUrl} style={{ flex: 1, border: 'none', width: '100%' }} title="מדריך" />
+        </div>
+      )}
+
       {/* ✅ מסמך פתיחה — overlay */}
       {showWelcomeDoc && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto' }}>
@@ -1101,7 +1150,7 @@ export default function PlanApp({ clientName, userPassword }) {
               <span style={{ fontSize: 22 }}>🛒</span>
               <div><div style={{ fontWeight: 800, fontSize: 15, color: C.teal }}>מדריך קניות חכם</div><div style={{ fontSize: 12, color: '#9ca3af' }}>רשימה מלאה עם טיפים וצ׳קבוקסים</div></div>
             </div>
-            <div style={{ padding: 14 }}><a href="/shopping_guide.html" target="_blank" style={{ display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: C.teal, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את המדריך 🛒</a></div>
+            <div style={{ padding: 14 }}><button onClick={() => setGuideUrl('/shopping_guide.html')} style={{ display: 'block', width: '100%', textAlign: 'center', padding: 12, borderRadius: 10, background: C.teal, color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>פתחי את המדריך 🛒</button></div>
           </div>
           {pantryNotes ? (
             <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
@@ -1111,7 +1160,7 @@ export default function PlanApp({ clientName, userPassword }) {
               </div>
               <div style={{ padding: 14 }}>
                 <div style={{ fontSize: 14, color: '#444', lineHeight: 1.7, marginBottom: 12 }}>{pantryNotes}</div>
-                <a href="/pantry_guide.html" target="_blank" style={{ display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: C.orange, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את המדריך המלא 🏡</a>
+                <button onClick={() => setGuideUrl('/pantry_guide.html')} style={{ display: 'block', width: '100%', textAlign: 'center', padding: 12, borderRadius: 10, background: C.orange, color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>פתחי את המדריך המלא 🏡</button>
               </div>
             </div>
           ) : (
@@ -1121,7 +1170,7 @@ export default function PlanApp({ clientName, userPassword }) {
                 <div><div style={{ fontWeight: 800, fontSize: 15, color: C.orange }}>מדריך המזווה והמקרר</div><div style={{ fontSize: 12, color: '#9ca3af' }}>איך לארגן את המטבח לתמיכה בדרך שלך</div></div>
               </div>
               <div style={{ padding: 14 }}>
-                <a href="/pantry_guide.html" target="_blank" style={{ display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: C.orange, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את המדריך 🏡</a>
+                <button onClick={() => setGuideUrl('/pantry_guide.html')} style={{ display: 'block', width: '100%', textAlign: 'center', padding: 12, borderRadius: 10, background: C.orange, color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>פתחי את המדריך 🏡</button>
               </div>
             </div>
           )}
@@ -1131,14 +1180,14 @@ export default function PlanApp({ clientName, userPassword }) {
                 <span style={{ fontSize: 22 }}>📚</span>
                 <div><div style={{ fontWeight: 800, fontSize: 15, color: C.purple }}>חוברת המתכונים של אתי</div><div style={{ fontSize: 12, color: '#9ca3af' }}>20 מתכונים · ללא קמח · ללא סוכר · חלבון גבוה</div></div>
               </div>
-              <div style={{ padding: 14 }}><a href="/recipes_guide.html" target="_blank" style={{ display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: C.purple, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את החוברת 📚</a></div>
+              <div style={{ padding: 14 }}><button onClick={() => setGuideUrl('/recipes_guide.html')} style={{ display: 'block', width: '100%', textAlign: 'center', padding: 12, borderRadius: 10, background: C.purple, color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>פתחי את החוברת 📚</button></div>
             </div>
           )}
         </div>
       )}
 
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '14px 14px 80px', display: activeTab === 'diary' ? 'block' : 'none' }}>
-        {feedback && <FeedbackCard feedback={feedback} clientName={displayName} logDate={today} onOpenFull={reportApproved ? () => setActiveTab('report') : undefined} />}
+        {feedback && <FeedbackCard feedback={feedback} clientName={displayName} logDate={today} onOpenFull={() => setShowDailyFeedback(true)} />}
 
         <div style={{ background: '#fff', borderRadius: 18, padding: 18, border: '1.5px solid #e2e8f0', marginBottom: 14 }}>
           <div style={{ fontWeight: 800, fontSize: 15, color: C.greenDark, marginBottom: 12, textAlign: 'right' }}>🧠 מודעות והקשבה לגוף</div>
