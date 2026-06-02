@@ -619,29 +619,6 @@ export default function PlanApp({ clientName, userPassword }) {
   const [steps, setSteps] = useState('')
   const [note, setNote] = useState('')
   const [showWAButton, setShowWAButton] = useState(false)
-
-  // ✅ שמירה אוטומטית — 3 שניות אחרי כל שינוי
-  const autoSaveRef = useRef(null)
-  useEffect(() => {
-    if (!dbKey || !todayKey || !profileDone) return
-    if (autoSaveRef.current) clearTimeout(autoSaveRef.current)
-    autoSaveRef.current = setTimeout(async () => {
-      var payload = {
-        client_name: dbKey, log_date: todayKey, checks,
-        carb_sel: carbSel, prot_sel: protSel, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
-        water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
-        boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
-        had_snack: hadSnack, had_benayim: hadBenayim,
-        sport_done_today: sportDoneToday, sport_days_week: sportDaysThisWeek,
-        scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
-        diet_type: dietType, restrictions,
-        nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood },
-        updated_at: new Date().toISOString(),
-      }
-      await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
-    }, 3000)
-    return () => clearTimeout(autoSaveRef.current)
-  }, [checks, carbSel, protSel, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, stressLevel, fatigueLevel, hungerLevel, userMood])
   const [bokerFree, setBokerFree] = useState('')
   const [lunchFree, setLunchFree] = useState('')
   const [erevFree, setErevFree] = useState('')
@@ -753,6 +730,29 @@ export default function PlanApp({ clientName, userPassword }) {
     }
     if (dbKey) load()
   }, [dbKey, todayKey])
+
+  // ✅ שמירה אוטומטית — 3 שניות אחרי כל שינוי
+  const autoSaveRef = useRef(null)
+  useEffect(() => {
+    if (!dbKey || !todayKey || !profileDone) return
+    if (autoSaveRef.current) clearTimeout(autoSaveRef.current)
+    autoSaveRef.current = setTimeout(async () => {
+      var payload = {
+        client_name: dbKey, log_date: todayKey, checks,
+        carb_sel: carbSel, prot_sel: protSel, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
+        water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
+        boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
+        had_snack: hadSnack, had_benayim: hadBenayim,
+        sport_done_today: sportDoneToday, sport_days_week: sportDaysThisWeek,
+        scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
+        diet_type: dietType, restrictions,
+        nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood },
+        updated_at: new Date().toISOString(),
+      }
+      await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
+    }, 3000)
+    return () => clearTimeout(autoSaveRef.current)
+  }, [checks, carbSel, protSel, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, stressLevel, fatigueLevel, hungerLevel, userMood])
 
   function calcEatenCalories() {
     var total = 0
