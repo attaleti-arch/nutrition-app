@@ -919,7 +919,7 @@ export default function AdminPage() {
                     <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4, color: '#0f4c2a' }}>✏️ ערכי לפני שליחה</div>
                     <textarea value={editableAnalysis} onChange={e => setEditableAnalysis(e.target.value)} rows={20} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8 }} />
                     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                      <button onClick={() => setPreviewReport(true)} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#eff6ff', color: '#0284c7', border: '1.5px solid #93c5fd', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה</button>
+                      <button onClick={() => window.open('/report?client=' + selectedClient.password + '&preview=true', '_blank')} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה</button>
                       <button onClick={sendAnalysisToClient} disabled={sendingToClient} style={{ flex: 2, padding: 14, borderRadius: 12, background: sentToClient ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
                         {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
                       </button>
@@ -936,7 +936,7 @@ export default function AdminPage() {
                   <>
                     <textarea value={editableAnalysis} onChange={e => setEditableAnalysis(e.target.value)} rows={20} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8 }} />
                     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                      <button onClick={() => setPreviewReport(true)} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#eff6ff', color: '#0284c7', border: '1.5px solid #93c5fd', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה</button>
+                      <button onClick={() => window.open('/report?client=' + selectedClient.password + '&preview=true', '_blank')} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה</button>
                       <button onClick={sendAnalysisToClient} disabled={sendingToClient} style={{ flex: 2, padding: 14, borderRadius: 12, background: sentToClient ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
                         {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
                       </button>
