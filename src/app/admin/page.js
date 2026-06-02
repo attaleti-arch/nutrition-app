@@ -295,6 +295,12 @@ export default function AdminPage() {
   const [previewDoc, setPreviewDoc] = useState(false)
   const [previewReport, setPreviewReport] = useState(false)
   const [togglingDoc, setTogglingDoc] = useState(false)
+  const [journeyAnswers, setJourneyAnswers] = useState({ vision_see: '', vision_hear: '', vision_feel: '', ecology_keep: '', ecology_harmony: '', belief_hard: '', belief_when: '', vaccine_moment: '', vaccine_action: '', vaccine_anchor: '' })
+  const [journeyAnalysis, setJourneyAnalysis] = useState('')
+  const [journeyLoading, setJourneyLoading] = useState(false)
+  const [sessionNotes, setSessionNotes] = useState('')
+  const [journeyDocLoading, setJourneyDocLoading] = useState(false)
+  const [journeyDocSent, setJourneyDocSent] = useState(false)
 
   const login = () => { if (pin === 'Esterika26') setAuth(true) }
 
@@ -642,7 +648,7 @@ export default function AdminPage() {
             </div>
 
             <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
-              {[{ k: 'logs', l: '📅 יומן' }, { k: 'questionnaire', l: '📋 שאלון' }, { k: 'blood', l: '🩸 בדיקות' }, { k: 'doctor', l: '📄 מכתב' }, { k: 'nutrition', l: '🥗 תזונה' }, { k: 'ai', l: '🧠 AI' }, { k: 'report', l: '📊 דוח' }, { k: 'stage', l: '🏆 שלב' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'pantry', l: '🛒 מזווה' }].map(function(t) {
+              {[{ k: 'logs', l: '📅 יומן' }, { k: 'questionnaire', l: '📋 שאלון' }, { k: 'blood', l: '🩸 בדיקות' }, { k: 'doctor', l: '📄 מכתב' }, { k: 'nutrition', l: '🥗 תזונה' }, { k: 'ai', l: '🧠 AI' }, { k: 'report', l: '📊 דוח' }, { k: 'stage', l: '🏆 שלב' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'pantry', l: '🛒 מזווה' }, { k: 'journey', l: '🧭 מטרה' }].map(function(t) {
                 return <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
               })}
             </div>
@@ -998,6 +1004,116 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
+            {tab === 'journey' && (
+              <div style={{ direction: 'rtl' }}>
+                <div style={{ background: 'linear-gradient(135deg,#7c3aed15,#faf5ff)', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
+                  <div style={{ fontWeight: 900, fontSize: 16, color: '#7c3aed', marginBottom: 4 }}>🧭 מסע המטרה</div>
+                  <div style={{ fontSize: 12, color: '#9ca3af' }}>מלאי יחד עם הלקוחה בפגישה הראשונה</div>
+                </div>
+
+                {/* חלק 1 — חזון */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#0f4c2a', marginBottom: 12 }}>✨ חלק 1 — החזון הסנסורי</div>
+                  {[
+                    { key: 'vision_see', label: 'מה היא רואה בבוקר שהשינוי קרה?' },
+                    { key: 'vision_hear', label: 'מה היא שומעת מסביבה?' },
+                    { key: 'vision_feel', label: 'מהי התחושה הגופנית של הביטחון?' },
+                  ].map(q => (
+                    <div key={q.key} style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 600 }}>{q.label}</div>
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    </div>
+                  ))}
+                </div>
+
+                {/* חלק 2 — אקולוגיה */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#0d9488', marginBottom: 12 }}>🌿 חלק 2 — הרמוניה ואיזון</div>
+                  {[
+                    { key: 'ecology_keep', label: 'מה חשוב לה לשמור גם תוך כדי השינוי?' },
+                    { key: 'ecology_harmony', label: 'איך תשלב את זה בדרך?' },
+                  ].map(q => (
+                    <div key={q.key} style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 600 }}>{q.label}</div>
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    </div>
+                  ))}
+                </div>
+
+                {/* חלק 3 — אמונות */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#dc2626', marginBottom: 12 }}>🔍 חלק 3 — חשיפת היתד</div>
+                  {[
+                    { key: 'belief_hard', label: 'מה גורם לה להרגיש שזה קשה/בלתי אפשרי?' },
+                    { key: 'belief_when', label: 'מתי החליטה שזה המצב?' },
+                  ].map(q => (
+                    <div key={q.key} style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 600 }}>{q.label}</div>
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    </div>
+                  ))}
+                </div>
+
+                {/* חלק 4 — חיסונים */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#7c3aed', marginBottom: 12 }}>🛡️ חלק 4 — החיסונים</div>
+                  {[
+                    { key: 'vaccine_moment', label: 'מהו הרגע הכי קשה ביום?' },
+                    { key: 'vaccine_action', label: 'הפעולה הקטנה שמתחייבת גם ביום קשה' },
+                    { key: 'vaccine_anchor', label: 'משפט העוגן שתגיד לעצמה' },
+                  ].map(q => (
+                    <div key={q.key} style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 600 }}>{q.label}</div>
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    </div>
+                  ))}
+                </div>
+
+                {/* כפתור ניתוח */}
+                <button onClick={async () => {
+                  setJourneyLoading(true); setJourneyAnalysis('')
+                  const profileSummary = `מחלות: ${profile.medical_history || 'לא צוין'} | תרופות: ${profile.medications || 'לא צוין'} | אכילה רגשית: ${profile.emotional_eating || 'לא צוין'} | מה מעכב: ${profile.goal_obstacles || 'לא צוין'}`
+                  const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, clientProfile: profileSummary, outputType: 'analysis' }) })
+                  const data = await res.json()
+                  setJourneyAnalysis(data.result || '')
+                  setJourneyLoading(false)
+                }} disabled={journeyLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
+                  {journeyLoading ? '⏳ מנתח...' : '🔍 הפק ניתוח לפגישה (לעיניך בלבד)'}
+                </button>
+
+                {/* ניתוח לפגישה */}
+                {journeyAnalysis && (
+                  <div style={{ background: '#fff', borderRadius: 18, padding: '18px', marginBottom: 16, border: '2px solid #7c3aed' }}>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: '#7c3aed', marginBottom: 12 }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
+                    <div style={{ fontSize: 13, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>{journeyAnalysis}</div>
+                  </div>
+                )}
+
+                {/* מה גילינו + הפקת מסמך ללקוחה */}
+                {journeyAnalysis && (
+                  <div style={{ background: '#fff', borderRadius: 18, padding: '18px', border: '1.5px solid #e9d5ff' }}>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: '#7c3aed', marginBottom: 8 }}>📝 מה גילינו בפגישה 2</div>
+                    <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>הוסיפי בקצרה מה השתנה, מה פירקנו, מה האמונה החדשה</div>
+                    <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
+                    <button onClick={async () => {
+                      setJourneyDocLoading(true)
+                      const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, sessionNotes, outputType: 'clientDoc' }) })
+                      const data = await res.json()
+                      if (data.result) {
+                        await supabase.from('clients').update({ outcome_doc: data.result }).eq('id', selectedClient.id)
+                        setSelectedClient(prev => ({ ...prev, outcome_doc: data.result }))
+                        setJourneyDocSent(true)
+                        setTimeout(() => setJourneyDocSent(false), 4000)
+                      }
+                      setJourneyDocLoading(false)
+                    }} disabled={journeyDocLoading || !sessionNotes.trim()} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyDocSent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
+                      {journeyDocLoading ? '⏳ מפיק...' : journeyDocSent ? '✅ נשלח אליה!' : '🧭 הפק מסמך ושלחי אליה'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
           </>
         )}
       </div>
