@@ -988,7 +988,7 @@ export default function PlanApp({ clientName, userPassword }) {
             )}
             {/* ניתוח התחלתי */}
             {feedback ? (
-              <button onClick={() => { setShowInitialReport(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#eff6ff,#f0fdf4)', border: '1.5px solid #0284c7', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#0f4c2a', textAlign: 'right' }}>
+              <button onClick={() => window.open('/report?client=' + dbKey, '_blank')} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#eff6ff,#f0fdf4)', border: '1.5px solid #0284c7', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#0f4c2a', textAlign: 'right' }}>
                 📊 הניתוח האישי שלי — 360 ובדיקות דם
               </button>
             ) : (
@@ -1115,10 +1115,14 @@ export default function PlanApp({ clientName, userPassword }) {
               </div>
             </div>
           ) : (
-            <div style={{ background: '#fafafa', borderRadius: 18, border: '1.5px dashed #d1d5db', marginBottom: 12, padding: '20px 18px', textAlign: 'center', opacity: 0.75 }}>
-              <div style={{ fontSize: 30, marginBottom: 8 }}>🔒</div>
-              <div style={{ fontWeight: 700, fontSize: 15, color: '#6b7280', marginBottom: 4 }}>מדריך המזווה האישי</div>
-              <div style={{ fontSize: 13, color: '#9ca3af' }}>ייפתח לאחר פגישת המזווה שלנו בבית 🏡</div>
+            <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
+              <div style={{ padding: '14px 18px', background: '#fff7ed', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 22 }}>🏡</span>
+                <div><div style={{ fontWeight: 800, fontSize: 15, color: C.orange }}>מדריך המזווה והמקרר</div><div style={{ fontSize: 12, color: '#9ca3af' }}>איך לארגן את המטבח לתמיכה בדרך שלך</div></div>
+              </div>
+              <div style={{ padding: 14 }}>
+                <a href="/pantry_guide.html" target="_blank" style={{ display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: C.orange, color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את המדריך 🏡</a>
+              </div>
             </div>
           )}
           {currentStage >= 3 && (
