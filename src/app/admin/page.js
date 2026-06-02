@@ -1192,5 +1192,3 @@ export default function AdminPage() {
     </div>
   )
 }
-
-השג את Outlook עבור iOS
