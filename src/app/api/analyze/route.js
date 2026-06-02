@@ -361,7 +361,110 @@ export async function POST(request) {
       }
     }
 
-    // ── משוב יומן ──
+    // ── מסע מטרה — ניתוח לפגישה + מסמך ללקוחה ──
+    if (mode === 'outcomeDoc' && body.answers) {
+      const { answers, clientName, clientProfile, outputType } = body
+      // answers = { vision_see, vision_hear, vision_feel, ecology_keep, ecology_harmony, belief_hard, belief_when, vaccine_moment, vaccine_action, vaccine_anchor }
+
+      if (outputType === 'analysis') {
+        // ── פלט לאתי — ניתוח מפורט לפגישה ──
+        const prompt = `אתה מנתח תשובות של לקוחה לשאלון "מסע המטרה" לפני פגישה 2 עם אתי אטל — יועצת בריאות ותזונה התנהגותית.
+
+נתוני הלקוחה:
+שם: ${clientName}
+${clientProfile ? 'פרופיל: ' + clientProfile : ''}
+
+תשובות הלקוחה לשאלון:
+חלק 1 — חזון:
+- מה רואה בבוקר השינוי: ${answers.vision_see || 'לא מולא'}
+- מה שומעת: ${answers.vision_hear || 'לא מולא'}
+- תחושה גופנית: ${answers.vision_feel || 'לא מולא'}
+
+חלק 2 — אקולוגיה:
+- מה חשוב לשמור: ${answers.ecology_keep || 'לא מולא'}
+- איך לשלב: ${answers.ecology_harmony || 'לא מולא'}
+
+חלק 3 — אמונות:
+- מה קשה/בלתי אפשרי: ${answers.belief_hard || 'לא מולא'}
+- מתי החליטה שזה המצב: ${answers.belief_when || 'לא מולא'}
+
+חלק 4 — חיסונים:
+- הרגע הכי קשה ביום: ${answers.vaccine_moment || 'לא מולא'}
+- הפעולה הקטנה שמתחייבת: ${answers.vaccine_action || 'לא מולא'}
+- משפט העוגן: ${answers.vaccine_anchor || 'לא מולא'}
+
+הפק ניתוח מפורט לאתי לקראת הפגישה. כתוב בעברית, בשפה ישירה ומקצועית. כלול:
+
+**1. מטרה מוגדרת כהלכה**
+נסח את המטרה שלה בשפה חיובית, ספציפית ובשליטתה (Well-Formed Outcome). אם היא ניסחה שלילית — תרגם לחיובי.
+
+**2. יתדות — אמונות מגבילות**
+זהה את האמונה המגבילה המרכזית. ציטט ישירות ממה שכתבה. סווג לקטגוריה: חוסר אונים / חוסר ערך / חוסר שייכות. הסבר את המנגנון.
+
+**3. דפוסי שפה לטיפול**
+סרוק הכללות (תמיד/אף פעם/כולם), חוקים פנימיים (חייבת/אסור), סיבתיות (כי...). ציטט ישירות.
+
+**4. שאלות ערעור מומלצות**
+3 שאלות כירורגיות מוכנות לשאול בפגישה — ממוקדות לאמונה הספציפית שלה.
+
+**5. עוגני כוח**
+מה שכתבה שמראה על משאבים, חוזק, מוטיבציה. ציטט ישירות.
+
+**6. אזהרות אקולוגיות**
+מה היא מפחדת לאבד? איפה עלולה לצוץ התנגדות? מה לשים לב אליו בפגישה.
+
+**7. הרגע הפגיע שלה**
+מתי ביום הכי קשה לה — ואיך לבנות את החיסון הנכון.`
+
+        const msg = await client.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 2000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+        return Response.json({ result: msg.content[0].text })
+      }
+
+      if (outputType === 'clientDoc') {
+        // ── פלט ללקוחה — מסמך שיקוף תמציתי ומבני ──
+        const { sessionNotes } = body
+        const prompt = `אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. צור "מסמך שיקוף אישי" ללקוחה ${clientName} אחרי פגישת "מטרה מוגדרת כהלכה".
+
+תשובות הלקוחה לפני הפגישה:
+חזון: ${answers.vision_see || ''} | ${answers.vision_hear || ''} | ${answers.vision_feel || ''}
+אקולוגיה: ${answers.ecology_keep || ''} | ${answers.ecology_harmony || ''}
+אמונות: ${answers.belief_hard || ''} | ${answers.belief_when || ''}
+חיסונים: ${answers.vaccine_moment || ''} | ${answers.vaccine_action || ''} | ${answers.vaccine_anchor || ''}
+
+${sessionNotes ? 'מה גילינו בפגישה (מאתי): ' + sessionNotes : ''}
+
+כתוב מסמך שיקוף אישי בעברית, בגוף שני נקבה, קצר ומבני. מבנה קבוע:
+
+🧭 המטרה שלך
+[משפט אחד — המטרה שלה מנוסחת בחיוב, בלשון הווה]
+
+✨ החזון שלך
+[2-3 משפטים — תיאור חושי של הבוקר שבו השינוי קרה, בשפתה שלה]
+
+💡 מה גילינו יחד
+[2 משפטים — האמונה שפירקנו והתובנה החדשה. ציטט ממה שכתבה]
+
+🛡️ החיסון שלך
+פעולה: [הפעולה שהתחייבה]
+עוגן: "[משפט העוגן שלה]"
+
+💚 ההבטחה שלך לעצמך
+[משפט אחד — בשפתה, מעצים]
+
+קצר. ממוקד. בשפתה שלה. ללא מבוא וללא סיכום.`
+
+        const msg = await client.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 800,
+          messages: [{ role: 'user', content: prompt }]
+        })
+        return Response.json({ result: msg.content[0].text })
+      }
+    }
     if (logs && !mode) {
       const gender = body.gender || 'נקבה'
       const isMale = gender === 'זכר'
