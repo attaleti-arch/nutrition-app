@@ -255,11 +255,83 @@ export default function ReportPage() {
           </div>
         )}
 
-        {/* תוכן הדוח */}
-        {reportText ? (
-          <div style={{ background: '#fff', borderRadius: 16, padding: '20px 18px', border: '1.5px solid #e0d5c5' }}>
-            <div style={{ fontWeight: 800, fontSize: 15, color: '#3a7a6e', marginBottom: 16 }}>📋 הניתוח האישי שלך</div>
-            {reportText.split('\n').map(function(line, i) {
+      <div style={{ fontWeight: 800, fontSize: 15, color: '#3a7a6e', marginBottom: 16 }}>
+  📋 הניתוח האישי שלך
+</div>
+{reportText.split(/\n\s*--\s*\n/).map(function(section, index) {
+  const colors = [
+    { color: '#16a34a', light: '#f0fdf4' },
+    { color: '#0284c7', light: '#eff6ff' },
+    { color: '#9333ea', light: '#faf5ff' },
+    { color: '#dc2626', light: '#fef2f2' },
+    { color: '#d97706', light: '#fffbeb' },
+    { color: '#0d9488', light: '#f0fdfa' }
+  ]
+  const c = colors[index % colors.length]
+  return (
+    <div
+      key={index}
+      style={{
+        background: c.light,
+        borderRadius: 14,
+        padding: '18px 16px',
+        marginBottom: 14,
+        borderTop: `5px solid ${c.color}`,
+        boxShadow: `0 4px 12px ${c.color}20`
+      }}
+    >
+      {section.split('\n').map(function(line, i) {
+        if (!line.trim()) return <div key={i} style={{ height: 6 }} />
+        if (line.startsWith('**') && line.endsWith('**')) {
+          return (
+            <div
+              key={i}
+              style={{
+                fontWeight: 800,
+                fontSize: 15,
+                color: c.color,
+                margin: '12px 0 6px'
+              }}
+            >
+              {line.replace(/\*\*/g, '')}
+            </div>
+          )
+        }
+        if (line.startsWith('*') || line.startsWith('-') || line.startsWith('•')) {
+          return (
+            <div
+              key={i}
+              style={{
+                display: 'flex',
+                gap: 8,
+                padding: '4px 0',
+                fontSize: 14,
+                color: '#374151',
+                lineHeight: 1.6
+              }}
+            >
+              <span style={{ color: c.color }}>•</span>
+              <span>{line.replace(/^[*\-•]\s*/, '')}</span>
+            </div>
+          )
+        }
+        return (
+          <div
+            key={i}
+            style={{
+              fontSize: 14,
+              color: '#374151',
+              lineHeight: 1.8,
+              marginBottom: 4
+            }}
+          >
+            {line}
+          </div>
+        )
+      })}
+    </div>
+  )
+})}
               if (!line.trim()) return <div key={i} style={{ height: 8 }} />
               if (line.startsWith('**') && line.endsWith('**')) {
                 return <div key={i} style={{ fontWeight: 800, fontSize: 15, color: '#3a7a6e', margin: '16px 0 8px' }}>
