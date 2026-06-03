@@ -12,6 +12,41 @@ const ACTIVITY_MULT = {
   'יושבני': 1.2, 'קל': 1.375, 'בינוני': 1.55, 'פעיל': 1.725, 'מאוד פעיל': 1.9
 }
 
+// טווחים תקינים לפי שדות blood_tests ב-client_profiles
+const BLOOD_RANGES = {
+  glucose: { name: 'סוכר בצום', min: 70, max: 100, unit: 'mg/dL' },
+  hba1c: { name: 'המוגלובין A1C', min: 0, max: 5.7, unit: '%' },
+  cholesterol: { name: 'כולסטרול כללי', min: 0, max: 200, unit: 'mg/dL' },
+  hdl: { name: 'HDL טוב', min: 60, max: 999, unit: 'mg/dL' },
+  ldl: { name: 'LDL רע', min: 0, max: 100, unit: 'mg/dL' },
+  triglycerides: { name: 'טריגליצרידים', min: 0, max: 150, unit: 'mg/dL' },
+  hemoglobin: { name: 'המוגלובין', min: 12, max: 16, unit: 'g/dL' },
+  ferritin: { name: 'פריטין', min: 12, max: 150, unit: 'ng/mL' },
+  iron: { name: 'ברזל', min: 60, max: 170, unit: 'µg/dL' },
+  vitamin_b12: { name: 'ויטמין B12', min: 200, max: 900, unit: 'pg/mL' },
+  vitamin_d: { name: 'ויטמין D', min: 30, max: 100, unit: 'ng/mL' },
+  tsh: { name: 'TSH', min: 0.4, max: 4.0, unit: 'mIU/L' },
+  crp: { name: 'CRP דלקת', min: 0, max: 1.0, unit: 'mg/L' },
+  insulin: { name: 'אינסולין', min: 2, max: 25, unit: 'µIU/mL' },
+  zinc: { name: 'אבץ', min: 70, max: 120, unit: 'µg/dL' },
+  magnesium: { name: 'מגנזיום', min: 1.7, max: 2.2, unit: 'mg/dL' },
+}
+
+function getAbnormalTests(bloodTestsJson) {
+  if (!bloodTestsJson) return []
+  var result = []
+  Object.entries(bloodTestsJson).forEach(function([key, val]) {
+    var range = BLOOD_RANGES[key]
+    if (!range || !val || val === '') return
+    var num = parseFloat(val)
+    if (isNaN(num)) return
+    if (num < range.min || num > range.max) {
+      result.push({ key, name: range.name, value: num, min: range.min, max: range.max, unit: range.unit })
+    }
+  })
+  return result
+}
+
 function calcTargets(client) {
   if (!client || !client.weight || !client.height || !client.age) return null
   var bmr = client.gender === 'זכר'
@@ -26,9 +61,7 @@ function calcTargets(client) {
     protein: Math.round((calories * split.protein / 100) / 4),
     carbs: Math.round((calories * split.carbs / 100) / 4),
     fat: Math.round((calories * split.fat / 100) / 9),
-    proteinPct: split.protein,
-    carbsPct: split.carbs,
-    fatPct: split.fat,
+    proteinPct: split.protein, carbsPct: split.carbs, fatPct: split.fat,
   }
 }
 
@@ -36,12 +69,7 @@ function calcNutrition(log, nutritionData) {
   var total = { calories: 0, protein: 0, fat: 0, fiber: 0 }
   function add(id) {
     var item = nutritionData[id]
-    if (item) {
-      total.calories += item.calories || 0
-      total.protein += item.protein || 0
-      total.fat += item.fat || 0
-      total.fiber += item.fiber || 0
-    }
+    if (item) { total.calories += item.calories || 0; total.protein += item.protein || 0; total.fat += item.fat || 0; total.fiber += item.fiber || 0 }
   }
   if (log.had_snack) add('snack')
   if (log.checks) Object.keys(log.checks).forEach(function(id) { if (log.checks[id]) add(id) })
@@ -77,11 +105,7 @@ function MacroPieChart({ actual, target }) {
     var radius = innerRadius + (outerRadius - innerRadius) * 0.5
     var x = cx + radius * Math.cos(-midAngle * RADIAN)
     var y = cy + radius * Math.sin(-midAngle * RADIAN)
-    return (
-      <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={800}>
-        {value}%
-      </text>
-    )
+    return <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={800}>{value}%</text>
   }
 
   return (
@@ -143,78 +167,32 @@ function NutritionBar({ label, value, max, color }) {
   )
 }
 
-function BloodTestBar({ test }) {
-  const rawPct =
-    ((test.result - test.min) /
-      (test.max - test.min)) * 100
-
-  const percentage = Math.min(
-    100,
-    Math.max(0, rawPct)
-  )
-
+function AbnormalBloodBar({ test }) {
+  // מציג רק חריגות — בר אדום
+  var pct = Math.min(100, Math.max(0, ((test.value - test.min) / (test.max - test.min)) * 100))
+  var isHigh = test.value > test.max
   return (
-    <div
-      style={{
-        marginBottom: 14,
-        background: '#fff',
-        padding: 14,
-        borderRadius: 12,
-        border: '1.5px solid #fecaca'
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          marginBottom: 6,
-          fontSize: 13,
-          fontWeight: 700,
-          color: '#dc2626'
-        }}
-      >
-        <span>{test.test_name}</span>
-        <span>{test.result}</span>
+    <div style={{ marginBottom: 12, background: '#fff', padding: '12px 14px', borderRadius: 12, border: '1.5px solid #fecaca' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5, fontSize: 13 }}>
+        <span style={{ fontWeight: 700, color: '#dc2626' }}>{test.name}</span>
+        <span style={{ fontWeight: 800, color: '#dc2626' }}>{test.value} {test.unit}</span>
       </div>
-
-      <div
-        style={{
-          height: 8,
-          background: '#f3f4f6',
-          borderRadius: 99,
-          overflow: 'hidden'
-        }}
-      >
-        <div
-          style={{
-            width: percentage + '%',
-            height: '100%',
-            background: '#dc2626',
-            transition: 'width 0.6s ease'
-          }}
-        />
+      <div style={{ height: 7, background: '#f3f4f6', borderRadius: 99, overflow: 'hidden' }}>
+        <div style={{ width: pct + '%', height: '100%', background: '#dc2626', borderRadius: 99, transition: 'width 0.6s ease' }} />
       </div>
-
-      <div
-        style={{
-          marginTop: 6,
-          fontSize: 12,
-          color: '#dc2626',
-          fontWeight: 600
-        }}
-      >
-        ⚠ חריגה מהטווח התקין
+      <div style={{ marginTop: 5, fontSize: 11, color: '#dc2626', fontWeight: 600 }}>
+        ⚠️ {isHigh ? 'גבוה מהטווח התקין' : 'נמוך מהטווח התקין'} · טווח: {test.min}–{test.max}
       </div>
     </div>
   )
 }
+
 export default function ReportPage() {
   const [client, setClient] = useState(null)
   const [profile, setProfile] = useState(null)
   const [logs, setLogs] = useState([])
   const [nutritionData, setNutritionData] = useState({})
   const [loading, setLoading] = useState(true)
-  const [bloodTests, setBloodTests] = useState([])
   const [isPreview, setIsPreview] = useState(false)
 
   useEffect(function() {
@@ -229,18 +207,12 @@ export default function ReportPage() {
       var { data: profileData } = await supabase.from('client_profiles').select('*').eq('client_password', clientPassword).maybeSingle()
       var { data: logsData } = await supabase.from('daily_logs').select('*').eq('client_name', clientPassword).order('log_date', { ascending: false }).limit(14)
       var { data: nd } = await supabase.from('nutrition_data').select('*')
-      var { data: labsData } = await supabase
-  .from('blood_tests')
-  .select('*')
-  .eq('client_id', clientData?.id)
-
       var nutritionMap = {}
       if (nd) nd.forEach(function(item) { nutritionMap[item.id] = item })
       setClient(clientData)
       setProfile(profileData)
       setLogs(logsData || [])
       setNutritionData(nutritionMap)
-      setBloodTests(labsData || [])
       setLoading(false)
     }
     load()
@@ -275,234 +247,118 @@ export default function ReportPage() {
     }
   })() : null
 
-var reportText = profile?.ai_report || ''
+  var reportText = profile?.ai_report || ''
+  // ✅ שואב חריגות מ-client_profiles.blood_tests (לא מטבלה נפרדת)
+  var abnormalTests = getAbnormalTests(profile?.blood_tests)
 
-const abnormalTests = bloodTests.filter(function(t) {
-  if (t.min == null || t.max == null) return false
-  return t.result < t.min || t.result > t.max
-})
+  const SECTION_COLORS = [
+    { color: '#16a34a', light: '#f0fdf4' },
+    { color: '#0284c7', light: '#eff6ff' },
+    { color: '#9333ea', light: '#faf5ff' },
+    { color: '#dc2626', light: '#fef2f2' },
+    { color: '#d97706', light: '#fffbeb' },
+    { color: '#0d9488', light: '#f0fdfa' },
+  ]
 
-return (
-  <div style={{
-    minHeight: '100vh',
-    background: '#f5f0e8',
-    direction: 'rtl',
-    fontFamily: 'sans-serif'
-  }}>
+  return (
+    <div style={{ minHeight: '100vh', background: '#f5f0e8', direction: 'rtl', fontFamily: 'sans-serif' }}>
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(16px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .report-section { animation: fadeInUp 0.5s ease forwards; }
+        @media print { button { display: none !important; } }
+      `}</style>
 
-    <style>{`
-      @keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(15px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-      @media print {
-        button { display: none !important; }
-      }
-    `}</style>
-
-    {!isPreview && (
-      <div style={{ textAlign: 'center', padding: 12 }}>
-        <button
-          onClick={() => window.print()}
-          style={{
-            background: '#3a7a6e',
-            color: '#fff',
-            padding: '8px 18px',
-            borderRadius: 8,
-            border: 'none',
-            cursor: 'pointer',
-            fontWeight: 700
-          }}
-        >
-          📄 הורדה כ‑PDF
-        </button>
-      </div>
-    )}
-
+      {/* כפתור סגירה — preview בלבד */}
       {isPreview && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
-          background: '#0f4c2a', padding: '10px 16px',
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
-        }}>
-          <span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>
-            👁️ תצוגה מקדימה — הלקוחה עדיין לא רואה
-          </span>
-          <button
-            onClick={() => window.close()}
-            style={{ background: '#fff', color: '#0f4c2a', border: 'none', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}
-          >
-            ✕ סגרי
-          </button>
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999, background: '#0f4c2a', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+          <span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>👁️ תצוגה מקדימה — הלקוחה עדיין לא רואה</span>
+          <button onClick={() => window.close()} style={{ background: '#fff', color: '#0f4c2a', border: 'none', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}>✕ סגרי</button>
         </div>
       )}
 
-      <div style={{
-        background: 'linear-gradient(160deg, #f8f4ef, #ede6db)',
-        padding: isPreview ? '60px 20px 24px' : '28px 20px 24px',
-        textAlign: 'center',
-        borderBottom: '2px solid #e0d5c5'
-      }}>
-        <img src="/logo.png" alt="בין הראש לצלחת" style={{ height: 80, width: 'auto', marginBottom: 8 }} />
-        <div style={{ fontFamily: 'serif', fontSize: 22, fontWeight: 900, color: '#3a7a6e', marginBottom: 4 }}>
-          🌿 הדוח האישי של {client.name}
+      {!isPreview && (
+        <div style={{ textAlign: 'center', padding: 12 }}>
+          <button onClick={() => window.print()} style={{ background: '#3a7a6e', color: '#fff', padding: '8px 18px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700 }}>📄 הורדה כ־PDF</button>
         </div>
-        <div style={{ fontSize: 13, color: '#9a8a7a' }}>
-          {new Date().toLocaleDateString('he-IL')}
-        </div>
+      )}
+
+      {/* כותרת */}
+      <div style={{ background: 'linear-gradient(160deg, #f8f4ef, #ede6db)', padding: isPreview ? '60px 20px 24px' : '28px 20px 24px', textAlign: 'center', borderBottom: '2px solid #e0d5c5' }}>
+        <img src="/logo.png" alt="בין הראש לצלחת" style={{ height: 80, width: 'auto', marginBottom: 8, objectFit: 'contain' }} />
+        <div style={{ fontFamily: 'serif', fontSize: 22, fontWeight: 900, color: '#3a7a6e', marginBottom: 4 }}>🌿 הדוח האישי של {client.name}</div>
+        <div style={{ fontSize: 13, color: '#9a8a7a' }}>{new Date().toLocaleDateString('he-IL')}</div>
       </div>
 
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 16px 60px' }}>
 
-        {avgNutrition && (
-          <MacroPieChart actual={avgNutrition} target={targets} />
-        )}
+        {/* גרף תזונה */}
+        {avgNutrition && <MacroPieChart actual={avgNutrition} target={targets} />}
 
+        {/* פסי תזונה */}
         {avgNutrition && targets && (
           <div style={{ background: '#fff', borderRadius: 16, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #e0d5c5' }}>
-            <div style={{ fontWeight: 800, fontSize: 14, color: '#3a7a6e', marginBottom: 12 }}>
-              📈 ממוצע שבועי מול יעד
-            </div>
+            <div style={{ fontWeight: 800, fontSize: 14, color: '#3a7a6e', marginBottom: 12 }}>📈 ממוצע שבועי מול יעד</div>
             <NutritionBar label="קלוריות" value={avgNutrition.calories} max={targets.calories} color="#f97316" />
             <NutritionBar label="חלבון (g)" value={avgNutrition.protein} max={targets.protein} color="#16a34a" />
             <NutritionBar label="שומן (g)" value={avgNutrition.fat} max={targets.fat} color="#9333ea" />
           </div>
         )}
 
-{abnormalTests.length > 0 && (
-  <div style={{
-    background: '#fef2f2',
-    borderRadius: 16,
-    padding: '16px 18px',
-    marginBottom: 16,
-    border: '1.5px solid #fecaca'
-  }}>
-    <div style={{
-      fontWeight: 800,
-      fontSize: 14,
-      color: '#dc2626',
-      marginBottom: 12
-    }}>
-      ⚠ בדיקות דם הדורשות התייחסות
-    </div>
+        {/* ✅ בדיקות חורגות בלבד — נשלף מ-client_profiles.blood_tests */}
+        {abnormalTests.length > 0 && (
+          <div style={{ background: '#fef2f2', borderRadius: 16, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #fecaca' }}>
+            <div style={{ fontWeight: 800, fontSize: 14, color: '#dc2626', marginBottom: 12 }}>🩸 בדיקות הדורשות התייחסות</div>
+            {abnormalTests.map(function(t, i) { return <AbnormalBloodBar key={i} test={t} /> })}
+          </div>
+        )}
 
-    {abnormalTests.map(function(t, i) {
-      return <BloodTestBar key={i} test={t} />
-    })}
-  </div>
-)}
+        {/* ניתוח אישי עם מקטעי צבע */}
         {reportText ? (
-          <div style={{ background: '#fff', borderRadius: 16, padding: '20px 18px', border: '1.5px solid #e0d5c5' }}>
-            <div style={{ fontWeight: 800, fontSize: 15, color: '#3a7a6e', marginBottom: 16 }}>
-              📋 הניתוח האישי שלך
+          <div style={{ borderRadius: 16, overflow: 'hidden' }}>
+            <div style={{ background: '#fff', padding: '16px 18px 8px', border: '1.5px solid #e0d5c5', borderBottom: 'none', borderRadius: '16px 16px 0 0' }}>
+              <div style={{ fontWeight: 800, fontSize: 15, color: '#3a7a6e', marginBottom: 4 }}>📋 הניתוח האישי שלך</div>
             </div>
-
             {reportText.split(/\n\s*--\s*\n/).map(function(section, index) {
-
-              const colors = [
-                { color: '#16a34a', light: '#f0fdf4' },
-                { color: '#0284c7', light: '#eff6ff' },
-                { color: '#9333ea', light: '#faf5ff' },
-                { color: '#dc2626', light: '#fef2f2' },
-                { color: '#d97706', light: '#fffbeb' },
-                { color: '#0d9488', light: '#f0fdfa' }
-              ]
-
-              const c = colors[index % colors.length]
-
+              var c = SECTION_COLORS[index % SECTION_COLORS.length]
+              var lines = section.trim().split('\n')
+              var firstLine = lines[0].trim()
+              var isBoldTitle = /^\*\*.*\*\*/.test(firstLine)
+              var title = isBoldTitle ? firstLine.replace(/\*\*/g, '').trim() : ''
+              var body = isBoldTitle ? lines.slice(1).join('\n').trim() : section.trim()
               return (
-  <div
-    key={index}
-    style={{
-      background: c.light,
-      borderRadius: 14,
-      padding: '18px 16px',
-      marginBottom: 14,
-      borderTop: `5px solid ${c.color}`,
-      boxShadow: `0 4px 12px ${c.color}20`,
-      animation: 'fadeInUp 0.6s ease forwards',
-      animationDelay: `${index * 0.08}s`,
-      opacity: 0
-    }}
-  >
-
-                  {section.split('\n').map(function(line, i) {
-
+                <div key={index} className="report-section" style={{ background: c.light, padding: '16px 18px', marginBottom: 3, borderTop: `4px solid ${c.color}`, animationDelay: index * 0.08 + 's' }}>
+                  {title && <div style={{ fontWeight: 900, fontSize: 15, color: c.color, marginBottom: 8 }}>{title}</div>}
+                  {body.split('\n').map(function(line, i) {
                     if (!line.trim()) return <div key={i} style={{ height: 6 }} />
-
-                    if (line.startsWith('**') && line.endsWith('**')) {
-                      return (
-                        <div
-                          key={i}
-                          style={{
-                            fontWeight: 800,
-                            fontSize: 15,
-                            color: c.color,
-                            margin: '12px 0 6px'
-                          }}
-                        >
-                          {line.replace(/\*\*/g, '')}
-                        </div>
-                      )
-                    }
-
                     if (line.startsWith('*') || line.startsWith('-') || line.startsWith('•')) {
-                      return (
-                        <div
-                          key={i}
-                          style={{
-                            display: 'flex',
-                            gap: 8,
-                            padding: '4px 0',
-                            fontSize: 14,
-                            color: '#374151',
-                            lineHeight: 1.6
-                          }}
-                        >
-                          <span style={{ color: c.color, flexShrink: 0 }}>•</span>
-                          <span>{line.replace(/^[*\-•]\s*/, '')}</span>
-                        </div>
-                      )
-                    }
-
-                    return (
-                      <div
-                        key={i}
-                        style={{
-                          fontSize: 14,
-                          color: '#374151',
-                          lineHeight: 1.8,
-                          marginBottom: 4
-                        }}
-                      >
-                        {line}
+                      return <div key={i} style={{ display: 'flex', gap: 8, padding: '3px 0', fontSize: 14, color: '#374151', lineHeight: 1.6 }}>
+                        <span style={{ color: c.color, flexShrink: 0 }}>•</span>
+                        <span>{line.replace(/^[*\-•]\s*/, '')}</span>
                       </div>
-                    )
+                    }
+                    return <div key={i} style={{ fontSize: 14, color: '#374151', lineHeight: 1.8, marginBottom: 3 }}
+                      dangerouslySetInnerHTML={{ __html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
                   })}
                 </div>
               )
             })}
+            <div style={{ height: 4, background: '#e0d5c5', borderRadius: '0 0 16px 16px' }} />
           </div>
         ) : (
           <div style={{ background: '#fff', borderRadius: 16, padding: 40, textAlign: 'center', border: '1.5px solid #e0d5c5' }}>
             <div style={{ fontSize: 40, marginBottom: 12 }}>🌱</div>
-            <div style={{ fontSize: 15, color: '#9a8a7a' }}>
-              הדוח האישי שלך בהכנה — אתי תשלח בקרוב
-            </div>
+            <div style={{ fontSize: 15, color: '#9a8a7a' }}>הדוח האישי שלך בהכנה — אתי תשלח בקרוב</div>
           </div>
         )}
 
+        {/* footer */}
         <div style={{ textAlign: 'center', marginTop: 24, padding: '16px', borderTop: '1px solid #e0d5c5' }}>
-          <div style={{ fontSize: 13, color: '#9a8a7a' }}>
-            <strong style={{ color: '#3a7a6e' }}>אתי אטל</strong> · יועצת בריאות ותזונה התנהגותית
-          </div>
-          <div style={{ fontSize: 12, color: '#9a8a7a', marginTop: 4 }}>
-            052-333-6766 · Attal.eti@gmail.com
-          </div>
-          <div style={{ fontSize: 11, color: '#c4a882', marginTop: 8 }}>
-            בין הראש לצלחת ©️ 2026
-          </div>
+          <div style={{ fontSize: 13, color: '#9a8a7a' }}><strong style={{ color: '#3a7a6e' }}>אתי אטל</strong> · יועצת בריאות ותזונה התנהגותית</div>
+          <div style={{ fontSize: 12, color: '#9a8a7a', marginTop: 4 }}>052-333-6766 · Attal.eti@gmail.com</div>
+          <div style={{ fontSize: 11, color: '#c4a882', marginTop: 8 }}>בין הראש לצלחת ©️ 2026</div>
         </div>
       </div>
     </div>
