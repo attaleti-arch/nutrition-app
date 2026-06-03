@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 
-export const maxDuration = 60
+export const maxDuration = 300
 
 const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -536,22 +536,33 @@ ${sessionNotes ? 'מה גילינו בפגישה (מאתי): ' + sessionNotes : 
         + 'סגנון: אינטימי, מעצים, רגיש ומלא אהבה — כמו שיחה אישית עמוקה עם חברה טובה, ללא טון רפואי מנוכר, ללא טבלאות.\n'
         + 'חובה: עברית תקנית בלבד. "את" ולא "אתת". אל תמציאי פרטים. אל תכתבי כותרת ראשית בתחילת התשובה — התחילי ישר עם הסעיף הראשון.\n'
         + 'כללי מבנה: כל סעיף 3-4 משפטים (בדיקות עד 5). כל משפט שלם וסגור.\n'
-        + 'פורמט קבוע: כל סעיף מתחיל בכותרת **אמוג׳י כותרת** ואחריה תוכן. בין סעיפים — שורה ריקה בלבד.\n\n'
+        + 'פורמט קבוע: כל סעיף מתחיל בכותרת **אמוג׳י כותרת** ואחריה תוכן. בין סעיפים — שורה ריקה ואז -- ואז שורה ריקה.\n\n'
 
       const [msg1, msg2] = await Promise.all([
         client.messages.create({
           model: 'claude-sonnet-4-6',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בדיוק:\n\n**✨ הקווים הזוהרים שלך**\n\n**🔍 מה באמת קורה**\n\n' + athleteSection }]
+          max_tokens: 1200,
+          messages: [{ role: 'user', content: systemPrompt + baseData
+            + '\nכתבי 3 סעיפים בדיוק, עם -- כמפריד בין כל סעיף:\n\n'
+            + '**✨ הקווים הזוהרים שלך**\n\n--\n\n'
+            + '**🔍 מה באמת קורה**\n\n--\n\n'
+            + athleteSection
+          }]
         }),
         client.messages.create({
           model: 'claude-sonnet-4-6',
-          max_tokens: 1400,
-          messages: [{ role: 'user', content: systemPrompt + baseData + '\nכתבי 3 סעיפים בדיוק:\n\n**🩺 מה אומרות הבדיקות**\nלכל ערך חריג: שם + ערך + הסבר + המלצה. אם יש חריגות נוספות (IgG, FLC וכו) — חובה לציין. אם דורש רופא — ציינו.\n\n**🥗 המלצות תזונה ותוספים**\n\n**🎯 3 צעדים למחר** (ממוספרים, ריאליסטיים' + stepsNote + ')' }]
+          max_tokens: 1600,
+          messages: [{ role: 'user', content: systemPrompt + baseData
+            + '\nכתבי 3 סעיפים בדיוק, עם -- כמפריד בין כל סעיף:\n\n'
+            + '**🩺 מה אומרות הבדיקות**\n'
+            + 'לכל ערך חריג: שם + ערך + הסבר + המלצה. אם יש חריגות נוספות (IgG, FLC וכו) — חובה לציין. אם דורש רופא — ציינו.\n\n--\n\n'
+            + '**🥗 המלצות תזונה ותוספים**\n\n--\n\n'
+            + '**🎯 3 צעדים למחר**\n(ממוספרים, ריאליסטיים' + stepsNote + ')'
+          }]
         })
       ])
 
-      return Response.json({ result: msg1.content[0].text.trim() + '\n\n' + msg2.content[0].text.trim() })
+      return Response.json({ result: msg1.content[0].text.trim() + '\n\n--\n\n' + msg2.content[0].text.trim() })
     }
 
     return Response.json({ result: 'לא התקבלו נתונים' })
