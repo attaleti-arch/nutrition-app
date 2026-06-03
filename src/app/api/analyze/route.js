@@ -543,7 +543,7 @@ ${sessionNotes ? 'מה גילינו בפגישה (מאתי): ' + sessionNotes : 
       const [msg1, msg2] = await Promise.all([
         client.messages.create({
           model: 'claude-sonnet-4-6',
-          max_tokens: 1200,
+          max_tokens: 1600,
           messages: [{ role: 'user', content: systemPrompt + baseData
             + '\nכתבי 3 סעיפים בדיוק, עם -- כמפריד בין כל סעיף:\n\n'
             + '**✨ הקווים הזוהרים שלך**\n\n--\n\n'
@@ -553,7 +553,7 @@ ${sessionNotes ? 'מה גילינו בפגישה (מאתי): ' + sessionNotes : 
         }),
         client.messages.create({
           model: 'claude-sonnet-4-6',
-          max_tokens: 1600,
+          max_tokens: 2000,
           messages: [{ role: 'user', content: systemPrompt + baseData
             + '\nכתבי 3 סעיפים בדיוק, עם -- כמפריד בין כל סעיף:\n\n'
             + '**🩺 מה אומרות הבדיקות**\n'
