@@ -397,7 +397,7 @@ function FeedbackCard({ feedback, clientName, logDate, onOpenFull }) {
     <div style={{ direction: 'rtl', marginBottom: 12 }}>
       <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '16px 18px', marginBottom: 10, color: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-          <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+          <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
           <div>
             <div style={{ fontWeight: 900, fontSize: 15 }}>משוב אישי מאתי 💚</div>
             <div style={{ fontSize: 11, color: '#86efac' }}>{logDate} · אתי אטל</div>
@@ -1030,7 +1030,7 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
             <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontWeight: 900, fontSize: 15 }}>המשוב האישי שלך 💚</div>
                   <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · {today} · אתי אטל</div>
@@ -1038,8 +1038,8 @@ export default function PlanApp({ clientName, userPassword }) {
               </div>
             </div>
             {(() => {
-              // מפצל לפי שורה ריקה לפני כותרת בולד (עם או בלי אמוגי)
-              const rawSections = feedback.split(/\n\n+(?=\*\*[^\n*]+\*\*)/)
+              // מפצל לפי המפריד -- שה-route שולח בין סעיפים
+              const rawSections = feedback.split(/\n\s*--\s*\n/)
               const SECTION_COLORS = [
                 { bg: '#f0fdf4', border: '#16a34a', title: '#15803d' },
                 { bg: '#eff6ff', border: '#2563eb', title: '#1d4ed8' },
@@ -1051,11 +1051,13 @@ export default function PlanApp({ clientName, userPassword }) {
                 { bg: '#fdf4ff', border: '#a21caf', title: '#86198f' },
               ]
               return rawSections.map((section, i) => {
-                const lines = section.trim().split('\n')
+                const trimmed = section.trim()
+                if (!trimmed) return null
+                const lines = trimmed.split('\n')
                 const firstLine = lines[0].trim()
                 const isBoldTitle = /^\*\*.*\*\*/.test(firstLine)
                 const title = isBoldTitle ? firstLine.replace(/\*\*/g, '').trim() : ''
-                const body = isBoldTitle ? lines.slice(1).join('\n').trim() : section.trim()
+                const body = isBoldTitle ? lines.slice(1).join('\n').trim() : trimmed
                 const c = SECTION_COLORS[i % SECTION_COLORS.length]
                 if (!body && !title) return null
                 return (
@@ -1075,9 +1077,9 @@ export default function PlanApp({ clientName, userPassword }) {
       {/* ✅ מדריך HTML — overlay עם סגירה */}
       {guideUrl && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: '#fff', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#0f4c2a', color: '#fff' }}>
-            <button onClick={() => setGuideUrl(null)} style={{ padding: '8px 18px', borderRadius: 10, background: '#fff', color: '#0f4c2a', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>✕ סגרי</button>
-            <span style={{ fontWeight: 700, fontSize: 14 }}>בין הראש לצלחת</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: '#0f4c2a', color: '#fff', flexShrink: 0 }}>
+            <button onClick={() => setGuideUrl(null)} style={{ padding: '7px 16px', borderRadius: 8, background: '#fff', color: '#0f4c2a', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 13 }}>✕ סגרי</button>
+            <img src="/logo.png" alt="בין הראש לצלחת" style={{ height: 32, width: 'auto', objectFit: 'contain' }} onError={e => { e.target.style.display='none' }} />
           </div>
           <iframe src={guideUrl} style={{ flex: 1, border: 'none', width: '100%' }} title="מדריך" />
         </div>
@@ -1102,7 +1104,7 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
             <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontWeight: 900, fontSize: 15 }}>הניתוח האישי שלך 💚</div>
                   <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · אתי אטל</div>
@@ -1141,7 +1143,7 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
             <div style={{ background: 'linear-gradient(135deg,#7c3aed,#9333ea)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'cover', border: '2px solid #e9d5ff', background: '#fff', flexShrink: 0 }} />
+                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #e9d5ff', background: '#fff', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontWeight: 900, fontSize: 15 }}>המטרה שלך — מסע התוצאה 🧭</div>
                   <div style={{ fontSize: 11, color: '#e9d5ff' }}>{displayName.split(' ')[0]} · אתי אטל</div>
