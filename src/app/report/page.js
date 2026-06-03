@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
- 
+
 const GOALS_SPLIT = {
   'ירידה במשקל': { protein: 40, carbs: 30, fat: 30 },
   'שמירה על משקל': { protein: 30, carbs: 40, fat: 30 },
@@ -52,7 +52,6 @@ function calcNutrition(log, nutritionData) {
   return total
 }
 
-// ── גרף טבעת עם אחוזים קבועים ──
 function MacroPieChart({ actual, target }) {
   var actualData = [
     { name: 'חלבון', value: actual.proteinPct || 0, color: '#16a34a' },
@@ -199,27 +198,43 @@ export default function ReportPage() {
   })() : null
 
   var reportText = profile?.ai_report || ''
-  var sections = reportText.split(/\*\*([^*]+)\*\*/).filter(Boolean)
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f0e8', direction: 'rtl', fontFamily: 'sans-serif' }}>
 
+      {/* ✅ כפתור סגירה — רק במצב preview */}
+      {isPreview && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+          background: '#0f4c2a', padding: '10px 16px',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
+        }}>
+          <span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>
+            👁️ תצוגה מקדימה — הלקוחה עדיין לא רואה
+          </span>
+          <button
+            onClick={() => window.close()}
+            style={{ background: '#fff', color: '#0f4c2a', border: 'none', borderRadius: 8, padding: '6px 16px', fontSize: 13, fontWeight: 800, cursor: 'pointer' }}
+          >
+            ✕ סגרי
+          </button>
+        </div>
+      )}
+
       {/* HEADER */}
-      <div style={{ background: 'linear-gradient(160deg, #f8f4ef, #ede6db)', padding: '28px 20px 24px', textAlign: 'center', borderBottom: '2px solid #e0d5c5', position: 'relative' }}>
-        {isPreview && (
-          <div style={{ background: '#fef3c7', border: '1.5px solid #fcd34d', borderRadius: 10, padding: '8px 14px', marginBottom: 16, fontSize: 13, color: '#92400e', fontWeight: 700 }}>
-            👁️ תצוגה מקדימה — הלקוחה עדיין לא רואה את זה
-          </div>
-        )}
+      <div style={{
+        background: 'linear-gradient(160deg, #f8f4ef, #ede6db)',
+        padding: isPreview ? '60px 20px 24px' : '28px 20px 24px',
+        textAlign: 'center',
+        borderBottom: '2px solid #e0d5c5'
+      }}>
         <img src="/logo.png" alt="בין הראש לצלחת" style={{ height: 80, width: 'auto', marginBottom: 8 }} />
         <div style={{ fontFamily: 'serif', fontSize: 22, fontWeight: 900, color: '#3a7a6e', marginBottom: 4 }}>
           🌿 הדוח האישי של {client.name}
         </div>
         <div style={{ fontSize: 13, color: '#9a8a7a' }}>
           {new Date().toLocaleDateString('he-IL')}
-        </div>
-        <div style={{ display: 'inline-block', background: '#4a9b8e', color: '#fff', fontSize: 12, fontWeight: 600, padding: '4px 16px', borderRadius: 99, marginTop: 10 }}>
-          תצוגה מקדימה — הלקוחה עדיין לא רואה ✨
         </div>
       </div>
 
@@ -247,7 +262,7 @@ export default function ReportPage() {
             {reportText.split('\n').map(function(line, i) {
               if (!line.trim()) return <div key={i} style={{ height: 8 }} />
               if (line.startsWith('**') && line.endsWith('**')) {
-                return <div key={i} style={{ fontWeight: 800, fontSize: 15, color: '#3a7a6e', margin: '16px 0 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                return <div key={i} style={{ fontWeight: 800, fontSize: 15, color: '#3a7a6e', margin: '16px 0 8px' }}>
                   {line.replace(/\*\*/g, '')}
                 </div>
               }
@@ -273,7 +288,7 @@ export default function ReportPage() {
             <strong style={{ color: '#3a7a6e' }}>אתי אטל</strong> · יועצת בריאות ותזונה התנהגותית
           </div>
           <div style={{ fontSize: 12, color: '#9a8a7a', marginTop: 4 }}>052-333-6766 · Attal.eti@gmail.com</div>
-          <div style={{ fontSize: 11, color: '#c4a882', marginTop: 8 }}>בין הראש לצלחת © 2026</div>
+          <div style={{ fontSize: 11, color: '#c4a882', marginTop: 8 }}>בין הראש לצלחת ©️ 2026</div>
         </div>
       </div>
     </div>
