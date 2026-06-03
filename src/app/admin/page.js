@@ -615,21 +615,37 @@ export default function AdminPage() {
                 </div>
               </div>
             </div>
-            {editableAnalysis.split(/\n(?=\*\*[✨🔍⚡🩺🥗🎯💚])/).map((section, i) => {
-              const lines = section.split('\n')
-              const title = lines[0].replace(/\*\*/g, '').trim()
-              const body = lines.slice(1).join('\n').trim()
-              const colors = ['#16a34a','#0284c7','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
-              const color = colors[i % colors.length]
-              return (
-                <div key={i} style={{ background: '#fff', borderRadius: 18, padding: '18px', marginBottom: 12, border: `1.5px solid ${color}25` }}>
-                  {title && <div style={{ fontWeight: 900, fontSize: 15, color, marginBottom: 10, borderBottom: `2px solid ${color}20`, paddingBottom: 8 }}>{title}</div>}
-                  <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, textAlign: 'right' }}
-                    dangerouslySetInnerHTML={{ __html: body.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }}
-                  />
-                </div>
-              )
-            })}
+            {(() => {
+              const rawSections = editableAnalysis.split(/\n\s*--\s*\n/)
+              const SECTION_COLORS = [
+                { bg: '#f0fdf4', border: '#16a34a', title: '#15803d' },
+                { bg: '#eff6ff', border: '#2563eb', title: '#1d4ed8' },
+                { bg: '#fffbeb', border: '#d97706', title: '#b45309' },
+                { bg: '#fef2f2', border: '#dc2626', title: '#b91c1c' },
+                { bg: '#faf5ff', border: '#7c3aed', title: '#6d28d9' },
+                { bg: '#f0fdfa', border: '#0d9488', title: '#0f766e' },
+                { bg: '#fff7ed', border: '#f97316', title: '#c2410c' },
+              ]
+              return rawSections.map((section, i) => {
+                const trimmed = section.trim()
+                if (!trimmed) return null
+                const lines = trimmed.split('\n')
+                const firstLine = lines[0].trim()
+                const isBoldTitle = /^\*\*.*\*\*/.test(firstLine)
+                const title = isBoldTitle ? firstLine.replace(/\*\*/g, '').trim() : ''
+                const body = isBoldTitle ? lines.slice(1).join('\n').trim() : trimmed
+                const c = SECTION_COLORS[i % SECTION_COLORS.length]
+                if (!body && !title) return null
+                return (
+                  <div key={i} style={{ background: c.bg, borderRadius: 16, padding: '16px 18px', marginBottom: 12, border: `1.5px solid ${c.border}40`, boxShadow: `0 2px 8px ${c.border}15` }}>
+                    {title && <div style={{ fontWeight: 900, fontSize: 15, color: c.title, marginBottom: 10, borderBottom: `2px solid ${c.border}30`, paddingBottom: 8 }}>{title}</div>}
+                    <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, textAlign: 'right' }}
+                      dangerouslySetInnerHTML={{ __html: body.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }}
+                    />
+                  </div>
+                )
+              }).filter(Boolean)
+            })()}
           </div>
         </div>
       )}
@@ -1192,3 +1208,4 @@ export default function AdminPage() {
     </div>
   )
 }
+
