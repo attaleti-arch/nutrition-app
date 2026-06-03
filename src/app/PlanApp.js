@@ -678,6 +678,7 @@ export default function PlanApp({ clientName, userPassword }) {
       if (client.data) {
         var d = client.data
         setClientData(d) // ✅ שמירת כל נתוני הלקוח
+        // ✅ אם יש weight — profileDone. אם יש diet_type — setupDone. שניהם מ-DB בלבד.
         if (d.weight) { setUserWeight(String(d.weight)); setProfileDone(true) }
         if (d.height) setUserHeight(String(d.height))
         if (d.age) setUserAge(String(d.age))
@@ -690,10 +691,10 @@ export default function PlanApp({ clientName, userPassword }) {
         if (d.created_at) setJoinedDate(d.created_at)
         if (d.sport_type) setSportType(d.sport_type)
         if (d.sport_commit_days) setSportCommitDays(d.sport_commit_days)
-        // welcome_doc_enabled נטען ישירות מ-client.data
 
-        // ✅ תיקון: טעינת העדפות תזונה מ-clients (לא מ-daily_logs)
+        // ✅ העדפות תזונה — אם diet_type קיים ב-DB, לא מציגים setup שוב
         if (d.diet_type) { setDietType(d.diet_type); setSetupDone(true) }
+        else if (d.weight) { setSetupDone(true) } // יש פרופיל אבל בלי diet_type — עדיין עוברים
         if (d.restrictions) setRestrictions(d.restrictions)
 
         if (d.current_stage) {
@@ -751,10 +752,11 @@ export default function PlanApp({ clientName, userPassword }) {
         nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood },
         updated_at: new Date().toISOString(),
       }
-      await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
+      const { error } = await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
+      if (error) console.error('❌ autosave failed:', error.message, error)
     }, 3000)
     return () => clearTimeout(autoSaveRef.current)
-  }, [checks, carbSel, protSel, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, stressLevel, fatigueLevel, hungerLevel, userMood])
+  }, [checks, carbSel, protSel, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood])
 
   // ✅ listener לסגירת מדריכים מתוך iframe
   useEffect(() => {
@@ -1111,25 +1113,37 @@ export default function PlanApp({ clientName, userPassword }) {
                 </div>
               </div>
             </div>
-            {feedback.split(/\n(?=\*\*[✨🔍⚡🩺🥗🎯💚])/).map((section, i) => {
-              const lines = section.split('\n')
-              const titleLine = lines[0]
-              const title = titleLine.replace(/\*\*/g, '').trim()
-              const body = lines.slice(1).join('\n').trim()
-              const colors = ['#16a34a','#0284c7','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
-              const color = colors[i % colors.length]
-              return (
-                <div key={i} style={{ background: '#fff', borderRadius: 18, padding: '18px', marginBottom: 12, border: `1.5px solid ${color}25` }}>
-                  {title && <div style={{ fontWeight: 900, fontSize: 15, color, marginBottom: 10, borderBottom: `2px solid ${color}20`, paddingBottom: 8 }}>{title}</div>}
-                  <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, textAlign: 'right' }}
-                    dangerouslySetInnerHTML={{ __html: body
-                      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                      .replace(/\n/g, '<br/>')
-                    }}
-                  />
-                </div>
-              )
-            })}
+            {(() => {
+              const rawSections = feedback.split(/\n\s*--\s*\n/)
+              const SECTION_COLORS = [
+                { bg: '#f0fdf4', border: '#16a34a', title: '#15803d' },
+                { bg: '#eff6ff', border: '#2563eb', title: '#1d4ed8' },
+                { bg: '#fffbeb', border: '#d97706', title: '#b45309' },
+                { bg: '#fef2f2', border: '#dc2626', title: '#b91c1c' },
+                { bg: '#faf5ff', border: '#7c3aed', title: '#6d28d9' },
+                { bg: '#f0fdfa', border: '#0d9488', title: '#0f766e' },
+                { bg: '#fff7ed', border: '#f97316', title: '#c2410c' },
+              ]
+              return rawSections.map((section, i) => {
+                const trimmed = section.trim()
+                if (!trimmed) return null
+                const lines = trimmed.split('\n')
+                const firstLine = lines[0].trim()
+                const isBoldTitle = /^\*\*.*\*\*/.test(firstLine)
+                const title = isBoldTitle ? firstLine.replace(/\*\*/g, '').trim() : ''
+                const body = isBoldTitle ? lines.slice(1).join('\n').trim() : trimmed
+                const c = SECTION_COLORS[i % SECTION_COLORS.length]
+                if (!body && !title) return null
+                return (
+                  <div key={i} style={{ background: c.bg, borderRadius: 16, padding: '16px 18px', marginBottom: 12, border: `1.5px solid ${c.border}40`, boxShadow: `0 2px 8px ${c.border}15` }}>
+                    {title && <div style={{ fontWeight: 900, fontSize: 15, color: c.title, marginBottom: 10, borderBottom: `2px solid ${c.border}30`, paddingBottom: 8 }}>{title}</div>}
+                    <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, textAlign: 'right' }}
+                      dangerouslySetInnerHTML={{ __html: body.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }}
+                    />
+                  </div>
+                )
+              }).filter(Boolean)
+            })()}
           </div>
         </div>
       )}
@@ -1362,3 +1376,4 @@ export default function PlanApp({ clientName, userPassword }) {
     </div>
   )
 }
+
