@@ -275,30 +275,49 @@ export default function ReportPage() {
     }
   })() : null
 
-  var reportText = profile?.ai_report || ''
+var reportText = profile?.ai_report || ''
+
 const abnormalTests = bloodTests.filter(function(t) {
   if (t.min == null || t.max == null) return false
   return t.result < t.min || t.result > t.max
 })
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#f5f0e8', direction: 'rtl', fontFamily: 'sans-serif' }}>
-<div style={{ textAlign: 'center', padding: 12 }}>
-  <button
-    onClick={() => window.print()}
-    style={{
-      background: '#3a7a6e',
-      color: '#fff',
-      padding: '8px 18px',
-      borderRadius: 8,
-      border: 'none',
-      cursor: 'pointer',
-      fontWeight: 700
-    }}
-  >
-    📄 הורדה כ‑PDF
-  </button>
-</div>
+return (
+  <div style={{
+    minHeight: '100vh',
+    background: '#f5f0e8',
+    direction: 'rtl',
+    fontFamily: 'sans-serif'
+  }}>
+
+    <style>{`
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @media print {
+        button { display: none !important; }
+      }
+    `}</style>
+
+    {!isPreview && (
+      <div style={{ textAlign: 'center', padding: 12 }}>
+        <button
+          onClick={() => window.print()}
+          style={{
+            background: '#3a7a6e',
+            color: '#fff',
+            padding: '8px 18px',
+            borderRadius: 8,
+            border: 'none',
+            cursor: 'pointer',
+            fontWeight: 700
+          }}
+        >
+          📄 הורדה כ‑PDF
+        </button>
+      </div>
+    )}
 
       {isPreview && (
         <div style={{
@@ -393,17 +412,21 @@ const abnormalTests = bloodTests.filter(function(t) {
               const c = colors[index % colors.length]
 
               return (
-                <div
-                  key={index}
-                  style={{
-                    background: c.light,
-                    borderRadius: 14,
-                    padding: '18px 16px',
-                    marginBottom: 14,
-                    borderTop: `5px solid ${c.color}`,
-                    boxShadow: `0 4px 12px ${c.color}20`
-                  }}
-                >
+  <div
+    key={index}
+    style={{
+      background: c.light,
+      borderRadius: 14,
+      padding: '18px 16px',
+      marginBottom: 14,
+      borderTop: `5px solid ${c.color}`,
+      boxShadow: `0 4px 12px ${c.color}20`,
+      animation: 'fadeInUp 0.6s ease forwards',
+      animationDelay: `${index * 0.08}s`,
+      opacity: 0
+    }}
+  >
+
                   {section.split('\n').map(function(line, i) {
 
                     if (!line.trim()) return <div key={i} style={{ height: 6 }} />
