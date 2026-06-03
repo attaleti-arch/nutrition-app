@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts'
 
@@ -12,7 +12,6 @@ const ACTIVITY_MULT = {
   'יושבני': 1.2, 'קל': 1.375, 'בינוני': 1.55, 'פעיל': 1.725, 'מאוד פעיל': 1.9
 }
 
-// טווחים תקינים לפי שדות blood_tests ב-client_profiles
 const BLOOD_RANGES = {
   glucose: { name: 'סוכר בצום', min: 70, max: 100, unit: 'mg/dL' },
   hba1c: { name: 'המוגלובין A1C', min: 0, max: 5.7, unit: '%' },
@@ -85,6 +84,26 @@ function calcNutrition(log, nutritionData) {
   total.fatPct = totalCal > 0 ? Math.round((total.fat * 9 / totalCal) * 100) : 0
   total.carbsPct = Math.max(0, 100 - total.proteinPct - total.fatPct)
   return total
+}
+
+// ✅ Fade שעובד ב-React — עם useRef + state
+function FadeSection({ children, delay = 0, style = {} }) {
+  const ref = useRef(null)
+  const [visible, setVisible] = useState(false)
+  useEffect(function() {
+    var timer = setTimeout(function() { setVisible(true) }, delay)
+    return function() { clearTimeout(timer) }
+  }, [delay])
+  return (
+    <div ref={ref} style={{
+      transition: 'opacity 0.5s ease, transform 0.5s ease',
+      opacity: visible ? 1 : 0,
+      transform: visible ? 'translateY(0)' : 'translateY(14px)',
+      ...style
+    }}>
+      {children}
+    </div>
+  )
 }
 
 function MacroPieChart({ actual, target }) {
@@ -168,8 +187,6 @@ function NutritionBar({ label, value, max, color }) {
 }
 
 function AbnormalBloodBar({ test }) {
-  // מציג רק חריגות — בר אדום
-  var pct = Math.min(100, Math.max(0, ((test.value - test.min) / (test.max - test.min)) * 100))
   var isHigh = test.value > test.max
   return (
     <div style={{ marginBottom: 12, background: '#fff', padding: '12px 14px', borderRadius: 12, border: '1.5px solid #fecaca' }}>
@@ -178,7 +195,7 @@ function AbnormalBloodBar({ test }) {
         <span style={{ fontWeight: 800, color: '#dc2626' }}>{test.value} {test.unit}</span>
       </div>
       <div style={{ height: 7, background: '#f3f4f6', borderRadius: 99, overflow: 'hidden' }}>
-        <div style={{ width: pct + '%', height: '100%', background: '#dc2626', borderRadius: 99, transition: 'width 0.6s ease' }} />
+        <div style={{ width: Math.min(100, Math.max(0, ((test.value - test.min) / (test.max - test.min)) * 100)) + '%', height: '100%', background: '#dc2626', borderRadius: 99, transition: 'width 0.6s ease' }} />
       </div>
       <div style={{ marginTop: 5, fontSize: 11, color: '#dc2626', fontWeight: 600 }}>
         ⚠️ {isHigh ? 'גבוה מהטווח התקין' : 'נמוך מהטווח התקין'} · טווח: {test.min}–{test.max}
@@ -186,6 +203,15 @@ function AbnormalBloodBar({ test }) {
     </div>
   )
 }
+
+const SECTION_COLORS = [
+  { color: '#16a34a', light: '#f0fdf4' },
+  { color: '#0284c7', light: '#eff6ff' },
+  { color: '#9333ea', light: '#faf5ff' },
+  { color: '#dc2626', light: '#fef2f2' },
+  { color: '#d97706', light: '#fffbeb' },
+  { color: '#0d9488', light: '#f0fdfa' },
+]
 
 export default function ReportPage() {
   const [client, setClient] = useState(null)
@@ -248,30 +274,12 @@ export default function ReportPage() {
   })() : null
 
   var reportText = profile?.ai_report || ''
-  // ✅ שואב חריגות מ-client_profiles.blood_tests (לא מטבלה נפרדת)
   var abnormalTests = getAbnormalTests(profile?.blood_tests)
-
-  const SECTION_COLORS = [
-    { color: '#16a34a', light: '#f0fdf4' },
-    { color: '#0284c7', light: '#eff6ff' },
-    { color: '#9333ea', light: '#faf5ff' },
-    { color: '#dc2626', light: '#fef2f2' },
-    { color: '#d97706', light: '#fffbeb' },
-    { color: '#0d9488', light: '#f0fdfa' },
-  ]
 
   return (
     <div style={{ minHeight: '100vh', background: '#f5f0e8', direction: 'rtl', fontFamily: 'sans-serif' }}>
-      <style>{`
-        @keyframes fadeInUp {
-          from { opacity: 0; transform: translateY(16px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .report-section { animation: fadeInUp 0.5s ease forwards; }
-        @media print { button { display: none !important; } }
-      `}</style>
+      <style>{`@media print { button { display: none !important; } }`}</style>
 
-      {/* כפתור סגירה — preview בלבד */}
       {isPreview && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999, background: '#0f4c2a', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
           <span style={{ color: '#fff', fontSize: 13, fontWeight: 700 }}>👁️ תצוגה מקדימה — הלקוחה עדיין לא רואה</span>
@@ -285,8 +293,8 @@ export default function ReportPage() {
         </div>
       )}
 
-      {/* כותרת */}
       <div style={{ background: 'linear-gradient(160deg, #f8f4ef, #ede6db)', padding: isPreview ? '60px 20px 24px' : '28px 20px 24px', textAlign: 'center', borderBottom: '2px solid #e0d5c5' }}>
+        {/* ✅ לוגו ללא רקע — mixBlendMode:multiply */}
         <img src="/logo.png" alt="בין הראש לצלחת" style={{ height: 80, width: 'auto', marginBottom: 8, objectFit: 'contain', mixBlendMode: 'multiply' }} />
         <div style={{ fontFamily: 'serif', fontSize: 22, fontWeight: 900, color: '#3a7a6e', marginBottom: 4 }}>🌿 הדוח האישי של {client.name}</div>
         <div style={{ fontSize: 13, color: '#9a8a7a' }}>{new Date().toLocaleDateString('he-IL')}</div>
@@ -294,10 +302,8 @@ export default function ReportPage() {
 
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '16px 16px 60px' }}>
 
-        {/* גרף תזונה */}
         {avgNutrition && <MacroPieChart actual={avgNutrition} target={targets} />}
 
-        {/* פסי תזונה */}
         {avgNutrition && targets && (
           <div style={{ background: '#fff', borderRadius: 16, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #e0d5c5' }}>
             <div style={{ fontWeight: 800, fontSize: 14, color: '#3a7a6e', marginBottom: 12 }}>📈 ממוצע שבועי מול יעד</div>
@@ -307,7 +313,7 @@ export default function ReportPage() {
           </div>
         )}
 
-        {/* ✅ בדיקות חורגות בלבד — נשלף מ-client_profiles.blood_tests */}
+        {/* ✅ בדיקות דם — מ-client_profiles.blood_tests */}
         {abnormalTests.length > 0 && (
           <div style={{ background: '#fef2f2', borderRadius: 16, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #fecaca' }}>
             <div style={{ fontWeight: 800, fontSize: 14, color: '#dc2626', marginBottom: 12 }}>🩸 בדיקות הדורשות התייחסות</div>
@@ -315,7 +321,7 @@ export default function ReportPage() {
           </div>
         )}
 
-        {/* ניתוח אישי עם מקטעי צבע */}
+        {/* ✅ ניתוח אישי — צבעים אלגנטיים + fade שעובד */}
         {reportText ? (
           <div style={{ borderRadius: 16, overflow: 'hidden' }}>
             <div style={{ background: '#fff', padding: '16px 18px 8px', border: '1.5px solid #e0d5c5', borderBottom: 'none', borderRadius: '16px 16px 0 0' }}>
@@ -329,7 +335,13 @@ export default function ReportPage() {
               var title = isBoldTitle ? firstLine.replace(/\*\*/g, '').trim() : ''
               var body = isBoldTitle ? lines.slice(1).join('\n').trim() : section.trim()
               return (
-                <div key={index} className="report-section" style={{ background: c.light, padding: '16px 18px', marginBottom: 3, borderTop: `4px solid ${c.color}`, animationDelay: `${index * 0.08}s` }}>
+                <FadeSection key={index} delay={index * 80} style={{
+                  background: c.light,
+                  padding: '18px 16px',
+                  marginBottom: 3,
+                  borderTop: `5px solid ${c.color}`,
+                  boxShadow: `0 4px 12px ${c.color}20`,
+                }}>
                   {title && <div style={{ fontWeight: 900, fontSize: 15, color: c.color, marginBottom: 8 }}>{title}</div>}
                   {body.split('\n').map(function(line, i) {
                     if (!line.trim()) return <div key={i} style={{ height: 6 }} />
@@ -342,7 +354,7 @@ export default function ReportPage() {
                     return <div key={i} style={{ fontSize: 14, color: '#374151', lineHeight: 1.8, marginBottom: 3 }}
                       dangerouslySetInnerHTML={{ __html: line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }} />
                   })}
-                </div>
+                </FadeSection>
               )
             })}
             <div style={{ height: 4, background: '#e0d5c5', borderRadius: '0 0 16px 16px' }} />
@@ -354,7 +366,6 @@ export default function ReportPage() {
           </div>
         )}
 
-        {/* footer */}
         <div style={{ textAlign: 'center', marginTop: 24, padding: '16px', borderTop: '1px solid #e0d5c5' }}>
           <div style={{ fontSize: 13, color: '#9a8a7a' }}><strong style={{ color: '#3a7a6e' }}>אתי אטל</strong> · יועצת בריאות ותזונה התנהגותית</div>
           <div style={{ fontSize: 12, color: '#9a8a7a', marginTop: 4 }}>052-333-6766 · Attal.eti@gmail.com</div>
