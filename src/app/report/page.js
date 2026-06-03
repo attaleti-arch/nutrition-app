@@ -287,7 +287,7 @@ export default function ReportPage() {
 
       {/* כותרת */}
       <div style={{ background: 'linear-gradient(160deg, #f8f4ef, #ede6db)', padding: isPreview ? '60px 20px 24px' : '28px 20px 24px', textAlign: 'center', borderBottom: '2px solid #e0d5c5' }}>
-        <img src="/logo.png" alt="בין הראש לצלחת" style={{ height: 80, width: 'auto', marginBottom: 8, objectFit: 'contain' }} />
+        <img src="/logo.png" alt="בין הראש לצלחת" style={{ height: 80, width: 'auto', marginBottom: 8, objectFit: 'contain', mixBlendMode: 'multiply' }} />
         <div style={{ fontFamily: 'serif', fontSize: 22, fontWeight: 900, color: '#3a7a6e', marginBottom: 4 }}>🌿 הדוח האישי של {client.name}</div>
         <div style={{ fontSize: 13, color: '#9a8a7a' }}>{new Date().toLocaleDateString('he-IL')}</div>
       </div>
@@ -329,7 +329,7 @@ export default function ReportPage() {
               var title = isBoldTitle ? firstLine.replace(/\*\*/g, '').trim() : ''
               var body = isBoldTitle ? lines.slice(1).join('\n').trim() : section.trim()
               return (
-                <div key={index} className="report-section" style={{ background: c.light, padding: '16px 18px', marginBottom: 3, borderTop: `4px solid ${c.color}`, animationDelay: index * 0.08 + 's' }}>
+                <div key={index} className="report-section" style={{ background: c.light, padding: '16px 18px', marginBottom: 3, borderTop: `4px solid ${c.color}`, animationDelay: `${index * 0.08}s` }}>
                   {title && <div style={{ fontWeight: 900, fontSize: 15, color: c.color, marginBottom: 8 }}>{title}</div>}
                   {body.split('\n').map(function(line, i) {
                     if (!line.trim()) return <div key={i} style={{ height: 6 }} />
