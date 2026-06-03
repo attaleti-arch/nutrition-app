@@ -139,7 +139,12 @@ function DefaultDocument({ clientName, onClose }) {
   return (
     <div style={{ direction: 'rtl', fontFamily: 'sans-serif', maxWidth: 520, margin: '0 auto', padding: '0 14px 100px' }}>
       <div style={{ background: 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', borderRadius: '0 0 24px 24px', padding: '28px 24px 32px', marginBottom: 20, color: '#fff', textAlign: 'center' }}>
-        <img src="/logo.png" alt="אתי אטל" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,0.4)', marginBottom: 12, background: '#fff' }} />
+        <img
+          src="/logo.png"
+          alt="בין הראש לצלחת"
+          style={{ height: 72, width: 'auto', maxWidth: 220, objectFit: 'contain', marginBottom: 14, display: 'block', margin: '0 auto 14px' }}
+          onError={e => { e.target.style.display = 'none' }}
+        />
         <div style={{ fontWeight: 900, fontSize: 22, marginBottom: 4 }}>מסמך הפתיחה שלך 🌿</div>
         <div style={{ fontSize: 13, color: '#b2dfdb' }}>היי {clientName ? clientName.split(' ')[0] : ''}! ברוכה הבאה לתוכנית</div>
         <div style={{ marginTop: 10, fontSize: 11, color: '#80cbc4' }}>שיטת אתי אטל · בין הראש לצלחת</div>
@@ -186,7 +191,12 @@ function DocContent({ data, onContinue, generatedAt }) {
       <div style={{ background: 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', borderRadius: '0 0 24px 24px', padding: '28px 24px 32px', marginBottom: 20, color: '#fff', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -20, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
         <div style={{ position: 'absolute', bottom: -30, left: -10, width: 90, height: 90, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
-        <img src="/logo.png" alt="אתי אטל" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,0.4)', marginBottom: 12, background: '#fff' }} />
+        <img
+          src="/logo.png"
+          alt="בין הראש לצלחת"
+          style={{ height: 72, width: 'auto', maxWidth: 220, objectFit: 'contain', marginBottom: 14, display: 'block', margin: '0 auto 14px' }}
+          onError={e => { e.target.style.display = 'none' }}
+        />
         <div style={{ fontWeight: 900, fontSize: 22, marginBottom: 4 }}>מסמך הפתיחה שלך 🌿</div>
         <div style={{ fontSize: 13, color: '#b2dfdb', lineHeight: 1.6 }}>{greeting || `היי ${name}!`}</div>
         <div style={{ marginTop: 10, fontSize: 11, color: '#80cbc4' }}>שיטת אתי אטל · מבוסס שאלון 360 ובדיקות דם</div>
