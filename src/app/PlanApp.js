@@ -223,6 +223,7 @@ function AgentChat({ clientName, gender, clientProfile }) {
       if (clientProfile.goal) extras.push('מטרה: ' + clientProfile.goal)
       if (clientProfile.weight) extras.push('משקל: ' + clientProfile.weight + 'ק"ג')
       if (clientProfile.age) extras.push('גיל: ' + clientProfile.age)
+      if (clientProfile.gender) extras.push('מגדר: ' + clientProfile.gender)
       return clientProfile.agent_instructions +
         (extras.length ? '\n\nנתונים נוספים: ' + extras.join(' | ') : '')
     }
