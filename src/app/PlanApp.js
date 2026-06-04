@@ -169,7 +169,19 @@ const AGENT_SYSTEM_PROMPT = `אתה "עוזר החירום" של תוכנית "�
 
 ## 🚫 גבולות
 - ייעוץ תזונתי בלבד. לא אבחנות, לא הפסקת תרופות.
-- ספק → "התייעצי עם הרופא המטפל"
+- תמיד עני — אל תשאירי את הלקוחה ריקה. גם כשיש מגבלה, תני חלופה חיובית.
+- ספק רפואי → "התייעצי עם הרופא המטפל, ובינתיים..."
+
+## 🚩 דגלים אדומים — הפניה מיידית
+זהי ופעלי מיד במצבים הבאים:
+
+**מצוקה נפשית:** ביטויים כמו "אין לי כוח להמשיך", "אני לא שווה", "רוצה להיעלם" → אמרי: "את לא לבד. מה שאת מרגישה חשוב. אני ממליצה לדבר עכשיו עם מישהו — 1201 (ער"ן) זמין 24/7."
+
+**סימנים רפואיים חריגים:** כאב מתמשך, ירידה פתאומית במשקל, דימום, חולשה קיצונית → אמרי: "זה נשמע כמו משהו שחשוב לבדוק עם רופא — לא כי משהו בטוח רע, אלא כי את מגיעה לבדיקה."
+
+**בקשות לאבחנה:** "האם יש לי סוכרת / הפרעת אכילה?" → אמרי: "אני לא יכולה לאבחן — רק רופא יכול. אבל אני יכולה לעזור לך להבין מה לשאול אותו."
+
+**כלל על:** אני כלי תומך-החלטה חם ומקצועי. אני לא מחליפה רופא או דיאטנית קלינית — אבל תמיד כאן איתך.
 
 ## 💬 סגנון
 - עברית חמה, קצרה, חיובית
@@ -198,8 +210,21 @@ function AgentChat({ clientName, gender, clientProfile }) {
 
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
+  // ✅ buildClientContext — הנחיות Agent קודמות לכל
   function buildClientContext() {
     if (!clientProfile) return ''
+
+    // ✅ אם יש הנחיות Agent — הן נשלחות ראשונות ומחליפות את הכל
+    if (clientProfile.agent_instructions) {
+      const extras = []
+      if (clientProfile.goal) extras.push('מטרה: ' + clientProfile.goal)
+      if (clientProfile.weight) extras.push('משקל: ' + clientProfile.weight + 'ק"ג')
+      if (clientProfile.age) extras.push('גיל: ' + clientProfile.age)
+      return clientProfile.agent_instructions +
+        (extras.length ? '\n\nנתונים נוספים: ' + extras.join(' | ') : '')
+    }
+
+    // fallback — אם אין הנחיות Agent עדיין
     const parts = []
     if (clientProfile.goal) parts.push('מטרה: ' + clientProfile.goal)
     if (clientProfile.weight) parts.push('משקל: ' + clientProfile.weight + 'ק"ג')
@@ -657,7 +682,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const [userActivity, setUserActivity] = useState('בינוני')
   const [userGoal, setUserGoal] = useState('ירידה במשקל')
   const [userTargetWeight, setUserTargetWeight] = useState('')
-  const [clientData, setClientData] = useState(null) // ✅ נתוני הלקוח המלאים
+  const [clientData, setClientData] = useState(null)
 
   const fem = userGender !== 'זכר'
   const gf = (f, m) => fem ? f : m
@@ -677,8 +702,7 @@ export default function PlanApp({ clientName, userPassword }) {
       var client = await supabase.from('clients').select('*').eq('password', dbKey).maybeSingle()
       if (client.data) {
         var d = client.data
-        setClientData(d) // ✅ שמירת כל נתוני הלקוח
-        // ✅ אם יש weight — profileDone. אם יש diet_type — setupDone. שניהם מ-DB בלבד.
+        setClientData(d)
         if (d.weight) { setUserWeight(String(d.weight)); setProfileDone(true) }
         if (d.height) setUserHeight(String(d.height))
         if (d.age) setUserAge(String(d.age))
@@ -691,12 +715,9 @@ export default function PlanApp({ clientName, userPassword }) {
         if (d.created_at) setJoinedDate(d.created_at)
         if (d.sport_type) setSportType(d.sport_type)
         if (d.sport_commit_days) setSportCommitDays(d.sport_commit_days)
-
-        // ✅ העדפות תזונה — אם diet_type קיים ב-DB, לא מציגים setup שוב
         if (d.diet_type) { setDietType(d.diet_type); setSetupDone(true) }
-        else if (d.weight) { setSetupDone(true) } // יש פרופיל אבל בלי diet_type — עדיין עוברים
+        else if (d.weight) { setSetupDone(true) }
         if (d.restrictions) setRestrictions(d.restrictions)
-
         if (d.current_stage) {
           const stg = d.current_stage
           setCurrentStage(stg)
@@ -710,8 +731,6 @@ export default function PlanApp({ clientName, userPassword }) {
             setTimeout(() => setShowConfetti(false), 4000)
           }
         }
-
-        // WelcomeDocument נפתח רק דרך כפתור ידני — לא אוטומטי
       }
 
       var todayLog = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
@@ -734,7 +753,6 @@ export default function PlanApp({ clientName, userPassword }) {
     if (dbKey) load()
   }, [dbKey, todayKey])
 
-  // ✅ שמירה אוטומטית — 3 שניות אחרי כל שינוי
   const autoSaveRef = useRef(null)
   useEffect(() => {
     if (!dbKey || !todayKey || !profileDone) return
@@ -758,7 +776,6 @@ export default function PlanApp({ clientName, userPassword }) {
     return () => clearTimeout(autoSaveRef.current)
   }, [checks, carbSel, protSel, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood])
 
-  // ✅ listener לסגירת מדריכים מתוך iframe
   useEffect(() => {
     function handleGuideClose(e) {
       if (e.data === 'closeGuide') setGuideUrl(null)
@@ -779,7 +796,6 @@ export default function PlanApp({ clientName, userPassword }) {
     return total
   }
 
-  // ✅ תיקון: saveProfile שומר גם diet_type ו-restrictions
   const saveProfile = async function() {
     if (!userWeight || !userHeight || !userAge) return
     await supabase.from('clients').update({
@@ -833,7 +849,7 @@ export default function PlanApp({ clientName, userPassword }) {
     }
     setSaving(false)
     setSaved(true)
-    setShowWAButton(true) // ✅ מציג כפתור WA נפרד — לא מנווט אוטומטית
+    setShowWAButton(true)
     setTimeout(() => setSaved(false), 3000)
   }
 
@@ -847,10 +863,6 @@ export default function PlanApp({ clientName, userPassword }) {
   const filteredBenayim = PLAN.benayimOptions.filter(i => !shouldHide(i, dietType, restrictions))
   const checkedCount = Object.values(checks).filter(Boolean).length
   const totalItems = filteredBoker.length + filteredErev.length
-
-  // ─────────────────────────────────────────────
-  // ✅ סדר זרימה נכון: setup → profile → welcome → stage2 → app
-  // ─────────────────────────────────────────────
 
   if (!setupDone) {
     return (
@@ -869,7 +881,6 @@ export default function PlanApp({ clientName, userPassword }) {
             {RESTRICTIONS.map(r => <button key={r.key} onClick={() => setRestrictions(prev => { var n = {...prev}; n[r.key] = !n[r.key]; return n })} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'right', border: '2px solid ' + (restrictions[r.key] ? C.blue : '#e5e7eb'), background: restrictions[r.key] ? C.blueLight : '#fafafa', color: restrictions[r.key] ? C.blue : '#333' }}>{r.icon} {r.label} {restrictions[r.key] ? '✓' : ''}</button>)}
           </div>
         </div>
-        {/* ✅ תיקון: שמירת העדפות תזונה ל-clients בלחיצה */}
         <button onClick={async () => {
           if (!dietType) return
           await supabase.from('clients').update({ diet_type: dietType, restrictions }).eq('password', dbKey)
@@ -911,8 +922,6 @@ export default function PlanApp({ clientName, userPassword }) {
     )
   }
 
-  // WelcomeDocument נפתח רק דרך כפתור ידני בטאבים
-
   if (showStage2Welcome) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', direction: 'rtl', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, color: '#fff' }}>
@@ -934,7 +943,6 @@ export default function PlanApp({ clientName, userPassword }) {
     <div style={{ minHeight: '100vh', background: '#f8fafc', direction: 'rtl' }}>
       {showConfetti && <Confetti />}
 
-      {/* HEADER */}
       <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '24px 18px 20px', color: '#fff' }}>
         <div style={{ maxWidth: 520, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -965,7 +973,6 @@ export default function PlanApp({ clientName, userPassword }) {
         </div>
       </div>
 
-      {/* TABS */}
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '10px 14px 0' }}>
         <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
           <button onClick={() => setActiveTab('diary')} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (activeTab === 'diary' ? '#16a34a' : '#e5e7eb'), background: activeTab === 'diary' ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: activeTab === 'diary' ? '#0f4c2a' : '#555' }}>
@@ -980,16 +987,13 @@ export default function PlanApp({ clientName, userPassword }) {
             🤖 Agent
             <span style={{ position: 'absolute', top: 4, left: 4, width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 4px #4ade80' }} />
           </button>
-          {/* ✅ כפתור "המסמכים שלי" — תמיד נגיש */}
           <button onClick={() => setShowDocsMenu(!showDocsMenu)} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (showDocsMenu ? '#7c3aed' : '#e5e7eb'), background: showDocsMenu ? '#faf5ff' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: showDocsMenu ? '#7c3aed' : '#555', position: 'relative' }}>
             📂 המסמכים
           </button>
         </div>
 
-        {/* ✅ תפריט מסמכים */}
         {showDocsMenu && (
           <div style={{ background: '#fff', borderRadius: 16, border: '1.5px solid #e9d5ff', padding: '12px', marginBottom: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {/* מסמך פתיחה */}
             {clientData?.welcome_doc_enabled ? (
               <button onClick={() => { setShowWelcomeDoc(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#e8f5f2,#f0fdf4)', border: '1.5px solid #4a9b8e', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#3a7a6e', textAlign: 'right' }}>
                 🌿 מסמך הפתיחה שלי — תזונה ומחלות
@@ -999,7 +1003,6 @@ export default function PlanApp({ clientName, userPassword }) {
                 🔒 מסמך הפתיחה — יפתח בקרוב
               </div>
             )}
-            {/* ניתוח התחלתי */}
             {feedback ? (
               <button onClick={() => window.open('/report?client=' + dbKey, '_blank')} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#eff6ff,#f0fdf4)', border: '1.5px solid #0284c7', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#0f4c2a', textAlign: 'right' }}>
                 📊 הניתוח האישי שלי — 360 ובדיקות דם
@@ -1009,7 +1012,6 @@ export default function PlanApp({ clientName, userPassword }) {
                 📊 הניתוח האישי — יתווסף לאחר הפגישה הראשונה
               </div>
             )}
-            {/* מסמך מטרה */}
             {clientData?.outcome_doc ? (
               <button onClick={() => { setShowOutcomeDoc(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#faf5ff,#eff6ff)', border: '1.5px solid #7c3aed', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#7c3aed', textAlign: 'right' }}>
                 🧭 המטרה שלי — מסע התוצאה
@@ -1023,7 +1025,6 @@ export default function PlanApp({ clientName, userPassword }) {
         )}
       </div>
 
-      {/* ✅ משוב יומי מלא — overlay */}
       {showDailyFeedback && feedback && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
           <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
@@ -1040,7 +1041,6 @@ export default function PlanApp({ clientName, userPassword }) {
               </div>
             </div>
             {(() => {
-              // מפצל לפי המפריד -- שה-route שולח בין סעיפים
               const rawSections = feedback.split(/\n\s*--\s*\n/)
               const SECTION_COLORS = [
                 { bg: '#f0fdf4', border: '#16a34a', title: '#15803d' },
@@ -1076,7 +1076,6 @@ export default function PlanApp({ clientName, userPassword }) {
         </div>
       )}
 
-      {/* ✅ מדריך HTML — overlay עם סגירה */}
       {guideUrl && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: '#fff', display: 'flex', flexDirection: 'column' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: '#0f4c2a', color: '#fff', flexShrink: 0 }}>
@@ -1087,7 +1086,6 @@ export default function PlanApp({ clientName, userPassword }) {
         </div>
       )}
 
-      {/* ✅ מסמך פתיחה — overlay */}
       {showWelcomeDoc && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto' }}>
           <div style={{ position: 'fixed', top: 12, left: 12, zIndex: 201 }}>
@@ -1097,7 +1095,6 @@ export default function PlanApp({ clientName, userPassword }) {
         </div>
       )}
 
-      {/* ✅ ניתוח התחלתי — overlay מעוצב */}
       {showInitialReport && feedback && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
           <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
@@ -1148,7 +1145,6 @@ export default function PlanApp({ clientName, userPassword }) {
         </div>
       )}
 
-      {/* ✅ מסמך מטרה — overlay */}
       {showOutcomeDoc && clientData?.outcome_doc && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
           <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
