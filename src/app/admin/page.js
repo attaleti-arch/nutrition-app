@@ -310,6 +310,11 @@ export default function AdminPage() {
   const [journeyDocLoading, setJourneyDocLoading] = useState(false)
   const [journeyDocSent, setJourneyDocSent] = useState(false)
 
+  // ── ✅ Agent Instructions state ──
+  const [agentInstructions, setAgentInstructions] = useState('')
+  const [generatingInstructions, setGeneratingInstructions] = useState(false)
+  const [savedInstructions, setSavedInstructions] = useState(false)
+
   const login = () => { if (pin === 'Esterika26') setAuth(true) }
 
   useEffect(function() { if (auth) { loadClients(); loadNutritionData() } }, [auth])
@@ -327,7 +332,6 @@ export default function AdminPage() {
   }
 
   async function loadProfile(client) {
-    setSelectedClient(client)
     setProfile({})
     setTab('logs')
     setAiAnalysis('')
@@ -337,6 +341,13 @@ export default function AdminPage() {
     setSelectedTests({})
     setInventory([])
     setPreviewDoc(false)
+
+    // ✅ תמיד טוען נתונים טריים מה-DB — מונע באג של welcome_doc_enabled שמתאפס
+    const { data: freshClient } = await supabase.from('clients').select('*').eq('id', client.id).maybeSingle()
+    const activeClient = freshClient || client
+    setSelectedClient(activeClient)
+    setAgentInstructions(activeClient.agent_instructions || '')
+
     const { data } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
     if (data) {
       setProfile(data)
@@ -379,6 +390,39 @@ export default function AdminPage() {
     if (!selectedClient) return
     const { error } = await supabase.from('clients').update({ [field]: value }).eq('id', selectedClient.id)
     if (!error) setSelectedClient(prev => ({ ...prev, [field]: value }))
+  }
+
+  // ── ✅ פונקציות Agent Instructions ──
+  async function generateAgentInstructions() {
+    if (!selectedClient) return
+    setGeneratingInstructions(true)
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'agentInstructions',
+          clientPassword: selectedClient.password
+        })
+      })
+      const data = await res.json()
+      if (data.result) {
+        setAgentInstructions(data.result)
+        setSelectedClient(prev => ({ ...prev, agent_instructions: data.result, agent_instructions_updated_at: new Date().toISOString() }))
+      }
+    } catch(e) { alert('שגיאה: ' + e.message) }
+    setGeneratingInstructions(false)
+  }
+
+  async function saveAgentInstructions() {
+    if (!selectedClient) return
+    await supabase.from('clients').update({
+      agent_instructions: agentInstructions,
+      agent_instructions_updated_at: new Date().toISOString()
+    }).eq('id', selectedClient.id)
+    setSelectedClient(prev => ({ ...prev, agent_instructions: agentInstructions }))
+    setSavedInstructions(true)
+    setTimeout(() => setSavedInstructions(false), 3000)
   }
 
   async function refreshWelcomeDoc() {
@@ -1040,14 +1084,52 @@ export default function AdminPage() {
                 </div>
               </div>
             )}
+
             {tab === 'journey' && (
               <div style={{ direction: 'rtl' }}>
+
+                {/* ── ✅ פאנל הנחיות Agent — בראש הטאב ── */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: 18, marginBottom: 16, border: '2px solid #4a9b8e' }}>
+                  <div style={{ fontWeight: 900, fontSize: 15, color: '#3a7a6e', marginBottom: 4 }}>
+                    🤖 הנחיות Agent — {selectedClient?.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>
+                    מה שכתוב כאן נשלח לכל שיחה עם ה-Agent. עדכני אם המצב הרפואי משתנה.
+                  </div>
+                  <textarea
+                    value={agentInstructions}
+                    onChange={e => setAgentInstructions(e.target.value)}
+                    rows={8}
+                    placeholder="לחצי על 'צרי אוטומטית' כדי לזקק מהדוחות..."
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif', direction: 'rtl' }}
+                  />
+                  {selectedClient?.agent_instructions_updated_at && (
+                    <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, textAlign: 'left' }}>
+                      עודכן: {new Date(selectedClient.agent_instructions_updated_at).toLocaleDateString('he-IL')}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <button
+                      onClick={generateAgentInstructions}
+                      disabled={generatingInstructions}
+                      style={{ flex: 2, padding: 12, borderRadius: 12, background: generatingInstructions ? '#9ca3af' : 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', color: '#fff', border: 'none', cursor: generatingInstructions ? 'default' : 'pointer', fontWeight: 700, fontSize: 13 }}
+                    >
+                      {generatingInstructions ? '⏳ מזקק מהדוחות...' : '🤖 צרי אוטומטית מהדוחות'}
+                    </button>
+                    <button
+                      onClick={saveAgentInstructions}
+                      style={{ flex: 1, padding: 12, borderRadius: 12, background: savedInstructions ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}
+                    >
+                      {savedInstructions ? '✅ נשמר!' : '💾 שמרי'}
+                    </button>
+                  </div>
+                </div>
+
                 <div style={{ background: 'linear-gradient(135deg,#7c3aed15,#faf5ff)', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
                   <div style={{ fontWeight: 900, fontSize: 16, color: '#7c3aed', marginBottom: 4 }}>🧭 מסע המטרה</div>
                   <div style={{ fontSize: 12, color: '#9ca3af' }}>מלאי יחד עם הלקוחה בפגישה הראשונה</div>
                 </div>
 
-                {/* עזרה: הנחיות ניסוח */}
                 <div style={{ background: '#fffbeb', borderRadius: 14, padding: '12px 16px', marginBottom: 16, border: '1.5px solid #fcd34d' }}>
                   <div style={{ fontWeight: 700, fontSize: 13, color: '#92400e', marginBottom: 6 }}>💡 הנחיות ניסוח — לשמור בראש</div>
                   <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.8 }}>
@@ -1059,7 +1141,6 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                {/* חלק 0 — פתיחה והגדרת המטרה */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 800, fontSize: 14, color: '#0f4c2a', marginBottom: 12 }}>🌱 חלק 1 — הגדרת המטרה</div>
                   {[
@@ -1077,7 +1158,6 @@ export default function AdminPage() {
                   ))}
                 </div>
 
-                {/* חלק 2 — חזון סנסורי */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 800, fontSize: 14, color: '#0284c7', marginBottom: 12 }}>✨ חלק 2 — החזון הסנסורי</div>
                   <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 12, fontStyle: 'italic' }}>דמייני את הבוקר שהשינוי כבר קרה — בלשון הווה, מפורט ככל האפשר</div>
@@ -1094,7 +1174,6 @@ export default function AdminPage() {
                   ))}
                 </div>
 
-                {/* חלק 3 — אקולוגיה */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 800, fontSize: 14, color: '#0d9488', marginBottom: 12 }}>🌿 חלק 3 — הרמוניה ואיזון</div>
                   <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 12, fontStyle: 'italic' }}>אם עולה התנגדות — שאלי: "מה הכוונה החיובית? איך לשמור עליה בדרך החדשה?"</div>
@@ -1111,7 +1190,6 @@ export default function AdminPage() {
                   ))}
                 </div>
 
-                {/* חלק 4 — אמונות */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 800, fontSize: 14, color: '#dc2626', marginBottom: 12 }}>🔍 חלק 4 — חשיפת היתד</div>
                   <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 12, fontStyle: 'italic' }}>הקשיבי למילים: "תמיד", "אף פעם", "חייבת", "אי אפשר", "כי..."</div>
@@ -1127,7 +1205,6 @@ export default function AdminPage() {
                   ))}
                 </div>
 
-                {/* חלק 5 — משאבים */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 800, fontSize: 14, color: '#d97706', marginBottom: 12 }}>💎 חלק 5 — ארגז הכלים שלה</div>
                   {[
@@ -1142,7 +1219,6 @@ export default function AdminPage() {
                   ))}
                 </div>
 
-                {/* חלק 6 — חיסונים */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 800, fontSize: 14, color: '#7c3aed', marginBottom: 12 }}>🛡️ חלק 6 — החיסונים וההתחייבות</div>
                   {[
@@ -1159,7 +1235,6 @@ export default function AdminPage() {
                   ))}
                 </div>
 
-                {/* כפתור ניתוח */}
                 <button onClick={async () => {
                   setJourneyLoading(true); setJourneyAnalysis('')
                   const profileSummary = `מחלות: ${profile.medical_history || 'לא צוין'} | תרופות: ${profile.medications || 'לא צוין'} | אכילה רגשית: ${profile.emotional_eating || 'לא צוין'} | מה מעכב: ${profile.goal_obstacles || 'לא צוין'}`
