@@ -197,7 +197,7 @@ export async function POST(request) {
         ? '\n\n[פרופיל הלקוחה: ' + body.clientProfile + ']'
         : ''
       const msg = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
+        model: 'claude-sonnet-4-6',
         max_tokens: 800,
         system: AGENT_SYSTEM + clientContext,
         messages: apiMessages,
