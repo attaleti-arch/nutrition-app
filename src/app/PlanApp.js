@@ -472,6 +472,7 @@ function FeedbackCard({ feedback, clientName, logDate, onOpenFull }) {
 
 function MealScanner({ gender, onAdd, joinedDate }) {
   const [scanning, setScanning] = useState(false)
+  const [recalculating, setRecalculating] = useState(false)
   const [result, setResult] = useState(null)
   const [editing, setEditing] = useState(false)
   const [editDesc, setEditDesc] = useState('')
@@ -483,6 +484,7 @@ function MealScanner({ gender, onAdd, joinedDate }) {
   const fem = gender !== 'זכר'
   var daysInApp = joinedDate ? Math.floor((Date.now() - new Date(joinedDate).getTime()) / (1000*60*60*24)) : 99
   var isLocked = daysInApp < 7
+
   async function handleFile(file) {
     if (!file) return
     setScanning(true); setResult(null)
@@ -497,6 +499,29 @@ function MealScanner({ gender, onAdd, joinedDate }) {
     } catch(e) { alert('שגיאה בסריקה') }
     setScanning(false)
   }
+
+  // ✅ חישוב מחדש לפי טקסט מתוקן
+  async function recalcByText() {
+    if (!editDesc.trim()) return
+    setRecalculating(true)
+    try {
+      var res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'scanMealText', description: editDesc, gender })
+      })
+      var data = await res.json()
+      var r2 = data.result
+      if (r2) {
+        setEditCal(r2.total_calories || 0)
+        setEditProtein(r2.total_protein || 0)
+        setEditFat(r2.total_fat || 0)
+        setEditCarbs(r2.total_carbs || 0)
+      }
+    } catch(e) { alert('שגיאה בחישוב') }
+    setRecalculating(false)
+  }
+
   if (isLocked) return (
     <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 10, background: '#f3f4f6', border: '1.5px dashed #d1d5db', textAlign: 'center' }}>
       <span style={{ fontSize: 12, color: '#9ca3af' }}>📸 צילום צלחת יפתח בעוד {7 - daysInApp} ימים</span>
@@ -513,13 +538,26 @@ function MealScanner({ gender, onAdd, joinedDate }) {
   return (
     <div style={{ marginTop: 10, background: '#eff6ff', borderRadius: 14, padding: 14, border: '1.5px solid #93c5fd' }}>
       <div style={{ fontWeight: 800, fontSize: 14, color: '#1e40af', marginBottom: 8 }}>🤖 AI זיהה — {fem ? 'תקני' : 'תקן'} אם לא מדויק:</div>
-      <input value={editDesc} onChange={e => setEditDesc(e.target.value)} style={{ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1.5px solid #bfdbfe', fontSize: 13, marginBottom: 10, boxSizing: 'border-box', textAlign: 'right' }} />
+      <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
+        <input
+          value={editDesc}
+          onChange={e => setEditDesc(e.target.value)}
+          style={{ flex: 1, padding: '7px 10px', borderRadius: 8, border: '1.5px solid #bfdbfe', fontSize: 13, boxSizing: 'border-box', textAlign: 'right' }}
+        />
+        <button
+          onClick={recalcByText}
+          disabled={recalculating}
+          style={{ padding: '7px 10px', borderRadius: 8, background: recalculating ? '#9ca3af' : '#0284c7', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, flexShrink: 0 }}
+        >
+          {recalculating ? '⏳' : '🔄 חשב'}
+        </button>
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 10 }}>
         {[{ label: '🔥 קל', val: editCal, set: setEditCal }, { label: '💪 חלבון', val: editProtein, set: setEditProtein }, { label: '🍞 פחמימה', val: editCarbs, set: setEditCarbs }, { label: '🫒 שומן', val: editFat, set: setEditFat }].map(function(f) {
           return <div key={f.label} style={{ textAlign: 'center' }}><div style={{ fontSize: 10, color: '#6b7280', marginBottom: 3 }}>{f.label}</div><input type="number" value={f.val} onChange={e => f.set(Number(e.target.value) || 0)} style={{ width: '100%', padding: '6px 4px', borderRadius: 8, border: '1.5px solid #bfdbfe', fontSize: 13, textAlign: 'center', boxSizing: 'border-box' }} /></div>
         })}
       </div>
-      {result.confidence === 'low' && <div style={{ fontSize: 11, color: '#f59e0b', marginBottom: 8 }}>⚠️ ביטחון נמוך — כדאי לתקן</div>}
+      {result.confidence === 'low' && <div style={{ fontSize: 11, color: '#f59e0b', marginBottom: 8 }}>⚠️ ביטחון נמוך — תקני או לחצי "חשב" אחרי עריכה</div>}
       <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={() => { onAdd(editCal, editDesc, editProtein, editFat, editCarbs); setEditing(false); setResult(null) }} style={{ flex: 2, padding: 10, borderRadius: 10, background: '#0284c7', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✅ {fem ? 'הוסיפי' : 'הוסף'} לארוחה</button>
         <button onClick={() => { setEditing(false); setResult(null) }} style={{ flex: 1, padding: 10, borderRadius: 10, background: '#fff', color: '#ef4444', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ ביטול</button>
@@ -686,6 +724,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const [userGoal, setUserGoal] = useState('ירידה במשקל')
   const [userTargetWeight, setUserTargetWeight] = useState('')
   const [clientData, setClientData] = useState(null)
+  const [clientPlate, setClientPlate] = useState(null) // ✅ אחוזי הצלחת האישית
 
   const fem = userGender !== 'זכר'
   const gf = (f, m) => fem ? f : m
@@ -706,6 +745,11 @@ export default function PlanApp({ clientName, userPassword }) {
       if (client.data) {
         var d = client.data
         setClientData(d)
+        // ✅ טוען אחוזי הצלחת מ-client_profiles
+        const profileRes = await supabase.from('client_profiles').select('welcome_doc_json').eq('client_password', dbKey).maybeSingle()
+        if (profileRes.data?.welcome_doc_json?.plate) {
+          setClientPlate(profileRes.data.welcome_doc_json.plate)
+        }
         if (d.weight) { setUserWeight(String(d.weight)); setProfileDone(true) }
         if (d.height) setUserHeight(String(d.height))
         if (d.age) setUserAge(String(d.age))
@@ -1300,12 +1344,59 @@ export default function PlanApp({ clientName, userPassword }) {
           </div>
           {lunchOpt === 'A' && (
             <div>
+              {/* ── מד השלמה חי ── */}
+              {(() => {
+                const protPct = clientPlate?.protein || (targets ? 40 : 40)
+                const carbPct = clientPlate?.carbs || (targets ? 30 : 30)
+                const protBudget = targets ? Math.round(targets.calories * protPct / 100 / 2) : 0
+                const carbBudget = targets ? Math.round(targets.calories * carbPct / 100 / 2) : 0
+
+                const selProtItem = nutritionData[protSel]
+                const selCarbItem = nutritionData[carbSel]
+                const cal100Prot = selProtItem?.calories_per_100 || selProtItem?.calories || 0
+                const cal100Carb = selCarbItem?.calories_per_100 || selCarbItem?.calories || 0
+                const protQtyVal = protQty[protSel] || (cal100Prot > 0 && protBudget > 0 ? Math.min(300, Math.round((protBudget / cal100Prot) * 100)) : 150)
+                const carbQtyVal = carbQty[carbSel] || (cal100Carb > 0 && carbBudget > 0 ? Math.min(300, Math.round((carbBudget / cal100Carb) * 100)) : 150)
+                const protCalActual = cal100Prot > 0 ? Math.round(cal100Prot * protQtyVal / 100) : 0
+                const carbCalActual = cal100Carb > 0 ? Math.round(cal100Carb * carbQtyVal / 100) : 0
+                const protRemain = protSel ? Math.max(0, protBudget - protCalActual) : protBudget
+                const carbRemain = carbSel ? Math.max(0, carbBudget - carbCalActual) : carbBudget
+
+                if (!targets) return null
+                return (
+                  <div style={{ background: '#f0fdf4', borderRadius: 12, padding: '10px 14px', marginBottom: 10, border: '1px solid #86efac' }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#166534', marginBottom: 6 }}>🎯 יעד הצהריים שלך</div>
+                    <div style={{ display: 'flex', gap: 10 }}>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 11, color: '#555', marginBottom: 3 }}>חלבון: {protCalActual}/{protBudget} קל</div>
+                        <div style={{ height: 6, background: '#dcfce7', borderRadius: 99 }}>
+                          <div style={{ width: Math.min(100, protBudget > 0 ? (protCalActual/protBudget)*100 : 0) + '%', height: '100%', background: '#16a34a', borderRadius: 99, transition: 'width 0.3s' }} />
+                        </div>
+                        {protRemain > 0 && protSel && <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>נשאר {protRemain} קל</div>}
+                        {protRemain === 0 && protSel && <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>✅ הגעת ליעד!</div>}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 11, color: '#555', marginBottom: 3 }}>פחמימה: {carbCalActual}/{carbBudget} קל</div>
+                        <div style={{ height: 6, background: '#dcfce7', borderRadius: 99 }}>
+                          <div style={{ width: Math.min(100, carbBudget > 0 ? (carbCalActual/carbBudget)*100 : 0) + '%', height: '100%', background: '#f97316', borderRadius: 99, transition: 'width 0.3s' }} />
+                        </div>
+                        {carbRemain > 0 && carbSel && <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>נשאר {carbRemain} קל</div>}
+                        {carbRemain === 0 && carbSel && <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>✅ הגעת ליעד!</div>}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
+
               <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>פחמימה:</div>
               {filteredCarbs.map(o => {
                 const item = nutritionData[o.id]
-                const cal100 = item?.calories_per_100 || (item?.calories ? item.calories : 0)
-                const carbBudget = targets ? Math.round(targets.calories * 0.30 / 2) : 0
-                const recQty = cal100 > 0 && carbBudget > 0 ? Math.round((carbBudget / cal100) * 100) : 150
+                const cal100 = item?.calories_per_100 || item?.calories || 0
+                const carbPct = clientPlate?.carbs || 30
+                const carbBudget = targets ? Math.round(targets.calories * carbPct / 100 / 2) : 0
+                const recQty = cal100 > 0 && carbBudget > 0
+                  ? Math.min(300, Math.round((carbBudget / cal100) * 100))
+                  : 150
                 const qty = carbQty[o.id] || recQty
                 const calDisplay = cal100 > 0 ? Math.round(cal100 * qty / 100) : 0
                 return (
@@ -1339,9 +1430,12 @@ export default function PlanApp({ clientName, userPassword }) {
               <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '10px 0 2px', textAlign: 'right' }}>חלבון:</div>
               {filteredProt.map(o => {
                 const item = nutritionData[o.id]
-                const cal100 = item?.calories_per_100 || (item?.calories ? item.calories : 0)
-                const protBudget = targets ? Math.round(targets.calories * 0.40 / 2) : 0
-                const recQty = cal100 > 0 && protBudget > 0 ? Math.round((protBudget / cal100) * 100) : 150
+                const cal100 = item?.calories_per_100 || item?.calories || 0
+                const protPct = clientPlate?.protein || 40
+                const protBudget = targets ? Math.round(targets.calories * protPct / 100 / 2) : 0
+                const recQty = cal100 > 0 && protBudget > 0
+                  ? Math.min(300, Math.round((protBudget / cal100) * 100))
+                  : 150
                 const qty = protQty[o.id] || recQty
                 const calDisplay = cal100 > 0 ? Math.round(cal100 * qty / 100) : 0
                 return (
@@ -1373,7 +1467,7 @@ export default function PlanApp({ clientName, userPassword }) {
               })}
 
               {/* תזכורת חלבון */}
-              {lunchOpt === 'A' && carbSel && !protSel && (
+              {carbSel && !protSel && (
                 <div style={{ marginTop: 10, background: '#fff7ed', borderRadius: 10, padding: '10px 14px', border: '1.5px solid #fed7aa', fontSize: 13, color: '#92400e' }}>
                   💪 זכרי להוסיף חלבון — זה מה ששומר אותך שבעה עד הערב
                 </div>
