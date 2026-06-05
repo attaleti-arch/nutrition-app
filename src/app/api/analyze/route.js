@@ -301,6 +301,66 @@ ${String(cl.outcome_doc || '').substring(0, 600)}
       return Response.json({ result: instructions })
     }
 
+    // ── חישוב הרכב צלחת אישי לפי מחלות + מטרה ──
+    if (mode === 'calcPlate' && body.clientPassword) {
+      const sb = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+      )
+
+      const [clientRes, profileRes] = await Promise.all([
+        sb.from('clients').select('*').eq('password', body.clientPassword).maybeSingle(),
+        sb.from('client_profiles').select('welcome_doc_json, ai_report').eq('client_password', body.clientPassword).maybeSingle(),
+      ])
+
+      const cl = clientRes.data || {}
+      const pr = profileRes.data || {}
+
+      const medicalCards = pr.welcome_doc_json?.medicalCards?.map(c =>
+        c.title + ': לאכול: ' + (c.eat||[]).join(', ') + ' | להימנע: ' + (c.avoid||[]).join(', ')
+      ).join('\n') || 'לא הוזן'
+
+      const platePrompt = `אתה מחשב הרכב צלחת אישי עבור לקוחת תזונה.
+
+פרטי הלקוחה:
+- שם: ${cl.name || ''}
+- מטרה: ${cl.goal || 'ירידה במשקל'}
+- מחלות רקע מהדוחות:
+${medicalCards}
+- ניתוח 360: ${String(pr.ai_report || '').substring(0, 800)}
+
+חשב הרכב צלחת אישי המתחשב במחלות הרקע ובמטרה.
+החזר JSON בלבד — ללא טקסט נוסף, ללא \`\`\`json:
+{
+  "protein": [מספר שלם 20-45],
+  "carbs": [מספר שלם 15-40],
+  "fat": [מספר שלם 10-25],
+  "veggies": [מספר שלם 20-50],
+  "reasoning": "משפט קצר אחד בעברית למה ההרכב הזה"
+}
+סכום protein+carbs+fat+veggies חייב להיות בדיוק 100.`
+
+      const msg = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 300,
+        messages: [{ role: 'user', content: platePrompt }]
+      })
+
+      try {
+        const plate = JSON.parse(msg.content[0].text.replace(/```json|```/g,'').trim())
+        // שמור ב-welcome_doc_json
+        const existing = pr.welcome_doc_json || {}
+        await sb.from('client_profiles').upsert({
+          client_password: body.clientPassword,
+          welcome_doc_json: { ...existing, plate },
+          welcome_doc_generated_at: existing.welcome_doc_generated_at || new Date().toISOString()
+        }, { onConflict: 'client_password' })
+        return Response.json({ result: plate })
+      } catch(e) {
+        return Response.json({ error: 'שגיאה בחישוב' }, { status: 500 })
+      }
+    }
+
     // ── טעינת מסמך פתיחה שמור (מהיר) ──
     if (mode === 'welcomeDocCached' && body.clientPassword) {
       const sb = createClient(
