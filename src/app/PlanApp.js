@@ -635,6 +635,8 @@ export default function PlanApp({ clientName, userPassword }) {
   const [checks, setChecks] = useState({})
   const [carbSel, setCarbSel] = useState(null)
   const [protSel, setProtSel] = useState(null)
+  const [carbQty, setCarbQty] = useState({})
+  const [protQty, setProtQty] = useState({})
   const [fatSel, setFatSel] = useState(null)
   const [veggieSel, setVeggieSel] = useState(null)
   const [lunchOpt, setLunchOpt] = useState(null)
@@ -787,10 +789,20 @@ export default function PlanApp({ clientName, userPassword }) {
 
   function calcEatenCalories() {
     var total = 0
-    function add(id) { var item = nutritionData[id]; if (item) total += item.calories || 0 }
+    function add(id, qtyOverride) {
+      var item = nutritionData[id]
+      if (item) {
+        if (qtyOverride && item.base_qty && item.base_qty > 0) {
+          total += (item.calories || 0) * (qtyOverride / item.base_qty)
+        } else {
+          total += item.calories || 0
+        }
+      }
+    }
     if (hadSnack) add('snack')
     if (checks) Object.keys(checks).forEach(id => { if (checks[id]) add(id) })
-    if (carbSel) add(carbSel); if (protSel) add(protSel)
+    if (carbSel) add(carbSel, carbQty[carbSel])
+    if (protSel) add(protSel, protQty[protSel])
     if (fatSel) add(fatSel); if (veggieSel) add(veggieSel)
     if (benayimSel) add(benayimSel); if (hadBenayim) add('benayim')
     total += (bokerExtraCal || 0) + (lunchExtraCal || 0) + (erevExtraCal || 0) + (scanCalories || 0)
@@ -1286,7 +1298,88 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ display: 'flex', gap: 8, padding: '10px 0' }}>
             {[{ k: 'A', l: '🍽️ מרכיבי הארוחה' }, { k: 'B', l: '🫒 רטבים ונלווים' }].map(opt => (<button key={opt.k} onClick={() => setLunchOpt(lunchOpt === opt.k ? null : opt.k)} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: '2px solid ' + (lunchOpt === opt.k ? C.greenMid : '#e5e7eb'), background: lunchOpt === opt.k ? C.greenLight : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: lunchOpt === opt.k ? C.greenDark : '#555' }}>{opt.l}</button>))}
           </div>
-          {lunchOpt === 'A' && (<div><div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>פחמימה:</div>{filteredCarbs.map(o => <RadioRow key={o.id} id={o.id} text={o.text} accent={C.greenMid} selected={carbSel} onSelect={setCarbSel} />)}<div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '10px 0 2px', textAlign: 'right' }}>חלבון:</div>{filteredProt.map(o => <RadioRow key={o.id} id={o.id} text={o.text} accent={C.greenMid} selected={protSel} onSelect={setProtSel} />)}</div>)}
+          {lunchOpt === 'A' && (
+            <div>
+              <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>פחמימה:</div>
+              {filteredCarbs.map(o => {
+                const item = nutritionData[o.id]
+                const cal100 = item?.calories_per_100 || (item?.calories ? item.calories : 0)
+                const carbBudget = targets ? Math.round(targets.calories * 0.30 / 2) : 0
+                const recQty = cal100 > 0 && carbBudget > 0 ? Math.round((carbBudget / cal100) * 100) : 150
+                const qty = carbQty[o.id] || recQty
+                const calDisplay = cal100 > 0 ? Math.round(cal100 * qty / 100) : 0
+                return (
+                  <div key={o.id}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <RadioRow id={o.id} text={o.text} accent={C.greenMid} selected={carbSel} onSelect={setCarbSel} />
+                      </div>
+                      {carbSel === o.id && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                          <input
+                            type="number"
+                            value={carbQty[o.id] || ''}
+                            onChange={e => setCarbQty(q => ({ ...q, [o.id]: Number(e.target.value) || 0 }))}
+                            placeholder={String(recQty)}
+                            style={{ width: 60, padding: '4px 6px', borderRadius: 8, border: '1.5px solid ' + C.greenMid, fontSize: 12, textAlign: 'center', outline: 'none' }}
+                          />
+                          <span style={{ fontSize: 11, color: '#9ca3af' }}>גר'</span>
+                        </div>
+                      )}
+                    </div>
+                    {carbSel === o.id && (
+                      <div style={{ fontSize: 11, color: C.greenMid, textAlign: 'left', paddingBottom: 4 }}>
+                        ≈ {calDisplay} קל {!carbQty[o.id] && <span style={{ color: '#9ca3af' }}>(מומלץ: {recQty} גר')</span>}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '10px 0 2px', textAlign: 'right' }}>חלבון:</div>
+              {filteredProt.map(o => {
+                const item = nutritionData[o.id]
+                const cal100 = item?.calories_per_100 || (item?.calories ? item.calories : 0)
+                const protBudget = targets ? Math.round(targets.calories * 0.40 / 2) : 0
+                const recQty = cal100 > 0 && protBudget > 0 ? Math.round((protBudget / cal100) * 100) : 150
+                const qty = protQty[o.id] || recQty
+                const calDisplay = cal100 > 0 ? Math.round(cal100 * qty / 100) : 0
+                return (
+                  <div key={o.id}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ flex: 1 }}>
+                        <RadioRow id={o.id} text={o.text} accent={C.greenMid} selected={protSel} onSelect={setProtSel} />
+                      </div>
+                      {protSel === o.id && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+                          <input
+                            type="number"
+                            value={protQty[o.id] || ''}
+                            onChange={e => setProtQty(q => ({ ...q, [o.id]: Number(e.target.value) || 0 }))}
+                            placeholder={String(recQty)}
+                            style={{ width: 60, padding: '4px 6px', borderRadius: 8, border: '1.5px solid ' + C.greenMid, fontSize: 12, textAlign: 'center', outline: 'none' }}
+                          />
+                          <span style={{ fontSize: 11, color: '#9ca3af' }}>גר'</span>
+                        </div>
+                      )}
+                    </div>
+                    {protSel === o.id && (
+                      <div style={{ fontSize: 11, color: C.greenMid, textAlign: 'left', paddingBottom: 4 }}>
+                        ≈ {calDisplay} קל {!protQty[o.id] && <span style={{ color: '#9ca3af' }}>(מומלץ: {recQty} גר')</span>}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* תזכורת חלבון */}
+              {lunchOpt === 'A' && carbSel && !protSel && (
+                <div style={{ marginTop: 10, background: '#fff7ed', borderRadius: 10, padding: '10px 14px', border: '1.5px solid #fed7aa', fontSize: 13, color: '#92400e' }}>
+                  💪 זכרי להוסיף חלבון — זה מה ששומר אותך שבעה עד הערב
+                </div>
+              )}
+            </div>
+          )}
           {lunchOpt === 'B' && (<div><div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>רטבים ותוספות:</div>{filteredFat.map(o => <CheckRow key={o.id} id={o.id} text={o.text} accent={C.greenMid} checked={!!checks[o.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}</div>)}
           <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות (חובה!):</div>
           {PLAN.veggieOptions.map(o => <RadioRow key={o.id} id={o.id} text={o.text} accent={C.teal} selected={veggieSel} onSelect={setVeggieSel} />)}
@@ -1328,10 +1421,26 @@ export default function PlanApp({ clientName, userPassword }) {
 
         <Section title="מעקב שתייה" icon="💧" accent={C.blue} light={C.blueLight}>
           <div style={{ padding: '10px 0' }}>
-            <div style={{ fontSize: 13, color: '#555', marginBottom: 8, textAlign: 'right' }}>{water}/8 כוסות</div>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-              {Array.from({ length: 8 }).map((_, i) => (<button key={i} onClick={() => setWater(i < water ? i : i + 1)} style={{ width: 38, height: 38, borderRadius: 10, fontSize: 18, cursor: 'pointer', border: '2px solid ' + (i < water ? C.blue : '#e5e7eb'), background: i < water ? C.blueLight : '#fafafa' }}>💧</button>))}
+            <div style={{ fontSize: 13, color: '#555', marginBottom: 10, textAlign: 'right' }}>
+              {water === 0 ? 'עדיין לא שתית 💧' : water === 0.5 ? '0.5 ליטר ✅' : water === 1 ? 'ליטר אחד ✅' : water === 1.5 ? 'ליטר וחצי ✅' : '2 ליטר 🏆'}
             </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[0.5, 1, 1.5, 2].map(l => (
+                <button key={l} onClick={() => setWater(l === water ? 0 : l)} style={{
+                  flex: 1, padding: '12px 4px', borderRadius: 12, fontSize: 13, fontWeight: 700,
+                  cursor: 'pointer',
+                  border: '2px solid ' + (water >= l ? C.blue : '#e5e7eb'),
+                  background: water >= l ? C.blueLight : '#fafafa',
+                  color: water >= l ? C.blue : '#555'
+                }}>
+                  💧{l}L
+                </button>
+              ))}
+            </div>
+            <div style={{ marginTop: 8, height: 6, background: '#f3f4f6', borderRadius: 99 }}>
+              <div style={{ width: Math.min(100, (water / 2) * 100) + '%', height: '100%', background: C.blue, borderRadius: 99, transition: 'width 0.3s' }} />
+            </div>
+            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>יעד: 1.5-2 ליטר ביום</div>
           </div>
         </Section>
 
