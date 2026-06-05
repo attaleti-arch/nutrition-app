@@ -315,6 +315,26 @@ export default function AdminPage() {
   const [generatingInstructions, setGeneratingInstructions] = useState(false)
   const [savedInstructions, setSavedInstructions] = useState(false)
 
+  // ── ✅ Plate Calculator state ──
+  const [calculatingPlate, setCalculatingPlate] = useState(false)
+  const [plateResult, setPlateResult] = useState(null)
+
+  async function calcPlate() {
+    if (!selectedClient?.password) return
+    setCalculatingPlate(true)
+    setPlateResult(null)
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'calcPlate', clientPassword: selectedClient.password })
+      })
+      const data = await res.json()
+      if (data.result) setPlateResult(data.result)
+    } catch(e) { alert('שגיאה בחישוב') }
+    setCalculatingPlate(false)
+  }
+
   const login = () => { if (pin === 'Esterika26') setAuth(true) }
 
   useEffect(function() { if (auth) { loadClients(); loadNutritionData() } }, [auth])
@@ -1128,6 +1148,43 @@ export default function AdminPage() {
                 <div style={{ background: 'linear-gradient(135deg,#7c3aed15,#faf5ff)', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
                   <div style={{ fontWeight: 900, fontSize: 16, color: '#7c3aed', marginBottom: 4 }}>🧭 מסע המטרה</div>
                   <div style={{ fontSize: 12, color: '#9ca3af' }}>מלאי יחד עם הלקוחה בפגישה הראשונה</div>
+                </div>
+
+                {/* ── 🧮 חישוב הרכב צלחת ── */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: 18, marginBottom: 16, border: '2px solid #f97316' }}>
+                  <div style={{ fontWeight: 900, fontSize: 15, color: '#c2410c', marginBottom: 4 }}>
+                    🧮 הרכב צלחת אישי — {selectedClient?.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>
+                    Sonnet קורא את הדוחות ומחשב הרכב מותאם לפי מחלות רקע ומטרה
+                  </div>
+                  {plateResult && (
+                    <div style={{ background: '#fff7ed', borderRadius: 12, padding: '12px 14px', marginBottom: 12, border: '1px solid #fed7aa' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+                        {[
+                          { label: '💪 חלבון', val: plateResult.protein, color: '#16a34a' },
+                          { label: '🍞 פחמימה', val: plateResult.carbs, color: '#f97316' },
+                          { label: '🫒 שומן', val: plateResult.fat, color: '#0284c7' },
+                          { label: '🥦 ירקות', val: plateResult.veggies, color: '#0d9488' },
+                        ].map(p => (
+                          <div key={p.label} style={{ textAlign: 'center', background: '#fff', borderRadius: 10, padding: '8px 4px', border: '1.5px solid #fed7aa' }}>
+                            <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>{p.label}</div>
+                            <div style={{ fontSize: 20, fontWeight: 900, color: p.color }}>{p.val}%</div>
+                          </div>
+                        ))}
+                      </div>
+                      {plateResult.reasoning && (
+                        <div style={{ fontSize: 12, color: '#92400e', fontStyle: 'italic' }}>💡 {plateResult.reasoning}</div>
+                      )}
+                    </div>
+                  )}
+                  <button
+                    onClick={calcPlate}
+                    disabled={calculatingPlate}
+                    style={{ width: '100%', padding: 12, borderRadius: 12, background: calculatingPlate ? '#9ca3af' : 'linear-gradient(135deg,#f97316,#ea580c)', color: '#fff', border: 'none', cursor: calculatingPlate ? 'default' : 'pointer', fontWeight: 700, fontSize: 13 }}
+                  >
+                    {calculatingPlate ? '⏳ מחשב...' : '🧮 חשבי הרכב צלחת אישי'}
+                  </button>
                 </div>
 
                 <div style={{ background: '#fffbeb', borderRadius: 14, padding: '12px 16px', marginBottom: 16, border: '1.5px solid #fcd34d' }}>
