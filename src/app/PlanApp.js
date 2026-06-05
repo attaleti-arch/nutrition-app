@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabase'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
-import WelcomeDocument from '../WelcomeDocument'
+import WelcomeDocument from './WelcomeDocument.jsx'
 
 const GOALS_SPLIT = {
   'ירידה במשקל': { protein: 40, carbs: 30, fat: 30 },
