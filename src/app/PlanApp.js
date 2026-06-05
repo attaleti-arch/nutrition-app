@@ -672,7 +672,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const [profileDone, setProfileDone] = useState(false)
   const [checks, setChecks] = useState({})
   const [carbSel, setCarbSel] = useState(null)
-  const [protSel, setProtSel] = useState(null)
+  const [protChecks, setProtChecks] = useState({}) // ✅ כמה חלבונות
   const [carbQty, setCarbQty] = useState({})
   const [protQty, setProtQty] = useState({})
   const [fatSel, setFatSel] = useState(null)
@@ -783,7 +783,7 @@ export default function PlanApp({ clientName, userPassword }) {
       var todayLog = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
       if (todayLog.data) {
         var t = todayLog.data
-        setChecks(t.checks || {}); setCarbSel(t.carb_sel); setProtSel(t.prot_sel); setFatSel(t.fat_sel)
+        setChecks(t.checks || {}); setCarbSel(t.carb_sel); setProtChecks(t.prot_checks || {}); setFatSel(t.fat_sel)
         setVeggieSel(t.veggie_sel); setLunchOpt(t.lunch_opt); setBenayimSel(t.benayim_sel)
         setWater(t.water || 0); setSteps(t.steps || ''); setNote(t.note || '')
         setBokerFree(t.boker_free || ''); setLunchFree(t.lunch_free || ''); setErevFree(t.erev_free || '')
@@ -807,7 +807,7 @@ export default function PlanApp({ clientName, userPassword }) {
     autoSaveRef.current = setTimeout(async () => {
       var payload = {
         client_name: dbKey, log_date: todayKey, checks,
-        carb_sel: carbSel, prot_sel: protSel, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
+        carb_sel: carbSel, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
         water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
         boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
         had_snack: hadSnack, had_benayim: hadBenayim,
@@ -821,7 +821,7 @@ export default function PlanApp({ clientName, userPassword }) {
       if (error) console.error('❌ autosave failed:', error.message, error)
     }, 3000)
     return () => clearTimeout(autoSaveRef.current)
-  }, [checks, carbSel, protSel, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood])
+  }, [checks, carbSel, protChecks, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood])
 
   useEffect(() => {
     function handleGuideClose(e) {
@@ -846,7 +846,8 @@ export default function PlanApp({ clientName, userPassword }) {
     if (hadSnack) add('snack')
     if (checks) Object.keys(checks).forEach(id => { if (checks[id]) add(id) })
     if (carbSel) add(carbSel, carbQty[carbSel])
-    if (protSel) add(protSel, protQty[protSel])
+    // ✅ מחשב כל החלבונות שנבחרו
+    Object.keys(protChecks).forEach(id => { if (protChecks[id]) add(id, protQty[id]) })
     if (fatSel) add(fatSel); if (veggieSel) add(veggieSel)
     if (benayimSel) add(benayimSel); if (hadBenayim) add('benayim')
     total += (bokerExtraCal || 0) + (lunchExtraCal || 0) + (erevExtraCal || 0) + (scanCalories || 0)
@@ -874,7 +875,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const resetDay = async function() {
     if (!window.confirm('לאפס את כל הנתונים של היום?')) return
     await supabase.from('daily_logs').delete().eq('client_name', dbKey).eq('log_date', todayKey)
-    setChecks({}); setCarbSel(null); setProtSel(null); setFatSel(null); setVeggieSel(null); setBenayimSel(null); setLunchOpt(null)
+    setChecks({}); setCarbSel(null); setProtChecks({}); setFatSel(null); setVeggieSel(null); setBenayimSel(null); setLunchOpt(null)
     setWater(0); setSteps(''); setNote(''); setBokerFree(''); setLunchFree(''); setErevFree('')
     setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
     setHadSnack(null); setHadBenayim(null); setSportDoneToday(false)
@@ -887,7 +888,7 @@ export default function PlanApp({ clientName, userPassword }) {
     setSaving(true)
     var payload = {
       client_name: dbKey, log_date: todayKey, checks,
-      carb_sel: carbSel, prot_sel: protSel, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
+      carb_sel: carbSel, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
       water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
       boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
       had_snack: hadSnack, had_benayim: hadBenayim,
@@ -1351,15 +1352,19 @@ export default function PlanApp({ clientName, userPassword }) {
                 const protBudget = targets ? Math.round(targets.calories * protPct / 100 / 2) : 0
                 const carbBudget = targets ? Math.round(targets.calories * carbPct / 100 / 2) : 0
 
-                const selProtItem = nutritionData[protSel]
+                // ✅ סכום כל החלבונות שנבחרו
+                const protCalActual = Object.keys(protChecks).filter(id => protChecks[id]).reduce((sum, id) => {
+                  const item = nutritionData[id]
+                  const cal100 = item?.calories_per_100 || item?.calories || 0
+                  const qty = protQty[id] || (cal100 > 0 && protBudget > 0 ? Math.min(300, Math.round((protBudget / cal100) * 100)) : 150)
+                  return sum + (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
+                }, 0)
                 const selCarbItem = nutritionData[carbSel]
-                const cal100Prot = selProtItem?.calories_per_100 || selProtItem?.calories || 0
                 const cal100Carb = selCarbItem?.calories_per_100 || selCarbItem?.calories || 0
-                const protQtyVal = protQty[protSel] || (cal100Prot > 0 && protBudget > 0 ? Math.min(300, Math.round((protBudget / cal100Prot) * 100)) : 150)
                 const carbQtyVal = carbQty[carbSel] || (cal100Carb > 0 && carbBudget > 0 ? Math.min(300, Math.round((carbBudget / cal100Carb) * 100)) : 150)
-                const protCalActual = cal100Prot > 0 ? Math.round(cal100Prot * protQtyVal / 100) : 0
                 const carbCalActual = cal100Carb > 0 ? Math.round(cal100Carb * carbQtyVal / 100) : 0
-                const protRemain = protSel ? Math.max(0, protBudget - protCalActual) : protBudget
+                const hasProtein = Object.values(protChecks).some(Boolean)
+                const protRemain = hasProtein ? Math.max(0, protBudget - protCalActual) : protBudget
                 const carbRemain = carbSel ? Math.max(0, carbBudget - carbCalActual) : carbBudget
 
                 if (!targets) return null
@@ -1372,8 +1377,8 @@ export default function PlanApp({ clientName, userPassword }) {
                         <div style={{ height: 6, background: '#dcfce7', borderRadius: 99 }}>
                           <div style={{ width: Math.min(100, protBudget > 0 ? (protCalActual/protBudget)*100 : 0) + '%', height: '100%', background: '#16a34a', borderRadius: 99, transition: 'width 0.3s' }} />
                         </div>
-                        {protRemain > 0 && protSel && <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>נשאר {protRemain} קל</div>}
-                        {protRemain === 0 && protSel && <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>✅ הגעת ליעד!</div>}
+                        {protRemain > 0 && hasProtein && <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>נשאר {protRemain} קל</div>}
+                        {protRemain === 0 && hasProtein && <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>✅ הגעת ליעד!</div>}
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 11, color: '#555', marginBottom: 3 }}>פחמימה: {carbCalActual}/{carbBudget} קל</div>
@@ -1433,18 +1438,25 @@ export default function PlanApp({ clientName, userPassword }) {
                 const cal100 = item?.calories_per_100 || item?.calories || 0
                 const protPct = clientPlate?.protein || 40
                 const protBudget = targets ? Math.round(targets.calories * protPct / 100 / 2) : 0
+                // ✅ המלצה = כל התקציב לחלבון זה בלבד
                 const recQty = cal100 > 0 && protBudget > 0
                   ? Math.min(300, Math.round((protBudget / cal100) * 100))
                   : 150
+                const isChecked = !!protChecks[o.id]
                 const qty = protQty[o.id] || recQty
                 const calDisplay = cal100 > 0 ? Math.round(cal100 * qty / 100) : 0
                 return (
                   <div key={o.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1 }}>
-                        <RadioRow id={o.id} text={o.text} accent={C.greenMid} selected={protSel} onSelect={setProtSel} />
+                      <div style={{ flex: 1 }} onClick={() => setProtChecks(p => ({ ...p, [o.id]: !p[o.id] }))}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', opacity: isChecked ? 1 : 0.85 }}>
+                          <div style={{ width: 20, height: 20, borderRadius: 6, border: '2px solid ' + (isChecked ? C.greenMid : '#d1d5db'), background: isChecked ? C.greenMid : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {isChecked && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
+                          </div>
+                          <span style={{ fontSize: 14, color: isChecked ? C.greenDark : '#222', fontWeight: isChecked ? 700 : 400, flex: 1, textAlign: 'right' }}>{o.text}</span>
+                        </div>
                       </div>
-                      {protSel === o.id && (
+                      {isChecked && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                           <input
                             type="number"
@@ -1457,7 +1469,7 @@ export default function PlanApp({ clientName, userPassword }) {
                         </div>
                       )}
                     </div>
-                    {protSel === o.id && (
+                    {isChecked && (
                       <div style={{ fontSize: 11, color: C.greenMid, textAlign: 'left', paddingBottom: 4 }}>
                         ≈ {calDisplay} קל {!protQty[o.id] && <span style={{ color: '#9ca3af' }}>(מומלץ: {recQty} גר')</span>}
                       </div>
@@ -1467,7 +1479,7 @@ export default function PlanApp({ clientName, userPassword }) {
               })}
 
               {/* תזכורת חלבון */}
-              {carbSel && !protSel && (
+              {carbSel && !Object.values(protChecks).some(Boolean) && (
                 <div style={{ marginTop: 10, background: '#fff7ed', borderRadius: 10, padding: '10px 14px', border: '1.5px solid #fed7aa', fontSize: 13, color: '#92400e' }}>
                   💪 זכרי להוסיף חלבון — זה מה ששומר אותך שבעה עד הערב
                 </div>
