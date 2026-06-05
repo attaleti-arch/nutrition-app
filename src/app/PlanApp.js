@@ -1,1185 +1,686 @@
 'use client'
-import { useState, useEffect, useRef } from 'react'
-import { supabase } from './supabase'
-import WelcomeDocument from './WelcomeDocument'
+import { useState, useEffect } from 'react'
+import { supabase } from '../supabase'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import WelcomeDocument from '../WelcomeDocument'
 
-const C = {
-  greenDark: '#0f4c2a', greenMid: '#16a34a', greenLight: '#dcfce7',
-  orange: '#f97316', orangeLight: '#fff7ed',
-  purple: '#9333ea', purpleLight: '#faf5ff',
-  blue: '#0284c7', blueLight: '#eff6ff',
-  amber: '#d97706', amberLight: '#fffbeb',
-  teal: '#0d9488', tealLight: '#f0fdfa',
-  agent: '#4a9b8e', agentLight: '#e8f5f2',
-}
-
-const DIET_TYPES = [
-  { key: 'regular', label: 'אוכלת הכל', icon: '🍗' },
-  { key: 'vegetarian', label: 'צמחונית', icon: '🥚' },
-  { key: 'vegan', label: 'טבעונית', icon: '🌱' },
-  { key: 'keto', label: 'קיטו', icon: '🥑' },
-]
-
-const RESTRICTIONS = [
-  { key: 'no_gluten', label: 'ללא גלוטן', icon: '🌾' },
-  { key: 'no_lactose', label: 'ללא לקטוז', icon: '🥛' },
-  { key: 'no_nuts', label: 'ללא אגוזים', icon: '🥜' },
-  { key: 'no_eggs', label: 'ללא ביצים', icon: '🥚' },
-  { key: 'no_fish', label: 'ללא דגים', icon: '🐟' },
-  { key: 'no_sugar', label: 'ללא סוכר מוסף', icon: '🍬' },
-]
-
-const SPORT_OPTIONS = [
-  { key: 'yoga', label: 'יוגה', icon: '🧘' },
-  { key: 'swim', label: 'שחייה', icon: '🏊' },
-  { key: 'bike', label: 'אופניים', icon: '🚴' },
-  { key: 'gym', label: 'כושר', icon: '🏋️' },
-  { key: 'run', label: 'ריצה', icon: '🏃' },
-  { key: 'dance', label: 'ריקוד', icon: '💃' },
-  { key: 'pilates', label: 'פילאטיס', icon: '🤸' },
-  { key: 'other', label: 'אחר', icon: '⚡' },
-]
-
-const ACTIVITY_LEVELS = ['יושבני', 'קל', 'בינוני', 'פעיל', 'מאוד פעיל']
-const ACTIVITY_MULT = { 'יושבני': 1.2, 'קל': 1.375, 'בינוני': 1.55, 'פעיל': 1.725, 'מאוד פעיל': 1.9 }
-const GOALS_LIST = ['ירידה במשקל', 'שמירה על משקל', 'עלייה במסה']
 const GOALS_SPLIT = {
   'ירידה במשקל': { protein: 40, carbs: 30, fat: 30 },
   'שמירה על משקל': { protein: 30, carbs: 40, fat: 30 },
   'עלייה במסה': { protein: 30, carbs: 50, fat: 20 },
 }
+const ACTIVITY_MULT = {
+  'יושבני': 1.2, 'קל': 1.375, 'בינוני': 1.55, 'פעיל': 1.725, 'מאוד פעיל': 1.9
+}
 
-const BONUS_RECIPES = [
-  { title: 'כדורי אנרגיה מעוררים', cal: '85 קל ליחידה', ingredients: 'תמרים, אגוזי מלך, קקאו איכותי, מעט קוקוס' },
-  { title: 'מאפי חלבון אקספרס', cal: '140 קל למאפה', ingredients: 'גבינה לבנה 5%, ביצה, קמח כוסמין, שום שמיר' },
-  { title: 'שייק ירוק מרענן ומאזן', cal: '180 קל למנה', ingredients: 'חופן תרד, חצי תפוח ירוק, משקה שקדים, מנת חלבון' }
+const DOCTOR_TESTS = [
+  { key: 'blood_count', label: 'ספירת דם מלאה' },
+  { key: 'cholesterol_full', label: 'ברור כולסטרול — LDL, HDL וכולסטרול כולל בצום' },
+  { key: 'triglycerides', label: 'שומנים (טריגליצרידים) בצום' },
+  { key: 'glucose', label: 'סוכר בדם בצום' },
+  { key: 'hba1c', label: 'המוגלובין A1C' },
+  { key: 'anemia', label: 'ברור אנמיה — חומצה פולית, B12, ברזל, פריטין, טרנספרין' },
+  { key: 'vitamin_d', label: 'ויטמין D' },
+  { key: 'minerals', label: 'סידן, אבץ ומגנזיום' },
+  { key: 'blood_chemistry', label: 'כימיה של הדם' },
+  { key: 'food_sensitivity', label: 'רגישות למזון — לקטוז, גלוטן, צליאק' },
+  { key: 'liver_kidney', label: 'תפקודי כבד וכליה' },
+  { key: 'thyroid', label: 'תפקודי בלוטת התריס — TSH, T3, T4' },
+  { key: 'hormones', label: 'פרופיל הורמונאלי — הורמוני מין' },
+  { key: 'inflammation', label: 'מדדי דלקת — שקיעת דם ESR, CRP' },
+  { key: 'homocysteine', label: 'רמות הומוציסטאין, B12, B6, חומצה פולית' },
+  { key: 'blood_type', label: 'סוג דם' },
+  { key: 'insulin', label: 'אינסולין בצום' },
+  { key: 'urine', label: 'בדיקת שתן כללית ולתרבית' },
 ]
 
-const PLAN = {
-  bokerSnack: 'לפני: נס קפה + חטיף בריאות עד 99 קל',
-  boker: [
-    { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
-    { id: 'b3', text: 'מעדן פרו + פרי', tags: ['vegan'] },
-    { id: 'b4', text: '3 פריכיות + קוטג׳ 3% + דבש', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5% + ירקות', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b6', text: 'פיתה כוסמין / 4 פריכיות / 2 פרוסות לחם שיפון', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
-    { id: 'b7', text: 'ביצים קשות / חביתה + ירקות', tags: [], hide: ['vegan', 'no_eggs'] },
-    { id: 'b8', text: 'אבוקדו + ירקות', tags: ['vegan', 'keto'] },
-    { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto'], tags: ['vegetarian'] },
-  ],
-  carbOptions: [
-    { id: 'c1', text: '150 גרם אורז מלא / קינואה', hide: ['keto', 'no_gluten'] },
-    { id: 'c2', text: '200 גרם בורגול / כוסמת', hide: ['keto', 'no_gluten'] },
-    { id: 'c4', text: '170 גרם תפוחי אדמה / בטטה', hide: ['keto'] },
-    { id: 'c5', text: '150 גרם כרובית / ברוקולי (קיטו)', tags: ['keto'] },
-    { id: 'c6', text: '150 גרם עדשים / חומוס מבושל', tags: ['vegan'] },
-    { id: 'c7', text: '100 גרם שעועית לבנה / אדומה', tags: ['vegan'] },
-  ],
-  protOptions: [
-    { id: 'p1', text: '200 גרם דג לבן (אמנון / בקלה)', hide: ['vegan', 'no_fish'] },
-    { id: 'p2', text: '100 גרם סלמון', hide: ['vegan', 'no_fish'] },
-    { id: 'p9', text: '100 גרם טונה / סרדינים', hide: ['vegan', 'no_fish'] },
-    { id: 'p10', text: 'גרם חזה עוף', hide: ['vegan', 'vegetarian'] },
-    { id: 'p5', text: '140 גרם ירך עוף / 100 גרם הודו טחון', hide: ['vegan', 'vegetarian'] },
-    { id: 'p3', text: '150 גרם טופו', tags: ['vegan'] },
-    { id: 'p8', text: 'ביצים / אומלט', hide: ['vegan', 'no_eggs'] },
-    { id: 'p11', text: '150 גרם מג׳דרה (עדשים + אורז)', tags: ['vegan'] },
-    { id: 'p6', text: '2 המבורגר צמחוני', tags: ['vegan'] },
-    { id: 'p13', text: '200 גרם גרגירי חומוס מבושל', tags: ['vegan'] },
-    { id: 'p14', text: '200 גרם עדשים מבושלות', tags: ['vegan'] },
-    { id: 'p15', text: '150 גרם שעועית / פול מבושל', tags: ['vegan'] },
-    { id: 'p16', text: '150 גרם אדממה', tags: ['vegan'] },
-    { id: 'p17', text: '200 גרם קוטג׳ 3% / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'] },
-    { id: 'p18', text: '200 גרם יוגורט יווני 0%', hide: ['vegan', 'no_lactose'] },
-  ],
-  fatOptions: [
-    { id: 'f1', text: 'כף שמן זית', tags: ['vegan', 'keto'] },
-    { id: 'f2', text: '2 כפות טחינה גולמית', tags: ['vegan'] },
-    { id: 'f3', text: '50 גרם אבוקדו (רבע)', tags: ['vegan', 'keto'] },
-    { id: 'f4', text: 'חופן אגוזי מלך / שקדים (30 גרם)', tags: ['vegan', 'keto'], hide: ['no_nuts'] },
-    { id: 'f5', text: '30 גרם גבינה צהובה 5%', hide: ['vegan', 'no_lactose'] },
-  ],
-  veggieOptions: [
-    { id: 'v1', text: 'סלט טרי — מלפפון, עגבנייה, לימון + מלח' },
-    { id: 'v2', text: 'ירקות קלויים בתנור (זוקיני, פלפל, חציל, ברוקולי)' },
-    { id: 'v3', text: 'ירקות מאודים (ברוקולי, כרובית, גזר)' },
-    { id: 'v4', text: 'סלט עלים ירוקים (תרד, רוקט, חסה)' },
-  ],
-  erev: [
-    { id: 'e1', text: 'קוטג׳ / גבינה לבנה 5% + ירקות טריים', hide: ['vegan', 'no_lactose'] },
-    { id: 'e2', text: '50 גרם ברנפלקס + חלב / משקה צמחי', hide: ['keto'] },
-    { id: 'e4', text: 'פיתה / 4 פריכיות / 2 פרוסות לחם שיפון', hide: ['keto', 'no_gluten'] },
-    { id: 'e5', text: 'סלט ירקות + טחינה / שמן זית', tags: ['vegan', 'keto'] },
-    { id: 'e6', text: 'יוגורט יווני 0% + פירות יער', hide: ['vegan', 'no_lactose', 'keto'] },
-    { id: 'e7', text: '2 ביצים קשות + ירקות', hide: ['vegan', 'no_eggs'] },
-    { id: 'e8', text: '100 גרם עדשים מבושלות + ירקות', tags: ['vegan'] },
-  ],
-  benayimOptions: [
-    { id: 'ben1', text: 'פרי עונתי (תפוח / אגס / קיווי)' },
-    { id: 'ben2', text: 'חופן אגוזים / שקדים (5-6 יחידות)' },
-    { id: 'ben3', text: 'חטיף בריאות / חלבון עד 150 קל' },
-    { id: 'ben4', text: 'יוגורט 0% + פרי', hide: ['vegan', 'no_lactose'] },
-  ],
-  rules: [
-    { icon: '💧', text: 'לפחות 2-3 ליטר מים ביום' },
-    { icon: '☕', text: 'עד 2 קפה ביום' },
-    { icon: '🥦', text: 'חצי צלחת = ירקות תמיד!' },
-    { icon: '🔄', text: 'ניתן להחליף בין הארוחות - לא להוסיף' },
-    { icon: '🍳', text: 'בישול בתרסיס שמן בלבד!' },
-    { icon: '😴', text: '7 שעות שינה לפחות' },
-    { icon: '🚶', text: '10,000 צעדים ביום' },
-  ],
-}
-
-const AGENT_SYSTEM_PROMPT = `אתה "עוזר החירום" של תוכנית "בין הראש לצלחת" – מבוסס שיטת אתי אטל.
-
-## זהותך
-אתה עוזר תזונתי קליני חם, מעצים ומקצועי. לא רופא — מלווה תזונתי שמדבר בשפה חיובית ומחזיר כוח ללקוחה.
-
-## 🚨 כלל חירום — מוחלט
-כאב חד בחזה / קוצר נשימה / נפיחות פתאומית / אובדן הכרה / ירידת סוכר קיצונית / כאב בטן עז → עצור הכול:
-"🚨 זה נשמע כמו מצב חירום רפואי. פני בדחיפות למיון או התקשרי ל-101. אל תישארי לבד."
-
-## 🍽️ הצלחת החכמה (שיטת אתי)
-- 50% ירקות מגוונים — הבסיס תמיד
-- 25-40% חלבון איכותי: דגים שמנים, עוף/הודו, ביצים, קטניות, טופו
-- 15-25% פחמימה מורכבת GI נמוך: בטטה, קינואה, כוסמת, בורגול, אורז מלא
-- 10-20% שומן מהצומח: שמן זית, אבוקדו, טחינה גולמית
-- סדר אכילה: חלבון וירק קודם → פחמימה אחרונה
-
-## 📋 6 פרוטוקולים קליניים
-1. מטבולי (סוכרת, אינסולין): 40% חלבון | 30% שומן | 30% פחמימה. חלבון לפני פחמימה. פעילות: כוח + אירובי. תוספים: מגנזיום, כרום, אומגה 3.
-2. קרדיולוגי (לב, כולסטרול, לחץ דם): 30% חלבון רזה | 20% שומן (אומגה 3) | 50% ירקות. ללא נתרן מיותר. פעילות: אירובי מתון בלבד. לא HIIT. תוספים: CoQ10, אומגה 3.
-3. אונקולוגי: 50% חלבון | 30% שומן | 20% פחמימה מבושלת. מניעת קכקסיה. להימנע מסוכר. פעילות: תנועה מתונה.
-4. בלוטת תריס (כולל כריתה): סלניום (2 אגוזי ברזיל/יום), אבץ, יוד. לא HIIT. לבותירוקסין על קיבה ריקה.
-5. עיכול (קרוהן, קוליטיס, IBS, צליאק): מזון מבושל/מאודה בלבד בדלקת. 5-6 ארוחות קטנות. פרוביוטיקה. פעילות: יוגה ופילאטיס.
-6. כליות וגאוט: 15-20% חלבון | הידרציה 2.5-3 ליטר | הימנעות מפורינים בגאוט.
-
-## 🧠 גישת NLP (אתי אטל)
-- "מה כן לאכול" — לא "מה אסור"
-- כל כישלון = משוב. "מה למדת מהמעידה הזו?"
-- "אנרגיה זורמת למקום שבו תשומת הלב מתמקדת"
-- זהי רגש מאחורי אכילה רגשית → הצעי חלופה
-- "תוכנית אכילה" — לא "דיאטה"
-
-## 🏋️ תזונת ספורט
-- לפני אימון (120 דק'): 250 קל', 70% פחמימות, 10-15% חלבון
-- ממש לפני (10-45 דק'): בננה / 2 תמרים / לחם לבן + דבש
-- אחרי אימון: 600-900 קל', 40-60% פחמימות, 20-30% חלבון
-
-## 🚫 גבולות
-- ייעוץ תזונתי בלבד. לא אבחנות, לא הפסקת תרופות.
-- תמיד עני — אל תשאירי את הלקוחה ריקה. גם כשיש מגבלה, תני חלופה חיובית.
-- ספק רפואי → "התייעצי עם הרופא המטפל, ובינתיים..."
-
-## 🚩 דגלים אדומים — הפניה מיידית
-זהי ופעלי מיד במצבים הבאים:
-
-**מצוקה נפשית:** ביטויים כמו "אין לי כוח להמשיך", "אני לא שווה", "רוצה להיעלם" → אמרי: "את לא לבד. מה שאת מרגישה חשוב. אני ממליצה לדבר עכשיו עם מישהו — 1201 (ער"ן) זמין 24/7."
-
-**סימנים רפואיים חריגים:** כאב מתמשך, ירידה פתאומית במשקל, דימום, חולשה קיצונית → אמרי: "זה נשמע כמו משהו שחשוב לבדוק עם רופא — לא כי משהו בטוח רע, אלא כי את מגיעה לבדיקה."
-
-**בקשות לאבחנה:** "האם יש לי סוכרת / הפרעת אכילה?" → אמרי: "אני לא יכולה לאבחן — רק רופא יכול. אבל אני יכולה לעזור לך להבין מה לשאול אותו."
-
-**כלל על:** אני כלי תומך-החלטה חם ומקצועי. אני לא מחליפה רופא או דיאטנית קלינית — אבל תמיד כאן איתך.
-
-## 💬 סגנון
-- עברית חמה, קצרה, חיובית
-- תמיד מסיימת במשהו מעשי אחד לעשות עכשיו`
-
-const AGENT_QUICK = [
-  "🍽️ איך בונה צלחת חכמה?",
-  "🏋️ מה לאכול לפני אימון?",
-  "🩸 תזונה לאיזון סוכר",
-  "🫀 תזונה לבריאות הלב",
-  "🦋 בלוטת תריס — מה לאכול?",
-  "😔 אכלתי ריגשית — מה עכשיו?",
-]
-
-function AgentChat({ clientName, gender, clientProfile }) {
-  const fem = gender !== 'זכר'
-  const [messages, setMessages] = useState([{
-    role: 'assistant',
-    content: `שלום${clientName ? ' ' + clientName.split(' ')[0] : ''}! 🌿\nאני **עוזר החירום** של "בין הראש לצלחת"\nמבוסס **שיטת אתי אטל**.\n\nכאן איתך 24/7 לכל שאלה תזונתית 💚\n\n⚠️ כאב חזה / קוצר נשימה / נפיחות פתאומית → פני מיד למיון!`
-  }])
-  const [input, setInput] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [showQuick, setShowQuick] = useState(true)
-  const endRef = useRef(null)
-  const inputRef = useRef(null)
-
-  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
-
-  // ✅ buildClientContext — הנחיות Agent קודמות לכל
-  function buildClientContext() {
-    if (!clientProfile) return ''
-
-    // ✅ אם יש הנחיות Agent — הן נשלחות ראשונות ומחליפות את הכל
-    if (clientProfile.agent_instructions) {
-      const extras = []
-      if (clientProfile.goal) extras.push('מטרה: ' + clientProfile.goal)
-      if (clientProfile.weight) extras.push('משקל: ' + clientProfile.weight + 'ק"ג')
-      if (clientProfile.age) extras.push('גיל: ' + clientProfile.age)
-      if (clientProfile.gender) extras.push('מגדר: ' + clientProfile.gender)
-      return clientProfile.agent_instructions +
-        (extras.length ? '\n\nנתונים נוספים: ' + extras.join(' | ') : '')
-    }
-
-    // fallback — אם אין הנחיות Agent עדיין
-    const parts = []
-    if (clientProfile.goal) parts.push('מטרה: ' + clientProfile.goal)
-    if (clientProfile.weight) parts.push('משקל: ' + clientProfile.weight + 'ק"ג')
-    if (clientProfile.age) parts.push('גיל: ' + clientProfile.age)
-    if (clientProfile.medical_history) parts.push('מחלות רקע: ' + clientProfile.medical_history)
-    if (clientProfile.medications) parts.push('תרופות: ' + clientProfile.medications)
-    if (clientProfile.outcome_doc) parts.push('מסע המטרה שלה:\n' + clientProfile.outcome_doc)
-    return parts.length ? parts.join(' | ') : ''
-  }
-
-  async function send(text) {
-    const userText = text || input.trim()
-    if (!userText || loading) return
-    setInput('')
-    setShowQuick(false)
-    const newMessages = [...messages, { role: 'user', content: userText }]
-    setMessages(newMessages)
-    setLoading(true)
-    try {
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mode: 'agent',
-          messages: newMessages.map(m => ({ role: m.role, content: m.content })),
-          clientProfile: buildClientContext(),
-        }),
-      })
-      const data = await res.json()
-      const reply = data.result || 'מצטערת, נסי שוב.'
-      setMessages(prev => [...prev, { role: 'assistant', content: reply }])
-    } catch {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'שגיאה בחיבור. בדקי את האינטרנט ונסי שוב.' }])
-    }
-    setLoading(false)
-    setTimeout(() => inputRef.current?.focus(), 100)
-  }
-
-  function fmt(text) {
-    return text
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/🚨([^\n]*)/g, '<span style="color:#dc2626;font-weight:700">🚨$1</span>')
-      .replace(/\n/g, '<br/>')
-  }
-
-  return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 200px)', maxWidth: 520, margin: '0 auto' }}>
-      <div style={{ background: 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', borderRadius: '16px 16px 0 0', padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12, marginBottom: 0 }}>
-        <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#fff2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🌿</div>
-        <div>
-          <div style={{ fontWeight: 800, fontSize: 15, color: '#fff' }}>Agent חירום 24/7</div>
-          <div style={{ fontSize: 11, color: '#b2dfdb' }}>בין הראש לצלחת · שיטת אתי אטל</div>
-        </div>
-        <div style={{ marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: '#ffffff20', borderRadius: 20, padding: '4px 10px' }}>
-          <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
-          <span style={{ fontSize: 11, color: '#fff', fontWeight: 600 }}>פעיל</span>
-        </div>
-      </div>
-      <div style={{ flex: 1, overflowY: 'auto', padding: '14px 14px 8px', display: 'flex', flexDirection: 'column', gap: 10, background: '#f8f4ef', border: '1px solid #e8f5f2', borderTop: 'none' }}>
-        {messages.map((msg, i) => (
-          <div key={i} style={{ display: 'flex', flexDirection: msg.role === 'user' ? 'row-reverse' : 'row', alignItems: 'flex-end', gap: 8, animation: 'fadeUp 0.25s ease' }}>
-            {msg.role === 'assistant' && (
-              <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, flexShrink: 0, boxShadow: '0 2px 6px rgba(74,155,142,0.3)' }}>🌿</div>
-            )}
-            <div
-              style={msg.role === 'user' ? {
-                background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff',
-                borderRadius: '18px 18px 4px 18px', padding: '11px 15px', maxWidth: '78%',
-                fontSize: 14, lineHeight: 1.7, boxShadow: '0 2px 10px rgba(15,76,42,0.25)',
-              } : {
-                background: '#fff', color: '#1a1a1a',
-                borderRadius: '18px 18px 18px 4px', padding: '11px 15px', maxWidth: '82%',
-                fontSize: 14, lineHeight: 1.7, border: '1px solid rgba(74,155,142,0.12)',
-                boxShadow: '0 1px 6px rgba(0,0,0,0.06)',
-              }}
-              dangerouslySetInnerHTML={{ __html: fmt(msg.content) }}
-            />
-          </div>
-        ))}
-        {loading && (
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8 }}>
-            <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>🌿</div>
-            <div style={{ background: '#fff', borderRadius: '18px 18px 18px 4px', padding: '14px 16px', border: '1px solid rgba(74,155,142,0.12)', display: 'flex', gap: 5 }}>
-              {[0,1,2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: '#4a9b8e', animation: `bounce 1.2s ${i*0.2}s infinite` }} />)}
-            </div>
-          </div>
-        )}
-        <div ref={endRef} />
-      </div>
-      {showQuick && (
-        <div style={{ padding: '8px 14px', background: '#f8f4ef', borderLeft: '1px solid #e8f5f2', borderRight: '1px solid #e8f5f2' }}>
-          <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 6 }}>שאלות נפוצות:</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {AGENT_QUICK.map((q, i) => (
-              <button key={i} onClick={() => send(q)} style={{ padding: '5px 11px', borderRadius: 20, border: '1.5px solid rgba(74,155,142,0.3)', background: '#fff', color: '#3a7a6e', fontSize: 12, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>{q}</button>
-            ))}
-          </div>
-        </div>
-      )}
-      <div style={{ padding: '10px 14px 14px', background: '#fff', borderRadius: '0 0 16px 16px', border: '1px solid #e8f5f2', borderTop: '1px solid #f0f0f0' }}>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-          <textarea
-            ref={inputRef} value={input} onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
-            placeholder={fem ? 'שאלי כל שאלה תזונתית...' : 'שאל כל שאלה תזונתית...'}
-            rows={1} disabled={loading}
-            style={{ flex: 1, padding: '10px 14px', borderRadius: 20, border: '1.5px solid rgba(74,155,142,0.25)', fontSize: 14, fontFamily: 'inherit', direction: 'rtl', resize: 'none', outline: 'none', background: '#f8f4ef', maxHeight: 90, overflow: 'auto', lineHeight: 1.5 }}
-          />
-          <button onClick={() => send()} disabled={!input.trim() || loading}
-            style={{ width: 42, height: 42, borderRadius: '50%', background: !input.trim() || loading ? '#e5e7eb' : 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', color: !input.trim() || loading ? '#9ca3af' : '#fff', border: 'none', cursor: !input.trim() || loading ? 'not-allowed' : 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', transform: 'rotate(180deg)', flexShrink: 0, transition: 'all 0.2s', boxShadow: !input.trim() || loading ? 'none' : '0 3px 10px rgba(74,155,142,0.4)' }}>
-            ➤
-          </button>
-        </div>
-        <p style={{ fontSize: 10, color: '#ccc', textAlign: 'center', marginTop: 6, marginBottom: 0 }}>⚠️ לתסמינים דחופים פני למיון · ייעוץ תזונתי בלבד</p>
-      </div>
-      <style>{`
-        @keyframes bounce { 0%,80%,100%{transform:translateY(0)} 40%{transform:translateY(-5px)} }
-        @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-      `}</style>
-    </div>
-  )
-}
-
-function calcBMR(weight, height, age, gender) {
-  if (!weight || !height || !age) return 0
-  return gender === 'נקבה'
-    ? 10 * weight + 6.25 * height - 5 * age - 161
-    : 10 * weight + 6.25 * height - 5 * age + 5
-}
-
-function calcTargets(weight, height, age, gender, activity, goal) {
-  var bmr = calcBMR(weight, height, age, gender)
-  if (!bmr) return null
-  var tdee = bmr * (ACTIVITY_MULT[activity] || 1.55)
-  var adjust = goal === 'ירידה במשקל' ? -400 : goal === 'עלייה במסה' ? 300 : 0
+function calcTargets(client) {
+  if (!client || !client.weight || !client.height || !client.age) return null
+  var bmr = client.gender === 'זכר'
+    ? 10 * client.weight + 6.25 * client.height - 5 * client.age + 5
+    : 10 * client.weight + 6.25 * client.height - 5 * client.age - 161
+  var tdee = bmr * (ACTIVITY_MULT[client.activity] || 1.55)
+  var adjust = client.goal === 'ירידה במשקל' ? -400 : client.goal === 'עלייה במסה' ? 300 : 0
   var calories = Math.round(tdee + adjust)
-  var split = GOALS_SPLIT[goal] || GOALS_SPLIT['ירידה במשקל']
+  var split = GOALS_SPLIT[client.goal] || GOALS_SPLIT['ירידה במשקל']
   return {
     calories,
     protein: Math.round((calories * split.protein / 100) / 4),
     carbs: Math.round((calories * split.carbs / 100) / 4),
     fat: Math.round((calories * split.fat / 100) / 9),
+    proteinPct: split.protein, carbsPct: split.carbs, fatPct: split.fat,
   }
 }
 
-function shouldHide(item, dietType, restrictions) {
-  if (!item.hide) return false
-  for (var i = 0; i < item.hide.length; i++) {
-    var h = item.hide[i]
-    if (h === dietType) return true
-    if (restrictions && restrictions[h]) return true
+function calcNutrition(log, nutritionData) {
+  var total = { calories: 0, protein: 0, fat: 0, fiber: 0 }
+  function add(id) {
+    var item = nutritionData[id]
+    if (item) { total.calories += item.calories || 0; total.protein += item.protein || 0; total.fat += item.fat || 0; total.fiber += item.fiber || 0 }
   }
-  return false
+  if (log.had_snack) add('snack')
+  if (log.checks) Object.keys(log.checks).forEach(function(id) { if (log.checks[id]) add(id) })
+  if (log.carb_sel) add(log.carb_sel)
+  if (log.prot_sel) add(log.prot_sel)
+  if (log.fat_sel) add(log.fat_sel)
+  if (log.veggie_sel) add(log.veggie_sel)
+  if (log.benayim_sel) add(log.benayim_sel)
+  if (log.had_benayim) add('benayim')
+  total.calories += (log.boker_extra_cal || 0) + (log.lunch_extra_cal || 0) + (log.erev_extra_cal || 0)
+  var totalCal = total.protein * 4 + total.fat * 9
+  total.proteinPct = totalCal > 0 ? Math.round((total.protein * 4 / totalCal) * 100) : 0
+  total.fatPct = totalCal > 0 ? Math.round((total.fat * 9 / totalCal) * 100) : 0
+  total.carbsPct = Math.max(0, 100 - total.proteinPct - total.fatPct)
+  return total
 }
 
-function Confetti() {
-  const colors = ['#16a34a','#f97316','#9333ea','#0284c7','#d97706','#0d9488','#ec4899']
-  const pieces = Array.from({ length: 60 }, function(_, i) { return i })
-  return (
-    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 999, overflow: 'hidden' }}>
-      {pieces.map(function(i) {
-        var color = colors[i % colors.length]
-        var left = (i * 37 + 13) % 100
-        var delay = (i * 0.08) % 2
-        var size = 6 + (i % 4) * 3
-        return <div key={i} style={{ position: 'absolute', top: -20, left: left + '%', width: size, height: size, background: color, borderRadius: i % 3 === 0 ? '50%' : 2, animation: 'fall ' + (2 + (i % 3) * 0.5) + 's ' + delay + 's ease-in forwards', opacity: 0.9 }} />
-      })}
-      <style>{`@keyframes fall{0%{transform:translateY(0) rotate(0deg);opacity:1}100%{transform:translateY(100vh) rotate(720deg);opacity:0}}`}</style>
-    </div>
-  )
-}
+function MacroPieChart({ actual, target }) {
+  var actualData = [
+    { name: 'חלבון', value: actual.proteinPct || 0, color: '#16a34a' },
+    { name: 'שומן', value: actual.fatPct || 0, color: '#9333ea' },
+    { name: 'פחמימות', value: actual.carbsPct || 0, color: '#f97316' },
+  ]
+  var targetData = target ? [
+    { name: 'חלבון', value: target.proteinPct, color: '#16a34a' },
+    { name: 'שומן', value: target.fatPct, color: '#9333ea' },
+    { name: 'פחמימות', value: target.carbsPct, color: '#f97316' },
+  ] : null
 
-function FeedbackCard({ feedback, clientName, logDate, onOpenFull }) {
-  const [expanded, setExpanded] = useState(false)
-  if (!feedback) return null
-  const lines = feedback.split('\n').map(function(l) { return l.trim() }).filter(Boolean)
-  const winLines = [], focusLines = [], stepsLines = [], messageLines = []
-  var currentSection = 'none'
-  lines.forEach(function(line) {
-    const l = line.toLowerCase()
-    if (l.includes('עבד') || l.includes('הצלחה') || l.includes('ניצחון') || l.includes('שמור')) { currentSection = 'win'; return }
-    if (l.includes('דיוק') || l.includes('שיפור') || l.includes('משימ') || l.includes('לחזק')) { currentSection = 'focus'; return }
-    if (l.includes('צעד') || l.includes('מחר') || l.includes('שבוע הבא')) { currentSection = 'steps'; return }
-    if (l.includes('מסר') || l.includes('💚') || l.includes('בשבילך')) { currentSection = 'message'; return }
-    if (line.startsWith('**') || line.startsWith('#') || line.startsWith('---')) return
-    const clean = line.replace(/^[*#\-•>\d.]+\s*/, '').trim()
-    if (!clean || clean.length < 4) return
-    if (currentSection === 'win') winLines.push(clean)
-    else if (currentSection === 'focus') focusLines.push(clean)
-    else if (currentSection === 'steps') stepsLines.push(clean)
-    else if (currentSection === 'message') messageLines.push(clean)
-  })
-  const hasParsed = winLines.length > 0 || focusLines.length > 0 || stepsLines.length > 0
+  function renderLabel({ cx, cy, midAngle, innerRadius, outerRadius, value }) {
+    if (value < 8) return null
+    var RADIAN = Math.PI / 180
+    var radius = innerRadius + (outerRadius - innerRadius) * 0.5
+    var x = cx + radius * Math.cos(-midAngle * RADIAN)
+    var y = cy + radius * Math.sin(-midAngle * RADIAN)
+    return <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={11} fontWeight={800}>{value}%</text>
+  }
+
   return (
-    <div style={{ direction: 'rtl', marginBottom: 12 }}>
-      <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '16px 18px', marginBottom: 10, color: '#fff' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-          <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
-          <div>
-            <div style={{ fontWeight: 900, fontSize: 15 }}>משוב אישי מאתי 💚</div>
-            <div style={{ fontSize: 11, color: '#86efac' }}>{logDate} · אתי אטל</div>
+    <div style={{ background: '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 10 }}>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ flex: 1, textAlign: 'center' }}>
+          <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>בפועל</div>
+          <ResponsiveContainer width="100%" height={100}>
+            <PieChart>
+              <Pie data={actualData} cx="50%" cy="50%" innerRadius={22} outerRadius={44} dataKey="value" paddingAngle={3} labelLine={false} label={renderLabel}>
+                {actualData.map(function(e, i) { return <Cell key={i} fill={e.color} stroke="none" /> })}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+          <div style={{ fontSize: 12, fontWeight: 700, color: '#555' }}>{Math.round(actual.calories)} קל</div>
+        </div>
+        {targetData && (
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 4 }}>יעד</div>
+            <ResponsiveContainer width="100%" height={100}>
+              <PieChart>
+                <Pie data={targetData} cx="50%" cy="50%" innerRadius={22} outerRadius={44} dataKey="value" paddingAngle={3} labelLine={false} label={renderLabel}>
+                  {targetData.map(function(e, i) { return <Cell key={i} fill={e.color} stroke="none" /> })}
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <div style={{ fontSize: 12, fontWeight: 700, color: '#555' }}>{target.calories} קל יעד</div>
           </div>
-        </div>
-        <div style={{ fontSize: 13, color: '#bbf7d0', lineHeight: 1.6 }}>היי {clientName ? clientName.split(' ')[0] : ''}! המשוב האישי שלי עבורך 🌿</div>
+        )}
       </div>
-      {hasParsed ? (
-        <div>
-          {winLines.length > 0 && (
-            <div style={{ background: '#f0fdf4', border: '1.5px solid #86efac', borderRadius: 16, padding: '14px 16px', marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}><span style={{ fontSize: 18 }}>✨</span><span style={{ fontWeight: 800, fontSize: 14, color: '#166534' }}>מה עבד — שמרי על זה!</span></div>
-              {winLines.map(function(line, i) { return <div key={i} style={{ display: 'flex', gap: 8, padding: '6px 10px', background: '#dcfce7', borderRadius: 10, marginBottom: 6 }}><span style={{ fontSize: 14, flexShrink: 0 }}>🌟</span><span style={{ fontSize: 13, color: '#166534', lineHeight: 1.6, flex: 1 }}>{line}</span></div> })}
-            </div>
-          )}
-          {focusLines.length > 0 && (
-            <div style={{ background: '#fffbeb', border: '1.5px solid #fcd34d', borderRadius: 16, padding: '14px 16px', marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}><span style={{ fontSize: 18 }}>🎯</span><span style={{ fontWeight: 800, fontSize: 14, color: '#92400e' }}>משימות לדיוק</span></div>
-              {focusLines.map(function(line, i) { return <div key={i} style={{ display: 'flex', gap: 8, padding: '6px 10px', background: '#fef3c7', borderRadius: 10, marginBottom: 6 }}><span style={{ fontSize: 13, color: '#92400e', flexShrink: 0 }}>→</span><span style={{ fontSize: 13, color: '#78350f', lineHeight: 1.6, flex: 1 }}>{line}</span></div> })}
-            </div>
-          )}
-          {stepsLines.length > 0 && (
-            <div style={{ background: '#eff6ff', border: '1.5px solid #93c5fd', borderRadius: 16, padding: '14px 16px', marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}><span style={{ fontSize: 18 }}>🚀</span><span style={{ fontWeight: 800, fontSize: 14, color: '#1e40af' }}>3 צעדים קטנים לשבוע הבא</span></div>
-              {stepsLines.map(function(line, i) { return <div key={i} style={{ display: 'flex', gap: 10, padding: '8px 10px', background: '#dbeafe', borderRadius: 10, marginBottom: 6 }}><div style={{ width: 22, height: 22, borderRadius: 99, background: '#1e40af', color: '#fff', fontSize: 12, fontWeight: 900, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{i + 1}</div><span style={{ fontSize: 13, color: '#1e3a8a', lineHeight: 1.6, flex: 1 }}>{line}</span></div> })}
-            </div>
-          )}
-          {messageLines.length > 0 && (
-            <div style={{ background: 'linear-gradient(135deg,#faf5ff,#f0fdf4)', border: '1.5px solid #d8b4fe', borderRadius: 16, padding: '14px 16px', marginBottom: 10, textAlign: 'center' }}>
-              <div style={{ fontSize: 20, marginBottom: 6 }}>💚</div>
-              {messageLines.map(function(line, i) { return <div key={i} style={{ fontSize: 14, color: '#7c3aed', fontWeight: 700, lineHeight: 1.7, fontStyle: 'italic' }}>"{line}"</div> })}
-              <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>— אתי אטל</div>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div style={{ background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: 16, padding: '16px 18px', marginBottom: 10 }}>
-          <div style={{ fontSize: 14, color: '#333', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{expanded ? feedback : feedback.substring(0, 200) + (feedback.length > 200 ? '...' : '')}</div>
-          {feedback.length > 200 && <button onClick={function() { setExpanded(!expanded) }} style={{ marginTop: 8, background: 'transparent', border: 'none', color: '#16a34a', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{expanded ? '▲ פחות' : '▼ קראי הכל'}</button>}
-        </div>
-      )}
-      {onOpenFull && <button onClick={onOpenFull} style={{ width: '100%', padding: 11, borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>📄 פתחי את המשוב המלא</button>}
-    </div>
-  )
-}
-
-function MealScanner({ gender, onAdd, joinedDate }) {
-  const [scanning, setScanning] = useState(false)
-  const [recalculating, setRecalculating] = useState(false)
-  const [result, setResult] = useState(null)
-  const [editing, setEditing] = useState(false)
-  const [editDesc, setEditDesc] = useState('')
-  const [editCal, setEditCal] = useState(0)
-  const [editProtein, setEditProtein] = useState(0)
-  const [editFat, setEditFat] = useState(0)
-  const [editCarbs, setEditCarbs] = useState(0)
-  const inputRef = useRef(null)
-  const fem = gender !== 'זכר'
-  var daysInApp = joinedDate ? Math.floor((Date.now() - new Date(joinedDate).getTime()) / (1000*60*60*24)) : 99
-  var isLocked = daysInApp < 7
-
-  async function handleFile(file) {
-    if (!file) return
-    setScanning(true); setResult(null)
-    try {
-      var base64 = await new Promise(function(res, rej) { var r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = () => rej(new Error('שגיאה')); r.readAsDataURL(file) })
-      var res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'scanMeal', imageBase64: base64, mediaType: file.type, gender: gender }) })
-      var data = await res.json()
-      var r2 = data.result
-      setResult(r2); setEditDesc(r2.description || ''); setEditCal(r2.total_calories || 0)
-      setEditProtein(r2.total_protein || 0); setEditFat(r2.total_fat || 0); setEditCarbs(r2.total_carbs || 0)
-      setEditing(true)
-    } catch(e) { alert('שגיאה בסריקה') }
-    setScanning(false)
-  }
-
-  // ✅ חישוב מחדש לפי טקסט מתוקן
-  async function recalcByText() {
-    if (!editDesc.trim()) return
-    setRecalculating(true)
-    try {
-      var res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mode: 'scanMealText', description: editDesc, gender })
-      })
-      var data = await res.json()
-      var r2 = data.result
-      if (r2) {
-        setEditCal(r2.total_calories || 0)
-        setEditProtein(r2.total_protein || 0)
-        setEditFat(r2.total_fat || 0)
-        setEditCarbs(r2.total_carbs || 0)
-      }
-    } catch(e) { alert('שגיאה בחישוב') }
-    setRecalculating(false)
-  }
-
-  if (isLocked) return (
-    <div style={{ marginTop: 10, padding: '10px 14px', borderRadius: 10, background: '#f3f4f6', border: '1.5px dashed #d1d5db', textAlign: 'center' }}>
-      <span style={{ fontSize: 12, color: '#9ca3af' }}>📸 צילום צלחת יפתח בעוד {7 - daysInApp} ימים</span>
-    </div>
-  )
-  if (!editing || !result) return (
-    <div style={{ marginTop: 10 }}>
-      <input type="file" accept="image/*" ref={inputRef} style={{ display: 'none' }} onChange={e => e.target.files[0] && handleFile(e.target.files[0])} />
-      <button onClick={() => inputRef.current?.click()} disabled={scanning} style={{ width: '100%', padding: '10px', borderRadius: 10, background: scanning ? '#9ca3af' : '#eff6ff', color: scanning ? '#fff' : '#0284c7', border: '1.5px dashed #93c5fd', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-        {scanning ? '⏳ מנתח...' : fem ? '📸 צלמי או העלי תמונה — AI יזהה' : '📸 צלם או העלה תמונה — AI יזהה'}
-      </button>
-    </div>
-  )
-  return (
-    <div style={{ marginTop: 10, background: '#eff6ff', borderRadius: 14, padding: 14, border: '1.5px solid #93c5fd' }}>
-      <div style={{ fontWeight: 800, fontSize: 14, color: '#1e40af', marginBottom: 8 }}>🤖 AI זיהה — {fem ? 'תקני' : 'תקן'} אם לא מדויק:</div>
-      <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
-        <input
-          value={editDesc}
-          onChange={e => setEditDesc(e.target.value)}
-          style={{ flex: 1, padding: '7px 10px', borderRadius: 8, border: '1.5px solid #bfdbfe', fontSize: 13, boxSizing: 'border-box', textAlign: 'right' }}
-        />
-        <button
-          onClick={recalcByText}
-          disabled={recalculating}
-          style={{ padding: '7px 10px', borderRadius: 8, background: recalculating ? '#9ca3af' : '#0284c7', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, flexShrink: 0 }}
-        >
-          {recalculating ? '⏳' : '🔄 חשב'}
-        </button>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6, marginBottom: 10 }}>
-        {[{ label: '🔥 קל', val: editCal, set: setEditCal }, { label: '💪 חלבון', val: editProtein, set: setEditProtein }, { label: '🍞 פחמימה', val: editCarbs, set: setEditCarbs }, { label: '🫒 שומן', val: editFat, set: setEditFat }].map(function(f) {
-          return <div key={f.label} style={{ textAlign: 'center' }}><div style={{ fontSize: 10, color: '#6b7280', marginBottom: 3 }}>{f.label}</div><input type="number" value={f.val} onChange={e => f.set(Number(e.target.value) || 0)} style={{ width: '100%', padding: '6px 4px', borderRadius: 8, border: '1.5px solid #bfdbfe', fontSize: 13, textAlign: 'center', boxSizing: 'border-box' }} /></div>
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 6 }}>
+        {[{ l: 'חלבון', c: '#16a34a' }, { l: 'שומן', c: '#9333ea' }, { l: 'פחמימות', c: '#f97316' }].map(function(i) {
+          return <div key={i.l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 8, height: 8, borderRadius: 2, background: i.c }} /><span style={{ fontSize: 11, color: '#555' }}>{i.l}</span></div>
         })}
       </div>
-      {result.confidence === 'low' && <div style={{ fontSize: 11, color: '#f59e0b', marginBottom: 8 }}>⚠️ ביטחון נמוך — תקני או לחצי "חשב" אחרי עריכה</div>}
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={() => { onAdd(editCal, editDesc, editProtein, editFat, editCarbs); setEditing(false); setResult(null) }} style={{ flex: 2, padding: 10, borderRadius: 10, background: '#0284c7', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✅ {fem ? 'הוסיפי' : 'הוסף'} לארוחה</button>
-        <button onClick={() => { setEditing(false); setResult(null) }} style={{ flex: 1, padding: 10, borderRadius: 10, background: '#fff', color: '#ef4444', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ ביטול</button>
+    </div>
+  )
+}
+
+function NutritionBar({ label, value, max, color }) {
+  var pct = Math.min(100, Math.round((value / (max || 1)) * 100))
+  return (
+    <div style={{ marginBottom: 6 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, marginBottom: 2 }}>
+        <span style={{ color: '#555' }}>{label}</span>
+        <span style={{ fontWeight: 700, color }}>{Math.round(value)}</span>
+      </div>
+      <div style={{ height: 5, background: '#f3f4f6', borderRadius: 99 }}>
+        <div style={{ width: pct + '%', height: '100%', background: color, borderRadius: 99 }} />
       </div>
     </div>
   )
 }
 
-function Section({ title, icon, accent, light, children, defaultOpen, badge, isLocked, lockMessage }) {
-  const [open, setOpen] = useState(defaultOpen || false)
-  if (isLocked) return (
-    <div style={{ background: '#fafafa', borderRadius: 18, overflow: 'hidden', border: '1.5px dashed #d1d5db', marginBottom: 10, opacity: 0.75 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', background: '#f3f4f6' }}>
-        <span style={{ fontSize: 20 }}>🔒</span>
-        <span style={{ flex: 1, fontWeight: 700, fontSize: 15, color: '#6b7280', textAlign: 'right' }}>{title}</span>
-        <span style={{ fontSize: 11, background: '#e5e7eb', color: '#4b5563', borderRadius: 99, padding: '2px 8px', fontWeight: 600 }}>{lockMessage || 'נעול'}</span>
+function Field({ label, value, onChange, type, rows }) {
+  if (type === 'boolean') {
+    return (
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>{label}</div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => onChange(true)} style={{ flex: 1, padding: '8px', borderRadius: 10, border: '2px solid ' + (value === true ? '#0f4c2a' : '#e5e7eb'), background: value === true ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: value === true ? '#0f4c2a' : '#555' }}>כן</button>
+          <button onClick={() => onChange(false)} style={{ flex: 1, padding: '8px', borderRadius: 10, border: '2px solid ' + (value === false ? '#ef4444' : '#e5e7eb'), background: value === false ? '#fef2f2' : '#fafafa', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: value === false ? '#ef4444' : '#555' }}>לא</button>
+        </div>
       </div>
+    )
+  }
+  if (rows) {
+    return (
+      <div style={{ marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>{label}</div>
+        <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={rows} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+      </div>
+    )
+  }
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>{label}</div>
+      <input type={type || 'text'} value={value || ''} onChange={e => onChange(e.target.value)} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
     </div>
   )
+}
+
+function QSection({ title, icon, children }) {
+  const [open, setOpen] = useState(true)
   return (
-    <div style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', border: '1.5px solid #f0f0f0', marginBottom: 10 }}>
-      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', background: open ? light : '#fff', border: 'none', cursor: 'pointer' }}>
-        <span style={{ fontSize: 22 }}>{icon}</span>
+    <div style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', border: '1.5px solid #f0f0f0', marginBottom: 12 }}>
+      <button onClick={() => setOpen(!open)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', background: open ? '#f0fdf4' : '#fff', border: 'none', cursor: 'pointer' }}>
+        <span style={{ fontSize: 20 }}>{icon}</span>
         <span style={{ flex: 1, fontWeight: 800, fontSize: 15, color: '#111', textAlign: 'right' }}>{title}</span>
-        {badge && <span style={{ fontSize: 11, background: '#dcfce7', color: '#166534', borderRadius: 99, padding: '2px 8px', fontWeight: 700 }}>{badge}</span>}
-        <span style={{ color: accent, fontSize: 18 }}>{open ? '▲' : '▼'}</span>
+        <span style={{ color: '#16a34a', fontSize: 18 }}>{open ? '▲' : '▼'}</span>
       </button>
       {open && <div style={{ padding: '4px 18px 16px' }}>{children}</div>}
     </div>
   )
 }
 
-function CheckRow({ id, text, accent, checked, onToggle }) {
-  return (
-    <div onClick={() => onToggle(id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', opacity: checked ? 0.45 : 1 }}>
-      <div style={{ width: 20, height: 20, borderRadius: 6, border: '2px solid ' + (checked ? accent : '#d1d5db'), background: checked ? accent : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-        {checked && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
-      </div>
-      <span style={{ fontSize: 14, color: '#222', textDecoration: checked ? 'line-through' : 'none', flex: 1, textAlign: 'right' }}>{text}</span>
-    </div>
-  )
-}
+const BLOOD_TESTS = [
+  { key: 'glucose', label: 'סוכר בדם בצום', unit: 'mg/dL', normal: '70-100' },
+  { key: 'hba1c', label: 'המוגלובין A1C', unit: '%', normal: '<5.7' },
+  { key: 'cholesterol', label: 'כולסטרול כללי', unit: 'mg/dL', normal: '<200' },
+  { key: 'hdl', label: 'כולסטרול טוב HDL', unit: 'mg/dL', normal: '>60' },
+  { key: 'ldl', label: 'כולסטרול רע LDL', unit: 'mg/dL', normal: '<100' },
+  { key: 'triglycerides', label: 'טריגליצרידים בצום', unit: 'mg/dL', normal: '<150' },
+  { key: 'hemoglobin', label: 'המוגלובין', unit: 'g/dL', normal: 'נשים: 12-16' },
+  { key: 'ferritin', label: 'פריטין (ברזל)', unit: 'ng/mL', normal: '12-150' },
+  { key: 'iron', label: 'ברזל בדם', unit: 'μg/dL', normal: '60-170' },
+  { key: 'transferrin', label: 'טרנספרין', unit: 'mg/dL', normal: '200-360' },
+  { key: 'folic_acid', label: 'חומצה פולית', unit: 'ng/mL', normal: '3-17' },
+  { key: 'vitamin_b12', label: 'ויטמין B12', unit: 'pg/mL', normal: '200-900' },
+  { key: 'vitamin_b6', label: 'ויטמין B6', unit: 'ng/mL', normal: '5-50' },
+  { key: 'vitamin_d', label: 'ויטמין D', unit: 'ng/mL', normal: '30-100' },
+  { key: 'calcium', label: 'סידן', unit: 'mg/dL', normal: '8.5-10.5' },
+  { key: 'zinc', label: 'אבץ', unit: 'μg/dL', normal: '70-120' },
+  { key: 'magnesium', label: 'מגנזיום', unit: 'mg/dL', normal: '1.7-2.2' },
+  { key: 'tsh', label: 'בלוטת התריס TSH', unit: 'mIU/L', normal: '0.4-4.0' },
+  { key: 't3', label: 'T3', unit: 'pg/mL', normal: '2.3-4.2' },
+  { key: 't4', label: 'T4', unit: 'ng/dL', normal: '0.8-1.8' },
+  { key: 'crp', label: 'דלקת CRP', unit: 'mg/L', normal: '<1.0' },
+  { key: 'esr', label: 'שקיעת דם ESR', unit: 'mm/hr', normal: 'נשים: <20' },
+  { key: 'homocysteine', label: 'הומוציסטאין', unit: 'μmol/L', normal: '<15' },
+  { key: 'alt', label: 'תפקוד כבד ALT', unit: 'U/L', normal: '<35' },
+  { key: 'ast', label: 'תפקוד כבד AST', unit: 'U/L', normal: '<40' },
+  { key: 'creatinine', label: 'קריאטינין (כליות)', unit: 'mg/dL', normal: '0.6-1.2' },
+  { key: 'urea', label: 'אוריאה', unit: 'mg/dL', normal: '7-20' },
+  { key: 'uric_acid', label: 'חומצה אורית', unit: 'mg/dL', normal: 'נשים: 2.4-6.0' },
+  { key: 'estrogen', label: 'אסטרוגן', unit: 'pg/mL', normal: 'תלוי מחזור' },
+  { key: 'progesterone', label: 'פרוגסטרון', unit: 'ng/mL', normal: 'תלוי מחזור' },
+  { key: 'testosterone', label: 'טסטוסטרון', unit: 'ng/dL', normal: 'נשים: 15-70' },
+  { key: 'insulin', label: 'אינסולין בצום', unit: 'μU/mL', normal: '2-25' },
+  { key: 'lactose_sensitivity', label: 'רגישות ללקטוז', unit: '', normal: 'שלילי' },
+  { key: 'gluten_sensitivity', label: 'רגישות לגלוטן', unit: '', normal: 'שלילי' },
+  { key: 'celiac', label: 'צליאק', unit: '', normal: 'שלילי' },
+  { key: 'blood_type', label: 'סוג דם', unit: '', normal: '' },
+  { key: 'wbc', label: 'ספירת דם — כדוריות לבנות WBC', unit: 'K/μL', normal: '4.5-11.0' },
+  { key: 'rbc', label: 'ספירת דם — כדוריות אדומות RBC', unit: 'M/μL', normal: 'נשים: 4.0-5.2' },
+  { key: 'platelets', label: 'טסיות דם', unit: 'K/μL', normal: '150-400' },
+  { key: 'urine_general', label: 'בדיקת שתן כללית', unit: '', normal: 'תקין' },
+  { key: 'urine_culture', label: 'בדיקת שתן לתרבית', unit: '', normal: 'שלילי' },
+]
 
-function RadioRow({ id, text, accent, selected, onSelect }) {
-  const active = selected === id
-  return (
-    <div onClick={() => onSelect(active ? null : id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer' }}>
-      <div style={{ width: 18, height: 18, borderRadius: 99, border: '2px solid ' + (active ? accent : '#d1d5db'), background: active ? accent : '#fff', flexShrink: 0 }} />
-      <span style={{ fontSize: 14, color: active ? accent : '#222', fontWeight: active ? 700 : 400, flex: 1, textAlign: 'right' }}>{text}</span>
-    </div>
-  )
-}
-
-function FreeText({ value, onChange, placeholder }) {
-  return <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder || 'פרטים נוספים...'} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginTop: 8, color: '#555' }} />
-}
-
-function ExtraCal({ value, onChange }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-      <input type="number" value={value || ''} onChange={e => onChange(Number(e.target.value) || 0)} placeholder="קלוריות נוספות..." style={{ flex: 1, padding: '7px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-      <span style={{ fontSize: 12, color: '#9ca3af', flexShrink: 0 }}>קל</span>
-    </div>
-  )
-}
-
-function YesNo({ value, onChange, labelYes, labelNo, accent }) {
-  return (
-    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-      <button onClick={() => onChange(true)} style={{ flex: 1, padding: '8px', borderRadius: 10, border: '2px solid ' + (value === true ? accent : '#e5e7eb'), background: value === true ? accent : '#fafafa', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: value === true ? '#fff' : '#555' }}>{labelYes}</button>
-      <button onClick={() => onChange(false)} style={{ flex: 1, padding: '8px', borderRadius: 10, border: '2px solid ' + (value === false ? '#ef4444' : '#e5e7eb'), background: value === false ? '#fef2f2' : '#fafafa', cursor: 'pointer', fontSize: 13, fontWeight: 700, color: value === false ? '#ef4444' : '#555' }}>{labelNo}</button>
-    </div>
-  )
-}
-
-function NlpSelector({ label, value, onChange, max, lowLabel, highLabel, accent }) {
-  return (
-    <div style={{ marginBottom: 14 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 4 }}>
-        <span>{label}</span>
-        <span style={{ color: accent, fontWeight: 900 }}>{value || 0}/{max}</span>
-      </div>
-      <div style={{ display: 'flex', gap: 4 }}>
-        {Array.from({ length: max }).map(function(_, i) {
-          const num = i + 1; const isActive = value === num
-          return <button key={num} onClick={() => onChange(num)} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '1.5px solid ' + (isActive ? accent : '#e5e7eb'), background: isActive ? accent : '#fff', color: isActive ? '#fff' : '#555', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{num}</button>
-        })}
-      </div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
-        <span>{lowLabel}</span><span>{highLabel}</span>
-      </div>
-    </div>
-  )
-}
-
-export default function PlanApp({ clientName, userPassword }) {
-  const displayName = clientName || userPassword || ''
-  const dbKey = userPassword || clientName || ''
-  const today = new Date().toLocaleDateString('he-IL')
-  const todayKey = new Date().toLocaleDateString('sv-SE')
-
-  const [currentStage, setCurrentStage] = useState(1)
-  const [stageName, setStageName] = useState('שלב הניצוץ · מודעות')
-  const [videoUrl, setVideoUrl] = useState('')
-  const [pantryNotes, setPantryNotes] = useState('')
-  const [showStage2Welcome, setShowStage2Welcome] = useState(false)
-  const [showConfetti, setShowConfetti] = useState(false)
-  const [showWelcomeDoc, setShowWelcomeDoc] = useState(false)
-  const [dietType, setDietType] = useState(null)
-  const [restrictions, setRestrictions] = useState({})
-  const [setupDone, setSetupDone] = useState(false)
-  const [profileDone, setProfileDone] = useState(false)
-  const [checks, setChecks] = useState({})
-  const [carbSel, setCarbSel] = useState(null)
-  const [protChecks, setProtChecks] = useState({}) // ✅ כמה חלבונות
-  const [carbQty, setCarbQty] = useState({})
-  const [protQty, setProtQty] = useState({})
-  const [fatSel, setFatSel] = useState(null)
-  const [veggieSel, setVeggieSel] = useState(null)
-  const [lunchOpt, setLunchOpt] = useState(null)
-  const [benayimSel, setBenayimSel] = useState(null)
-  const [hadSnack, setHadSnack] = useState(null)
-  const [hadBenayim, setHadBenayim] = useState(null)
-  const [water, setWater] = useState(0)
-  const [steps, setSteps] = useState('')
-  const [note, setNote] = useState('')
-  const [showWAButton, setShowWAButton] = useState(false)
-  const [bokerFree, setBokerFree] = useState('')
-  const [lunchFree, setLunchFree] = useState('')
-  const [erevFree, setErevFree] = useState('')
-  const [bokerExtraCal, setBokerExtraCal] = useState(0)
-  const [lunchExtraCal, setLunchExtraCal] = useState(0)
-  const [erevExtraCal, setErevExtraCal] = useState(0)
-  const [scanCalories, setScanCalories] = useState(0)
-  const [scanDesc, setScanDesc] = useState('')
-  const [scanProtein, setScanProtein] = useState(0)
-  const [scanFat, setScanFat] = useState(0)
-  const [scanCarbs, setScanCarbs] = useState(0)
-  const [joinedDate, setJoinedDate] = useState(null)
-  const [feedback, setFeedback] = useState(null)
-  const [reportApproved, setReportApproved] = useState(false)
-  const [activeTab, setActiveTab] = useState('diary')
-  const [showDocsMenu, setShowDocsMenu] = useState(false)
-  const [showInitialReport, setShowInitialReport] = useState(false)
-  const [showOutcomeDoc, setShowOutcomeDoc] = useState(false)
-  const [showDailyFeedback, setShowDailyFeedback] = useState(false)
-  const [guideUrl, setGuideUrl] = useState(null)
+function NutritionRow({ item, onSave }) {
+  const [vals, setVals] = useState(item)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '8px 16px', borderBottom: '1px solid #f3f4f6', alignItems: 'center' }}>
+      <div style={{ fontSize: 13, color: '#333', fontWeight: 600 }}>{item.name}</div>
+      {['calories', 'protein', 'fat', 'fiber'].map(function(field) {
+        return <input key={field} type="number" value={vals[field] || 0} onChange={function(e) { setVals(function(v) { return { ...v, [field]: Number(e.target.value) } }) }} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
+      })}
+      <button onClick={async function() { setSaving(true); await onSave(vals); setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000) }} style={{ padding: '6px 10px', borderRadius: 8, background: saved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+        {saving ? '...' : saved ? '✓' : 'שמור'}
+      </button>
+    </div>
+  )
+}
+
+export default function AdminPage() {
+  const [pin, setPin] = useState('')
+  const [auth, setAuth] = useState(false)
+  const [clients, setClients] = useState([])
+  const [selectedClient, setSelectedClient] = useState(null)
+  const [profile, setProfile] = useState({})
+  const [nutritionItems, setNutritionItems] = useState([])
   const [nutritionData, setNutritionData] = useState({})
-  const [sportType, setSportType] = useState('')
-  const [sportCommitDays, setSportCommitDays] = useState(2)
-  const [sportDoneToday, setSportDoneToday] = useState(false)
-  const [sportDaysThisWeek, setSportDaysThisWeek] = useState(0)
-  const [stressLevel, setStressLevel] = useState(0)
-  const [fatigueLevel, setFatigueLevel] = useState(0)
-  const [hungerLevel, setHungerLevel] = useState(0)
-  const [userMood, setUserMood] = useState(null)
-  const [userWeight, setUserWeight] = useState('')
-  const [userHeight, setUserHeight] = useState('')
-  const [userAge, setUserAge] = useState('')
-  const [userGender, setUserGender] = useState('נקבה')
-  const [userActivity, setUserActivity] = useState('בינוני')
-  const [userGoal, setUserGoal] = useState('ירידה במשקל')
-  const [userTargetWeight, setUserTargetWeight] = useState('')
-  const [clientData, setClientData] = useState(null)
-  const [clientPlate, setClientPlate] = useState(null) // ✅ אחוזי הצלחת האישית
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+  const [tab, setTab] = useState('logs')
+  const [scanLoading, setScanLoading] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiAnalysis, setAiAnalysis] = useState('')
+  const [logs, setLogs] = useState([])
+  const [filteredLogs, setFilteredLogs] = useState([])
+  const [filterMode, setFilterMode] = useState('week')
+  const [feedback, setFeedback] = useState({})
+  const [savingFeedback, setSavingFeedback] = useState(null)
+  const [sentFeedback, setSentFeedback] = useState(null)
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
+  const [patientId, setPatientId] = useState('')
+  const [selectedTests, setSelectedTests] = useState({})
+  const [newClient, setNewClient] = useState({ name: '', last_name: '', password: '', phone: '', age: '', weight: '', height: '', goal: '', activity: '', gender: '' })
+  const [addingClient, setAddingClient] = useState(false)
+  const [clientAdded, setClientAdded] = useState('')
+  const [foodDiary, setFoodDiary] = useState('')
+  const [bloodText, setBloodText] = useState('')
+  const [bloodScanLoading, setBloodScanLoading] = useState(false)
+  const [extraBloodNotes, setExtraBloodNotes] = useState('')
+  const [editableAnalysis, setEditableAnalysis] = useState('')
+  const [sendingToClient, setSendingToClient] = useState(false)
+  const [sentToClient, setSentToClient] = useState(false)
+  const [dailyPreview, setDailyPreview] = useState('')
+  const [dailyEditing, setDailyEditing] = useState(false)
+  const [dailyTargetLog, setDailyTargetLog] = useState(null)
+  const [sendingDaily, setSendingDaily] = useState(false)
+  const [sentDaily, setSentDaily] = useState(null)
+  const [inventory, setInventory] = useState([])
+  const [newItemName, setNewItemName] = useState('')
+  const [addingItem, setAddingItem] = useState(false)
+  const [previewDoc, setPreviewDoc] = useState(false)
+  const [previewReport, setPreviewReport] = useState(false)
+  const [togglingDoc, setTogglingDoc] = useState(false)
+  const [journeyAnswers, setJourneyAnswers] = useState({
+    goal_reason: '', goal_what: '', goal_context: '', goal_why: '', goal_proof: '',
+    vision_see: '', vision_hear: '', vision_feel: '',
+    ecology_keep: '', ecology_harmony: '', ecology_who: '',
+    belief_hard: '', belief_when: '',
+    resources_has: '', resources_past: '',
+    vaccine_moment: '', vaccine_action: '', vaccine_anchor: '',
+    first_step: ''
+  })
+  const [journeyAnalysis, setJourneyAnalysis] = useState('')
+  const [journeyLoading, setJourneyLoading] = useState(false)
+  const [sessionNotes, setSessionNotes] = useState('')
+  const [journeyDocLoading, setJourneyDocLoading] = useState(false)
+  const [journeyDocSent, setJourneyDocSent] = useState(false)
 
-  const fem = userGender !== 'זכר'
-  const gf = (f, m) => fem ? f : m
+  // ── ✅ Agent Instructions state ──
+  const [agentInstructions, setAgentInstructions] = useState('')
+  const [generatingInstructions, setGeneratingInstructions] = useState(false)
+  const [savedInstructions, setSavedInstructions] = useState(false)
 
-  useEffect(function() {
-    async function loadNutrition() {
-      var { data } = await supabase.from('nutrition_data').select('*')
-      var nd = {}
-      if (data) data.forEach(item => nd[item.id] = item)
-      setNutritionData(nd)
-    }
-    loadNutrition()
-  }, [])
+  // ── ✅ Plate Calculator state ──
+  const [calculatingPlate, setCalculatingPlate] = useState(false)
+  const [plateResult, setPlateResult] = useState(null)
 
-  useEffect(function() {
-    async function load() {
-      var client = await supabase.from('clients').select('*').eq('password', dbKey).maybeSingle()
-      if (client.data) {
-        var d = client.data
-        setClientData(d)
-        // ✅ טוען אחוזי הצלחת מ-client_profiles
-        const profileRes = await supabase.from('client_profiles').select('welcome_doc_json').eq('client_password', dbKey).maybeSingle()
-        if (profileRes.data?.welcome_doc_json?.plate) {
-          setClientPlate(profileRes.data.welcome_doc_json.plate)
-        }
-        if (d.weight) { setUserWeight(String(d.weight)); setProfileDone(true) }
-        if (d.height) setUserHeight(String(d.height))
-        if (d.age) setUserAge(String(d.age))
-        if (d.gender) setUserGender(d.gender)
-        if (d.activity) setUserActivity(d.activity)
-        if (d.goal) setUserGoal(d.goal)
-        if (d.target_weight) setUserTargetWeight(String(d.target_weight))
-        if (d.video_url) setVideoUrl(d.video_url)
-        if (d.pantry_notes) setPantryNotes(d.pantry_notes)
-        if (d.created_at) setJoinedDate(d.created_at)
-        if (d.sport_type) setSportType(d.sport_type)
-        if (d.sport_commit_days) setSportCommitDays(d.sport_commit_days)
-        if (d.diet_type) { setDietType(d.diet_type); setSetupDone(true) }
-        else if (d.weight) { setSetupDone(true) }
-        if (d.restrictions) setRestrictions(d.restrictions)
-        if (d.current_stage) {
-          const stg = d.current_stage
-          setCurrentStage(stg)
-          if (stg === 1) setStageName('שלב הניצוץ · מודעות')
-          if (stg === 2) setStageName('שלב העוגן · עיצוב סביבה')
-          if (stg === 3) setStageName('שלב החופש · דרך חיים')
-          var seenKey = 'stage2seen_' + dbKey
-          if (stg >= 2 && !localStorage.getItem(seenKey)) {
-            setShowStage2Welcome(true); setShowConfetti(true)
-            localStorage.setItem(seenKey, '1')
-            setTimeout(() => setShowConfetti(false), 4000)
-          }
-        }
-      }
-
-      var todayLog = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
-      if (todayLog.data) {
-        var t = todayLog.data
-        setChecks(t.checks || {}); setCarbSel(t.carb_sel); setProtChecks(t.prot_checks || {}); setFatSel(t.fat_sel)
-        setVeggieSel(t.veggie_sel); setLunchOpt(t.lunch_opt); setBenayimSel(t.benayim_sel)
-        setWater(t.water || 0); setSteps(t.steps || ''); setNote(t.note || '')
-        setBokerFree(t.boker_free || ''); setLunchFree(t.lunch_free || ''); setErevFree(t.erev_free || '')
-        setBokerExtraCal(t.boker_extra_cal || 0); setLunchExtraCal(t.lunch_extra_cal || 0); setErevExtraCal(t.erev_extra_cal || 0)
-        setHadSnack(t.had_snack ?? null); setHadBenayim(t.had_benayim ?? null)
-        setSportDoneToday(t.sport_done_today || false)
-        var dayOfWeek = new Date().getDay()
-        setSportDaysThisWeek(dayOfWeek === 0 ? 0 : (t.sport_days_week || 0))
-        setScanCalories(t.scan_calories || 0); setScanDesc(t.scan_desc || '')
-        setFeedback(t.trainer_feedback || null); setReportApproved(t.report_approved || false)
-        if (t.nlp_metrics) { var m = t.nlp_metrics; setStressLevel(m.stress || 0); setFatigueLevel(m.fatigue || 0); setHungerLevel(m.hunger || 0); setUserMood(m.mood || null) }
-      }
-    }
-    if (dbKey) load()
-  }, [dbKey, todayKey])
-
-  const autoSaveRef = useRef(null)
-  useEffect(() => {
-    if (!dbKey || !todayKey || !profileDone) return
-    if (autoSaveRef.current) clearTimeout(autoSaveRef.current)
-    autoSaveRef.current = setTimeout(async () => {
-      var payload = {
-        client_name: dbKey, log_date: todayKey, checks,
-        carb_sel: carbSel, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
-        water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
-        boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
-        had_snack: hadSnack, had_benayim: hadBenayim,
-        sport_done_today: sportDoneToday, sport_days_week: sportDaysThisWeek,
-        scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
-        diet_type: dietType, restrictions,
-        nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood },
-        updated_at: new Date().toISOString(),
-      }
-      const { error } = await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
-      if (error) console.error('❌ autosave failed:', error.message, error)
-    }, 3000)
-    return () => clearTimeout(autoSaveRef.current)
-  }, [checks, carbSel, protChecks, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood])
-
-  useEffect(() => {
-    function handleGuideClose(e) {
-      if (e.data === 'closeGuide') setGuideUrl(null)
-    }
-    window.addEventListener('message', handleGuideClose)
-    return () => window.removeEventListener('message', handleGuideClose)
-  }, [])
-
-  function calcEatenCalories() {
-    var total = 0
-    function add(id, qtyOverride) {
-      var item = nutritionData[id]
-      if (item) {
-        if (qtyOverride && item.base_qty && item.base_qty > 0) {
-          total += (item.calories || 0) * (qtyOverride / item.base_qty)
-        } else {
-          total += item.calories || 0
-        }
-      }
-    }
-    if (hadSnack) add('snack')
-    if (checks) Object.keys(checks).forEach(id => { if (checks[id]) add(id) })
-    if (carbSel) add(carbSel, carbQty[carbSel])
-    // ✅ מחשב כל החלבונות שנבחרו
-    Object.keys(protChecks).forEach(id => {
-      if (protChecks[id]) {
-        if (id === 'p8') {
-          // ביצים — לפי יחידות
-          const qty = protQty[id] || 2
-          total += Math.round(qty * 70)
-        } else {
-          add(id, protQty[id])
-        }
-      }
-    })
-    if (fatSel) add(fatSel); if (veggieSel) add(veggieSel)
-    if (benayimSel) add(benayimSel); if (hadBenayim) add('benayim')
-    total += (bokerExtraCal || 0) + (lunchExtraCal || 0) + (erevExtraCal || 0) + (scanCalories || 0)
-    return total
+  async function calcPlate() {
+    if (!selectedClient?.password) return
+    setCalculatingPlate(true)
+    setPlateResult(null)
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mode: 'calcPlate', clientPassword: selectedClient.password })
+      })
+      const data = await res.json()
+      if (data.result) setPlateResult(data.result)
+    } catch(e) { alert('שגיאה בחישוב') }
+    setCalculatingPlate(false)
   }
 
-  const saveProfile = async function() {
-    if (!userWeight || !userHeight || !userAge) return
+  const login = () => { if (pin === 'Esterika26') setAuth(true) }
+
+  useEffect(function() { if (auth) { loadClients(); loadNutritionData() } }, [auth])
+
+  async function loadNutritionData() {
+    var { data } = await supabase.from('nutrition_data').select('*')
+    var nd = {}
+    if (data) data.forEach(function(item) { nd[item.id] = item })
+    setNutritionData(nd)
+  }
+
+  async function loadClients() {
+    const { data } = await supabase.from('clients').select('*')
+    setClients(data || [])
+  }
+
+  async function loadProfile(client) {
+    setProfile({})
+    setTab('logs')
+    setAiAnalysis('')
+    setLogs([])
+    setFilteredLogs([])
+    setPatientId('')
+    setSelectedTests({})
+    setInventory([])
+    setPreviewDoc(false)
+
+    // ✅ תמיד טוען נתונים טריים מה-DB — מונע באג של welcome_doc_enabled שמתאפס
+    const { data: freshClient } = await supabase.from('clients').select('*').eq('id', client.id).maybeSingle()
+    const activeClient = freshClient || client
+    setSelectedClient(activeClient)
+    setAgentInstructions(activeClient.agent_instructions || '')
+
+    const { data } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
+    if (data) {
+      setProfile(data)
+      setFoodDiary(data.food_diary || '')
+      setExtraBloodNotes(data.extra_blood_notes || '')
+      if (data.ai_report) { setAiAnalysis(data.ai_report); setEditableAnalysis(data.ai_report) }
+    } else setProfile({ client_password: client.password, blood_tests: {} })
+    const { data: nd } = await supabase.from('nutrition_data').select('*').order('id')
+    setNutritionItems(nd || [])
+    const { data: logsData } = await supabase.from('daily_logs').select('*').eq('client_name', client.password).order('log_date', { ascending: false }).limit(30)
+    setLogs(logsData || [])
+    applyFilter(logsData || [], 'week', '', '')
+    const { data: inventoryData } = await supabase.from('inventory_items').select('*').eq('client_id', client.id).order('created_at', { ascending: false })
+    setInventory(inventoryData || [])
+  }
+
+  function applyFilter(allLogs, mode, from, to) {
+    if (mode === 'today') {
+      var today = new Date().toLocaleDateString('sv-SE')
+      setFilteredLogs(allLogs.filter(function(l) { return l.log_date === today }))
+    } else if (mode === 'week') {
+      var weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
+      setFilteredLogs(allLogs.filter(function(l) { return l.log_date >= weekAgo.toLocaleDateString('sv-SE') }))
+    } else if (mode === 'custom' && from && to) {
+      setFilteredLogs(allLogs.filter(function(l) { return l.log_date >= from && l.log_date <= to }))
+    } else {
+      setFilteredLogs(allLogs)
+    }
+  }
+
+  useEffect(function() { applyFilter(logs, filterMode, dateFrom, dateTo) }, [logs, filterMode, dateFrom, dateTo])
+
+  function updateProfile(field, value) { setProfile(p => ({ ...p, [field]: value })) }
+  function updateBloodTest(key, value) { setProfile(p => ({ ...p, blood_tests: { ...(p.blood_tests || {}), [key]: value } })) }
+  function toggleTest(key) { setSelectedTests(t => ({ ...t, [key]: !t[key] })) }
+  function selectAllTests() { var all = {}; DOCTOR_TESTS.forEach(t => { all[t.key] = true }); setSelectedTests(all) }
+  function clearAllTests() { setSelectedTests({}) }
+
+  async function updateClientData(field, value) {
+    if (!selectedClient) return
+    const { error } = await supabase.from('clients').update({ [field]: value }).eq('id', selectedClient.id)
+    if (!error) setSelectedClient(prev => ({ ...prev, [field]: value }))
+  }
+
+  // ── ✅ פונקציות Agent Instructions ──
+  async function generateAgentInstructions() {
+    if (!selectedClient) return
+    setGeneratingInstructions(true)
+    try {
+      const res = await fetch('/api/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'agentInstructions',
+          clientPassword: selectedClient.password
+        })
+      })
+      const data = await res.json()
+      if (data.result) {
+        setAgentInstructions(data.result)
+        setSelectedClient(prev => ({ ...prev, agent_instructions: data.result, agent_instructions_updated_at: new Date().toISOString() }))
+      }
+    } catch(e) { alert('שגיאה: ' + e.message) }
+    setGeneratingInstructions(false)
+  }
+
+  async function saveAgentInstructions() {
+    if (!selectedClient) return
     await supabase.from('clients').update({
-      weight: parseFloat(userWeight),
-      height: parseFloat(userHeight),
-      age: parseInt(userAge),
-      gender: userGender,
-      activity: userActivity,
-      goal: userGoal,
-      target_weight: userTargetWeight ? parseFloat(userTargetWeight) : null,
-      sport_type: sportType,
-      sport_commit_days: sportCommitDays,
-      diet_type: dietType,
-      restrictions: restrictions,
-    }).eq('password', dbKey)
-    setProfileDone(true)
+      agent_instructions: agentInstructions,
+      agent_instructions_updated_at: new Date().toISOString()
+    }).eq('id', selectedClient.id)
+    setSelectedClient(prev => ({ ...prev, agent_instructions: agentInstructions }))
+    setSavedInstructions(true)
+    setTimeout(() => setSavedInstructions(false), 3000)
   }
 
-  const resetDay = async function() {
-    if (!window.confirm('לאפס את כל הנתונים של היום?')) return
-    await supabase.from('daily_logs').delete().eq('client_name', dbKey).eq('log_date', todayKey)
-    setChecks({}); setCarbSel(null); setProtChecks({}); setFatSel(null); setVeggieSel(null); setBenayimSel(null); setLunchOpt(null)
-    setWater(0); setSteps(''); setNote(''); setBokerFree(''); setLunchFree(''); setErevFree('')
-    setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
-    setHadSnack(null); setHadBenayim(null); setSportDoneToday(false)
-    setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0)
-    setStressLevel(0); setFatigueLevel(0); setHungerLevel(0); setUserMood(null)
-    setFeedback(null); setReportApproved(false)
+  async function refreshWelcomeDoc() {
+    if (!selectedClient) return
+    if (!window.confirm('למחוק את המסמך הקיים ולייצר חדש?')) return
+    setTogglingDoc(true)
+    await supabase.from('client_profiles').update({
+      welcome_doc_json: null,
+      welcome_doc_generated_at: null
+    }).eq('client_password', selectedClient.password)
+    setTogglingDoc(false)
+    alert('✅ המסמך נמחק — בפתיחה הבאה ייווצר חדש')
   }
 
-  const handleSave = async function() {
+  async function toggleWelcomeDoc() {
+    if (!selectedClient) return
+    setTogglingDoc(true)
+    const newVal = !selectedClient.welcome_doc_enabled
+    await supabase.from('clients').update({ welcome_doc_enabled: newVal }).eq('id', selectedClient.id)
+    setSelectedClient(prev => ({ ...prev, welcome_doc_enabled: newVal }))
+    setTogglingDoc(false)
+  }
+
+  async function addItemToInventory() {
+    if (!newItemName.trim() || !selectedClient) return
+    setAddingItem(true)
+    const { data, error } = await supabase.from('inventory_items').insert([{ client_id: selectedClient.id, name: newItemName.trim(), category: 'pantry', status: 'missing' }]).select()
+    if (!error && data) { setInventory(prev => [data[0], ...prev]); setNewItemName('') }
+    setAddingItem(false)
+  }
+
+  async function deleteItem(itemId) {
+    const { error } = await supabase.from('inventory_items').delete().eq('id', itemId)
+    if (!error) setInventory(prev => prev.filter(item => item.id !== itemId))
+  }
+
+  async function toggleItemStatus(itemId, currentStatus) {
+    const newStatus = currentStatus === 'missing' ? 'pantry' : 'missing'
+    const { error } = await supabase.from('inventory_items').update({ status: newStatus }).eq('id', itemId)
+    if (!error) setInventory(prev => prev.map(item => item.id === itemId ? { ...item, status: newStatus } : item))
+  }
+
+  function openDoctorLetter() {
+    if (!selectedClient) return
+    var today = new Date().toLocaleDateString('he-IL')
+    var fullName = (selectedClient.name || '') + ' ' + (selectedClient.last_name || '')
+    var id = selectedClient.id_number || patientId || '___________'
+    var tests = DOCTOR_TESTS.filter(t => selectedTests[t.key]).map(t => '<tr><td style="padding:6px 12px;font-size:14px;border-bottom:1px solid #f0f0f0;">&#10061; ' + t.label + '</td></tr>').join('')
+    if (!tests) { alert('בחרי לפחות בדיקה אחת'); return }
+    var html = '<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;direction:rtl;padding:40px;color:#222;max-width:700px;margin:0 auto}.header{text-align:center;margin-bottom:30px;border-bottom:2px solid #0f4c2a;padding-bottom:20px}.logo{height:80px;margin-bottom:10px}.name{font-size:22px;font-weight:bold;color:#0f4c2a}.title{font-size:13px;color:#666}table{width:100%;border-collapse:collapse;margin:16px 0}.signature{margin-top:40px;border-top:1px solid #e5e7eb;padding-top:20px}p{line-height:1.8;font-size:15px}</style></head><body>'
+      + '<div class="header"><img class="logo" src="/logo.png" alt="logo" /><div class="name">אתי אטל</div><div class="title">יועצת בריאות ותזונה התנהגותית</div><div class="title">052-333-6766 | Attal.eti@gmail.com</div></div>'
+      + '<p style="text-align:right;color:#666;font-size:14px;">' + today + '</p>'
+      + '<p>לכבוד רופא המשפחה</p>'
+      + '<p><strong>הנדון: המלצה לביצוע בדיקות מעבדה</strong></p>'
+      + '<p>' + fullName.trim() + ' (ת.ז: ' + id + ') הינו/ה הלקוח/ה שלי.<br/>בכדי שאוכל להמשיך את הליווי הבריאותי, אבקש לבצע את הבדיקות הבאות:</p>'
+      + '<table>' + tests + '</table>'
+      + '<div class="signature"><p>בתודה מראש,</p><br/><p><strong>אתי אטל</strong><br/>יועצת בריאות ותזונה התנהגותית<br/>052-333-6766 | Attal.eti@gmail.com</p></div>'
+      + '</body></html>'
+    var win = window.open('', '_blank')
+    win.document.write(html + '<div style="text-align:center;margin-top:30px"><button onclick="window.print()" style="padding:14px 30px;background:#0f4c2a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer">הדפס / שמור PDF</button></div>')
+    win.document.close()
+  }
+
+  async function addClient() {
+    if (!newClient.name || !newClient.password) { alert('שם וסיסמה הם שדות חובה'); return }
+    setAddingClient(true)
+    const { error } = await supabase.from('clients').insert([{
+      name: newClient.name, last_name: newClient.last_name, password: newClient.password,
+      phone: newClient.phone, id_number: newClient.id_number || null,
+      age: newClient.age ? parseInt(newClient.age) : null,
+      weight: newClient.weight ? parseFloat(newClient.weight) : null,
+      height: newClient.height ? parseFloat(newClient.height) : null,
+      goal: newClient.goal, activity: newClient.activity, gender: newClient.gender,
+      welcome_doc_enabled: false,
+    }])
+    setAddingClient(false)
+    if (error) { alert('שגיאה: ' + error.message); return }
+    setClientAdded('✅ ' + newClient.name + ' נוספה בהצלחה!')
+    setNewClient({ name: '', last_name: '', password: '', phone: '', age: '', weight: '', height: '', goal: 'ירידה במשקל', activity: 'בינוני', gender: 'נקבה' })
+    setTimeout(() => setClientAdded(''), 4000)
+    loadClients()
+  }
+
+  async function extractBloodFromText() {
+    if (!bloodText.trim()) return
+    setBloodScanLoading(true)
+    try {
+      const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'blood', bloodText: bloodText }) })
+      const data = await res.json()
+      var parsed = JSON.parse(data.result.replace(/```json|```/g, '').trim())
+      var newTests = Object.assign({}, profile.blood_tests || {})
+      Object.keys(parsed).forEach(function(k) { if (parsed[k] !== null && parsed[k] !== '') newTests[k] = String(parsed[k]) })
+      setProfile(p => ({ ...p, blood_tests: newTests }))
+      if (data.extra && data.extra.trim()) { setExtraBloodNotes(data.extra.trim()); alert('✅ הערכים חולצו! נמצאו גם ערכים חריגים נוספים.') }
+      else alert('✅ הערכים חולצו! בדקי ושמרי.')
+      setBloodText('')
+    } catch(e) { alert('שגיאה: ' + e.message) }
+    setBloodScanLoading(false)
+  }
+
+  async function saveProfile() {
     setSaving(true)
-    var payload = {
-      client_name: dbKey, log_date: todayKey, checks,
-      carb_sel: carbSel, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
-      water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
-      boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
-      had_snack: hadSnack, had_benayim: hadBenayim,
-      sport_done_today: sportDoneToday, sport_days_week: sportDaysThisWeek,
-      scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
-      diet_type: dietType, restrictions,
-      nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood },
-      updated_at: new Date().toISOString(),
-    }
-    const { error } = await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
-    if (error) {
-      console.error('שגיאה בשמירה:', error.message)
-      alert('שגיאה בשמירה: ' + error.message)
-      setSaving(false)
-      return
-    }
-    setSaving(false)
-    setSaved(true)
-    setShowWAButton(true)
-    setTimeout(() => setSaved(false), 3000)
+    var payload = { ...profile, food_diary: foodDiary, extra_blood_notes: extraBloodNotes, client_password: selectedClient.password, updated_at: new Date().toISOString() }
+    await supabase.from('client_profiles').upsert(payload, { onConflict: 'client_password' })
+    setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 3000)
   }
 
-  const targets = calcTargets(parseFloat(userWeight), parseFloat(userHeight), parseInt(userAge), userGender, userActivity, userGoal)
-  const eatenCalories = calcEatenCalories()
-  const filteredBoker = PLAN.boker.filter(i => !shouldHide(i, dietType, restrictions))
-  const filteredProt = PLAN.protOptions.filter(i => !shouldHide(i, dietType, restrictions))
-  const filteredErev = PLAN.erev.filter(i => !shouldHide(i, dietType, restrictions))
-  const filteredCarbs = PLAN.carbOptions.filter(i => !shouldHide(i, dietType, restrictions))
-  const filteredFat = PLAN.fatOptions.filter(i => !shouldHide(i, dietType, restrictions))
-  const filteredBenayim = PLAN.benayimOptions.filter(i => !shouldHide(i, dietType, restrictions))
-  const checkedCount = Object.values(checks).filter(Boolean).length
-  const totalItems = filteredBoker.length + filteredErev.length
+  async function saveFeedback(log) {
+    setSavingFeedback(log.id)
+    const text = feedback[log.id] != null ? feedback[log.id] : (log.trainer_feedback || '')
+    await supabase.from('daily_logs').update({ trainer_feedback: text, report_approved: true }).eq('id', log.id)
+    setSavingFeedback(null); setSentFeedback(log.id); setTimeout(() => setSentFeedback(null), 4000)
+    const { data } = await supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).order('log_date', { ascending: false }).limit(30)
+    setLogs(data || [])
+  }
 
-  if (!setupDone) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f0fdf4', padding: 24, direction: 'rtl' }}>
-        <div style={{ fontSize: 26, fontWeight: 900, marginBottom: 6 }}>היי {displayName.split(' ')[0]}!</div>
-        <div style={{ fontSize: 14, color: '#555', marginBottom: 24 }}>{gf('בואי', 'בוא')} נתאים את התפריט</div>
-        <div style={{ width: '100%', maxWidth: 340, background: '#fff', borderRadius: 20, padding: 20, marginBottom: 16 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12, textAlign: 'right' }}>סוג תזונה:</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {DIET_TYPES.map(d => <button key={d.key} onClick={() => setDietType(d.key)} style={{ padding: '12px 16px', borderRadius: 12, fontSize: 15, fontWeight: 600, cursor: 'pointer', textAlign: 'right', border: '2px solid ' + (dietType === d.key ? C.greenMid : '#e5e7eb'), background: dietType === d.key ? C.greenLight : '#fafafa', color: dietType === d.key ? C.greenDark : '#333' }}>{d.icon} {d.label}</button>)}
-          </div>
-        </div>
-        <div style={{ width: '100%', maxWidth: 340, background: '#fff', borderRadius: 20, padding: 20, marginBottom: 20 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 12, textAlign: 'right' }}>הגבלות:</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {RESTRICTIONS.map(r => <button key={r.key} onClick={() => setRestrictions(prev => { var n = {...prev}; n[r.key] = !n[r.key]; return n })} style={{ padding: '10px 16px', borderRadius: 12, fontSize: 14, fontWeight: 600, cursor: 'pointer', textAlign: 'right', border: '2px solid ' + (restrictions[r.key] ? C.blue : '#e5e7eb'), background: restrictions[r.key] ? C.blueLight : '#fafafa', color: restrictions[r.key] ? C.blue : '#333' }}>{r.icon} {r.label} {restrictions[r.key] ? '✓' : ''}</button>)}
-          </div>
-        </div>
-        <button onClick={async () => {
-          if (!dietType) return
-          await supabase.from('clients').update({ diet_type: dietType, restrictions }).eq('password', dbKey)
-          setSetupDone(true)
-        }} disabled={!dietType} style={{ padding: '14px 40px', borderRadius: 14, fontSize: 16, fontWeight: 800, background: dietType ? C.greenMid : '#e5e7eb', color: dietType ? '#fff' : '#9ca3af', border: 'none', cursor: 'pointer', width: '100%', maxWidth: 340 }}>
-          {gf('בואי', 'בוא')} נתחיל!
-        </button>
+  function openWhatsApp(log) {
+    var phone = selectedClient.phone
+    if (!phone) { alert('אין מספר טלפון למטופל זה'); return }
+    phone = phone.replace(/^0/, '972')
+    var msg = 'היי ' + selectedClient.name + '! 🌿\n\nמשוב חדש מאתי מחכה לך באפליקציה 💚\nהיכנסי לצפייה: https://project-l990h.vercel.app'
+    window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+  }
+
+  async function runProfileAnalysis() {
+    setAiLoading(true); setAiAnalysis(''); setEditableAnalysis('')
+    try {
+      if (extraBloodNotes) await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, extra_blood_notes: extraBloodNotes, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
+      if (foodDiary && foodDiary.trim()) await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, food_diary: foodDiary, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
+      var profileData = {}
+      var allowedKeys = ['sleep_quality','sleep_issues','wake_time','sleep_time','digestion','smoking','menstrual_cycle','menstrual_days','medications','therapists','medical_history','family_history','diet_restrictions','breakfast_habits','lunch_habits','dinner_habits','snack_habits','food_sensitivities','avoided_foods','cooks_at_home','restaurants_per_week','water_intake','coffee_intake','alcohol_intake','emotional_eating','work_hours','stress_level','energy_level','mood_notes','exercise_type','pain_issues','main_goal','goal_obstacles','goal_motivation','success_vision','important_values','positive_memories','blood_tests','extra_blood_notes']
+      allowedKeys.forEach(function(k) { if (profile[k] !== undefined) profileData[k] = profile[k] })
+      var clientData = { age: selectedClient.age, weight: selectedClient.weight, height: selectedClient.height, gender: selectedClient.gender, activity: selectedClient.activity, goal: selectedClient.goal, target_weight: selectedClient.target_weight }
+      const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: selectedClient.name, mode: 'profile', profile: { ...profileData, ...clientData, extra_blood_notes: extraBloodNotes }, foodDiary: foodDiary || '' }) })
+      if (!res.ok) throw new Error('שגיאת שרת: ' + res.status)
+      const data = await res.json()
+      if (data.error) { alert('שגיאה: ' + data.error) } else {
+        setAiAnalysis(data.result); setEditableAnalysis(data.result)
+        await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, ai_report: data.result, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
+      }
+    } catch(err) { alert('שגיאה בניתוח: ' + err.message) }
+    setAiLoading(false)
+  }
+
+  async function sendAnalysisToClient() {
+    if (!editableAnalysis || !selectedClient) return
+    setSendingToClient(true)
+    const today = new Date().toLocaleDateString('sv-SE')
+    await supabase.from('daily_logs').upsert({ client_name: selectedClient.password, log_date: today, trainer_feedback: editableAnalysis, report_approved: true, updated_at: new Date().toISOString() }, { onConflict: 'client_name,log_date' })
+    setSendingToClient(false); setSentToClient(true); setTimeout(() => setSentToClient(false), 4000)
+  }
+
+  async function runLogsAnalysis(targetLog) {
+    if (!filteredLogs.length) return
+    setAiLoading(true); setAiAnalysis(''); setDailyPreview(''); setDailyEditing(false); setDailyTargetLog(targetLog || null)
+    var targets = calcTargets(selectedClient)
+    var summary = filteredLogs.map(function(l) {
+      var nut = calcNutrition(l, nutritionData)
+      var scanExtra = ''
+      if (l.scan_calories > 0) { scanExtra = ' | 📸 צילום: ' + l.scan_calories + ' קל'; if (l.scan_desc) scanExtra += ' (' + l.scan_desc + ')' }
+      return 'תאריך: ' + l.log_date + ' | קלוריות: ' + Math.round(nut.calories) + (targets ? ' (יעד: ' + targets.calories + ')' : '') + ' | חלבון: ' + Math.round(nut.protein) + 'g | שומן: ' + Math.round(nut.fat) + 'g | מים: ' + (l.water || 0) + ' | צעדים: ' + (l.steps || 0) + scanExtra + ' | הערה: ' + (l.note || '')
+    }).join('\n')
+    const res = await fetch('/api/analyze', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: selectedClient.name, gender: selectedClient.gender || 'נקבה', logs: summary, nlpSummary: filteredLogs.map(function(l) { var m = l.nlp_metrics || {}; if (!m.stress && !m.fatigue && !m.hunger && !m.mood) return null; return l.log_date + ': לחץ ' + (m.stress||0) + '/5, עייפות ' + (m.fatigue||0) + '/5, רעב ' + (m.hunger||0) + '/5, מצב רוח: ' + (m.mood||'לא צוין') }).filter(Boolean).join(' | ') })
+    })
+    const data = await res.json()
+    setDailyPreview(data.result); setDailyEditing(true); setAiLoading(false)
+  }
+
+  async function sendDailyFeedback() {
+    if (!dailyPreview || !dailyTargetLog) return
+    setSendingDaily(true)
+    await supabase.from('daily_logs').update({ trainer_feedback: dailyPreview, report_approved: true }).eq('id', dailyTargetLog.id)
+    setSendingDaily(false); setSentDaily(dailyTargetLog.id); setDailyEditing(false); setDailyPreview(''); setDailyTargetLog(null)
+    setTimeout(() => setSentDaily(null), 4000)
+    const { data } = await supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).order('log_date', { ascending: false }).limit(30)
+    setLogs(data || [])
+  }
+
+  async function scanBloodTests(file) {
+    setScanLoading(true)
+    try {
+      var base64 = await new Promise(function(res, rej) { var r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = () => rej(new Error('Read failed')); r.readAsDataURL(file) })
+      var response = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'bloodImage', imageBase64: base64, mediaType: file.type }) })
+      var data = await response.json()
+      var parsed = JSON.parse(data.result.replace(/```json|```/g, '').trim())
+      var newTests = Object.assign({}, profile.blood_tests || {})
+      Object.keys(parsed).forEach(function(k) { if (parsed[k] !== null) newTests[k] = String(parsed[k]) })
+      setProfile(p => ({ ...p, blood_tests: newTests }))
+      if (data.extra && data.extra.trim()) { setExtraBloodNotes(data.extra.trim()); alert('✅ הערכים חולצו! נמצאו גם ערכים חריגים נוספים.') }
+      else alert('✅ הערכים חולצו! בדקי ושמרי.')
+    } catch(e) { alert('שגיאה בסריקה: ' + e.message) }
+    setScanLoading(false)
+  }
+
+  if (!auth) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f0fdf4', direction: 'rtl' }}>
+      <div style={{ background: '#fff', borderRadius: 20, padding: 32, width: 300, textAlign: 'center', boxShadow: '0 8px 40px #0000000f' }}>
+        <div style={{ fontSize: 32, marginBottom: 12 }}>⚙️</div>
+        <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 20 }}>הלקוחות שלי</div>
+        <input type="password" value={pin} onChange={e => setPin(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} placeholder="סיסמה..." style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 15, textAlign: 'center', outline: 'none', boxSizing: 'border-box', marginBottom: 10 }} />
+        <button onClick={login} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>כניסה</button>
       </div>
-    )
-  }
+    </div>
+  )
 
-  if (!profileDone) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f0fdf4', padding: 24, direction: 'rtl' }}>
-        <div style={{ fontSize: 22, fontWeight: 900, marginBottom: 6 }}>פרטים אישיים 📊</div>
-        <div style={{ fontSize: 14, color: '#555', marginBottom: 20 }}>כדי לחשב את היעד הקלורי שלך</div>
-        <div style={{ width: '100%', maxWidth: 340, background: '#fff', borderRadius: 20, padding: 20, marginBottom: 16 }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-            {[{ label: 'משקל (ק"ג)', val: userWeight, set: setUserWeight, ph: '70' }, { label: 'גובה (ס"מ)', val: userHeight, set: setUserHeight, ph: '165' }, { label: 'גיל', val: userAge, set: setUserAge, ph: '30' }, { label: 'משקל יעד (ק"ג)', val: userTargetWeight, set: setUserTargetWeight, ph: '60' }].map(f => (
-              <div key={f.label}><div style={{ fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 600 }}>{f.label}</div><input type="number" value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.ph} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} /></div>
-            ))}
-          </div>
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 12, color: '#555', marginBottom: 6, fontWeight: 600 }}>מין</div>
-            <div style={{ display: 'flex', gap: 8 }}>{['נקבה', 'זכר'].map(g => <button key={g} onClick={() => setUserGender(g)} style={{ flex: 1, padding: 10, borderRadius: 10, border: '2px solid ' + (userGender === g ? C.greenMid : '#e5e7eb'), background: userGender === g ? C.greenLight : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 14, color: userGender === g ? C.greenDark : '#555' }}>{g}</button>)}</div>
-          </div>
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 12, color: '#555', marginBottom: 6, fontWeight: 600 }}>רמת פעילות</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>{ACTIVITY_LEVELS.map(a => <button key={a} onClick={() => setUserActivity(a)} style={{ padding: '8px 12px', borderRadius: 99, border: '2px solid ' + (userActivity === a ? C.greenMid : '#e5e7eb'), background: userActivity === a ? C.greenLight : '#fafafa', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: userActivity === a ? C.greenDark : '#555' }}>{a}</button>)}</div>
-          </div>
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 12, color: '#555', marginBottom: 6, fontWeight: 600 }}>מטרה</div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>{GOALS_LIST.map(g => <button key={g} onClick={() => setUserGoal(g)} style={{ padding: '10px 14px', borderRadius: 10, border: '2px solid ' + (userGoal === g ? C.greenMid : '#e5e7eb'), background: userGoal === g ? C.greenLight : '#fafafa', cursor: 'pointer', fontSize: 14, fontWeight: 600, color: userGoal === g ? C.greenDark : '#555', textAlign: 'right' }}>{g}</button>)}</div>
-          </div>
-        </div>
-        <button onClick={saveProfile} disabled={!userWeight || !userHeight || !userAge} style={{ padding: '14px 40px', borderRadius: 14, fontSize: 16, fontWeight: 800, background: (userWeight && userHeight && userAge) ? C.greenMid : '#e5e7eb', color: (userWeight && userHeight && userAge) ? '#fff' : '#9ca3af', border: 'none', cursor: 'pointer', width: '100%', maxWidth: 340 }}>{gf('שמרי', 'שמור')} פרטים</button>
-        <button onClick={() => setProfileDone(true)} style={{ marginTop: 10, background: 'transparent', border: 'none', color: '#9ca3af', fontSize: 13, cursor: 'pointer' }}>{gf('דלגי', 'דלג')} בינתיים</button>
-      </div>
-    )
-  }
-
-  if (showStage2Welcome) {
-    return (
-      <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', direction: 'rtl', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: 24, color: '#fff' }}>
-        {showConfetti && <Confetti />}
-        <div style={{ fontSize: 60, marginBottom: 16 }}>🎉</div>
-        <div style={{ fontWeight: 900, fontSize: 28, textAlign: 'center', marginBottom: 8 }}>{gf('ברוכה הבאה', 'ברוך הבא')} לשלב 2!</div>
-        <div style={{ fontSize: 16, color: '#bbf7d0', textAlign: 'center', marginBottom: 24, lineHeight: 1.7 }}>שלב העוגן · עיצוב הסביבה 🏡<br/>עברת על הבסיס — עכשיו הופכים אותו לדרך חיים</div>
-        {videoUrl && (<div style={{ width: '100%', maxWidth: 400, borderRadius: 16, overflow: 'hidden', marginBottom: 24, boxShadow: '0 8px 40px #0000004a' }}><iframe src={videoUrl.replace('watch?v=', 'embed/')} width="100%" height="220" frameBorder="0" allowFullScreen style={{ display: 'block' }} /></div>)}
-        <div style={{ background: '#ffffff20', borderRadius: 16, padding: 16, width: '100%', maxWidth: 400, marginBottom: 24 }}>
-          <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 10, color: '#86efac' }}>מה חדש בשלב הזה:</div>
-          {['🏃 ספורט נוסף על ההליכות — בחירה שלך', '🥫 מדריך מזווה ומקרר — מוכן לך כאן', '📸 צילום צלחת — AI יזהה מה אכלת', '🤖 Agent חירום 24/7 — שאלי כל שאלה תזונתית'].map((t, i) => (<div key={i} style={{ fontSize: 14, color: '#fff', padding: '6px 0', borderBottom: i < 3 ? '1px solid #ffffff15' : 'none' }}>{t}</div>))}
-        </div>
-        <button onClick={() => setShowStage2Welcome(false)} style={{ padding: '16px 40px', borderRadius: 16, background: '#fff', color: '#0f4c2a', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 17 }}>{gf('בואי', 'בוא')} נתחיל! 🚀</button>
-      </div>
-    )
-  }
+  var targets = selectedClient ? calcTargets(selectedClient) : null
 
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', direction: 'rtl' }}>
-      {showConfetti && <Confetti />}
 
-      <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '24px 18px 20px', color: '#fff' }}>
-        <div style={{ maxWidth: 520, margin: '0 auto' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <div style={{ fontSize: 11, color: '#86efac' }}>בין הראש לצלחת · אתי אטל</div>
-            <div style={{ fontSize: 11, background: '#ffffff25', color: '#fff', padding: '3px 10px', borderRadius: 99, fontWeight: 700 }}>🏆 {stageName}</div>
+      {previewDoc && selectedClient && (
+        <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 9999, overflowY: 'auto' }}>
+          <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 10000 }}>
+            <button onClick={() => setPreviewDoc(false)} style={{ padding: '10px 20px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>✕ סגרי תצוגה מקדימה</button>
           </div>
-          <div style={{ fontSize: 22, fontWeight: 900 }}>היי {displayName.split(' ')[0]}!</div>
-          <div style={{ fontSize: 12, color: '#bbf7d0', marginTop: 2 }}>{today}</div>
-          {targets && (
-            <div style={{ marginTop: 10, background: '#ffffff20', borderRadius: 12, padding: '10px 14px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#86efac', marginBottom: 6 }}>
-                <span>🔥 {Math.round(eatenCalories)} קל אכל{gf('ת', '')}</span>
-                <span>יעד: {targets.calories} קל</span>
-              </div>
-              <div style={{ position: 'relative', height: 18, background: '#ffffff20', borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{ width: Math.min(100, Math.round((eatenCalories / targets.calories) * 100)) + '%', height: '100%', background: eatenCalories >= targets.calories ? '#fbbf24' : '#4ade80', borderRadius: 99, transition: 'width 0.3s' }} />
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 800, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>
-                  {Math.min(100, Math.round((eatenCalories / targets.calories) * 100))}%
-                </div>
-              </div>
-              <div style={{ fontSize: 11, color: '#bbf7d0', marginTop: 4 }}>{eatenCalories >= targets.calories ? '✅ הגעת ליעד!' : 'נשאר ' + (targets.calories - Math.round(eatenCalories)) + ' קל'}</div>
-            </div>
-          )}
-          <div style={{ marginTop: 8, background: '#ffffff15', borderRadius: 10, height: 6, overflow: 'hidden' }}>
-            <div style={{ width: Math.round((checkedCount / totalItems) * 100) + '%', height: '100%', background: '#4ade80', borderRadius: 10 }} />
-          </div>
-          <div style={{ fontSize: 11, color: '#86efac', marginTop: 4 }}>{checkedCount}/{totalItems} פריטים סומנו היום</div>
+          <WelcomeDocument clientPassword={selectedClient.password} clientName={selectedClient.name + ' ' + (selectedClient.last_name || '')} onContinue={() => setPreviewDoc(false)} />
         </div>
-      </div>
+      )}
 
-      <div style={{ maxWidth: 520, margin: '0 auto', padding: '10px 14px 0' }}>
-        <div style={{ display: 'flex', gap: 6, marginBottom: 10, flexWrap: 'wrap' }}>
-          <button onClick={() => setActiveTab('diary')} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (activeTab === 'diary' ? '#16a34a' : '#e5e7eb'), background: activeTab === 'diary' ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: activeTab === 'diary' ? '#0f4c2a' : '#555' }}>
-            📅 היומן
-          </button>
-          {currentStage >= 2 && (
-            <button onClick={() => setActiveTab('guides')} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (activeTab === 'guides' ? C.teal : '#e5e7eb'), background: activeTab === 'guides' ? C.tealLight : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: activeTab === 'guides' ? C.teal : '#555' }}>
-              🏡 מדריכים
-            </button>
-          )}
-          <button onClick={() => setActiveTab('agent')} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (activeTab === 'agent' ? C.agent : '#e5e7eb'), background: activeTab === 'agent' ? C.agentLight : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: activeTab === 'agent' ? C.agent : '#555', position: 'relative' }}>
-            🤖 Agent
-            <span style={{ position: 'absolute', top: 4, left: 4, width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 4px #4ade80' }} />
-          </button>
-          <button onClick={() => setShowDocsMenu(!showDocsMenu)} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (showDocsMenu ? '#7c3aed' : '#e5e7eb'), background: showDocsMenu ? '#faf5ff' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: showDocsMenu ? '#7c3aed' : '#555', position: 'relative' }}>
-            📂 המסמכים
-          </button>
-        </div>
-
-        {showDocsMenu && (
-          <div style={{ background: '#fff', borderRadius: 16, border: '1.5px solid #e9d5ff', padding: '12px', marginBottom: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {clientData?.welcome_doc_enabled ? (
-              <button onClick={() => { setShowWelcomeDoc(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#e8f5f2,#f0fdf4)', border: '1.5px solid #4a9b8e', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#3a7a6e', textAlign: 'right' }}>
-                🌿 מסמך הפתיחה שלי — תזונה ומחלות
-              </button>
-            ) : (
-              <div style={{ padding: '12px 16px', borderRadius: 12, background: '#f3f4f6', border: '1.5px solid #e5e7eb', fontSize: 13, color: '#9ca3af', textAlign: 'right' }}>
-                🔒 מסמך הפתיחה — יפתח בקרוב
-              </div>
-            )}
-            {feedback ? (
-              <button onClick={() => window.open('/report?client=' + dbKey, '_blank')} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#eff6ff,#f0fdf4)', border: '1.5px solid #0284c7', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#0f4c2a', textAlign: 'right' }}>
-                📊 הניתוח האישי שלי — 360 ובדיקות דם
-              </button>
-            ) : (
-              <div style={{ padding: '12px 16px', borderRadius: 12, background: '#f3f4f6', border: '1.5px solid #e5e7eb', fontSize: 13, color: '#9ca3af', textAlign: 'right' }}>
-                📊 הניתוח האישי — יתווסף לאחר הפגישה הראשונה
-              </div>
-            )}
-            {clientData?.outcome_doc ? (
-              <button onClick={() => { setShowOutcomeDoc(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#faf5ff,#eff6ff)', border: '1.5px solid #7c3aed', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#7c3aed', textAlign: 'right' }}>
-                🧭 המטרה שלי — מסע התוצאה
-              </button>
-            ) : (
-              <div style={{ padding: '12px 16px', borderRadius: 12, background: '#f3f4f6', border: '1.5px solid #e5e7eb', fontSize: 13, color: '#9ca3af', textAlign: 'right' }}>
-                🧭 המטרה שלי — יתווסף לאחר פגישה 2
-              </div>
-            )}
+      {previewReport && editableAnalysis && (
+        <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 9999, overflowY: 'auto', direction: 'rtl' }}>
+          <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 10000 }}>
+            <button onClick={() => setPreviewReport(false)} style={{ padding: '10px 20px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>✕ סגרי תצוגה מקדימה</button>
           </div>
-        )}
-      </div>
-
-      {showDailyFeedback && feedback && (
-        <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
-          <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
-            <button onClick={() => setShowDailyFeedback(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
-          </div>
-          <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
+          <div style={{ maxWidth: 520, margin: '0 auto', padding: '70px 20px 40px' }}>
             <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
                 <div>
-                  <div style={{ fontWeight: 900, fontSize: 15 }}>המשוב האישי שלך 💚</div>
-                  <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · {today} · אתי אטל</div>
+                  <div style={{ fontWeight: 900, fontSize: 15 }}>הדוח האישי שלך 💚</div>
+                  <div style={{ fontSize: 11, color: '#86efac' }}>{selectedClient?.name} · אתי אטל</div>
                 </div>
               </div>
             </div>
             {(() => {
-              const rawSections = feedback.split(/\n\s*--\s*\n/)
-              const SECTION_COLORS = [
-                { bg: '#f0fdf4', border: '#16a34a', title: '#15803d' },
-                { bg: '#eff6ff', border: '#2563eb', title: '#1d4ed8' },
-                { bg: '#fffbeb', border: '#d97706', title: '#b45309' },
-                { bg: '#fef2f2', border: '#dc2626', title: '#b91c1c' },
-                { bg: '#faf5ff', border: '#7c3aed', title: '#6d28d9' },
-                { bg: '#f0fdfa', border: '#0d9488', title: '#0f766e' },
-                { bg: '#fff7ed', border: '#f97316', title: '#c2410c' },
-                { bg: '#fdf4ff', border: '#a21caf', title: '#86198f' },
-              ]
-              return rawSections.map((section, i) => {
-                const trimmed = section.trim()
-                if (!trimmed) return null
-                const lines = trimmed.split('\n')
-                const firstLine = lines[0].trim()
-                const isBoldTitle = /^\*\*.*\*\*/.test(firstLine)
-                const title = isBoldTitle ? firstLine.replace(/\*\*/g, '').trim() : ''
-                const body = isBoldTitle ? lines.slice(1).join('\n').trim() : trimmed
-                const c = SECTION_COLORS[i % SECTION_COLORS.length]
-                if (!body && !title) return null
-                return (
-                  <div key={i} style={{ background: c.bg, borderRadius: 16, padding: '14px 16px', marginBottom: 12, border: `1.5px solid ${c.border}40`, boxShadow: `0 2px 8px ${c.border}15` }}>
-                    {title && <div style={{ fontWeight: 900, fontSize: 15, color: c.title, marginBottom: 10, borderBottom: `2px solid ${c.border}30`, paddingBottom: 8 }}>{title}</div>}
-                    <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, textAlign: 'right' }}
-                      dangerouslySetInnerHTML={{ __html: body.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }}
-                    />
-                  </div>
-                )
-              }).filter(Boolean)
-            })()}
-          </div>
-        </div>
-      )}
-
-      {guideUrl && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 300, background: '#fff', display: 'flex', flexDirection: 'column' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: '#0f4c2a', color: '#fff', flexShrink: 0 }}>
-            <button onClick={() => setGuideUrl(null)} style={{ padding: '7px 16px', borderRadius: 8, background: '#fff', color: '#0f4c2a', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 13 }}>✕ סגרי</button>
-            <img src="/logo.png" alt="בין הראש לצלחת" style={{ height: 32, width: 'auto', objectFit: 'contain' }} onError={e => { e.target.style.display='none' }} />
-          </div>
-          <iframe src={guideUrl} style={{ flex: 1, border: 'none', width: '100%' }} title="מדריך" />
-        </div>
-      )}
-
-      {showWelcomeDoc && (
-        <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto' }}>
-          <div style={{ position: 'fixed', top: 12, left: 12, zIndex: 201 }}>
-            <button onClick={() => setShowWelcomeDoc(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
-          </div>
-          <WelcomeDocument clientPassword={dbKey} clientName={displayName} onContinue={() => setShowWelcomeDoc(false)} />
-        </div>
-      )}
-
-      {showInitialReport && feedback && (
-        <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
-          <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
-            <button onClick={() => setShowInitialReport(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
-          </div>
-          <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
-            <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontWeight: 900, fontSize: 15 }}>הניתוח האישי שלך 💚</div>
-                  <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · אתי אטל</div>
-                </div>
-              </div>
-            </div>
-            {(() => {
-              const rawSections = feedback.split(/\n\s*--\s*\n/)
+              const rawSections = editableAnalysis.split(/\n\s*--\s*\n/)
               const SECTION_COLORS = [
                 { bg: '#f0fdf4', border: '#16a34a', title: '#15803d' },
                 { bg: '#eff6ff', border: '#2563eb', title: '#1d4ed8' },
@@ -1213,396 +714,628 @@ export default function PlanApp({ clientName, userPassword }) {
         </div>
       )}
 
-      {showOutcomeDoc && clientData?.outcome_doc && (
-        <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
-          <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
-            <button onClick={() => setShowOutcomeDoc(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
+      <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '20px 24px', color: '#fff' }}>
+        <div style={{ fontSize: 11, color: '#86efac' }}>בין הראש לצלחת</div>
+        <div style={{ fontSize: 22, fontWeight: 900 }}>⚙️ הלקוחות שלי</div>
+      </div>
+
+      <div style={{ maxWidth: 700, margin: '0 auto', padding: '20px 16px' }}>
+        <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 16, border: '1.5px solid #f0f0f0' }}>
+          <div style={{ fontWeight: 700, marginBottom: 10 }}>בחרי לקוח:</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {clients.map(c => (
+              <button key={c.id} onClick={() => loadProfile(c)} style={{ padding: '10px 16px', borderRadius: 10, border: '2px solid ' + (selectedClient?.id === c.id ? '#0f4c2a' : '#e5e7eb'), background: selectedClient?.id === c.id ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 14, color: selectedClient?.id === c.id ? '#0f4c2a' : '#333' }}>
+                {c.name}
+              </button>
+            ))}
           </div>
-          <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
-            <div style={{ background: 'linear-gradient(135deg,#7c3aed,#9333ea)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #e9d5ff', background: '#fff', flexShrink: 0 }} />
-                <div>
-                  <div style={{ fontWeight: 900, fontSize: 15 }}>המטרה שלך — מסע התוצאה 🧭</div>
-                  <div style={{ fontSize: 11, color: '#e9d5ff' }}>{displayName.split(' ')[0]} · אתי אטל</div>
+        </div>
+
+        {selectedClient && (
+          <>
+            <div style={{ background: '#fff', borderRadius: 18, padding: '14px 18px', marginBottom: 16, border: '1.5px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: 180 }}>
+                <div style={{ fontWeight: 800, fontSize: 14, color: '#1a1a1a', marginBottom: 2 }}>🌿 מסמך פתיחה אישי</div>
+                <div style={{ fontSize: 12, color: '#9ca3af' }}>
+                  {selectedClient.welcome_doc_enabled ? '✅ פעיל — הלקוחה יכולה לפתוח' : '🔒 כבוי — הכפתור אפור אצלה'}
                 </div>
               </div>
+              <button onClick={refreshWelcomeDoc} disabled={togglingDoc} style={{ padding: '10px 14px', borderRadius: 12, background: '#fff7ed', color: '#f97316', border: '1.5px solid #fed7aa', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>🔄 רענן</button>
+              <button onClick={() => setPreviewDoc(true)} style={{ padding: '10px 16px', borderRadius: 12, background: '#eff6ff', color: '#0284c7', border: '1.5px solid #93c5fd', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>👁️ תצוגה מקדימה</button>
+              <button onClick={toggleWelcomeDoc} disabled={togglingDoc} style={{ padding: '10px 18px', borderRadius: 12, background: selectedClient.welcome_doc_enabled ? '#dcfce7' : '#f3f4f6', color: selectedClient.welcome_doc_enabled ? '#0f4c2a' : '#6b7280', border: '2px solid ' + (selectedClient.welcome_doc_enabled ? '#16a34a' : '#d1d5db'), cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                {togglingDoc ? '⏳' : selectedClient.welcome_doc_enabled ? '✅ הפעיל' : '🔒 כבוי'}
+              </button>
             </div>
-            <div style={{ background: '#fff', borderRadius: 18, padding: '20px 18px', border: '1.5px solid #e9d5ff' }}>
-              <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>{clientData.outcome_doc}</div>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {activeTab === 'agent' && (
-        <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px' }}>
-          <AgentChat clientName={displayName} gender={userGender} clientProfile={clientData} />
-        </div>
-      )}
-
-      {activeTab === 'guides' && currentStage >= 2 && (
-        <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px' }}>
-          {videoUrl && (
-            <div style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', border: '1.5px solid #f0f0f0', marginBottom: 12 }}>
-              <div style={{ padding: '14px 18px', background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', fontWeight: 800, fontSize: 15 }}>🎬 ברכת פתיחה מאתי</div>
-              <iframe src={videoUrl.replace('watch?v=', 'embed/')} width="100%" height="200" frameBorder="0" allowFullScreen style={{ display: 'block' }} />
-            </div>
-          )}
-          <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
-            <div style={{ padding: '14px 18px', background: C.tealLight, borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 22 }}>🛒</span>
-              <div><div style={{ fontWeight: 800, fontSize: 15, color: C.teal }}>מדריך קניות חכם</div><div style={{ fontSize: 12, color: '#9ca3af' }}>רשימה מלאה עם טיפים וצ׳קבוקסים</div></div>
-            </div>
-            <div style={{ padding: 14 }}><button onClick={() => setGuideUrl('/shopping_guide.html')} style={{ display: 'block', width: '100%', textAlign: 'center', padding: 12, borderRadius: 10, background: C.teal, color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>פתחי את המדריך 🛒</button></div>
-          </div>
-          {pantryNotes ? (
-            <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
-              <div style={{ padding: '14px 18px', background: '#fff7ed', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 22 }}>🏡</span>
-                <div><div style={{ fontWeight: 800, fontSize: 15, color: C.orange }}>מדריך המזווה שלי</div><div style={{ fontSize: 12, color: '#9ca3af' }}>הנחיות אישיות מהפגישה שלנו בבית</div></div>
-              </div>
-              <div style={{ padding: 14 }}>
-                <div style={{ fontSize: 14, color: '#444', lineHeight: 1.7, marginBottom: 12 }}>{pantryNotes}</div>
-                <button onClick={() => setGuideUrl('/pantry_guide.html')} style={{ display: 'block', width: '100%', textAlign: 'center', padding: 12, borderRadius: 10, background: C.orange, color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>פתחי את המדריך המלא 🏡</button>
-              </div>
-            </div>
-          ) : (
-            <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
-              <div style={{ padding: '14px 18px', background: '#fff7ed', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 22 }}>🏡</span>
-                <div><div style={{ fontWeight: 800, fontSize: 15, color: C.orange }}>מדריך המזווה והמקרר</div><div style={{ fontSize: 12, color: '#9ca3af' }}>איך לארגן את המטבח לתמיכה בדרך שלך</div></div>
-              </div>
-              <div style={{ padding: 14 }}>
-                <button onClick={() => setGuideUrl('/pantry_guide.html')} style={{ display: 'block', width: '100%', textAlign: 'center', padding: 12, borderRadius: 10, background: C.orange, color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>פתחי את המדריך 🏡</button>
-              </div>
-            </div>
-          )}
-          {currentStage >= 3 && (
-            <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
-              <div style={{ padding: '14px 18px', background: C.purpleLight, borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 22 }}>📚</span>
-                <div><div style={{ fontWeight: 800, fontSize: 15, color: C.purple }}>חוברת המתכונים של אתי</div><div style={{ fontSize: 12, color: '#9ca3af' }}>20 מתכונים · ללא קמח · ללא סוכר · חלבון גבוה</div></div>
-              </div>
-              <div style={{ padding: 14 }}><button onClick={() => setGuideUrl('/recipes_guide.html')} style={{ display: 'block', width: '100%', textAlign: 'center', padding: 12, borderRadius: 10, background: C.purple, color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>פתחי את החוברת 📚</button></div>
-            </div>
-          )}
-        </div>
-      )}
-
-      <div style={{ maxWidth: 520, margin: '0 auto', padding: '14px 14px 80px', display: activeTab === 'diary' ? 'block' : 'none' }}>
-        {feedback && <FeedbackCard feedback={feedback} clientName={displayName} logDate={today} onOpenFull={() => setShowDailyFeedback(true)} />}
-
-        <div style={{ background: '#fff', borderRadius: 18, padding: 18, border: '1.5px solid #e2e8f0', marginBottom: 14 }}>
-          <div style={{ fontWeight: 800, fontSize: 15, color: C.greenDark, marginBottom: 12, textAlign: 'right' }}>🧠 מודעות והקשבה לגוף</div>
-          <div style={{ marginBottom: 12 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 6 }}>מה מצב הרוח שלך היום?</div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              {[{ k: 'calm', l: gf('😌 רגועה', '😌 רגוע') }, { k: 'stressed', l: '🤯 בסטרס' }, { k: 'tired', l: gf('🥱 עייפה', '🥱 עייף') }, { k: 'bored', l: gf('😐 משועממת', '😐 משועמם') }].map(m => {
-                const isSel = userMood === m.k
-                return <button key={m.k} onClick={() => setUserMood(m.k)} style={{ flex: 1, padding: '8px 4px', borderRadius: 10, border: '1.5px solid ' + (isSel ? C.greenMid : '#e5e7eb'), background: isSel ? C.greenLight : '#fafafa', fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>{m.l}</button>
+            <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
+              {[{ k: 'logs', l: '📅 יומן' }, { k: 'questionnaire', l: '📋 שאלון' }, { k: 'blood', l: '🩸 בדיקות' }, { k: 'doctor', l: '📄 מכתב' }, { k: 'nutrition', l: '🥗 תזונה' }, { k: 'ai', l: '🧠 AI' }, { k: 'report', l: '📊 דוח' }, { k: 'stage', l: '🏆 שלב' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'pantry', l: '🛒 מזווה' }, { k: 'journey', l: '🧭 מטרה' }].map(function(t) {
+                return <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
               })}
             </div>
-          </div>
-          <NlpSelector label="לחץ וסטרס:" value={stressLevel} onChange={setStressLevel} max={5} lowLabel={gf('רגועה', 'רגוע')} highLabel="עומס" accent="#ef4444" />
-          <NlpSelector label="עייפות:" value={fatigueLevel} onChange={setFatigueLevel} max={5} lowLabel={gf('אנרגטית', 'אנרגטי')} highLabel={gf('סחוטה', 'סחוט')} accent={C.orange} />
-          <NlpSelector label="רעב ממוצע:" value={hungerLevel} onChange={setHungerLevel} max={5} lowLabel={gf('שבעה', 'שבע')} highLabel="רעב קיצוני" accent={C.blue} />
-        </div>
 
-        {currentStage >= 2 && (
-          <div style={{ background: '#fff', borderRadius: 18, padding: 18, border: '1.5px solid #e2e8f0', marginBottom: 14 }}>
-            <div style={{ fontWeight: 800, fontSize: 15, color: C.purple, marginBottom: 12, textAlign: 'right' }}>🏃 ספורט שבועי</div>
-            {!sportType ? (
+            {tab === 'logs' && (
+              <div>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 10 }}>📅 סינון:</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                    {[{ k: 'today', l: 'היום' }, { k: 'week', l: 'שבוע' }, { k: 'all', l: 'הכל' }, { k: 'custom', l: 'מותאם' }].map(function(m) {
+                      return <button key={m.k} onClick={() => setFilterMode(m.k)} style={{ padding: '6px 14px', borderRadius: 99, fontSize: 13, fontWeight: 600, cursor: 'pointer', border: '2px solid ' + (filterMode === m.k ? '#0f4c2a' : '#e5e7eb'), background: filterMode === m.k ? '#dcfce7' : '#fafafa', color: filterMode === m.k ? '#0f4c2a' : '#555' }}>{m.l}</button>
+                    })}
+                  </div>
+                  {filterMode === 'custom' && (
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                      <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none' }} />
+                      <span style={{ color: '#9ca3af' }}>עד</span>
+                      <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none' }} />
+                    </div>
+                  )}
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>מציג {filteredLogs.length} רשומות</div>
+                </div>
+                {filteredLogs.map(function(log) {
+                  var nut = calcNutrition(log, nutritionData)
+                  return (
+                    <div key={log.id} style={{ background: '#fff', borderRadius: 18, marginBottom: 12, border: '1.5px solid #f0f0f0', overflow: 'hidden' }}>
+                      <div style={{ padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid #f0f0f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ fontWeight: 800, fontSize: 15 }}>{log.log_date}</div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          {log.trainer_feedback && <span style={{ fontSize: 11, background: '#dcfce7', color: '#166534', borderRadius: 8, padding: '2px 8px' }}>✓ נענה</span>}
+                          <span style={{ fontSize: 12, color: '#9ca3af' }}>💧{log.water || 0} 🚶{log.steps || 0}</span>
+                        </div>
+                      </div>
+                      <div style={{ padding: '12px 16px' }}>
+                        <MacroPieChart actual={nut} target={targets} />
+                        <NutritionBar label="קלוריות" value={nut.calories} max={targets ? targets.calories : 2000} color="#f97316" />
+                        <NutritionBar label="חלבון (g)" value={nut.protein} max={targets ? targets.protein : 100} color="#16a34a" />
+                        <NutritionBar label="שומן (g)" value={nut.fat} max={targets ? targets.fat : 70} color="#9333ea" />
+                        {log.note && <div style={{ padding: '8px 12px', background: '#fffbeb', borderRadius: 10, fontSize: 13, color: '#78350f', marginTop: 8 }}>💬 {log.note}</div>}
+                        <textarea value={feedback[log.id] != null ? feedback[log.id] : (log.trainer_feedback || '')} onChange={e => setFeedback(f => ({ ...f, [log.id]: e.target.value }))} placeholder="כתבי משוב..." rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginTop: 10 }} />
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                          <button onClick={() => saveFeedback(log)} style={{ flex: 1, padding: 10, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                            {savingFeedback === log.id ? '⏳...' : sentFeedback === log.id ? '✅ נשלח!' : '💚 שלחי משוב ללקוחה'}
+                          </button>
+                          {sentFeedback === log.id && selectedClient.phone && (
+                            <button onClick={() => openWhatsApp(log)} style={{ padding: '10px 14px', borderRadius: 10, background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>📱 WA</button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+                {filteredLogs.length > 0 && (
+                  <button onClick={() => runLogsAnalysis(filteredLogs[0])} disabled={aiLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: aiLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginTop: 4 }}>
+                    {aiLoading ? '⏳ מנתח...' : '🤖 הפק דוח ביצועים עם AI'}
+                  </button>
+                )}
+                {dailyEditing && dailyPreview && (
+                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #16a34a', overflow: 'hidden', marginTop: 12 }}>
+                    <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <img src="/logo.png" alt="לוגו" style={{ height: 36, width: 36, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: 14 }}>👁️ תצוגה מקדימה</div>
+                        <div style={{ fontSize: 11, color: '#86efac' }}>ערכי ואז אשרי לשליחה</div>
+                      </div>
+                    </div>
+                    <div style={{ padding: 16 }}>
+                      <textarea value={dailyPreview} onChange={e => setDailyPreview(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                      <button onClick={() => { setDailyEditing(false); setDailyPreview(''); setDailyTargetLog(null) }} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#fef2f2', color: '#ef4444', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ ביטול</button>
+                      <button onClick={sendDailyFeedback} disabled={sendingDaily} style={{ flex: 2, padding: 12, borderRadius: 10, background: sendingDaily ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {sendingDaily ? '⏳ שולח...' : '✅ אשרי ושלחי ללקוח/ה'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {sentDaily && <div style={{ background: '#dcfce7', color: '#166534', borderRadius: 12, padding: '12px 16px', marginTop: 8, fontWeight: 700, textAlign: 'center', fontSize: 14 }}>✅ הדוח נשלח!</div>}
+              </div>
+            )}
+
+            {tab === 'doctor' && (
+              <div>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ textAlign: 'center', marginBottom: 16 }}>
+                    <img src="/logo.png" alt="אתי אטל" style={{ height: 80, objectFit: 'contain' }} />
+                    <div style={{ fontWeight: 800, fontSize: 18, color: '#0f4c2a', marginTop: 6 }}>אתי אטל</div>
+                    <div style={{ fontSize: 13, color: '#9ca3af' }}>יועצת בריאות ותזונה התנהגותית</div>
+                  </div>
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>תעודת זהות מטופל/ת</div>
+                    <input type="text" value={patientId} onChange={e => setPatientId(e.target.value)} placeholder="הזיני ת.ז..." style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                    <button onClick={selectAllTests} style={{ flex: 1, padding: '8px', borderRadius: 10, background: '#f0fdf4', border: '1.5px solid #16a34a', color: '#0f4c2a', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✅ בחרי הכל</button>
+                    <button onClick={clearAllTests} style={{ flex: 1, padding: '8px', borderRadius: 10, background: '#fef2f2', border: '1.5px solid #fca5a5', color: '#ef4444', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>❌ נקי הכל</button>
+                  </div>
+                  {DOCTOR_TESTS.map(function(test) {
+                    return (
+                      <div key={test.key} onClick={() => toggleTest(test.key)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer' }}>
+                        <div style={{ width: 22, height: 22, borderRadius: 6, border: '2px solid ' + (selectedTests[test.key] ? '#0f4c2a' : '#d1d5db'), background: selectedTests[test.key] ? '#0f4c2a' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {selectedTests[test.key] && <span style={{ color: '#fff', fontSize: 13, fontWeight: 900 }}>✓</span>}
+                        </div>
+                        <span style={{ fontSize: 14, color: '#222', flex: 1, textAlign: 'right' }}>{test.label}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+                <button onClick={openDoctorLetter} style={{ width: '100%', padding: 14, borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16, marginBottom: 8 }}>📄 פתחי מכתב לרופא</button>
+              </div>
+            )}
+
+            {tab === 'stage' && (
+              <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
+                <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4, color: '#0f4c2a' }}>🏆 שלב הלקוחה בתוכנית</div>
+                <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 20 }}>שינוי השלב יפתח/יסגור תכנים באפליקציית הלקוחה</div>
+                {[
+                  { stage: 1, title: 'שלב 1 — הניצוץ', desc: 'מודעות ואיזון קליני. יומן + NLP בסיסי.', color: '#f97316', bg: '#fff7ed' },
+                  { stage: 2, title: 'שלב 2 — העוגן', desc: 'עיצוב סביבה. נפתח: מדריך מזווה + רשימת קניות.', color: '#0d9488', bg: '#f0fdfa' },
+                  { stage: 3, title: 'שלב 3 — החופש', desc: 'דרך חיים. נפתח: ספר מתכונים + נשנושים.', color: '#9333ea', bg: '#faf5ff' },
+                ].map(function(s) {
+                  const isActive = (selectedClient.current_stage || 1) === s.stage
+                  return (
+                    <div key={s.stage} onClick={async function() { await supabase.from('clients').update({ current_stage: s.stage }).eq('id', selectedClient.id); setSelectedClient(c => ({ ...c, current_stage: s.stage })) }} style={{ padding: 16, borderRadius: 14, border: '2px solid ' + (isActive ? s.color : '#e5e7eb'), background: isActive ? s.bg : '#fafafa', cursor: 'pointer', marginBottom: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div style={{ width: 22, height: 22, borderRadius: 99, border: '2px solid ' + (isActive ? s.color : '#d1d5db'), background: isActive ? s.color : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          {isActive && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: 14, color: isActive ? s.color : '#333' }}>{s.title}</div>
+                          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{s.desc}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {tab === 'questionnaire' && (
               <>
-                <div style={{ fontSize: 13, color: '#555', marginBottom: 10 }}>{gf('בחרי', 'בחר')} פעילות נוספת על ההליכות:</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
-                  {SPORT_OPTIONS.map(s => (<button key={s.key} onClick={async () => { setSportType(s.key); await supabase.from('clients').update({ sport_type: s.key }).eq('password', dbKey) }} style={{ padding: '8px 14px', borderRadius: 10, border: '1.5px solid #e5e7eb', background: '#fafafa', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>{s.icon} {s.label}</button>))}
-                </div>
-              </>
-            ) : (
-              <>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                  <div><span style={{ fontSize: 22 }}>{SPORT_OPTIONS.find(s => s.key === sportType)?.icon || '⚡'}</span><span style={{ fontWeight: 700, fontSize: 14, marginRight: 6, color: C.purple }}>{SPORT_OPTIONS.find(s => s.key === sportType)?.label || sportType}</span></div>
-                  <button onClick={() => setSportType('')} style={{ fontSize: 11, color: '#9ca3af', background: 'transparent', border: 'none', cursor: 'pointer' }}>שנה</button>
-                </div>
-                <div style={{ marginBottom: 12 }}>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: '#333', marginBottom: 6 }}>מחויבות שבועית:</div>
-                  <div style={{ display: 'flex', gap: 6 }}>{[1,2,3,4].map(n => (<button key={n} onClick={async () => { setSportCommitDays(n); await supabase.from('clients').update({ sport_commit_days: n }).eq('password', dbKey) }} style={{ flex: 1, padding: '8px 0', borderRadius: 8, border: '2px solid ' + (sportCommitDays === n ? C.purple : '#e5e7eb'), background: sportCommitDays === n ? C.purpleLight : '#fff', color: sportCommitDays === n ? C.purple : '#555', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>{n}×</button>))}</div>
-                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>פעמים בשבוע בנוסף על ההליכות</div>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: sportDoneToday ? '#faf5ff' : '#fafafa', borderRadius: 12, padding: '12px 14px' }}>
-                  <div><div style={{ fontSize: 13, fontWeight: 700, color: '#333' }}>אימון היום</div><div style={{ fontSize: 11, color: '#9ca3af' }}>השבוע: {sportDaysThisWeek}/{sportCommitDays} אימונים</div></div>
-                  <button onClick={() => { var done = !sportDoneToday; setSportDoneToday(done); if (done) setSportDaysThisWeek(w => Math.min(w + 1, sportCommitDays)) }} style={{ padding: '8px 16px', borderRadius: 10, background: sportDoneToday ? C.purple : '#fff', color: sportDoneToday ? '#fff' : C.purple, border: '2px solid ' + C.purple, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{sportDoneToday ? '✅ בוצע!' : '+ סמן אימון'}</button>
-                </div>
-                {sportDaysThisWeek >= sportCommitDays && (<div style={{ marginTop: 8, background: C.purpleLight, borderRadius: 10, padding: '8px 12px', textAlign: 'center', fontSize: 13, color: C.purple, fontWeight: 700 }}>🏆 {gf('השלמת', 'השלמת')} את המחויבות השבועית! מדהים!</div>)}
+                <QSection title="פרטים כלליים ורפואיים" icon="👤">
+                  <Field label="איכות שינה" value={profile.sleep_quality} onChange={v => updateProfile('sleep_quality', v)} rows={2} />
+                  <Field label="בעיות שינה" value={profile.sleep_issues} onChange={v => updateProfile('sleep_issues', v)} rows={2} />
+                  <Field label="שעת קימה" value={profile.wake_time} onChange={v => updateProfile('wake_time', v)} />
+                  <Field label="שעת שינה" value={profile.sleep_time} onChange={v => updateProfile('sleep_time', v)} />
+                  <Field label="פעילות מעיים" value={profile.digestion} onChange={v => updateProfile('digestion', v)} rows={2} />
+                  <Field label="מעשן/ת?" value={profile.smoking} onChange={v => updateProfile('smoking', v)} type="boolean" />
+                  <Field label="מחזור חודשי" value={profile.menstrual_cycle} onChange={v => updateProfile('menstrual_cycle', v)} rows={1} />
+                  <Field label="תרופות / תוספים" value={profile.medications} onChange={v => updateProfile('medications', v)} rows={2} />
+                  <Field label="היסטוריה רפואית" value={profile.medical_history} onChange={v => updateProfile('medical_history', v)} rows={3} />
+                  <Field label="בריאות הורים" value={profile.family_history} onChange={v => updateProfile('family_history', v)} rows={2} />
+                </QSection>
+                <QSection title="הרגלי תזונה" icon="🍽️">
+                  <Field label="הגבלות תזונה" value={profile.diet_restrictions} onChange={v => updateProfile('diet_restrictions', v)} />
+                  <Field label="ארוחת בוקר" value={profile.breakfast_habits} onChange={v => updateProfile('breakfast_habits', v)} rows={2} />
+                  <Field label="ארוחת צהריים" value={profile.lunch_habits} onChange={v => updateProfile('lunch_habits', v)} rows={2} />
+                  <Field label="ארוחת ערב" value={profile.dinner_habits} onChange={v => updateProfile('dinner_habits', v)} rows={2} />
+                  <Field label="ביניים / נשנושים" value={profile.snack_habits} onChange={v => updateProfile('snack_habits', v)} rows={2} />
+                  <Field label="רגישויות למזון" value={profile.food_sensitivities} onChange={v => updateProfile('food_sensitivities', v)} rows={2} />
+                  <Field label="מבשל/ת בבית?" value={profile.cooks_at_home} onChange={v => updateProfile('cooks_at_home', v)} type="boolean" />
+                </QSection>
+                <QSection title="אורח חיים ורגש" icon="🧠">
+                  <Field label="כמות מים ביום" value={profile.water_intake} onChange={v => updateProfile('water_intake', v)} />
+                  <Field label="קפה ביום" value={profile.coffee_intake} onChange={v => updateProfile('coffee_intake', v)} />
+                  <Field label="אכילה רגשית" value={profile.emotional_eating} onChange={v => updateProfile('emotional_eating', v)} rows={2} />
+                  <Field label="רמת לחץ (1-10)" value={profile.stress_level} onChange={v => updateProfile('stress_level', parseInt(v))} type="number" />
+                  <Field label="רמת אנרגיה (1-10)" value={profile.energy_level} onChange={v => updateProfile('energy_level', parseInt(v))} type="number" />
+                </QSection>
+                <QSection title="פעילות גופנית" icon="🏃">
+                  <Field label="סוג פעילות ותדירות" value={profile.exercise_type} onChange={v => updateProfile('exercise_type', v)} rows={2} />
+                  <Field label="כאבים" value={profile.pain_issues} onChange={v => updateProfile('pain_issues', v)} rows={2} />
+                </QSection>
+                <QSection title="מטרות ו-NLP" icon="🎯">
+                  <Field label="מה רוצה להשיג?" value={profile.main_goal} onChange={v => updateProfile('main_goal', v)} rows={3} />
+                  <Field label="מה מעכב?" value={profile.goal_obstacles} onChange={v => updateProfile('goal_obstacles', v)} rows={2} />
+                  <Field label="איך תיראה ההצלחה?" value={profile.success_vision} onChange={v => updateProfile('success_vision', v)} rows={3} />
+                  <Field label="מה חשוב לך?" value={profile.important_values} onChange={v => updateProfile('important_values', v)} rows={2} />
+                </QSection>
+                <button onClick={saveProfile} disabled={saving} style={{ width: '100%', padding: 14, borderRadius: 14, marginTop: 4, background: saved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
+                  {saving ? '⏳ שומר...' : saved ? '✅ נשמר!' : '💾 שמרי פרופיל'}
+                </button>
               </>
             )}
-          </div>
-        )}
 
-        <Section title="ארוחת בוקר" icon="☀️" accent={C.orange} light={C.orangeLight} defaultOpen={true}>
-          <div style={{ fontSize: 12, color: '#9ca3af', padding: '8px 0 4px', textAlign: 'right' }}>{PLAN.bokerSnack}</div>
-          <YesNo value={hadSnack} onChange={setHadSnack} labelYes="✅ אכלתי חטיף" labelNo="❌ דילגתי" accent={C.orange} />
-          {filteredBoker.map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
-          <FreeText value={bokerFree} onChange={setBokerFree} placeholder="אכלתי גם / פרטים נוספים..." />
-          <ExtraCal value={bokerExtraCal} onChange={setBokerExtraCal} />
-          <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setBokerExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
-        </Section>
-
-        <Section title="ארוחת צהריים" icon="🌞" accent={C.greenMid} light={C.greenLight}>
-          <div style={{ display: 'flex', gap: 8, padding: '10px 0' }}>
-            {[{ k: 'A', l: '🍽️ מרכיבי הארוחה' }, { k: 'B', l: '🫒 רטבים ונלווים' }].map(opt => (<button key={opt.k} onClick={() => setLunchOpt(lunchOpt === opt.k ? null : opt.k)} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: '2px solid ' + (lunchOpt === opt.k ? C.greenMid : '#e5e7eb'), background: lunchOpt === opt.k ? C.greenLight : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: lunchOpt === opt.k ? C.greenDark : '#555' }}>{opt.l}</button>))}
-          </div>
-          {lunchOpt === 'A' && (
-            <div>
-              {/* ── מד השלמה חי ── */}
-              {(() => {
-                const protPct = clientPlate?.protein || (targets ? 40 : 40)
-                const carbPct = clientPlate?.carbs || (targets ? 30 : 30)
-                const protBudget = targets ? Math.round(targets.calories * protPct / 100 / 2) : 0
-                const carbBudget = targets ? Math.round(targets.calories * carbPct / 100 / 2) : 0
-
-                // ✅ סכום כל החלבונות שנבחרו
-                const protCalActual = Object.keys(protChecks).filter(id => protChecks[id]).reduce((sum, id) => {
-                  const item = nutritionData[id]
-                  const isEggs = id === 'p8'
-                  const cal100 = item?.calories_per_100 || item?.calories || 0
-                  if (isEggs) {
-                    const qty = protQty[id] || 2
-                    return sum + Math.round(qty * 70)
-                  }
-                  const qty = protQty[id] || (cal100 > 0 && protBudget > 0 ? Math.min(300, Math.round((protBudget / cal100) * 100)) : 150)
-                  return sum + (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
-                }, 0)
-                const selCarbItem = nutritionData[carbSel]
-                const cal100Carb = selCarbItem?.calories_per_100 || selCarbItem?.calories || 0
-                const carbQtyVal = carbQty[carbSel] || (cal100Carb > 0 && carbBudget > 0 ? Math.min(300, Math.round((carbBudget / cal100Carb) * 100)) : 150)
-                const carbCalActual = cal100Carb > 0 ? Math.round(cal100Carb * carbQtyVal / 100) : 0
-                const hasProtein = Object.values(protChecks).some(Boolean)
-                const protRemain = hasProtein ? Math.max(0, protBudget - protCalActual) : protBudget
-                const carbRemain = carbSel ? Math.max(0, carbBudget - carbCalActual) : carbBudget
-
-                if (!targets) return null
-                return (
-                  <div style={{ background: '#f0fdf4', borderRadius: 12, padding: '10px 14px', marginBottom: 10, border: '1px solid #86efac' }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#166534', marginBottom: 6 }}>🎯 יעד הצהריים שלך</div>
-                    <div style={{ display: 'flex', gap: 10 }}>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, color: '#555', marginBottom: 3 }}>חלבון: {protCalActual}/{protBudget} קל</div>
-                        <div style={{ height: 6, background: '#dcfce7', borderRadius: 99 }}>
-                          <div style={{ width: Math.min(100, protBudget > 0 ? (protCalActual/protBudget)*100 : 0) + '%', height: '100%', background: '#16a34a', borderRadius: 99, transition: 'width 0.3s' }} />
-                        </div>
-                        {protRemain > 0 && hasProtein && <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>נשאר {protRemain} קל</div>}
-                        {protRemain === 0 && hasProtein && <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>✅ הגעת ליעד!</div>}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, color: '#555', marginBottom: 3 }}>פחמימה: {carbCalActual}/{carbBudget} קל</div>
-                        <div style={{ height: 6, background: '#dcfce7', borderRadius: 99 }}>
-                          <div style={{ width: Math.min(100, carbBudget > 0 ? (carbCalActual/carbBudget)*100 : 0) + '%', height: '100%', background: '#f97316', borderRadius: 99, transition: 'width 0.3s' }} />
-                        </div>
-                        {carbRemain > 0 && carbSel && <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>נשאר {carbRemain} קל</div>}
-                        {carbRemain === 0 && carbSel && <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>✅ הגעת ליעד!</div>}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })()}
-
-              <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>פחמימה:</div>
-              {filteredCarbs.map(o => {
-                const item = nutritionData[o.id]
-                const cal100 = item?.calories_per_100 || item?.calories || 0
-                const carbPct = clientPlate?.carbs || 30
-                const carbBudget = targets ? Math.round(targets.calories * carbPct / 100 / 2) : 0
-                const recQty = cal100 > 0 && carbBudget > 0
-                  ? Math.min(300, Math.round((carbBudget / cal100) * 100))
-                  : 150
-                const qty = carbQty[o.id] || recQty
-                const calDisplay = cal100 > 0 ? Math.round(cal100 * qty / 100) : 0
-                return (
-                  <div key={o.id}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1 }}>
-                        <RadioRow id={o.id} text={o.text} accent={C.greenMid} selected={carbSel} onSelect={setCarbSel} />
-                      </div>
-                      {carbSel === o.id && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                          <input
-                            type="number"
-                            value={carbQty[o.id] || ''}
-                            onChange={e => setCarbQty(q => ({ ...q, [o.id]: Number(e.target.value) || 0 }))}
-                            placeholder={String(recQty)}
-                            style={{ width: 60, padding: '4px 6px', borderRadius: 8, border: '1.5px solid ' + C.greenMid, fontSize: 12, textAlign: 'center', outline: 'none' }}
-                          />
-                          <span style={{ fontSize: 11, color: '#9ca3af' }}>גר'</span>
-                        </div>
-                      )}
-                    </div>
-                    {carbSel === o.id && (
-                      <div style={{ fontSize: 11, color: C.greenMid, textAlign: 'left', paddingBottom: 4 }}>
-                        ≈ {calDisplay} קל {!carbQty[o.id] && <span style={{ color: '#9ca3af' }}>(מומלץ: {recQty} גר')</span>}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-
-              <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '10px 0 2px', textAlign: 'right' }}>חלבון:</div>
-              {filteredProt.map(o => {
-                const item = nutritionData[o.id]
-                const isEggs = o.id === 'p8'
-                const cal100 = item?.calories_per_100 || item?.calories || 0
-                const protPct = clientPlate?.protein || 40
-                const protBudget = targets ? Math.round(targets.calories * protPct / 100 / 2) : 0
-                // ✅ ביצים — המלצה ביחידות, שאר — גרמים
-                const recQty = isEggs ? 2 : (cal100 > 0 && protBudget > 0
-                  ? Math.min(300, Math.round((protBudget / cal100) * 100))
-                  : 150)
-                const isChecked = !!protChecks[o.id]
-                const qty = protQty[o.id] || recQty
-                // ✅ ביצים: כמות × 70 קל לביצה
-                const calDisplay = isEggs
-                  ? Math.round(qty * 70)
-                  : (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
-                return (
-                  <div key={o.id}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1 }} onClick={() => setProtChecks(p => ({ ...p, [o.id]: !p[o.id] }))}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', opacity: isChecked ? 1 : 0.85 }}>
-                          <div style={{ width: 20, height: 20, borderRadius: 6, border: '2px solid ' + (isChecked ? C.greenMid : '#d1d5db'), background: isChecked ? C.greenMid : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            {isChecked && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
-                          </div>
-                          <span style={{ fontSize: 14, color: isChecked ? C.greenDark : '#222', fontWeight: isChecked ? 700 : 400, flex: 1, textAlign: 'right' }}>{o.text}</span>
-                        </div>
-                      </div>
-                      {isChecked && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                          <input
-                            type="number"
-                            value={protQty[o.id] || ''}
-                            onChange={e => setProtQty(q => ({ ...q, [o.id]: Number(e.target.value) || 0 }))}
-                            placeholder={String(recQty)}
-                            style={{ width: 55, padding: '4px 6px', borderRadius: 8, border: '1.5px solid ' + C.greenMid, fontSize: 12, textAlign: 'center', outline: 'none' }}
-                          />
-                          <span style={{ fontSize: 11, color: '#9ca3af' }}>{isEggs ? 'יח\'' : 'גר\''}</span>
-                        </div>
-                      )}
-                    </div>
-                    {isChecked && (
-                      <div style={{ fontSize: 11, color: C.greenMid, textAlign: 'left', paddingBottom: 4 }}>
-                        ≈ {calDisplay} קל {!protQty[o.id] && <span style={{ color: '#9ca3af' }}>(מומלץ: {recQty} {isEggs ? 'ביצים' : 'גר\''})</span>}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-
-              {/* תזכורת חלבון */}
-              {carbSel && !Object.values(protChecks).some(Boolean) && (
-                <div style={{ marginTop: 10, background: '#fff7ed', borderRadius: 10, padding: '10px 14px', border: '1.5px solid #fed7aa', fontSize: 13, color: '#92400e' }}>
-                  💪 זכרי להוסיף חלבון — זה מה ששומר אותך שבעה עד הערב
+            {tab === 'blood' && (
+              <>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 10 }}>📸 סריקת בדיקות דם עם AI</div>
+                  <input type="file" accept="image/*" onChange={e => e.target.files[0] && scanBloodTests(e.target.files[0])} style={{ display: 'none' }} id="scan-input" />
+                  <label htmlFor="scan-input" style={{ display: 'block', padding: 12, borderRadius: 10, background: '#f0fdf4', border: '2px dashed #16a34a', textAlign: 'center', cursor: 'pointer', fontWeight: 700, color: '#0f4c2a' }}>
+                    {scanLoading ? '⏳ סורק...' : '📸 העלי תמונה של בדיקות דם'}
+                  </label>
                 </div>
-              )}
-            </div>
-          )}
-          {lunchOpt === 'B' && (<div><div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>רטבים ותוספות:</div>{filteredFat.map(o => <CheckRow key={o.id} id={o.id} text={o.text} accent={C.greenMid} checked={!!checks[o.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}</div>)}
-          <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות (חובה!):</div>
-          {PLAN.veggieOptions.map(o => <RadioRow key={o.id} id={o.id} text={o.text} accent={C.teal} selected={veggieSel} onSelect={setVeggieSel} />)}
-          <FreeText value={lunchFree} onChange={setLunchFree} placeholder="פרטים נוספים על הצהריים..." />
-          <ExtraCal value={lunchExtraCal} onChange={setLunchExtraCal} />
-          <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setLunchExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
-        </Section>
-
-        <Section title="ביניים" icon="🌤" accent={C.blue} light={C.blueLight}>
-          <div style={{ fontWeight: 700, fontSize: 12, color: C.blue, padding: '8px 0 4px', textAlign: 'right' }}>בחר/י:</div>
-          {filteredBenayim.map(o => <RadioRow key={o.id} id={o.id} text={o.text} accent={C.blue} selected={benayimSel} onSelect={setBenayimSel} />)}
-          <YesNo value={hadBenayim} onChange={setHadBenayim} labelYes="✅ אכלתי" labelNo="❌ דילגתי" accent={C.blue} />
-        </Section>
-
-        <Section title="ארוחת ערב" icon="🌙" accent={C.purple} light={C.purpleLight}>
-          {filteredErev.map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.purple} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
-          <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות לערב:</div>
-          {PLAN.veggieOptions.map(o => (<div key={o.id + '_e'} onClick={() => setChecks(c => { var n = {...c}; n[o.id + '_erev'] = !n[o.id + '_erev']; return n })} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', opacity: checks[o.id + '_erev'] ? 0.45 : 1 }}><div style={{ width: 20, height: 20, borderRadius: 6, border: '2px solid ' + (checks[o.id + '_erev'] ? C.teal : '#d1d5db'), background: checks[o.id + '_erev'] ? C.teal : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{checks[o.id + '_erev'] && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}</div><span style={{ fontSize: 14, color: '#222', textDecoration: checks[o.id + '_erev'] ? 'line-through' : 'none', flex: 1, textAlign: 'right' }}>{o.text}</span></div>))}
-          <FreeText value={erevFree} onChange={setErevFree} placeholder="פרטים נוספים על הערב..." />
-          <ExtraCal value={erevExtraCal} onChange={setErevExtraCal} />
-          <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setErevExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
-        </Section>
-
-        <Section title="🥫 המזווה ועוגני ההתארגנות" icon="🛒" accent={C.teal} light={C.tealLight} isLocked={currentStage < 2} lockMessage="ייפתח לאחר פגישת המזווה שלנו! 🔒">
-          <div style={{ paddingTop: 6 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: C.teal, marginBottom: 4 }}>💡 עוגן שבועי — מקרר מנצח:</div>
-            <div style={{ fontSize: 13, color: '#444', background: C.tealLight, padding: 10, borderRadius: 10, lineHeight: 1.6, marginBottom: 12 }}>{gf('הקפידי', 'הקפד')} שבכל סופ"ש יהיו לך לפחות 3 מקורות חלבון מבושלים במקרר וירקות שטופים וחתוכים.</div>
-            {[{ id: 'shop1', text: 'הכנתי קיטים מראש למקפיא' }, { id: 'shop2', text: 'חתכתי ירקות ושמתי בגובה העיניים במקרר' }, { id: 'shop3', text: 'יש קופסת הצלה מוכנה במקרר' }, { id: 'shop4', text: 'קניתי מקורות חלבון לשבוע' }].map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.teal} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
-          </div>
-        </Section>
-
-        <Section title="🧁 ספר המתכונים של אתי" icon="✨" accent={C.purple} light={C.purpleLight} isLocked={currentStage < 3} lockMessage="ייפתח לאחר סדנת הנשנושים! 🔒">
-          <div style={{ paddingTop: 6 }}>
-            {BONUS_RECIPES.map(function(rec, idx) {
-              return (<div key={idx} style={{ background: '#fff', padding: 10, borderRadius: 10, border: '1px solid #e9d5ff', marginBottom: 8 }}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}><span style={{ fontWeight: 700, fontSize: 13, color: C.purple }}>{rec.title}</span><span style={{ fontSize: 11, background: C.purpleLight, color: C.purple, padding: '2px 6px', borderRadius: 6, fontWeight: 700 }}>{rec.cal}</span></div><div style={{ fontSize: 12, color: '#666' }}><span style={{ fontWeight: 600 }}>רכיבים:</span> {rec.ingredients}</div></div>)
-            })}
-          </div>
-        </Section>
-
-        <Section title="מעקב שתייה" icon="💧" accent={C.blue} light={C.blueLight}>
-          <div style={{ padding: '10px 0' }}>
-            <div style={{ fontSize: 13, color: '#555', marginBottom: 10, textAlign: 'right' }}>
-              {water === 0 ? 'עדיין לא שתית 💧' : water === 0.5 ? '0.5 ליטר ✅' : water === 1 ? 'ליטר אחד ✅' : water === 1.5 ? 'ליטר וחצי ✅' : '2 ליטר 🏆'}
-            </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {[0.5, 1, 1.5, 2].map(l => (
-                <button key={l} onClick={() => setWater(l === water ? 0 : l)} style={{
-                  flex: 1, padding: '12px 4px', borderRadius: 12, fontSize: 13, fontWeight: 700,
-                  cursor: 'pointer',
-                  border: '2px solid ' + (water >= l ? C.blue : '#e5e7eb'),
-                  background: water >= l ? C.blueLight : '#fafafa',
-                  color: water >= l ? C.blue : '#555'
-                }}>
-                  💧{l}L
+                <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>📋 הדבקת טקסט מבדיקות דם</div>
+                  <textarea value={bloodText} onChange={e => setBloodText(e.target.value)} placeholder="הדביקי כאן את תוצאות הבדיקות..." rows={5} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginBottom: 8 }} />
+                  <button onClick={extractBloodFromText} disabled={bloodScanLoading || !bloodText.trim()} style={{ width: '100%', padding: 12, borderRadius: 10, background: bloodScanLoading ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                    {bloodScanLoading ? '⏳ מחלץ ערכים...' : '🤖 חלצי ערכים אוטומטית'}
+                  </button>
+                </div>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 8 }}>⚠️ ערכים חריגים נוספים</div>
+                  <textarea value={extraBloodNotes} onChange={e => setExtraBloodNotes(e.target.value)} onBlur={async e => { if (selectedClient) await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, extra_blood_notes: e.target.value, updated_at: new Date().toISOString() }, { onConflict: 'client_password' }) }} placeholder="לדוגמה: IgG 2328 (גבוה)..." rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                </div>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 16, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 700, marginBottom: 12 }}>🩸 ערכי בדיקות דם</div>
+                  {BLOOD_TESTS.map(function(test) {
+                    var val = (profile.blood_tests || {})[test.key] || ''
+                    return (
+                      <div key={test.key} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 8, alignItems: 'center', marginBottom: 8, padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
+                        <div><div style={{ fontSize: 13, fontWeight: 600 }}>{test.label}</div><div style={{ fontSize: 11, color: '#9ca3af' }}>תקין: {test.normal} {test.unit}</div></div>
+                        <input type={['lactose_sensitivity','gluten_sensitivity','celiac','blood_type','urine_general','urine_culture'].includes(test.key) ? 'text' : 'number'} value={val} onChange={e => updateBloodTest(test.key, e.target.value)} placeholder="ערך" style={{ padding: '6px 8px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, textAlign: 'center', outline: 'none', width: '100%', boxSizing: 'border-box' }} />
+                        <div style={{ fontSize: 11, color: '#9ca3af', textAlign: 'center' }}>{test.unit}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+                <button onClick={saveProfile} disabled={saving} style={{ width: '100%', padding: 14, borderRadius: 14, marginTop: 16, background: saved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
+                  {saving ? '⏳ שומר...' : saved ? '✅ נשמר!' : '💾 שמרי בדיקות'}
                 </button>
-              ))}
-            </div>
-            <div style={{ marginTop: 8, height: 6, background: '#f3f4f6', borderRadius: 99 }}>
-              <div style={{ width: Math.min(100, (water / 2) * 100) + '%', height: '100%', background: C.blue, borderRadius: 99, transition: 'width 0.3s' }} />
-            </div>
-            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4 }}>יעד: 1.5-2 ליטר ביום</div>
-          </div>
-        </Section>
+              </>
+            )}
 
-        <Section title="מעקב צעדים" icon="🚶" accent={C.purple} light={C.purpleLight}>
-          <div style={{ padding: '10px 0' }}>
-            <input type="number" value={steps} onChange={e => setSteps(e.target.value)} placeholder="מספר צעדים..." style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, outline: 'none', boxSizing: 'border-box', textAlign: 'right' }} />
-            <div style={{ marginTop: 8, height: 8, background: '#f3f4f6', borderRadius: 99 }}>
-              <div style={{ width: Math.min(100, Math.round((parseInt(steps) || 0) / 10000 * 100)) + '%', height: '100%', background: C.purple, borderRadius: 99 }} />
-            </div>
-          </div>
-        </Section>
+            {tab === 'nutrition' && (
+              <div style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', border: '1.5px solid #f0f0f0' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '10px 16px', background: '#f8fafc', fontWeight: 700, fontSize: 13, color: '#555', borderBottom: '1.5px solid #f0f0f0' }}>
+                  <div>פריט</div><div style={{ textAlign: 'center' }}>קלוריות</div><div style={{ textAlign: 'center' }}>חלבון</div><div style={{ textAlign: 'center' }}>שומן</div><div style={{ textAlign: 'center' }}>סיבים</div><div></div>
+                </div>
+                {nutritionItems.map(function(item) {
+                  return <NutritionRow key={item.id} item={item} onSave={async function(updated) { await supabase.from('nutrition_data').upsert(updated, { onConflict: 'id' }); const { data } = await supabase.from('nutrition_data').select('*').order('id'); setNutritionItems(data || []) }} />
+                })}
+              </div>
+            )}
 
-        <Section title="כללים חשובים" icon="📋" accent={C.amber} light={C.amberLight}>
-          <div style={{ paddingTop: 8 }}>
-            {PLAN.rules.map(function(r, i) { return (<div key={i} style={{ display: 'flex', gap: 10, padding: '8px 0', borderBottom: i < PLAN.rules.length - 1 ? '1px solid #fef3c7' : 'none' }}><span style={{ fontSize: 18 }}>{r.icon}</span><span style={{ fontSize: 13.5, color: '#333', lineHeight: 1.6, flex: 1, textAlign: 'right' }}>{r.text}</span></div>) })}
-          </div>
-        </Section>
+            {tab === 'ai' && (
+              <div>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0', marginBottom: 12 }}>
+                  <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>🧠 ניתוח AI מקיף</div>
+                  <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>משלב: שאלון 360 + בדיקות דם + NLP + ימי אכילה</div>
+                  <textarea value={foodDiary} onChange={e => setFoodDiary(e.target.value)} placeholder='3 ימי אכילה אופייניים...' rows={8} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
+                  <button onClick={runProfileAnalysis} disabled={aiLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: aiLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: aiLoading ? 'default' : 'pointer', fontWeight: 700, fontSize: 16 }}>
+                    {aiLoading ? '⏳ מנתחת... (עד דקה)' : '🧠 הפעילי ניתוח מקיף'}
+                  </button>
+                </div>
+                {editableAnalysis && (
+                  <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
+                    <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4, color: '#0f4c2a' }}>✏️ ערכי לפני שליחה</div>
+                    <textarea value={editableAnalysis} onChange={e => setEditableAnalysis(e.target.value)} rows={20} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8 }} />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <button onClick={() => window.open('/report?client=' + selectedClient.password + '&preview=true', '_blank')} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה</button>
+                      <button onClick={sendAnalysisToClient} disabled={sendingToClient} style={{ flex: 2, padding: 14, borderRadius: 12, background: sentToClient ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                        {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
-        <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', border: '1.5px solid #f0f0f0', marginBottom: 10 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: '#111', marginBottom: 10, textAlign: 'right' }}>הערה יומית לאתי</div>
-          <textarea value={note} onChange={e => setNote(e.target.value)} placeholder={gf('כתבי כאן איך הרגשת היום...', 'כתוב כאן איך הרגשת היום...')} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 14, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-        </div>
+            {tab === 'report' && (
+              <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
+                <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4, color: '#0f4c2a' }}>📊 הדוח השמור</div>
+                {editableAnalysis ? (
+                  <>
+                    <textarea value={editableAnalysis} onChange={e => setEditableAnalysis(e.target.value)} rows={20} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8 }} />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <button onClick={() => window.open('/report?client=' + selectedClient.password + '&preview=true', '_blank')} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה</button>
+                      <button onClick={sendAnalysisToClient} disabled={sendingToClient} style={{ flex: 2, padding: 14, borderRadius: 12, background: sentToClient ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                        {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>
+                    <div style={{ fontSize: 40, marginBottom: 12 }}>🧠</div>
+                    <div>עדיין לא הופק ניתוח AI</div>
+                    <button onClick={() => setTab('ai')} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}>עברי לטאב AI</button>
+                  </div>
+                )}
+              </div>
+            )}
 
-        <button onClick={handleSave} disabled={saving} style={{ width: '100%', padding: 16, borderRadius: 16, background: saved ? '#16a34a' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 17 }}>
-          {saving ? 'שומר...' : saved ? '✅ נשמר!' : gf('שמרי', 'שמור') + ' את היום שלי'}
-        </button>
-        {showWAButton && (
-          <a href={'https://wa.me/972523336766?text=' + encodeURIComponent('יומן חדש! 🌿\n' + (displayName || dbKey) + ' מילאה את היומן היום.\nhttps://project-l990h.vercel.app/admin')}
-            target="_blank" rel="noopener noreferrer"
-            onClick={() => setShowWAButton(false)}
-            style={{ display: 'block', width: '100%', padding: 12, borderRadius: 14, marginTop: 8, background: '#25D366', color: '#fff', textAlign: 'center', fontWeight: 700, fontSize: 15, textDecoration: 'none' }}>
-            📱 שלחי הודעה לאתי
-          </a>
+            {tab === 'newclient' && (
+              <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
+                <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 16 }}>➕ הוספת לקוחה חדשה</div>
+                {clientAdded && <div style={{ background: '#dcfce7', color: '#166534', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontWeight: 700 }}>{clientAdded}</div>}
+                <Field label="שם פרטי *" value={newClient.name} onChange={v => setNewClient(c => ({...c, name: v}))} />
+                <Field label="שם משפחה" value={newClient.last_name} onChange={v => setNewClient(c => ({...c, last_name: v}))} />
+                <Field label="סיסמה *" value={newClient.password} onChange={v => setNewClient(c => ({...c, password: v}))} />
+                <Field label="טלפון" value={newClient.phone} onChange={v => setNewClient(c => ({...c, phone: v}))} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ flex: 1 }}><Field label="גיל" value={newClient.age} onChange={v => setNewClient(c => ({...c, age: v}))} type="number" /></div>
+                  <div style={{ flex: 1 }}><Field label='משקל (ק"ג)' value={newClient.weight} onChange={v => setNewClient(c => ({...c, weight: v}))} type="number" /></div>
+                  <div style={{ flex: 1 }}><Field label='גובה (ס"מ)' value={newClient.height} onChange={v => setNewClient(c => ({...c, height: v}))} type="number" /></div>
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>מגדר</div>
+                  <div style={{ display: 'flex', gap: 8 }}>{['נקבה', 'זכר'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, gender: g}))} style={{ flex: 1, padding: 8, borderRadius: 10, border: '2px solid ' + (newClient.gender === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.gender === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: newClient.gender === g ? '#0f4c2a' : '#555' }}>{g}</button>)}</div>
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>מטרה</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{['ירידה במשקל', 'שמירה על משקל', 'עלייה במסה'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, goal: g}))} style={{ flex: 1, padding: 8, borderRadius: 10, border: '2px solid ' + (newClient.goal === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.goal === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: newClient.goal === g ? '#0f4c2a' : '#555', minWidth: 100 }}>{g}</button>)}</div>
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>רמת פעילות</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{['יושבני', 'קל', 'בינוני', 'פעיל', 'מאוד פעיל'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, activity: g}))} style={{ padding: '6px 10px', borderRadius: 10, border: '2px solid ' + (newClient.activity === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.activity === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: newClient.activity === g ? '#0f4c2a' : '#555' }}>{g}</button>)}</div>
+                </div>
+                <button onClick={addClient} disabled={addingClient} style={{ width: '100%', padding: 14, borderRadius: 12, background: addingClient ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
+                  {addingClient ? '⏳ מוסיפה...' : '➕ הוסיפי לקוחה'}
+                </button>
+              </div>
+            )}
+
+            {tab === 'pantry' && (
+              <div>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8, color: '#0f4c2a' }}>🎥 וידאו אישי למטופלת</div>
+                  <input value={selectedClient.video_url || ''} onChange={e => setSelectedClient(prev => ({ ...prev, video_url: e.target.value }))} onBlur={e => updateClientData('video_url', e.target.value)} placeholder="קישור YouTube או Vimeo..." style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                  {selectedClient.video_url && <div style={{ marginTop: 12, borderRadius: 12, overflow: 'hidden' }}><iframe src={selectedClient.video_url.replace('watch?v=', 'embed/')} width="100%" height="200" frameBorder="0" allowFullScreen style={{ borderRadius: 12, display: 'block' }} /></div>}
+                </div>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8, color: '#0f4c2a' }}>📝 הנחיות מזווה</div>
+                  <textarea value={selectedClient.pantry_notes || ''} onChange={e => setSelectedClient(prev => ({ ...prev, pantry_notes: e.target.value }))} onBlur={e => updateClientData('pantry_notes', e.target.value)} placeholder="כתבי הנחיות מזווה אישיות..." style={{ width: '100%', height: 200, padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7 }} />
+                </div>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 12, color: '#0f4c2a' }}>🛒 ניהול מלאי וקניות</div>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                    <input value={newItemName} onChange={e => setNewItemName(e.target.value)} onKeyDown={e => e.key === 'Enter' && addItemToInventory()} placeholder="שם המוצר" style={{ flex: 1, padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    <button onClick={addItemToInventory} disabled={addingItem || !newItemName.trim()} style={{ padding: '10px 18px', borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>{addingItem ? '⏳' : '+ הוסיפי'}</button>
+                  </div>
+                  {inventory.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: 24, color: '#9ca3af', fontSize: 14 }}>עדיין אין פריטים</div>
+                  ) : (
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                      <tbody>
+                        {inventory.map(item => (
+                          <tr key={item.id} style={{ borderBottom: '1px solid #f3f4f6' }}>
+                            <td style={{ padding: '10px 12px', fontSize: 14, color: '#222' }}>{item.name}</td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                              <button onClick={() => toggleItemStatus(item.id, item.status)} style={{ padding: '4px 12px', borderRadius: 99, fontSize: 12, fontWeight: 700, cursor: 'pointer', border: 'none', background: item.status === 'missing' ? '#fef2f2' : '#dcfce7', color: item.status === 'missing' ? '#ef4444' : '#16a34a' }}>
+                                {item.status === 'missing' ? '❌ חסר' : '✅ קיים'}
+                              </button>
+                            </td>
+                            <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                              <button onClick={() => deleteItem(item.id)} style={{ padding: '4px 12px', borderRadius: 8, fontSize: 12, cursor: 'pointer', border: '1px solid #fca5a5', background: '#fff', color: '#ef4444', fontWeight: 700 }}>מחק</button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {tab === 'journey' && (
+              <div style={{ direction: 'rtl' }}>
+
+                {/* ── ✅ פאנל הנחיות Agent — בראש הטאב ── */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: 18, marginBottom: 16, border: '2px solid #4a9b8e' }}>
+                  <div style={{ fontWeight: 900, fontSize: 15, color: '#3a7a6e', marginBottom: 4 }}>
+                    🤖 הנחיות Agent — {selectedClient?.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>
+                    מה שכתוב כאן נשלח לכל שיחה עם ה-Agent. עדכני אם המצב הרפואי משתנה.
+                  </div>
+                  <textarea
+                    value={agentInstructions}
+                    onChange={e => setAgentInstructions(e.target.value)}
+                    rows={8}
+                    placeholder="לחצי על 'צרי אוטומטית' כדי לזקק מהדוחות..."
+                    style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif', direction: 'rtl' }}
+                  />
+                  {selectedClient?.agent_instructions_updated_at && (
+                    <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, textAlign: 'left' }}>
+                      עודכן: {new Date(selectedClient.agent_instructions_updated_at).toLocaleDateString('he-IL')}
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <button
+                      onClick={generateAgentInstructions}
+                      disabled={generatingInstructions}
+                      style={{ flex: 2, padding: 12, borderRadius: 12, background: generatingInstructions ? '#9ca3af' : 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', color: '#fff', border: 'none', cursor: generatingInstructions ? 'default' : 'pointer', fontWeight: 700, fontSize: 13 }}
+                    >
+                      {generatingInstructions ? '⏳ מזקק מהדוחות...' : '🤖 צרי אוטומטית מהדוחות'}
+                    </button>
+                    <button
+                      onClick={saveAgentInstructions}
+                      style={{ flex: 1, padding: 12, borderRadius: 12, background: savedInstructions ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}
+                    >
+                      {savedInstructions ? '✅ נשמר!' : '💾 שמרי'}
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ background: 'linear-gradient(135deg,#7c3aed15,#faf5ff)', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
+                  <div style={{ fontWeight: 900, fontSize: 16, color: '#7c3aed', marginBottom: 4 }}>🧭 מסע המטרה</div>
+                  <div style={{ fontSize: 12, color: '#9ca3af' }}>מלאי יחד עם הלקוחה בפגישה הראשונה</div>
+                </div>
+
+                {/* ── 🧮 חישוב הרכב צלחת ── */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: 18, marginBottom: 16, border: '2px solid #f97316' }}>
+                  <div style={{ fontWeight: 900, fontSize: 15, color: '#c2410c', marginBottom: 4 }}>
+                    🧮 הרכב צלחת אישי — {selectedClient?.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>
+                    Sonnet קורא את הדוחות ומחשב הרכב מותאם לפי מחלות רקע ומטרה
+                  </div>
+                  {plateResult && (
+                    <div style={{ background: '#fff7ed', borderRadius: 12, padding: '12px 14px', marginBottom: 12, border: '1px solid #fed7aa' }}>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 8, marginBottom: 8 }}>
+                        {[
+                          { label: '💪 חלבון', val: plateResult.protein, color: '#16a34a' },
+                          { label: '🍞 פחמימה', val: plateResult.carbs, color: '#f97316' },
+                          { label: '🫒 שומן', val: plateResult.fat, color: '#0284c7' },
+                          { label: '🥦 ירקות', val: plateResult.veggies, color: '#0d9488' },
+                        ].map(p => (
+                          <div key={p.label} style={{ textAlign: 'center', background: '#fff', borderRadius: 10, padding: '8px 4px', border: '1.5px solid #fed7aa' }}>
+                            <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 2 }}>{p.label}</div>
+                            <div style={{ fontSize: 20, fontWeight: 900, color: p.color }}>{p.val}%</div>
+                          </div>
+                        ))}
+                      </div>
+                      {plateResult.reasoning && (
+                        <div style={{ fontSize: 12, color: '#92400e', fontStyle: 'italic' }}>💡 {plateResult.reasoning}</div>
+                      )}
+                    </div>
+                  )}
+                  <button
+                    onClick={calcPlate}
+                    disabled={calculatingPlate}
+                    style={{ width: '100%', padding: 12, borderRadius: 12, background: calculatingPlate ? '#9ca3af' : 'linear-gradient(135deg,#f97316,#ea580c)', color: '#fff', border: 'none', cursor: calculatingPlate ? 'default' : 'pointer', fontWeight: 700, fontSize: 13 }}
+                  >
+                    {calculatingPlate ? '⏳ מחשב...' : '🧮 חשבי הרכב צלחת אישי'}
+                  </button>
+                </div>
+
+                <div style={{ background: '#fffbeb', borderRadius: 14, padding: '12px 16px', marginBottom: 16, border: '1.5px solid #fcd34d' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#92400e', marginBottom: 6 }}>💡 הנחיות ניסוח — לשמור בראש</div>
+                  <div style={{ fontSize: 12, color: '#78350f', lineHeight: 1.8 }}>
+                    • <strong>בחיוב בלבד</strong> — "אני רוצה להרגיש..." ולא "אני לא רוצה להיות..."<br/>
+                    • <strong>בזמן הווה</strong> — "אני חשה", "אני בוחרת", "אני יודעת"<br/>
+                    • <strong>בשליטתה</strong> — תלוי בה ולא באחרים<br/>
+                    • אם אומרת שלילי — שאלי: "את זה את לא רוצה — מה כן?"<br/>
+                    • אם בורחת מסבל — שאלי: "לאן את הולכת? מה במקום?"
+                  </div>
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#0f4c2a', marginBottom: 12 }}>🌱 חלק 1 — הגדרת המטרה</div>
+                  {[
+                    { key: 'goal_reason', label: 'מה הביא אותך לכאן?', hint: 'שאלה פתוחה — הקשיבי, אל תמהרי קדימה' },
+                    { key: 'goal_what', label: 'מה את רוצה? איך את רוצה להשתנות?', hint: 'בחיוב, ספציפית, בשליטתה. אם שלילי — "מה כן?"' },
+                    { key: 'goal_context', label: 'באיזה הקשר? מתי? עם מי? איפה?', hint: 'מדייקת את המטרה לסיטואציה אמיתית' },
+                    { key: 'goal_why', label: 'למה זה חשוב לך?', hint: 'אם בורחת מסבל — "לאן? מה במקום?"' },
+                    { key: 'goal_proof', label: 'איך תדעי שהגעת? מה תהיה ההוכחה?', hint: 'מה היא תראה/תרגיש/תשמע כשתצליח?' },
+                  ].map(q => (
+                    <div key={q.key} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
+                      {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#0284c7', marginBottom: 12 }}>✨ חלק 2 — החזון הסנסורי</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 12, fontStyle: 'italic' }}>דמייני את הבוקר שהשינוי כבר קרה — בלשון הווה, מפורט ככל האפשר</div>
+                  {[
+                    { key: 'vision_see', label: 'מה את רואה סביבך כשאת פוקחת עיניים?', hint: 'פרטים ויזואליים — מה בדיוק?' },
+                    { key: 'vision_hear', label: 'מה את שומעת? מה אומרים לך? מה את אומרת לעצמך?', hint: 'קולות, מילים, משפטים' },
+                    { key: 'vision_feel', label: 'מהי התחושה הגופנית המדויקת? איפה היא בגוף?', hint: 'קלה, יציבה, חמה — ספציפי' },
+                  ].map(q => (
+                    <div key={q.key} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
+                      {q.hint && <div style={{ fontSize: 11, color: '#0284c7', marginBottom: 4, fontStyle: 'italic' }}>💙 {q.hint}</div>}
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#0d9488', marginBottom: 12 }}>🌿 חלק 3 — הרמוניה ואיזון</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 12, fontStyle: 'italic' }}>אם עולה התנגדות — שאלי: "מה הכוונה החיובית? איך לשמור עליה בדרך החדשה?"</div>
+                  {[
+                    { key: 'ecology_keep', label: 'כשתשיגי את המטרה — האם תפסידי משהו שחשוב לך?', hint: 'רווח משני — מה המצב הנוכחי נותן לה?' },
+                    { key: 'ecology_harmony', label: 'איך תשמרי על מה שחשוב לך בתוך השינוי?', hint: 'עדכני את המטרה אם עלתה התנגדות' },
+                    { key: 'ecology_who', label: 'במי תלויה השגת המטרה?', hint: 'חשוב — התוצאה חייבת להיות בשליטתה' },
+                  ].map(q => (
+                    <div key={q.key} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
+                      {q.hint && <div style={{ fontSize: 11, color: '#0d9488', marginBottom: 4, fontStyle: 'italic' }}>💚 {q.hint}</div>}
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#dc2626', marginBottom: 12 }}>🔍 חלק 4 — חשיפת היתד</div>
+                  <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 12, fontStyle: 'italic' }}>הקשיבי למילים: "תמיד", "אף פעם", "חייבת", "אי אפשר", "כי..."</div>
+                  {[
+                    { key: 'belief_hard', label: 'מה גורם לך להרגיש שזה קשה או בלתי אפשרי?', hint: 'ציטוט מדויק — מה המשפט שעולה לה?' },
+                    { key: 'belief_when', label: 'מתי החלטת שזה המצב?', hint: 'מחפשת את שורש האמונה — גיל? אירוע?' },
+                  ].map(q => (
+                    <div key={q.key} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
+                      {q.hint && <div style={{ fontSize: 11, color: '#dc2626', marginBottom: 4, fontStyle: 'italic' }}>❤️ {q.hint}</div>}
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#d97706', marginBottom: 12 }}>💎 חלק 5 — ארגז הכלים שלה</div>
+                  {[
+                    { key: 'resources_has', label: 'אילו משאבים כבר יש לה? (יכולות, אנשים, ידע)', hint: 'מה היא כבר עושה טוב? מה עזר לה בעבר?' },
+                    { key: 'resources_past', label: 'זכרי רגע שהיית מרוצה מעצמך — מה היה שם? מה עשית?', hint: 'מחלצת עוגני כוח מהעבר' },
+                  ].map(q => (
+                    <div key={q.key} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
+                      {q.hint && <div style={{ fontSize: 11, color: '#d97706', marginBottom: 4, fontStyle: 'italic' }}>🧡 {q.hint}</div>}
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#7c3aed', marginBottom: 12 }}>🛡️ חלק 6 — החיסונים וההתחייבות</div>
+                  {[
+                    { key: 'vaccine_moment', label: 'מהו הרגע הכי קשה ביום — מתי הכי קשה לשמור על המטרה?', hint: 'ספציפי — שעה? סיטואציה? אחרי מה?' },
+                    { key: 'vaccine_action', label: 'מהי הפעולה הקטנה שמתחייבת לעשות גם ביום הכי קשה?', hint: 'קטנה ומציאותית — לא מושלמת, רק אפשרית' },
+                    { key: 'vaccine_anchor', label: 'איזה משפט תגידי לעצמך ברגעים של עומס?', hint: 'בשפתה שלה — לא סיסמה, אלא משפט שמרגיש אמיתי' },
+                    { key: 'first_step', label: 'מהו הצעד הראשון שמתחייבת לשבוע הקרוב?', hint: 'מחויבות קונקרטית — מה? מתי? איך?' },
+                  ].map(q => (
+                    <div key={q.key} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
+                      {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    </div>
+                  ))}
+                </div>
+
+                <button onClick={async () => {
+                  setJourneyLoading(true); setJourneyAnalysis('')
+                  const profileSummary = `מחלות: ${profile.medical_history || 'לא צוין'} | תרופות: ${profile.medications || 'לא צוין'} | אכילה רגשית: ${profile.emotional_eating || 'לא צוין'} | מה מעכב: ${profile.goal_obstacles || 'לא צוין'}`
+                  const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, clientProfile: profileSummary, outputType: 'analysis' }) })
+                  const data = await res.json()
+                  setJourneyAnalysis(data.result || '')
+                  setJourneyLoading(false)
+                }} disabled={journeyLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
+                  {journeyLoading ? '⏳ מנתח...' : '🔍 הפק ניתוח לפגישה (לעיניך בלבד)'}
+                </button>
+
+                {journeyAnalysis && (
+                  <div style={{ background: '#fff', borderRadius: 18, padding: '18px', marginBottom: 16, border: '2px solid #7c3aed' }}>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: '#7c3aed', marginBottom: 12 }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
+                    <div style={{ fontSize: 13, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>{journeyAnalysis}</div>
+                  </div>
+                )}
+
+                {journeyAnalysis && (
+                  <div style={{ background: '#fff', borderRadius: 18, padding: '18px', border: '1.5px solid #e9d5ff' }}>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: '#7c3aed', marginBottom: 8 }}>📝 מה גילינו בפגישה 2</div>
+                    <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>הוסיפי בקצרה מה השתנה, מה פירקנו, מה האמונה החדשה</div>
+                    <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
+                    <button onClick={async () => {
+                      setJourneyDocLoading(true)
+                      const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, sessionNotes, outputType: 'clientDoc' }) })
+                      const data = await res.json()
+                      if (data.result) {
+                        await supabase.from('clients').update({ outcome_doc: data.result }).eq('id', selectedClient.id)
+                        setSelectedClient(prev => ({ ...prev, outcome_doc: data.result }))
+                        setJourneyDocSent(true)
+                        setTimeout(() => setJourneyDocSent(false), 4000)
+                      }
+                      setJourneyDocLoading(false)
+                    }} disabled={journeyDocLoading || !sessionNotes.trim()} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyDocSent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
+                      {journeyDocLoading ? '⏳ מפיק...' : journeyDocSent ? '✅ נשלח אליה!' : '🧭 הפק מסמך ושלחי אליה'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+          </>
         )}
-        <button onClick={resetDay} style={{ width: '100%', padding: 10, borderRadius: 12, marginTop: 8, background: 'transparent', border: '1px solid #fca5a5', color: '#ef4444', cursor: 'pointer', fontSize: 13 }}>🔄 {gf('אפסי', 'אפס')} את היום</button>
-        <button onClick={() => setSetupDone(false)} style={{ width: '100%', padding: 10, borderRadius: 12, marginTop: 6, background: 'transparent', border: '1px solid #e5e7eb', color: '#9ca3af', cursor: 'pointer', fontSize: 13 }}>{gf('עדכני', 'עדכן')} העדפות תזונה</button>
-        <button onClick={() => setProfileDone(false)} style={{ width: '100%', padding: 10, borderRadius: 12, marginTop: 6, background: 'transparent', border: '1px solid #e5e7eb', color: '#9ca3af', cursor: 'pointer', fontSize: 13 }}>{gf('עדכני', 'עדכן')} פרטים אישיים</button>
       </div>
     </div>
   )
