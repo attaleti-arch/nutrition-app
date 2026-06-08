@@ -62,11 +62,14 @@ function calcNutrition(log, nutritionData) {
   if (log.checks) Object.keys(log.checks).forEach(function(id) { if (log.checks[id]) add(id) })
   if (log.carb_sel) add(log.carb_sel)
   if (log.prot_sel) add(log.prot_sel)
+  if (log.prot_checks) Object.keys(log.prot_checks).forEach(function(id) { if (log.prot_checks[id]) add(id) })
   if (log.fat_sel) add(log.fat_sel)
   if (log.veggie_sel) add(log.veggie_sel)
   if (log.benayim_sel) add(log.benayim_sel)
   if (log.had_benayim) add('benayim')
   total.calories += (log.boker_extra_cal || 0) + (log.lunch_extra_cal || 0) + (log.erev_extra_cal || 0)
+  total.protein += (log.boker_extra_prot || 0) + (log.lunch_extra_prot || 0) + (log.erev_extra_prot || 0)
+  if (log.scan_calories) { total.calories += log.scan_calories; total.protein += (log.scan_protein || 0); total.fat += (log.scan_fat || 0) }
   var totalCal = total.protein * 4 + total.fat * 9
   total.proteinPct = totalCal > 0 ? Math.round((total.protein * 4 / totalCal) * 100) : 0
   total.fatPct = totalCal > 0 ? Math.round((total.fat * 9 / totalCal) * 100) : 0
@@ -682,7 +685,8 @@ export default function AdminPage() {
     if (!filteredLogs.length) return
     setAiLoading(true); setAiAnalysis(''); setDailyPreview(''); setDailyEditing(false); setDailyTargetLog(targetLog || null)
     var targets = calcTargets(selectedClient)
-    var summary = filteredLogs.map(function(l) {
+    var logsToAnalyze = targetLog ? [targetLog] : filteredLogs
+    var summary = logsToAnalyze.map(function(l) {
       var nut = calcNutrition(l, nutritionData)
       var scanExtra = ''
       if (l.scan_calories > 0) { scanExtra = ' | 📸 צילום: ' + l.scan_calories + ' קל'; if (l.scan_desc) scanExtra += ' (' + l.scan_desc + ')' }
@@ -690,7 +694,7 @@ export default function AdminPage() {
     }).join('\n')
     const res = await fetch('/api/analyze', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: selectedClient.name, gender: selectedClient.gender || 'נקבה', logs: summary, nlpSummary: filteredLogs.map(function(l) { var m = l.nlp_metrics || {}; if (!m.stress && !m.fatigue && !m.hunger && !m.mood) return null; return l.log_date + ': לחץ ' + (m.stress||0) + '/5, עייפות ' + (m.fatigue||0) + '/5, רעב ' + (m.hunger||0) + '/5, מצב רוח: ' + (m.mood||'לא צוין') }).filter(Boolean).join(' | ') })
+      body: JSON.stringify({ name: selectedClient.name, gender: selectedClient.gender || 'נקבה', logs: summary, nlpSummary: logsToAnalyze.map(function(l) { var m = l.nlp_metrics || {}; if (!m.stress && !m.fatigue && !m.hunger && !m.mood) return null; return l.log_date + ': לחץ ' + (m.stress||0) + '/5, עייפות ' + (m.fatigue||0) + '/5, רעב ' + (m.hunger||0) + '/5, מצב רוח: ' + (m.mood||'לא צוין') }).filter(Boolean).join(' | ') })
     })
     const data = await res.json()
     setDailyPreview(data.result); setDailyEditing(true); setAiLoading(false)
