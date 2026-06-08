@@ -1205,9 +1205,7 @@ export default function PlanApp({ clientName, userPassword }) {
                 </div>
               </div>
             </div>
-            {rootsFeedback.split(/
-
-/).filter(Boolean).map((section, i) => (
+            {rootsFeedback.split('\n\n').filter(Boolean).map((section, i) => (
               <div key={i} style={{ background: '#fff', borderRadius: 16, padding: '18px 20px', marginBottom: 14, borderRight: '4px solid #c4956a', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
                 <div style={{ fontSize: 14, color: '#2a2420', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{section}</div>
               </div>
