@@ -703,6 +703,8 @@ export default function PlanApp({ clientName, userPassword }) {
   const [showAiReport, setShowAiReport] = useState(false)
   const [rootsFeedback, setRootsFeedback] = useState(null)
   const [showRootsFeedback, setShowRootsFeedback] = useState(false)
+  const [bodyFeedback, setBodyFeedback] = useState(null)
+  const [showBodyFeedback, setShowBodyFeedback] = useState(false)
   const [reportApproved, setReportApproved] = useState(false)
   const [activeTab, setActiveTab] = useState('diary')
   const [showDocsMenu, setShowDocsMenu] = useState(false)
@@ -751,7 +753,7 @@ export default function PlanApp({ clientName, userPassword }) {
         var d = client.data
         setClientData(d)
         // ✅ טוען אחוזי הצלחת מ-client_profiles
-        const profileRes = await supabase.from('client_profiles').select('welcome_doc_json, ai_report, roots_feedback').eq('client_password', dbKey).maybeSingle()
+        const profileRes = await supabase.from('client_profiles').select('welcome_doc_json, ai_report, roots_feedback, body_feedback').eq('client_password', dbKey).maybeSingle()
         if (profileRes.data?.welcome_doc_json?.plate) {
           setClientPlate(profileRes.data.welcome_doc_json.plate)
         }
@@ -760,6 +762,9 @@ export default function PlanApp({ clientName, userPassword }) {
         }
         if (profileRes.data?.roots_feedback) {
           setRootsFeedback(profileRes.data.roots_feedback)
+        }
+        if (profileRes.data?.body_feedback) {
+          setBodyFeedback(profileRes.data.body_feedback)
         }
         if (d.weight) { setUserWeight(String(d.weight)); setProfileDone(true) }
         if (d.height) setUserHeight(String(d.height))
@@ -1190,6 +1195,29 @@ export default function PlanApp({ clientName, userPassword }) {
           </div>
         </div>
       )}
+      {showBodyFeedback && bodyFeedback && (
+        <div style={{ position: 'fixed', inset: 0, background: '#f0fdfa', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
+          <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
+            <button onClick={() => setShowBodyFeedback(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
+          </div>
+          <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#0d9488,#14b8a6)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ fontSize: 36 }}>🩺</div>
+                <div>
+                  <div style={{ fontWeight: 900, fontSize: 15 }}>המשוב האישי שלך — הגוף מדבר</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>{displayName.split(' ')[0]} · מאתי אטל</div>
+                </div>
+              </div>
+            </div>
+            {bodyFeedback.split('\n\n').filter(Boolean).map((section, i) => (
+              <div key={i} style={{ background: '#fff', borderRadius: 16, padding: '18px 20px', marginBottom: 14, borderRight: '4px solid #0d9488', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
+                <div style={{ fontSize: 14, color: '#2a2420', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{section}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       {showRootsFeedback && rootsFeedback && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8f4ef', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
           <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
@@ -1418,6 +1446,18 @@ export default function PlanApp({ clientName, userPassword }) {
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 900, fontSize: 15 }}>הניתוח האישי שלך מוכן!</div>
                 <div style={{ fontSize: 12, color: '#86efac', marginTop: 2 }}>מאתי · לחצי לצפייה מלאה</div>
+              </div>
+              <div style={{ fontSize: 22 }}>←</div>
+            </div>
+          </div>
+        )}
+        {bodyFeedback && (
+          <div style={{ background: 'linear-gradient(135deg,#0d9488,#14b8a6)', borderRadius: 18, padding: '18px 20px', marginBottom: 14, color: '#fff', cursor: 'pointer' }} onClick={() => setShowBodyFeedback(true)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontSize: 36 }}>🩺</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 900, fontSize: 15 }}>המשוב מפגישת הגוף מדבר</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 2 }}>מאתי · לחצי לצפייה מלאה</div>
               </div>
               <div style={{ fontSize: 22 }}>←</div>
             </div>
