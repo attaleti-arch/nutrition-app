@@ -614,7 +614,7 @@ export default function AdminPage() {
       if (extraBloodNotes) await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, extra_blood_notes: extraBloodNotes, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
       if (foodDiary && foodDiary.trim()) await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, food_diary: foodDiary, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
       var profileData = {}
-      var allowedKeys = ['sleep_quality','sleep_issues','wake_time','sleep_time','digestion','smoking','menstrual_cycle','menstrual_days','medications','therapists','medical_history','family_history','diet_restrictions','breakfast_habits','lunch_habits','dinner_habits','snack_habits','food_sensitivities','avoided_foods','cooks_at_home','restaurants_per_week','water_intake','coffee_intake','alcohol_intake','emotional_eating','work_hours','stress_level','energy_level','mood_notes','exercise_type','pain_issues','main_goal','goal_obstacles','goal_motivation','success_vision','important_values','positive_memories','blood_tests','extra_blood_notes','home_counter','home_shopping','home_never','home_fridge','home_children','home_family_meals','body_stomach','body_after_eating','body_food_link','body_headaches','body_fatigue']
+      var allowedKeys = ['sleep_quality','sleep_issues','wake_time','sleep_time','digestion','smoking','menstrual_cycle','menstrual_days','medications','therapists','medical_history','family_history','diet_restrictions','breakfast_habits','lunch_habits','dinner_habits','snack_habits','food_sensitivities','avoided_foods','cooks_at_home','restaurants_per_week','water_intake','coffee_intake','alcohol_intake','emotional_eating','work_hours','stress_level','energy_level','mood_notes','exercise_type','pain_issues','main_goal','goal_obstacles','goal_motivation','success_vision','important_values','positive_memories','blood_tests','extra_blood_notes','home_counter','home_shopping','home_never','home_fridge','home_children','home_family_meals','body_stomach','body_after_eating','body_food_link','body_headaches','body_fatigue','child_name','child_age','child_eating','child_eating_when','child_blood','child_mood','child_stress','child_calm','child_anxiety','child_food_comfort','family_atmosphere','siblings_rules','child_safe_person','family_meals_vibe','parent_food_model','parent_sport','home_junk','siblings_food_diff','child_eat_with','child_social_eating','child_friend','child_bedtime','child_screen_eat']
       allowedKeys.forEach(function(k) { if (profile[k] !== undefined) profileData[k] = profile[k] })
       var clientData = { age: selectedClient.age, weight: selectedClient.weight, height: selectedClient.height, gender: selectedClient.gender, activity: selectedClient.activity, goal: selectedClient.goal, target_weight: selectedClient.target_weight }
       const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: selectedClient.name, mode: 'profile', profile: { ...profileData, ...clientData, extra_blood_notes: extraBloodNotes }, foodDiary: foodDiary || '' }) })
@@ -717,6 +717,9 @@ export default function AdminPage() {
 
       {previewDoc && selectedClient && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 9999, overflowY: 'auto' }}>
+          <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 10000 }}>
+            <button onClick={() => setPreviewDoc(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
+          </div>
           <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 10000 }}>
             <button onClick={() => setPreviewDoc(false)} style={{ padding: '10px 20px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }}>✕ סגרי תצוגה מקדימה</button>
           </div>
@@ -835,10 +838,55 @@ export default function AdminPage() {
               </button>
             </div>
 
-            <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
-              {[{ k: 'logs', l: '📅 יומן' }, { k: 'questionnaire', l: '📋 שאלון' }, { k: 'blood', l: '🩸 בדיקות' }, { k: 'doctor', l: '📄 מכתב' }, { k: 'nutrition', l: '🥗 תזונה' }, { k: 'ai', l: '🧠 AI' }, { k: 'report', l: '📊 דוח' }, { k: 'stage', l: '🏆 שלב' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'pantry', l: '🛒 מזווה' }, { k: 'journey', l: '🧭 מטרה' }, { k: 'roots', l: '🌱 שורשים' }, { k: 'body', l: '🩺 גוף מדבר' }, { k: 'child', l: '👨‍👩‍👧 הורה-ילד' }].map(function(t) {
-                return <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
-              })}
+            {/* טאבים מקובצים */}
+            <div style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', gap: 8 }}>
+
+              {/* קבוצה 1 — מעקב */}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', marginBottom: 4, paddingRight: 4 }}>📊 מעקב</div>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {[{ k: 'logs', l: '📅 יומן' }, { k: 'report', l: '📊 דוח' }, { k: 'stage', l: '🏆 שלב' }].map(t => (
+                    <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* קבוצה 2 — פרופיל */}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', marginBottom: 4, paddingRight: 4 }}>📋 פרופיל</div>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {[{ k: 'questionnaire', l: '📋 שאלון' }, { k: 'blood', l: '🩸 בדיקות' }, { k: 'nutrition', l: '🥗 תזונה' }, { k: 'doctor', l: '📄 מכתב' }].map(t => (
+                    <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* קבוצה 3 — מפגשים */}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', marginBottom: 4, paddingRight: 4 }}>🧠 מפגשים</div>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {[
+                    { k: 'ai', l: '🧠 AI' },
+                    { k: 'journey', l: '🧭 מטרה' },
+                    { k: 'roots', l: '🌱 שורשים' },
+                    { k: 'body', l: '🩺 גוף מדבר' },
+                    ...(selectedClient?.client_track === 'child' || selectedClient?.client_track === 'both' ? [{ k: 'child', l: '👨‍👩‍👧 הורה-ילד' }] : [])
+                  ].map(t => (
+                    <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
+                  ))}
+                </div>
+              </div>
+
+              {/* קבוצה 4 — ניהול */}
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', marginBottom: 4, paddingRight: 4 }}>⚙️ ניהול</div>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {[{ k: 'pantry', l: '🛒 מזווה' }, { k: 'newclient', l: '➕ לקוח' }].map(t => (
+                    <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
+                  ))}
+                </div>
+              </div>
+
             </div>
 
             {tab === 'logs' && (
@@ -896,12 +944,15 @@ export default function AdminPage() {
                 )}
                 {dailyEditing && dailyPreview && (
                   <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #16a34a', overflow: 'hidden', marginTop: 12 }}>
-                    <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <img src="/logo.png" alt="לוגו" style={{ height: 36, width: 36, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
-                      <div>
-                        <div style={{ fontWeight: 800, fontSize: 14 }}>👁️ תצוגה מקדימה</div>
-                        <div style={{ fontSize: 11, color: '#86efac' }}>ערכי ואז אשרי לשליחה</div>
+                    <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <img src="/logo.png" alt="לוגו" style={{ height: 36, width: 36, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: 14 }}>👁️ תצוגה מקדימה</div>
+                          <div style={{ fontSize: 11, color: '#86efac' }}>ערכי ואז אשרי לשליחה</div>
+                        </div>
                       </div>
+                      <button onClick={() => { setDailyEditing(false); setDailyPreview(''); setDailyTargetLog(null) }} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
                     </div>
                     <div style={{ padding: 16 }}>
                       <textarea value={dailyPreview} onChange={e => setDailyPreview(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
@@ -981,6 +1032,52 @@ export default function AdminPage() {
 
             {tab === 'questionnaire' && (
               <>
+                {selectedClient?.is_child ? (
+                  <>
+                    <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', borderRadius: 14, padding: '12px 16px', marginBottom: 12 }}>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: '#fff' }}>👶 שאלון 360 — {selectedClient.name}</div>
+                      <div style={{ fontSize: 12, color: '#e9d5ff', marginTop: 2 }}>שאלון מותאם לילד — נפרד מהורה</div>
+                    </div>
+                    <QSection title="הילד — פרטים ובריאות" icon="👦">
+                      <Field label="גיל" value={profile.child_age} onChange={v => updateProfile('child_age', v)} type="number" />
+                      <Field label="מה אוכל / מה מסרב?" value={profile.child_eating} onChange={v => updateProfile('child_eating', v)} rows={3} />
+                      <Field label="מתי אוכל הכי הרבה ולמה?" value={profile.child_eating_when} onChange={v => updateProfile('child_eating_when', v)} rows={2} />
+                      <Field label="כאבי בטן / תחושות גוף?" value={profile.body_stomach} onChange={v => updateProfile('body_stomach', v)} rows={2} />
+                      <Field label="שינה — איכות ושעות?" value={profile.sleep_quality} onChange={v => updateProfile('sleep_quality', v)} rows={2} />
+                      <Field label="תרופות / אלרגיות?" value={profile.medications} onChange={v => updateProfile('medications', v)} rows={2} />
+                    </QSection>
+                    <QSection title="הסטייט אוף מיינד" icon="🧠">
+                      <Field label="מצב רוח בסיסי" value={profile.child_mood} onChange={v => updateProfile('child_mood', v)} rows={2} />
+                      <Field label="מה מלחיץ / מציף אותו?" value={profile.child_stress} onChange={v => updateProfile('child_stress', v)} rows={2} />
+                      <Field label="מה עוזר לו להירגע?" value={profile.child_calm} onChange={v => updateProfile('child_calm', v)} rows={2} />
+                      <Field label="חרדה / קושי חברתי?" value={profile.child_anxiety} onChange={v => updateProfile('child_anxiety', v)} rows={2} />
+                      <Field label="האם אוכל = מקום בטוח?" value={profile.child_food_comfort} onChange={v => updateProfile('child_food_comfort', v)} rows={2} />
+                    </QSection>
+                    <QSection title="דינמיקה משפחתית" icon="🏠">
+                      <Field label="אווירה בבית" value={profile.family_atmosphere} onChange={v => updateProfile('family_atmosphere', v)} rows={2} />
+                      <Field label="אחים — אותם חוקים?" value={profile.siblings_rules} onChange={v => updateProfile('siblings_rules', v)} rows={2} />
+                      <Field label="מי האדם הבטוח?" value={profile.child_safe_person} onChange={v => updateProfile('child_safe_person', v)} rows={1} />
+                      <Field label="ארוחות משותפות — אווירה?" value={profile.family_meals_vibe} onChange={v => updateProfile('family_meals_vibe', v)} rows={2} />
+                    </QSection>
+                    <QSection title="ההורה כמודל" icon="👁️">
+                      <Field label="מה הילד רואה את ההורה אוכל?" value={profile.parent_food_model} onChange={v => updateProfile('parent_food_model', v)} rows={2} />
+                      <Field label="האם ההורים עושים ספורט?" value={profile.parent_sport} onChange={v => updateProfile('parent_sport', v)} rows={1} />
+                      <Field label="כמה ג׳אנק / מזון מעובד בבית?" value={profile.home_junk} onChange={v => updateProfile('home_junk', v)} rows={2} />
+                      <Field label="הבדלים בין אחים?" value={profile.siblings_food_diff} onChange={v => updateProfile('siblings_food_diff', v)} rows={2} />
+                    </QSection>
+                    <QSection title="טריגרים וחברתי" icon="⚡">
+                      <Field label="עם מי נוח לו לאכול?" value={profile.child_eat_with} onChange={v => updateProfile('child_eat_with', v)} rows={2} />
+                      <Field label="בבופה / אירועים — מה קורה?" value={profile.child_social_eating} onChange={v => updateProfile('child_social_eating', v)} rows={2} />
+                      <Field label="יש חבר בטוח?" value={profile.child_friend} onChange={v => updateProfile('child_friend', v)} rows={2} />
+                      <Field label="לפני שינה — מאריך / אוכל?" value={profile.child_bedtime} onChange={v => updateProfile('child_bedtime', v)} rows={2} />
+                      <Field label="מסך + אכילה?" value={profile.child_screen_eat} onChange={v => updateProfile('child_screen_eat', v)} rows={2} />
+                    </QSection>
+                    <button onClick={saveProfile} disabled={saving} style={{ width: '100%', padding: 14, borderRadius: 14, marginTop: 4, background: saved ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
+                      {saving ? '⏳ שומר...' : saved ? '✅ נשמר!' : '💾 שמרי פרופיל ילד'}
+                    </button>
+                  </>
+                ) : (
+                <>
                 <QSection title="פרטים כלליים ורפואיים" icon="👤">
                   <Field label="איכות שינה" value={profile.sleep_quality} onChange={v => updateProfile('sleep_quality', v)} rows={2} />
                   <Field label="בעיות שינה" value={profile.sleep_issues} onChange={v => updateProfile('sleep_issues', v)} rows={2} />
@@ -1034,14 +1131,91 @@ export default function AdminPage() {
                   <Field label="איך תיראה ההצלחה?" value={profile.success_vision} onChange={v => updateProfile('success_vision', v)} rows={3} />
                   <Field label="מה חשוב לך?" value={profile.important_values} onChange={v => updateProfile('important_values', v)} rows={2} />
                 </QSection>
+
+
                 <button onClick={saveProfile} disabled={saving} style={{ width: '100%', padding: 14, borderRadius: 14, marginTop: 4, background: saved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
                   {saving ? '⏳ שומר...' : saved ? '✅ נשמר!' : '💾 שמרי פרופיל'}
                 </button>
+                </>
+                )}
               </>
             )}
 
             {tab === 'blood' && (
               <>
+                {selectedClient?.is_child ? (
+                  <>
+                    <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', borderRadius: 14, padding: '12px 16px', marginBottom: 12 }}>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: '#fff' }}>🩸 בדיקות דם — {selectedClient.name}</div>
+                      <div style={{ fontSize: 12, color: '#e9d5ff', marginTop: 2 }}>פרופיל בדיקות מותאם לילדים</div>
+                    </div>
+
+                    {/* סריקה */}
+                    <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #e9d5ff' }}>
+                      <div style={{ fontWeight: 700, marginBottom: 10, color: '#7c3aed' }}>📸 סריקת בדיקות דם עם AI</div>
+                      <input type="file" accept="image/*" onChange={e => e.target.files[0] && scanBloodTests(e.target.files[0])} style={{ display: 'none' }} id="scan-input-child" />
+                      <label htmlFor="scan-input-child" style={{ display: 'block', padding: 12, borderRadius: 10, background: '#faf5ff', border: '2px dashed #7c3aed', textAlign: 'center', cursor: 'pointer', fontWeight: 700, color: '#7c3aed' }}>
+                        {scanLoading ? '⏳ סורק...' : '📸 העלי תמונה של בדיקות דם'}
+                      </label>
+                    </div>
+
+                    {/* בדיקות לפי קטגוריות */}
+                    {[
+                      { title: '🍬 פרופיל סוכר', color: '#d97706', bg: '#fffbeb', tests: [
+                        { key: 'glucose', label: 'גלוקוז בצום', normal: '70-100 mg/dL' },
+                        { key: 'hba1c', label: 'HbA1c', normal: 'מתחת ל-5.7%' },
+                        { key: 'insulin', label: 'אינסולין', normal: '2-20 מיקרויחידות/מL' },
+                      ]},
+                      { title: '🫀 פרופיל שומנים', color: '#e53e3e', bg: '#fff5f5', tests: [
+                        { key: 'cholesterol', label: 'כולסטרול כללי', normal: 'מתחת ל-170 mg/dL' },
+                        { key: 'ldl', label: 'LDL (רע)', normal: 'מתחת ל-110 mg/dL' },
+                        { key: 'hdl', label: 'HDL (טוב)', normal: 'מעל 40 mg/dL' },
+                        { key: 'triglycerides', label: 'טריגליצרידים', normal: 'מתחת ל-150 mg/dL' },
+                      ]},
+                      { title: '🫀 תפקודי כבד וכליות', color: '#0d9488', bg: '#f0fdfa', tests: [
+                        { key: 'alt', label: 'ALT (כבד)', normal: '7-40 U/L' },
+                        { key: 'ast', label: 'AST (כבד)', normal: '10-40 U/L' },
+                        { key: 'creatinine', label: 'קריאטינין (כליות)', normal: '0.5-1.0 mg/dL' },
+                      ]},
+                      { title: '⚖️ איזון הורמונלי', color: '#7c3aed', bg: '#faf5ff', tests: [
+                        { key: 'tsh', label: 'TSH (בלוטת התריס)', normal: '0.5-4.5 mIU/L' },
+                      ]},
+                      { title: '💊 מדדי חסר', color: '#2563eb', bg: '#eff6ff', tests: [
+                        { key: 'vitamin_d', label: 'ויטמין D', normal: '30-100 ng/mL' },
+                        { key: 'iron', label: 'ברזל', normal: '50-120 mcg/dL' },
+                        { key: 'ferritin', label: 'פריטין', normal: '15-120 ng/mL' },
+                        { key: 'vitamin_b12', label: 'ויטמין B12', normal: '200-900 pg/mL' },
+                        { key: 'folic_acid', label: 'חומצה פולית', normal: '4-20 ng/mL' },
+                      ]},
+                      { title: '🔬 מדדים כלליים', color: '#6b7280', bg: '#f9fafb', tests: [
+                        { key: 'wbc', label: 'WBC (ספירת דם לבנה)', normal: '4,500-11,000' },
+                        { key: 'hemoglobin', label: 'המוגלובין', normal: 'ילד: 11.5-13.5 | ילדה: 11.5-13.5 g/dL' },
+                        { key: 'rbc', label: 'RBC (כדוריות דם אדומות)', normal: '3.8-5.2 מיליון' },
+                        { key: 'platelets', label: 'טסיות', normal: '150,000-400,000' },
+                      ]},
+                    ].map(({ title, color, bg, tests }) => (
+                      <div key={title} style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #e5e7eb' }}>
+                        <div style={{ fontWeight: 700, fontSize: 14, color, marginBottom: 12, paddingBottom: 8, borderBottom: '1.5px solid ' + bg }}>{title}</div>
+                        {tests.map(({ key, label, normal }) => (
+                          <div key={key} style={{ marginBottom: 10 }}>
+                            <div style={{ fontSize: 12, color: '#555', marginBottom: 4, fontWeight: 600 }}>{label} <span style={{ color: '#9ca3af', fontWeight: 400 }}>({normal})</span></div>
+                            <input type="number" step="0.01" value={(profile.blood_tests || {})[key] || ''} onChange={async e => {
+                              const newBlood = { ...(profile.blood_tests || {}), [key]: e.target.value }
+                              setProfile(p => ({ ...p, blood_tests: newBlood }))
+                              await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, blood_tests: newBlood, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
+                            }} placeholder="הזיני ערך..." style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                          </div>
+                        ))}
+                      </div>
+                    ))}
+
+                    <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #e9d5ff' }}>
+                      <div style={{ fontWeight: 700, marginBottom: 8, color: '#7c3aed' }}>⚠️ ערכים חריגים נוספים</div>
+                      <textarea value={extraBloodNotes} onChange={e => setExtraBloodNotes(e.target.value)} onBlur={async e => { if (selectedClient) await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, extra_blood_notes: e.target.value, updated_at: new Date().toISOString() }, { onConflict: 'client_password' }) }} placeholder="ערכים חריגים נוספים..." rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    </div>
+                  </>
+                ) : (
+                <>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 700, marginBottom: 10 }}>📸 סריקת בדיקות דם עם AI</div>
                   <input type="file" accept="image/*" onChange={e => e.target.files[0] && scanBloodTests(e.target.files[0])} style={{ display: 'none' }} id="scan-input" />
@@ -1076,6 +1250,8 @@ export default function AdminPage() {
                 <button onClick={saveProfile} disabled={saving} style={{ width: '100%', padding: 14, borderRadius: 14, marginTop: 16, background: saved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
                   {saving ? '⏳ שומר...' : saved ? '✅ נשמר!' : '💾 שמרי בדיקות'}
                 </button>
+                </>
+                )}
               </>
             )}
 
