@@ -310,6 +310,19 @@ export default function AdminPage() {
   const [journeyDocLoading, setJourneyDocLoading] = useState(false)
   const [journeyDocSent, setJourneyDocSent] = useState(false)
 
+  // ── 👨‍👩‍👧 הורה-ילד state ──
+  const [childNotes, setChildNotes] = useState({
+    child_self: '', state_of_mind: '', family_dynamics: '', parent_model: '', triggers_social: ''
+  })
+  const [childAnalysis, setChildAnalysis] = useState('')
+  const [childLoading, setChildLoading] = useState(false)
+  const [childEditing, setChildEditing] = useState(false)
+  const [childFeedback, setChildFeedback] = useState('')
+  const [childFeedbackLoading, setChildFeedbackLoading] = useState(false)
+  const [childFeedbackSaved, setChildFeedbackSaved] = useState(false)
+  const [sendingChildFeedback, setSendingChildFeedback] = useState(false)
+  const [childFeedbackSent, setChildFeedbackSent] = useState(false)
+
   // ── 🩺 הגוף מדבר state ──
   const [bodyNotes, setBodyNotes] = useState({
     body_signals: '', body_history: '', emotion_body: '', energy_sleep: '', hunger_satiety: '', already_knows: ''
@@ -793,7 +806,7 @@ export default function AdminPage() {
             </div>
 
             <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
-              {[{ k: 'logs', l: '📅 יומן' }, { k: 'questionnaire', l: '📋 שאלון' }, { k: 'blood', l: '🩸 בדיקות' }, { k: 'doctor', l: '📄 מכתב' }, { k: 'nutrition', l: '🥗 תזונה' }, { k: 'ai', l: '🧠 AI' }, { k: 'report', l: '📊 דוח' }, { k: 'stage', l: '🏆 שלב' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'pantry', l: '🛒 מזווה' }, { k: 'journey', l: '🧭 מטרה' }, { k: 'roots', l: '🌱 שורשים' }, { k: 'body', l: '🩺 גוף מדבר' }].map(function(t) {
+              {[{ k: 'logs', l: '📅 יומן' }, { k: 'questionnaire', l: '📋 שאלון' }, { k: 'blood', l: '🩸 בדיקות' }, { k: 'doctor', l: '📄 מכתב' }, { k: 'nutrition', l: '🥗 תזונה' }, { k: 'ai', l: '🧠 AI' }, { k: 'report', l: '📊 דוח' }, { k: 'stage', l: '🏆 שלב' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'pantry', l: '🛒 מזווה' }, { k: 'journey', l: '🧭 מטרה' }, { k: 'roots', l: '🌱 שורשים' }, { k: 'body', l: '🩺 גוף מדבר' }, { k: 'child', l: '👨‍👩‍👧 הורה-ילד' }].map(function(t) {
                 return <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
               })}
             </div>
@@ -877,6 +890,9 @@ export default function AdminPage() {
 
             {tab === 'doctor' && (
               <div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
+                  <button onClick={() => setTab('logs')} style={{ padding: '8px 18px', borderRadius: 10, background: '#fef2f2', color: '#ef4444', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
+                </div>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ textAlign: 'center', marginBottom: 16 }}>
                     <img src="/logo.png" alt="אתי אטל" style={{ height: 80, objectFit: 'contain' }} />
@@ -1694,6 +1710,141 @@ export default function AdminPage() {
                         setSendingBodyFeedback(false); setBodyFeedbackSent(true); setTimeout(() => setBodyFeedbackSent(false), 4000)
                       }} disabled={sendingBodyFeedback} style={{ flex: 2, padding: 12, borderRadius: 10, background: bodyFeedbackSent ? '#16a34a' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {sendingBodyFeedback ? '⏳...' : bodyFeedbackSent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )}
+
+            {tab === 'child' && (
+              <div style={{ direction: 'rtl' }}>
+
+                <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
+                  <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 4 }}>👨‍👩‍👧 הורה-ילד — {selectedClient?.name}</div>
+                  <div style={{ fontSize: 12, color: '#e9d5ff' }}>הזיני הערות מהזום המקדים — AI יבנה מערך מפגש מלא ומסמך להורה</div>
+                </div>
+
+                {[
+                  { key: 'child_self', icon: '👦', title: 'הילד עצמו', placeholder: 'מי הוא? מה אוכל/מסרב? מתי אוכל הכי הרבה ולמה? יום רגיל?' },
+                  { key: 'state_of_mind', icon: '🧠', title: 'הסטייט אוף מיינד', placeholder: 'מה מצב הרוח הבסיסי? מה מלחיץ אותו? מה עוזר להירגע? האם אוכל = מקום בטוח? חרדה / קושי חברתי?' },
+                  { key: 'family_dynamics', icon: '🏠', title: 'הדינמיקה המשפחתית', placeholder: 'אווירה בבית — שקט / מתחים? אחים — אותם חוקים? מי האדם הבטוח? ארוחות משותפות?' },
+                  { key: 'parent_model', icon: '👁️', title: 'ההורה כמודל', placeholder: 'מה הוא רואה את ההורה אוכל? האם ההורים עושים ספורט? כמה ג'אנק בבית ומי קונה? הבדלים בין אחים?' },
+                  { key: 'triggers_social', icon: '⚡', title: 'טריגרים, סיטואציות וחברתי', placeholder: 'עם מי נוח לו לאכול? בבופה / אירועים — מה קורה? יש חבר בטוח? לפני שינה — מאריך / אוכל? מסך + אוכל?' },
+                ].map(({ key, icon, title, placeholder }) => (
+                  <div key={key} style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 12, border: '1.5px solid #e5e7eb' }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#7c3aed', marginBottom: 8 }}>{icon} {title}</div>
+                    <textarea value={childNotes[key]} onChange={e => setChildNotes(prev => ({ ...prev, [key]: e.target.value }))} placeholder={placeholder} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }} />
+                  </div>
+                ))}
+
+                <button onClick={async () => {
+                  setChildLoading(true); setChildAnalysis(''); setChildEditing(false)
+                  const notesText = Object.entries(childNotes).map(([k,v]) => {
+                    const labels = { child_self: 'הילד עצמו', state_of_mind: 'סטייט אוף מיינד', family_dynamics: 'דינמיקה משפחתית', parent_model: 'ההורה כמודל', triggers_social: 'טריגרים וחברתי' }
+                    return v.trim() ? labels[k] + ':\n' + v : ''
+                  }).filter(Boolean).join('\n\n')
+
+                  const prompt = 'אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להכין מערך מפגש עם הורה לגבי הילד שלו.\n\n' +
+                    'שם ההורה: ' + (selectedClient?.name||'') + '\n\n' +
+                    'הערות מהזום המקדים:\n' + notesText + '\n\n' +
+                    'הפק ניתוח מעמיק ומערך מפגש לאתי. כתוב בעברית, מקצועי וישיר.\n\n' +
+                    '**1. תמונת הילד — מי הוא**\n' +
+                    'סיכום מי הילד, מה מאפיין אותו, מה הכוחות שלו. ציטט ישירות מהדברים.\n\n' +
+                    '**2. הדפוסים שזוהו**\n' +
+                    'לכל דפוס: מה קורה בפועל + מה מאחורי זה (רגשי/סביבתי/חברתי) + מה זה אומר לתהליך.\n' +
+                    'אין הגבלה לכמות — כלול את כולם.\n\n' +
+                    '**3. הדינמיקה המשפחתית — מה צריך לשנות**\n' +
+                    'מה בבית תומך בבעיה? מה ניתן לשנות מיד? מה דורש עבודה עמוקה יותר?\n\n' +
+                    '**4. ההורה כגורם**\n' +
+                    'מה ההורה תורם לדפוס — בלי להאשים. מה הוא יכול לשנות בעצמו?\n\n' +
+                    '**5. מבנה מוצע למפגש הפיזי**\n' +
+                    'סדר נושאים + זמן משוער + שאלת פתיחה + רגעי חיבור אישי.\n\n' +
+                    '**6. צעדים פרקטיים לשינוי ביתי**\n' +
+                    'לפחות 6-8 צעדים קונקרטיים שההורה יכול להתחיל מחר — מותאמים ספציפית למשפחה.\n\n' +
+                    '**7. שאלות המשך לפגישה**\n' +
+                    '2-3 שאלות אם נושא לא כוסה מספיק.'
+
+                  const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                  const data = await res.json()
+                  if (data.result) { setChildAnalysis(data.result); setChildEditing(true) }
+                  setChildLoading(false)
+                }} disabled={childLoading || !Object.values(childNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: childLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
+                  {childLoading ? '⏳ מנתח...' : '👨‍👩‍👧 הפק מערך מפגש AI'}
+                </button>
+
+                {childEditing && childAnalysis && (
+                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
+                    <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: 14 }}>📋 מערך מפגש — לעיניך בלבד</div>
+                        <div style={{ fontSize: 11, color: '#e9d5ff' }}>ערכי והוסיפי — ואז עבדי מחדש או הפיקי מסמך להורה</div>
+                      </div>
+                      <button onClick={() => { setChildEditing(false); setChildAnalysis('') }} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
+                    </div>
+                    <div style={{ padding: 16 }}>
+                      <textarea value={childAnalysis} onChange={e => setChildAnalysis(e.target.value)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                      <button onClick={async () => {
+                        setChildLoading(true)
+                        const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + childAnalysis
+                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                        const data = await res.json()
+                        if (data.result) setChildAnalysis(data.result)
+                        setChildLoading(false)
+                      }} disabled={childLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#faf5ff', color: '#7c3aed', border: '1.5px solid #e9d5ff', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {childLoading ? '⏳...' : '🔄 עבדי מחדש'}
+                      </button>
+                      <button onClick={async () => {
+                        setChildFeedbackLoading(true)
+                        const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. צרי מסמך סיכום חם ומעשי להורה ' + (selectedClient?.name||'') + ' לאחר פגישת הורה-ילד.\n\n' +
+                          'על בסיס הניתוח:\n' + childAnalysis + '\n\n' +
+                          'כתבי מסמך בעברית, גוף שני, חיובי ומעצים. מבנה:\n\n' +
+                          '🌟 מה ראינו יחד\n[2-3 משפטים — תובנות על הילד, בשפה חיובית]\n\n' +
+                          '💚 הכוחות של הילד שלך\n[2 משפטים — מה חיובי שראינו]\n\n' +
+                          '🏠 מה משתנה בבית — מהיום\n[4-5 צעדים יומיומיים קונקרטיים וריאליסטיים]\n\n' +
+                          '🌿 מה לשים לב אליו בשבוע הקרוב\n[2-3 נקודות תצפית — לא שיפוט]\n\n' +
+                          '💬 משפט לסיום\n[חם, מעצים, מחזק את ההורה]\n\n' +
+                          'ללא מבוא. ללא כותרת ראשית. שפה של אדם — לא של מטפל.'
+                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                        const data = await res.json()
+                        if (data.result) setChildFeedback(data.result)
+                        setChildFeedbackLoading(false)
+                      }} disabled={childFeedbackLoading} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {childFeedbackLoading ? '⏳ מפיק...' : '📝 הפיקי מסמך להורה'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {childFeedback && (
+                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
+                    <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff' }}>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>💚 מסמך סיכום להורה — אחרי הפגישה</div>
+                      <div style={{ fontSize: 11, color: '#e9d5ff' }}>הוסיפי מה שעלה בפגישה → שמרי → שלחי</div>
+                    </div>
+                    <div style={{ padding: 16 }}>
+                      <textarea value={childFeedback} onChange={e => setChildFeedback(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                      <button onClick={async () => {
+                        const { error } = await supabase.from('client_profiles').update({ child_feedback: childFeedback, child_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        if (!error) { setChildFeedbackSaved(true); setTimeout(() => setChildFeedbackSaved(false), 3000) }
+                      }} style={{ flex: 1, padding: 12, borderRadius: 10, background: childFeedbackSaved ? '#16a34a' : '#faf5ff', color: childFeedbackSaved ? '#fff' : '#7c3aed', border: '1.5px solid #7c3aed', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {childFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
+                      </button>
+                      <button onClick={async () => {
+                        if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
+                        setSendingChildFeedback(true)
+                        await supabase.from('client_profiles').update({ child_feedback: childFeedback, child_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        const phone = selectedClient.phone.replace(/^0/, '972')
+                        const msg = 'היי ' + selectedClient.name + '! 👨‍👩‍👧\n\nמסמך הסיכום מהפגישה שלנו מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+                        setSendingChildFeedback(false); setChildFeedbackSent(true); setTimeout(() => setChildFeedbackSent(false), 4000)
+                      }} disabled={sendingChildFeedback} style={{ flex: 2, padding: 12, borderRadius: 10, background: childFeedbackSent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {sendingChildFeedback ? '⏳...' : childFeedbackSent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
                       </button>
                     </div>
                   </div>
