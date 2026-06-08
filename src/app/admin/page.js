@@ -573,7 +573,7 @@ export default function AdminPage() {
       if (extraBloodNotes) await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, extra_blood_notes: extraBloodNotes, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
       if (foodDiary && foodDiary.trim()) await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, food_diary: foodDiary, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
       var profileData = {}
-      var allowedKeys = ['sleep_quality','sleep_issues','wake_time','sleep_time','digestion','smoking','menstrual_cycle','menstrual_days','medications','therapists','medical_history','family_history','diet_restrictions','breakfast_habits','lunch_habits','dinner_habits','snack_habits','food_sensitivities','avoided_foods','cooks_at_home','restaurants_per_week','water_intake','coffee_intake','alcohol_intake','emotional_eating','work_hours','stress_level','energy_level','mood_notes','exercise_type','pain_issues','main_goal','goal_obstacles','goal_motivation','success_vision','important_values','positive_memories','blood_tests','extra_blood_notes']
+      var allowedKeys = ['sleep_quality','sleep_issues','wake_time','sleep_time','digestion','smoking','menstrual_cycle','menstrual_days','medications','therapists','medical_history','family_history','diet_restrictions','breakfast_habits','lunch_habits','dinner_habits','snack_habits','food_sensitivities','avoided_foods','cooks_at_home','restaurants_per_week','water_intake','coffee_intake','alcohol_intake','emotional_eating','work_hours','stress_level','energy_level','mood_notes','exercise_type','pain_issues','main_goal','goal_obstacles','goal_motivation','success_vision','important_values','positive_memories','blood_tests','extra_blood_notes','home_counter','home_shopping','home_never','home_fridge','home_children','home_family_meals','body_stomach','body_after_eating','body_food_link','body_headaches','body_fatigue']
       allowedKeys.forEach(function(k) { if (profile[k] !== undefined) profileData[k] = profile[k] })
       var clientData = { age: selectedClient.age, weight: selectedClient.weight, height: selectedClient.height, gender: selectedClient.gender, activity: selectedClient.activity, goal: selectedClient.goal, target_weight: selectedClient.target_weight }
       const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: selectedClient.name, mode: 'profile', profile: { ...profileData, ...clientData, extra_blood_notes: extraBloodNotes }, foodDiary: foodDiary || '' }) })
@@ -940,6 +940,21 @@ export default function AdminPage() {
                 <QSection title="פעילות גופנית" icon="🏃">
                   <Field label="סוג פעילות ותדירות" value={profile.exercise_type} onChange={v => updateProfile('exercise_type', v)} rows={2} />
                   <Field label="כאבים" value={profile.pain_issues} onChange={v => updateProfile('pain_issues', v)} rows={2} />
+                </QSection>
+                <QSection title="הסביבה הביתית" icon="🏠">
+                  <Field label="מה תמיד נמצא על השיש / בהישג יד?" value={profile.home_counter} onChange={v => updateProfile('home_counter', v)} rows={2} />
+                  <Field label="מי קונה את האוכל בבית ולפי מה?" value={profile.home_shopping} onChange={v => updateProfile('home_shopping', v)} rows={2} />
+                  <Field label="מה אף פעם לא נכנס הביתה?" value={profile.home_never} onChange={v => updateProfile('home_never', v)} rows={2} />
+                  <Field label="איך נראה המקרר בדרך כלל?" value={profile.home_fridge} onChange={v => updateProfile('home_fridge', v)} rows={2} />
+                  <Field label="ילדים בבית? גילאים?" value={profile.home_children} onChange={v => updateProfile('home_children', v)} />
+                  <Field label="ארוחות משותפות — כמה פעמים בשבוע?" value={profile.home_family_meals} onChange={v => updateProfile('home_family_meals', v)} />
+                </QSection>
+                <QSection title="הגוף מדבר" icon="🩺">
+                  <Field label="כאבי בטן חוזרים? מתי מופיעים?" value={profile.body_stomach} onChange={v => updateProfile('body_stomach', v)} rows={2} />
+                  <Field label="תחושות אחרי אכילה (נפיחות / עייפות / בחילה)?" value={profile.body_after_eating} onChange={v => updateProfile('body_after_eating', v)} rows={2} />
+                  <Field label="קשר בין מזון מסוים לתחושה גרועה?" value={profile.body_food_link} onChange={v => updateProfile('body_food_link', v)} rows={2} />
+                  <Field label="כאבי ראש חוזרים? תדירות?" value={profile.body_headaches} onChange={v => updateProfile('body_headaches', v)} />
+                  <Field label="עייפות לאחר ארוחות?" value={profile.body_fatigue} onChange={v => updateProfile('body_fatigue', v)} rows={2} />
                 </QSection>
                 <QSection title="מטרות ו-NLP" icon="🎯">
                   <Field label="מה רוצה להשיג?" value={profile.main_goal} onChange={v => updateProfile('main_goal', v)} rows={3} />
