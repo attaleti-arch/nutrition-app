@@ -274,7 +274,7 @@ export default function AdminPage() {
   const [dateTo, setDateTo] = useState('')
   const [patientId, setPatientId] = useState('')
   const [selectedTests, setSelectedTests] = useState({})
-  const [newClient, setNewClient] = useState({ name: '', last_name: '', password: '', phone: '', age: '', weight: '', height: '', goal: '', activity: '', gender: '' })
+  const [newClient, setNewClient] = useState({ name: '', last_name: '', password: '', phone: '', id_number: '', age: '', weight: '', height: '', goal: '', activity: '', gender: '' })
   const [addingClient, setAddingClient] = useState(false)
   const [clientAdded, setClientAdded] = useState('')
   const [foodDiary, setFoodDiary] = useState('')
@@ -1100,6 +1100,7 @@ export default function AdminPage() {
                 <Field label="שם משפחה" value={newClient.last_name} onChange={v => setNewClient(c => ({...c, last_name: v}))} />
                 <Field label="סיסמה *" value={newClient.password} onChange={v => setNewClient(c => ({...c, password: v}))} />
                 <Field label="טלפון" value={newClient.phone} onChange={v => setNewClient(c => ({...c, phone: v}))} />
+                <Field label="תעודת זהות" value={newClient.id_number} onChange={v => setNewClient(c => ({...c, id_number: v}))} />
                 <div style={{ display: 'flex', gap: 8 }}>
                   <div style={{ flex: 1 }}><Field label="גיל" value={newClient.age} onChange={v => setNewClient(c => ({...c, age: v}))} type="number" /></div>
                   <div style={{ flex: 1 }}><Field label='משקל (ק"ג)' value={newClient.weight} onChange={v => setNewClient(c => ({...c, weight: v}))} type="number" /></div>
