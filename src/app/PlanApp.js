@@ -616,11 +616,19 @@ function FreeText({ value, onChange, placeholder }) {
   return <textarea value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder || 'פרטים נוספים...'} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginTop: 8, color: '#555' }} />
 }
 
-function ExtraCal({ value, onChange }) {
+function ExtraCal({ value, onChange, valueProt, onChangeProt }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-      <input type="number" value={value || ''} onChange={e => onChange(Number(e.target.value) || 0)} placeholder="קלוריות נוספות..." style={{ flex: 1, padding: '7px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-      <span style={{ fontSize: 12, color: '#9ca3af', flexShrink: 0 }}>קל</span>
+    <div style={{ marginTop: 6 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <input type="number" value={value || ''} onChange={e => onChange(Number(e.target.value) || 0)} placeholder="קלוריות נוספות..." style={{ flex: 1, padding: '7px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+        <span style={{ fontSize: 12, color: '#9ca3af', flexShrink: 0 }}>קל</span>
+      </div>
+      {onChangeProt !== undefined && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <input type="number" value={valueProt || ''} onChange={e => onChangeProt(Number(e.target.value) || 0)} placeholder="חלבון נוסף..." style={{ flex: 1, padding: '7px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+          <span style={{ fontSize: 12, color: '#9ca3af', flexShrink: 0 }}>גר</span>
+        </div>
+      )}
     </div>
   )
 }
@@ -692,6 +700,9 @@ export default function PlanApp({ clientName, userPassword }) {
   const [bokerExtraCal, setBokerExtraCal] = useState(0)
   const [lunchExtraCal, setLunchExtraCal] = useState(0)
   const [erevExtraCal, setErevExtraCal] = useState(0)
+  const [bokerExtraProt, setBokerExtraProt] = useState(0)
+  const [lunchExtraProt, setLunchExtraProt] = useState(0)
+  const [erevExtraProt, setErevExtraProt] = useState(0)
   const [scanCalories, setScanCalories] = useState(0)
   const [scanDesc, setScanDesc] = useState('')
   const [scanProtein, setScanProtein] = useState(0)
@@ -804,6 +815,7 @@ export default function PlanApp({ clientName, userPassword }) {
         setWater(t.water || 0); setSteps(t.steps || ''); setNote(t.note || '')
         setBokerFree(t.boker_free || ''); setLunchFree(t.lunch_free || ''); setErevFree(t.erev_free || '')
         setBokerExtraCal(t.boker_extra_cal || 0); setLunchExtraCal(t.lunch_extra_cal || 0); setErevExtraCal(t.erev_extra_cal || 0)
+        setBokerExtraProt(t.boker_extra_prot || 0); setLunchExtraProt(t.lunch_extra_prot || 0); setErevExtraProt(t.erev_extra_prot || 0)
         setHadSnack(t.had_snack ?? null); setHadBenayim(t.had_benayim ?? null)
         setSportDoneToday(t.sport_done_today || false)
         var dayOfWeek = new Date().getDay()
@@ -849,6 +861,8 @@ export default function PlanApp({ clientName, userPassword }) {
         carb_sel: carbSel, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
         water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
         boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
+      boker_extra_prot: bokerExtraProt || 0, lunch_extra_prot: lunchExtraProt || 0, erev_extra_prot: erevExtraProt || 0,
+        boker_extra_prot: bokerExtraProt || 0, lunch_extra_prot: lunchExtraProt || 0, erev_extra_prot: erevExtraProt || 0,
         had_snack: hadSnack, had_benayim: hadBenayim,
         sport_done_today: sportDoneToday, sport_days_week: sportDaysThisWeek,
         scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
@@ -1529,7 +1543,7 @@ export default function PlanApp({ clientName, userPassword }) {
           <YesNo value={hadSnack} onChange={setHadSnack} labelYes="✅ אכלתי חטיף" labelNo="❌ דילגתי" accent={C.orange} />
           {filteredBoker.map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
           <FreeText value={bokerFree} onChange={setBokerFree} placeholder="אכלתי גם / פרטים נוספים..." />
-          <ExtraCal value={bokerExtraCal} onChange={setBokerExtraCal} />
+          <ExtraCal value={bokerExtraCal} onChange={setBokerExtraCal} valueProt={bokerExtraProt} onChangeProt={setBokerExtraProt} />
           <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setBokerExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
         </Section>
 
@@ -1693,7 +1707,7 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות (חובה!):</div>
           {PLAN.veggieOptions.map(o => <RadioRow key={o.id} id={o.id} text={o.text} accent={C.teal} selected={veggieSel} onSelect={setVeggieSel} />)}
           <FreeText value={lunchFree} onChange={setLunchFree} placeholder="פרטים נוספים על הצהריים..." />
-          <ExtraCal value={lunchExtraCal} onChange={setLunchExtraCal} />
+          <ExtraCal value={lunchExtraCal} onChange={setLunchExtraCal} valueProt={lunchExtraProt} onChangeProt={setLunchExtraProt} />
           <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setLunchExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
         </Section>
 
@@ -1708,7 +1722,7 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות לערב:</div>
           {PLAN.veggieOptions.map(o => (<div key={o.id + '_e'} onClick={() => setChecks(c => { var n = {...c}; n[o.id + '_erev'] = !n[o.id + '_erev']; return n })} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', opacity: checks[o.id + '_erev'] ? 0.45 : 1 }}><div style={{ width: 20, height: 20, borderRadius: 6, border: '2px solid ' + (checks[o.id + '_erev'] ? C.teal : '#d1d5db'), background: checks[o.id + '_erev'] ? C.teal : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{checks[o.id + '_erev'] && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}</div><span style={{ fontSize: 14, color: '#222', textDecoration: checks[o.id + '_erev'] ? 'line-through' : 'none', flex: 1, textAlign: 'right' }}>{o.text}</span></div>))}
           <FreeText value={erevFree} onChange={setErevFree} placeholder="פרטים נוספים על הערב..." />
-          <ExtraCal value={erevExtraCal} onChange={setErevExtraCal} />
+          <ExtraCal value={erevExtraCal} onChange={setErevExtraCal} valueProt={erevExtraProt} onChangeProt={setErevExtraProt} />
           <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setErevExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
         </Section>
 
