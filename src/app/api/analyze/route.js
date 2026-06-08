@@ -655,6 +655,15 @@ ${sessionNotes ? 'מה גילינו בפגישה (מאתי): ' + sessionNotes : 
       }
     }
 
+    if (mode === 'rootsAnalysis' && body.prompt) {
+      const msg = await client.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 2500,
+        messages: [{ role: 'user', content: body.prompt }]
+      })
+      return Response.json({ result: msg.content[0].text })
+    }
+
     if (logs && !mode) {
       const gender = body.gender || 'נקבה'
       const isMale = gender === 'זכר'
