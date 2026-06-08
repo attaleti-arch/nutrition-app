@@ -707,6 +707,19 @@ ${sessionNotes ? 'מה גילינו בפגישה (מאתי): ' + sessionNotes : 
         + 'בדיקות: ' + bloodText + '\n'
         + (extraBlood ? extraBlood + '\n' : '')
         + (diary ? 'אכילה (3 ימים): ' + diary + '\n' : '')
+        + (p.home_counter || p.home_fridge || p.home_children ? '--- סביבה ביתית ---\n'
+          + (p.home_counter ? 'על השיש: ' + p.home_counter + '\n' : '')
+          + (p.home_shopping ? 'קניות: ' + p.home_shopping + '\n' : '')
+          + (p.home_never ? 'לא נכנס הביתה: ' + p.home_never + '\n' : '')
+          + (p.home_fridge ? 'מקרר: ' + p.home_fridge + '\n' : '')
+          + (p.home_children ? 'ילדים בבית: ' + p.home_children + '\n' : '')
+          + (p.home_family_meals ? 'ארוחות משותפות: ' + p.home_family_meals + '\n' : '') : '')
+        + (p.body_stomach || p.body_after_eating || p.body_headaches ? '--- ביטויים פיזיולוגיים ---\n'
+          + (p.body_stomach ? 'כאבי בטן: ' + p.body_stomach + '\n' : '')
+          + (p.body_after_eating ? 'תחושות אחרי אכילה: ' + p.body_after_eating + '\n' : '')
+          + (p.body_food_link ? 'קשר מזון-תחושה: ' + p.body_food_link + '\n' : '')
+          + (p.body_headaches ? 'כאבי ראש: ' + p.body_headaches + '\n' : '')
+          + (p.body_fatigue ? 'עייפות אחרי ארוחות: ' + p.body_fatigue + '\n' : '') : '')
 
       const systemPrompt = 'אתה אתי אטל - יועצת בריאות ותזונה התנהגותית בגישת NLP.\n'
         + 'כתבי ניתוח אישי חם, עמוק, אמפתי ומחבק מאוד ל-' + name + ' בעברית, גוף שני נקבה.\n'
