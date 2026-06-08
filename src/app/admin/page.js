@@ -1416,11 +1416,8 @@ export default function AdminPage() {
                   setRootsLoading(true); setRootsAnalysis(''); setRootsEditing(false)
                   const notesText = Object.entries(rootsNotes).map(([k,v]) => {
                     const labels = { home_background: 'הבית שגדלה בו', family_identity: 'זהות וגוף במשפחה', today_patterns: 'דפוסים היום', forward_passing: 'מה עובר הלאה', beliefs_motivation: 'אמונות ומוטיבציה', resources: 'משאבים' }
-                    return v.trim() ? labels[k] + ':
-' + v : ''
-                  }).filter(Boolean).join('
-
-')
+                    return v.trim() ? labels[k] + ':\n' + v : ''
+                  }).filter(Boolean).join('\n\n')
                   const prompt = `אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להתכונן לפגישת "שורשים" עם לקוחה.
 
 הערות מהזום המקדים:
