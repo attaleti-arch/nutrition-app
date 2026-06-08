@@ -67,6 +67,8 @@ const PLAN = {
     { id: 'b7', text: 'ביצים קשות / חביתה + ירקות', tags: [], hide: ['vegan', 'no_eggs'] },
     { id: 'b8', text: 'אבוקדו + ירקות', tags: ['vegan', 'keto'] },
     { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto'], tags: ['vegetarian'] },
+    { id: 'bnew1', text: '2 פרוסות לחם כוסמין', tags: [], hide: ['keto', 'no_gluten'] },
+    { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
   ],
   carbOptions: [
     { id: 'c1', text: '150 גרם אורז מלא / קינואה', hide: ['keto', 'no_gluten'] },
@@ -114,6 +116,8 @@ const PLAN = {
     { id: 'e6', text: 'יוגורט יווני 0% + פירות יער', hide: ['vegan', 'no_lactose', 'keto'] },
     { id: 'e7', text: '2 ביצים קשות + ירקות', hide: ['vegan', 'no_eggs'] },
     { id: 'e8', text: '100 גרם עדשים מבושלות + ירקות', tags: ['vegan'] },
+    { id: 'enew1', text: 'שקשוקה 2 ביצים + ירקות', tags: [], hide: ['vegan', 'no_eggs'] },
+    { id: 'enew2', text: '2 פרוסות לחם כוסמין', tags: [], hide: ['keto', 'no_gluten'] },
   ],
   benayimOptions: [
     { id: 'ben1', text: 'פרי עונתי (תפוח / אגס / קיווי)' },
@@ -861,7 +865,6 @@ export default function PlanApp({ clientName, userPassword }) {
         carb_sel: carbSel, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
         water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
         boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
-      boker_extra_prot: bokerExtraProt || 0, lunch_extra_prot: lunchExtraProt || 0, erev_extra_prot: erevExtraProt || 0,
         boker_extra_prot: bokerExtraProt || 0, lunch_extra_prot: lunchExtraProt || 0, erev_extra_prot: erevExtraProt || 0,
         had_snack: hadSnack, had_benayim: hadBenayim,
         sport_done_today: sportDoneToday, sport_days_week: sportDaysThisWeek,
@@ -915,6 +918,10 @@ export default function PlanApp({ clientName, userPassword }) {
     if (benayimSel) add(benayimSel); if (hadBenayim) add('benayim')
     total += (bokerExtraCal || 0) + (lunchExtraCal || 0) + (erevExtraCal || 0) + (scanCalories || 0)
     return total
+  }
+
+  function calcExtraProt() {
+    return (bokerExtraProt || 0) + (lunchExtraProt || 0) + (erevExtraProt || 0)
   }
 
   const saveProfile = async function() {
@@ -1571,7 +1578,7 @@ export default function PlanApp({ clientName, userPassword }) {
                   }
                   const qty = protQty[id] || (cal100 > 0 && protBudget > 0 ? Math.min(300, Math.round((protBudget / cal100) * 100)) : 150)
                   return sum + (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
-                }, 0)
+                }, 0) + calcExtraProt() * 4
                 const selCarbItem = nutritionData[carbSel]
                 const cal100Carb = selCarbItem?.calories_per_100 || selCarbItem?.calories || 0
                 const carbQtyVal = carbQty[carbSel] || (cal100Carb > 0 && carbBudget > 0 ? Math.min(300, Math.round((carbBudget / cal100Carb) * 100)) : 150)
