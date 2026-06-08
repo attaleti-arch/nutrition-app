@@ -310,6 +310,19 @@ export default function AdminPage() {
   const [journeyDocLoading, setJourneyDocLoading] = useState(false)
   const [journeyDocSent, setJourneyDocSent] = useState(false)
 
+  // ── 🩺 הגוף מדבר state ──
+  const [bodyNotes, setBodyNotes] = useState({
+    body_signals: '', body_history: '', emotion_body: '', energy_sleep: '', hunger_satiety: '', already_knows: ''
+  })
+  const [bodyAnalysis, setBodyAnalysis] = useState('')
+  const [bodyLoading, setBodyLoading] = useState(false)
+  const [bodyEditing, setBodyEditing] = useState(false)
+  const [bodyFeedback, setBodyFeedback] = useState('')
+  const [bodyFeedbackLoading, setBodyFeedbackLoading] = useState(false)
+  const [bodyFeedbackSaved, setBodyFeedbackSaved] = useState(false)
+  const [sendingBodyFeedback, setSendingBodyFeedback] = useState(false)
+  const [bodyFeedbackSent, setBodyFeedbackSent] = useState(false)
+
   // ── ✅ Agent Instructions state ──
   const [agentInstructions, setAgentInstructions] = useState('')
   const [generatingInstructions, setGeneratingInstructions] = useState(false)
@@ -780,7 +793,7 @@ export default function AdminPage() {
             </div>
 
             <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
-              {[{ k: 'logs', l: '📅 יומן' }, { k: 'questionnaire', l: '📋 שאלון' }, { k: 'blood', l: '🩸 בדיקות' }, { k: 'doctor', l: '📄 מכתב' }, { k: 'nutrition', l: '🥗 תזונה' }, { k: 'ai', l: '🧠 AI' }, { k: 'report', l: '📊 דוח' }, { k: 'stage', l: '🏆 שלב' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'pantry', l: '🛒 מזווה' }, { k: 'journey', l: '🧭 מטרה' }, { k: 'roots', l: '🌱 שורשים' }].map(function(t) {
+              {[{ k: 'logs', l: '📅 יומן' }, { k: 'questionnaire', l: '📋 שאלון' }, { k: 'blood', l: '🩸 בדיקות' }, { k: 'doctor', l: '📄 מכתב' }, { k: 'nutrition', l: '🥗 תזונה' }, { k: 'ai', l: '🧠 AI' }, { k: 'report', l: '📊 דוח' }, { k: 'stage', l: '🏆 שלב' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'pantry', l: '🛒 מזווה' }, { k: 'journey', l: '🧭 מטרה' }, { k: 'roots', l: '🌱 שורשים' }, { k: 'body', l: '🩺 גוף מדבר' }].map(function(t) {
                 return <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
               })}
             </div>
@@ -1520,7 +1533,175 @@ export default function AdminPage() {
               </div>
             )}
 
-          </>
+            {tab === 'body' && (
+              <div style={{ direction: 'rtl' }}>
+
+                <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#1a6b3a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
+                  <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 4 }}>🩺 הגוף מדבר — {selectedClient?.name}</div>
+                  <div style={{ fontSize: 12, color: '#86efac' }}>הזיני הערות מהזום המקדים — AI יבנה ניתוח אישי מחובר לשאלון 360</div>
+                </div>
+
+                {/* שאלות הזום */}
+                {[
+                  { key: 'body_signals', icon: '👁️', title: 'מה הגוף אומר היום', placeholder: 'איך הגוף מרגיש יום יום? יש שעה שטוב יותר / פחות? שמה לב לקשר בין אכילה לתחושה?' },
+                  { key: 'body_history', icon: '📖', title: 'ההיסטוריה של הגוף', placeholder: 'יש תקופה שהרגישה הכי טוב? מה היה שם שונה? יש מזון שאחריו טוב/פחות טוב?' },
+                  { key: 'emotion_body', icon: '💔', title: 'הקשר בין רגש לגוף', placeholder: 'כשלחוצה — מה קורה עם האכילה? יש אכילה אוטומטית? מה אחריה?' },
+                  { key: 'energy_sleep', icon: '😴', title: 'אנרגיה ושינה', placeholder: 'איך האנרגיה לאורך היום? ירידות — מתי? כמה שעות שינה? קימה — קלה או קשה?' },
+                  { key: 'hunger_satiety', icon: '🍽️', title: 'רעב ושובע', placeholder: 'איך יודעת שרעבה? איך יודעת שבעה? מרגישה הבדל בין רעב פיזי לרגשי?' },
+                  { key: 'already_knows', icon: '💡', title: 'מה היא כבר יודעת', placeholder: 'יש משהו שחושדת שהגוף מנסה לומר ועדיין לא הקשיבה? אם הגוף יכול לדבר — מה הוא מבקש?' },
+                ].map(({ key, icon, title, placeholder }) => (
+                  <div key={key} style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 12, border: '1.5px solid #e5e7eb' }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#0f4c2a', marginBottom: 8 }}>{icon} {title}</div>
+                    <textarea value={bodyNotes[key]} onChange={e => setBodyNotes(prev => ({ ...prev, [key]: e.target.value }))} placeholder={placeholder} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }} />
+                  </div>
+                ))}
+
+                <button onClick={async () => {
+                  setBodyLoading(true); setBodyAnalysis(''); setBodyEditing(false)
+                  const notesText = Object.entries(bodyNotes).map(([k,v]) => {
+                    const labels = { body_signals: 'מה הגוף אומר היום', body_history: 'היסטוריה של הגוף', emotion_body: 'קשר רגש-גוף', energy_sleep: 'אנרגיה ושינה', hunger_satiety: 'רעב ושובע', already_knows: 'מה היא כבר יודעת' }
+                    return v.trim() ? labels[k] + ':\n' + v : ''
+                  }).filter(Boolean).join('\n\n')
+
+                  const profile360 = selectedClient ? (
+                    'שינה: ' + (selectedClient.sleep_quality||'לא ידוע') +
+                    ' | לחץ: ' + (selectedClient.stress_level||'לא ידוע') +
+                    ' | אנרגיה: ' + (selectedClient.energy_level||'לא ידוע') +
+                    ' | אכילה רגשית: ' + (selectedClient.emotional_eating||'לא ידוע') +
+                    ' | בוקר: ' + (selectedClient.breakfast_habits||'לא ידוע') +
+                    ' | מים: ' + (selectedClient.water_intake||'לא ידוע') +
+                    ' | כאבי בטן: ' + (selectedClient.body_stomach||'לא ידוע') +
+                    ' | תחושות אחרי אכילה: ' + (selectedClient.body_after_eating||'לא ידוע') +
+                    ' | קשר מזון-תחושה: ' + (selectedClient.body_food_link||'לא ידוע') +
+                    ' | כאבי ראש: ' + (selectedClient.body_headaches||'לא ידוע') +
+                    ' | עייפות אחרי ארוחות: ' + (selectedClient.body_fatigue||'לא ידוע')
+                  ) : ''
+
+                  const TOPICS = '12 נושאי חובה שיש לשלב כשרלוונטי:\n' +
+                    '1. סוכר ואינסולין — עודף סוכר שאינסולין לא מכניס לתא הופך לשומן. קפיצה ונפילה. חשק למתוק = נפילת סוכר.\n' +
+                    '2. חלבון — בלי מספיק: הגוף מפרק שריר. פחות שריר = מטבוליזם איטי = קשה לרדת.\n' +
+                    '3. שומן בריא vs. לא בריא — שמן זית/אבוקדו/אומגה 3 vs. שמן מעובד/טרנס. שומן לא משמין — הסוג הלא נכון משמין.\n' +
+                    '4. פחמימות — מהירות (קפיצת סוכר) vs. מורכבות (אנרגיה יציבה). GI נמוך = שובע ממושך.\n' +
+                    '5. סיבים — מזון לחיידקי המעי, שובע, ויסות סוכר, מניעת עצירות.\n' +
+                    '6. ויטמינים ומינרלים — תת תזונה בעודף משקל: B12, ברזל, ויטמין D, מגנזיום. חסר = עייפות, קושי בירידה.\n' +
+                    '7. הפסקות בין ארוחות — אינסולין גבוה כל הזמן = הגוף לא שורף שומן. צריך חלון.\n' +
+                    '8. סטרס וקורטיזול — קורטיזול מעלה סוכר → מעלה אינסולין → מאחסן שומן בבטן.\n' +
+                    '9. שינה — חוסר שינה: גרלין עולה (רעב) + לפטין יורד (שובע). לילה של 5 שעות = 300 קלוריות נוספות ביום אחרי.\n' +
+                    '10. 3 מוחות + ENS — קורטקס, אוטומטי, ENS (500M נוירונים). 90% סרוטונין במעי. עצב הואגוס דו-כיווני.\n' +
+                    '11. פסיכוסומטי — כל רגש יש לו ביטוי פיזי. מחקר שוודי: חרם → פי 1.3 מחלת מעי דלקתית גם 20 שנה אחרי. טריגרים שנוצרים.\n' +
+                    '12. מיקרוביום ורירית המעי — הליקובקטר פילורי: 50% מהאוכלוסייה נשאים, 15-20% מתבטא. רירית עדינה — סטרס/מזון מעובד פוגעים בה.'
+
+                  const prompt = 'אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להכין ניתוח מעמיק לפגישת הגוף מדבר.\n\n' +
+                    'שם הלקוחה: ' + (selectedClient?.name||'') + '\n\n' +
+                    'נתוני שאלון 360:\n' + profile360 + '\n\n' +
+                    'הערות מהזום המקדים:\n' + notesText + '\n\n' +
+                    TOPICS + '\n\n' +
+                    'הפק ניתוח מעמיק לאתי. כתוב בעברית, מקצועי וישיר. המבנה:\n\n' +
+                    '**דפוסים שזוהו — כל אחד עם הסבר רלוונטי**\n' +
+                    'לכל דפוס שזוהה מהשאלון/זום:\n' +
+                    '• [מה היא אמרה / מה עלה בשאלון]\n' +
+                    '• [ההסבר הפיזיולוגי/מדעי הרלוונטי מרשימת ה-12 — בשפה פשוטה]\n' +
+                    '• [מה זה אומר עבורה ספציפית]\n' +
+                    'אין הגבלה לכמות הדפוסים — כלול את כולם.\n\n' +
+                    '**ידע חובה לשלב בשיעור (לפי הרלוונטיות אליה)**\n' +
+                    'אילו מ-12 הנושאים חייבים להיכנס לשיעור שלה — ולמה.\n\n' +
+                    '**מבנה מוצע לשעה הפיזית**\n' +
+                    'סדר הנושאים + זמן + שאלת פתיחה מומלצת + רגעי חיבור אישי.\n\n' +
+                    '**משפטי חיבור אישי מוכנים**\n' +
+                    'לפחות 4-5 משפטים שמחברים בין מה שאמרה לבין הידע. לדוגמה: "ענית שאחרי האוכל חייבת מתוק — זו לא חולשה. זו נפילת הסוכר שהמוח שלך תפס כהרגל."\n\n' +
+                    '**צעדים פרקטיים מותאמים אליה**\n' +
+                    'לפחות 6 צעדים קונקרטיים שאפשר להתחיל מחר — מבוססים על מה שזוהה.\n\n' +
+                    '**שאלות שכדאי לשאול בפגישה**\n' +
+                    '2-3 שאלות אם נושא לא כוסה מספיק בזום.'
+
+                  const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                  const data = await res.json()
+                  if (data.result) { setBodyAnalysis(data.result); setBodyEditing(true) }
+                  setBodyLoading(false)
+                }} disabled={bodyLoading || !Object.values(bodyNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: bodyLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
+                  {bodyLoading ? '⏳ מנתח...' : '🩺 הפק ניתוח AI לפגישה'}
+                </button>
+
+                {bodyEditing && bodyAnalysis && (
+                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #0f4c2a', overflow: 'hidden', marginBottom: 16 }}>
+                    <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: 14 }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
+                        <div style={{ fontSize: 11, color: '#86efac' }}>ערכי והוסיפי — ואז עבדי מחדש או הפיקי משוב</div>
+                      </div>
+                      <button onClick={() => { setBodyEditing(false); setBodyAnalysis('') }} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
+                    </div>
+                    <div style={{ padding: 16 }}>
+                      <textarea value={bodyAnalysis} onChange={e => setBodyAnalysis(e.target.value)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                      <button onClick={async () => {
+                        setBodyLoading(true)
+                        const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + bodyAnalysis
+                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                        const data = await res.json()
+                        if (data.result) setBodyAnalysis(data.result)
+                        setBodyLoading(false)
+                      }} disabled={bodyLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {bodyLoading ? '⏳...' : '🔄 עבדי מחדש'}
+                      </button>
+                      <button onClick={async () => {
+                        setBodyFeedbackLoading(true)
+                        const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. צרי משוב חם, מעצים ואישי ל' + (selectedClient?.name||'') + ' לאחר פגישת הגוף מדבר.\n\n' +
+                          'על בסיס הניתוח:\n' + bodyAnalysis + '\n\n' +
+                          'כתבי מסמך משוב בעברית, גוף שני נקבה, חיובי ומעצים. מבנה:\n\n' +
+                          '🩺 מה הגוף שלך אמר לנו היום\n[2-3 משפטים — תובנות מרכזיות בשפתה, לא ז'רגון רפואי]\n\n' +
+                          '✨ מה גילינו יחד\n[דפוסים ספציפיים שזוהו — מחוברים לה, לא כלליים]\n\n' +
+                          '💪 הכוחות שכבר יש לך\n[2 משפטים — מה היא כבר עושה טוב]\n\n' +
+                          '🌿 3 דברים שמתחילים מחר\n[קונקרטיים, ריאליסטיים, בחום]\n\n' +
+                          '💚 מילה אחרונה\n[משפט אחד — אישי, מעצים, בשפתה]\n\n' +
+                          'ללא מבוא. ללא כותרת ראשית. ישר לתוכן. שפה של אדם — לא של רופא.'
+                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                        const data = await res.json()
+                        if (data.result) setBodyFeedback(data.result)
+                        setBodyFeedbackLoading(false)
+                      }} disabled={bodyFeedbackLoading} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {bodyFeedbackLoading ? '⏳ מפיק...' : '📝 הפקי טיוטת משוב ללקוחה'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {bodyFeedback && (
+                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #0d9488', overflow: 'hidden', marginBottom: 16 }}>
+                    <div style={{ background: 'linear-gradient(135deg,#0d9488,#14b8a6)', padding: '14px 18px', color: '#fff' }}>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>💚 משוב ללקוחה — אחרי הפגישה</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>הוסיפי מה שעלה בפגישה → שמרי → שלחי</div>
+                    </div>
+                    <div style={{ padding: 16 }}>
+                      <textarea value={bodyFeedback} onChange={e => setBodyFeedback(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                      <button onClick={async () => {
+                        const { error } = await supabase.from('client_profiles').update({ body_feedback: bodyFeedback, body_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        if (!error) { setBodyFeedbackSaved(true); setTimeout(() => setBodyFeedbackSaved(false), 3000) }
+                      }} style={{ flex: 1, padding: 12, borderRadius: 10, background: bodyFeedbackSaved ? '#16a34a' : '#f0fdfa', color: bodyFeedbackSaved ? '#fff' : '#0d9488', border: '1.5px solid #0d9488', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {bodyFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
+                      </button>
+                      <button onClick={async () => {
+                        if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
+                        setSendingBodyFeedback(true)
+                        await supabase.from('client_profiles').update({ body_feedback: bodyFeedback, body_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        const phone = selectedClient.phone.replace(/^0/, '972')
+                        const msg = 'היי ' + selectedClient.name + '! 🩺\n\nהמשוב האישי שלך מפגישת הגוף מדבר מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+                        setSendingBodyFeedback(false); setBodyFeedbackSent(true); setTimeout(() => setBodyFeedbackSent(false), 4000)
+                      }} disabled={sendingBodyFeedback} style={{ flex: 2, padding: 12, borderRadius: 10, background: bodyFeedbackSent ? '#16a34a' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {sendingBodyFeedback ? '⏳...' : bodyFeedbackSent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            )}
+
+          <>
         )}
       </div>
     </div>
