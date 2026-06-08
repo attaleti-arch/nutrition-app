@@ -590,9 +590,13 @@ export default function AdminPage() {
   async function sendAnalysisToClient() {
     if (!editableAnalysis || !selectedClient) return
     setSendingToClient(true)
-    const today = new Date().toLocaleDateString('sv-SE')
-    await supabase.from('daily_logs').upsert({ client_name: selectedClient.password, log_date: today, trainer_feedback: editableAnalysis, report_approved: true, updated_at: new Date().toISOString() }, { onConflict: 'client_name,log_date' })
+    await supabase.from('client_profiles').update({ ai_report: editableAnalysis, report_sent_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
     setSendingToClient(false); setSentToClient(true); setTimeout(() => setSentToClient(false), 4000)
+    if (selectedClient.phone) {
+      var phone = selectedClient.phone.replace(/^0/, '972')
+      var msg = 'היי ' + selectedClient.name + '! 🌿\n\nהניתוח האישי שלך מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+    }
   }
 
   async function runLogsAnalysis(targetLog) {
@@ -614,13 +618,28 @@ export default function AdminPage() {
   }
 
   async function sendDailyFeedback() {
-    if (!dailyPreview || !dailyTargetLog) return
+    if (!dailyPreview) return
     setSendingDaily(true)
-    await supabase.from('daily_logs').update({ trainer_feedback: dailyPreview, report_approved: true }).eq('id', dailyTargetLog.id)
-    setSendingDaily(false); setSentDaily(dailyTargetLog.id); setDailyEditing(false); setDailyPreview(''); setDailyTargetLog(null)
+    // שמור ב-client_profiles כדי שהלקוחה תראה תמיד
+    await supabase.from('client_profiles').update({
+      ai_report: dailyPreview,
+      report_sent_at: new Date().toISOString()
+    }).eq('client_password', selectedClient.password)
+    // גם שמור על הלוג הספציפי אם קיים
+    if (dailyTargetLog) {
+      await supabase.from('daily_logs').update({ trainer_feedback: dailyPreview, report_approved: true }).eq('id', dailyTargetLog.id)
+    }
+    setSendingDaily(false); setSentDaily('done'); setDailyEditing(false)
     setTimeout(() => setSentDaily(null), 4000)
     const { data } = await supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).order('log_date', { ascending: false }).limit(30)
     setLogs(data || [])
+    // פתח וואטסאפ אוטומטית
+    if (selectedClient.phone) {
+      var phone = selectedClient.phone.replace(/^0/, '972')
+      var msg = 'היי ' + selectedClient.name + '! 🌿\n\nהדוח שלך מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+    }
+    setDailyPreview(''); setDailyTargetLog(null)
   }
 
   async function scanBloodTests(file) {
@@ -790,12 +809,12 @@ export default function AdminPage() {
                         {log.note && <div style={{ padding: '8px 12px', background: '#fffbeb', borderRadius: 10, fontSize: 13, color: '#78350f', marginTop: 8 }}>💬 {log.note}</div>}
                         <textarea value={feedback[log.id] != null ? feedback[log.id] : (log.trainer_feedback || '')} onChange={e => setFeedback(f => ({ ...f, [log.id]: e.target.value }))} placeholder="כתבי משוב..." rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginTop: 10 }} />
                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                          <button onClick={() => saveFeedback(log)} style={{ flex: 1, padding: 10, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                            {savingFeedback === log.id ? '⏳...' : sentFeedback === log.id ? '✅ נשלח!' : '💚 שלחי משוב ללקוחה'}
+                          <button onClick={async () => {
+                            await saveFeedback(log)
+                            openWhatsApp(log)
+                          }} style={{ flex: 1, padding: 10, borderRadius: 10, background: savingFeedback === log.id ? '#9ca3af' : sentFeedback === log.id ? '#16a34a' : '#25D366', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                            {savingFeedback === log.id ? '⏳ שומר...' : sentFeedback === log.id ? '✅ נשלח בוואטסאפ!' : '📱 שלחי משוב בוואטסאפ'}
                           </button>
-                          {sentFeedback === log.id && selectedClient.phone && (
-                            <button onClick={() => openWhatsApp(log)} style={{ padding: '10px 14px', borderRadius: 10, background: '#25D366', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>📱 WA</button>
-                          )}
                         </div>
                       </div>
                     </div>
