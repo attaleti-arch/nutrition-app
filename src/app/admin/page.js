@@ -1418,38 +1418,18 @@ export default function AdminPage() {
                     const labels = { home_background: 'הבית שגדלה בו', family_identity: 'זהות וגוף במשפחה', today_patterns: 'דפוסים היום', forward_passing: 'מה עובר הלאה', beliefs_motivation: 'אמונות ומוטיבציה', resources: 'משאבים' }
                     return v.trim() ? labels[k] + ':\n' + v : ''
                   }).filter(Boolean).join('\n\n')
-                  const prompt = `אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להתכונן לפגישת "שורשים" עם לקוחה.
-
-הערות מהזום המקדים:
-${notesText}
-
-נתוני הלקוחה: ${selectedClient?.name}, גיל ${selectedClient?.age || 'לא ידוע'}, מטרה: ${selectedClient?.goal || 'לא ידוע'}
-
-הפק ניתוח מעמיק לאתי לקראת הפגישה הפיזית. כתוב בעברית, גוף שלישי נקבה. כלול:
-
-**1. תמונת הבית שגדלה בו**
-מה עיצב את הקשר שלה עם אוכל ועם הגוף. ציטט ישירות מהדברים.
-
-**2. פצע הזהות הגופנית**
-איך חוותה את עצמה בתוך המשפחה — שייכות / נבדלות / השוואה. מה זה עשה לדימוי העצמי.
-
-**3. אמונות מגבילות שזוהו**
-רשימה ממוקדת. לכל אמונה — מה היא, מאיפה היא מגיעה, ואיך היא מתבטאת היום.
-
-**4. דפוסי מוטיבציה**
-מה מניע, מה מכבה, מה קורה אחרי כישלון. סוג המוטיבציה — חיצונית / פנימית.
-
-**5. מה עובר לילדים (אם רלוונטי)**
-דינמיקות ספציפיות שזוהו. מה הלקוחה מודעת אליו ומה לא.
-
-**6. מבנה מוצע לפגישה**
-סדר הנושאים + זמן משוער לכל נושא + על מה לשים דגש. כולל שאלת פתיחה מומלצת.
-
-**7. צעדים פרקטיים לשינוי**
-לפחות 6-8 צעדים קונקרטיים שאפשר לעשות מהיום — מותאמים ספציפית לה.
-
-**8. שאלות המשך אם משהו חסר**
-2-3 שאלות שכדאי לשאול בפגישה אם הנושא לא כוסה מספיק.`
+                  const prompt = 'אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להתכונן לפגישת שורשים עם לקוחה.\n\n' +
+                    'הערות מהזום המקדים:\n' + notesText + '\n\n' +
+                    'נתוני הלקוחה: ' + (selectedClient?.name||'') + ', גיל ' + (selectedClient?.age||'לא ידוע') + ', מטרה: ' + (selectedClient?.goal||'לא ידוע') + '\n\n' +
+                    'הפק ניתוח מעמיק לאתי לקראת הפגישה הפיזית. כתוב בעברית, גוף שלישי נקבה. כלול:\n\n' +
+                    '**1. תמונת הבית שגדלה בו**\nמה עיצב את הקשר שלה עם אוכל ועם הגוף. ציטט ישירות מהדברים.\n\n' +
+                    '**2. פצע הזהות הגופנית**\nאיך חוותה את עצמה בתוך המשפחה — שייכות / נבדלות / השוואה. מה זה עשה לדימוי העצמי.\n\n' +
+                    '**3. אמונות מגבילות שזוהו**\nרשימה ממוקדת. לכל אמונה — מה היא, מאיפה היא מגיעה, ואיך היא מתבטאת היום.\n\n' +
+                    '**4. דפוסי מוטיבציה**\nמה מניע, מה מכבה, מה קורה אחרי כישלון. סוג המוטיבציה — חיצונית / פנימית.\n\n' +
+                    '**5. מה עובר לילדים (אם רלוונטי)**\nדינמיקות ספציפיות שזוהו. מה הלקוחה מודעת אליו ומה לא.\n\n' +
+                    '**6. מבנה מוצע לפגישה**\nסדר הנושאים + זמן משוער לכל נושא + על מה לשים דגש. כולל שאלת פתיחה מומלצת.\n\n' +
+                    '**7. צעדים פרקטיים לשינוי**\nלפחות 6-8 צעדים קונקרטיים שאפשר לעשות מהיום — מותאמים ספציפית לה.\n\n' +
+                    '**8. שאלות המשך אם משהו חסר**\n2-3 שאלות שכדאי לשאול בפגישה אם הנושא לא כוסה מספיק.'
 
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
                   const data = await res.json()
@@ -1475,9 +1455,7 @@ ${notesText}
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
                       <button onClick={async () => {
                         setRootsLoading(true)
-                        const prompt = `עדכני את הניתוח הבא לפי הגרסה הערוכה שניתנה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:
-
-${rootsAnalysis}`
+                        const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה שניתנה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + rootsAnalysis
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
                         const data = await res.json()
                         if (data.result) setRootsAnalysis(data.result)
@@ -1487,29 +1465,15 @@ ${rootsAnalysis}`
                       </button>
                       <button onClick={async () => {
                         setRootsFeedbackLoading(true)
-                        const prompt = `אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. צרי משוב חם, מעצים ואישי ל${selectedClient?.name} לאחר פגישת "השורשים".
-
-על בסיס הניתוח הבא:
-${rootsAnalysis}
-
-כתבי מסמך משוב ללקוחה בעברית, גוף שני נקבה, חיובי ומלא תקווה. מבנה:
-
-🌱 מה גילינו יחד
-[2-3 משפטים — תובנות מרכזיות שעלו, בשפתה]
-
-💫 הכוחות שלך
-[2 משפטים — מה את כבר עושה טוב שאולי לא ראית]
-
-🔓 מה משתחרר
-[1-2 משפטים — אמונה שהתחילה להשתנות]
-
-🌿 3 צעדים שמתחילים מהיום
-[3 צעדים קטנים וספציפיים — כתובים בחום ובאמונה בה]
-
-💚 מילה אחרונה
-[משפט אחד — חם, אישי, מעצים]
-
-ללא מבוא. ללא כותרת ראשית. ישר לתוכן.`
+                        const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. צרי משוב חם, מעצים ואישי ל' + (selectedClient?.name||'') + ' לאחר פגישת השורשים.\n\n' +
+                          'על בסיס הניתוח הבא:\n' + rootsAnalysis + '\n\n' +
+                          'כתבי מסמך משוב ללקוחה בעברית, גוף שני נקבה, חיובי ומלא תקווה. מבנה:\n\n' +
+                          '🌱 מה גילינו יחד\n[2-3 משפטים — תובנות מרכזיות שעלו, בשפתה]\n\n' +
+                          '💫 הכוחות שלך\n[2 משפטים — מה את כבר עושה טוב שאולי לא ראית]\n\n' +
+                          '🔓 מה משתחרר\n[1-2 משפטים — אמונה שהתחילה להשתנות]\n\n' +
+                          '🌿 3 צעדים שמתחילים מהיום\n[3 צעדים קטנים וספציפיים — כתובים בחום ובאמונה בה]\n\n' +
+                          '💚 מילה אחרונה\n[משפט אחד — חם, אישי, מעצים]\n\n' +
+                          'ללא מבוא. ללא כותרת ראשית. ישר לתוכן.'
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
                         const data = await res.json()
                         if (data.result) setRootsFeedback(data.result)
@@ -1543,10 +1507,7 @@ ${rootsAnalysis}
                         setSendingRootsFeedback(true)
                         await supabase.from('client_profiles').update({ roots_feedback: rootsFeedback, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
                         const phone = selectedClient.phone.replace(/^0/, '972')
-                        const msg = 'היי ' + selectedClient.name + '! 🌱
-
-המשוב האישי שלך מפגישת השורשים מוכן — היכנסי לאפליקציה לצפייה 💚
-https://project-l990h.vercel.app'
+                        const msg = 'היי ' + selectedClient.name + '! 🌱\n\nהמשוב האישי שלך מפגישת השורשים מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
                         window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
                         setSendingRootsFeedback(false); setRootsFeedbackSent(true); setTimeout(() => setRootsFeedbackSent(false), 4000)
                       }} disabled={sendingRootsFeedback} style={{ flex: 2, padding: 12, borderRadius: 10, background: rootsFeedbackSent ? '#16a34a' : '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
