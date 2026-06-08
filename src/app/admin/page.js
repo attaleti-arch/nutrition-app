@@ -315,6 +315,19 @@ export default function AdminPage() {
   const [generatingInstructions, setGeneratingInstructions] = useState(false)
   const [savedInstructions, setSavedInstructions] = useState(false)
 
+  // ── 🌱 שורשים state ──
+  const [rootsNotes, setRootsNotes] = useState({
+    home_background: '', family_identity: '', today_patterns: '', forward_passing: '', beliefs_motivation: '', resources: ''
+  })
+  const [rootsAnalysis, setRootsAnalysis] = useState('')
+  const [rootsLoading, setRootsLoading] = useState(false)
+  const [rootsEditing, setRootsEditing] = useState(false)
+  const [rootsFeedback, setRootsFeedback] = useState('')
+  const [rootsFeedbackLoading, setRootsFeedbackLoading] = useState(false)
+  const [rootsFeedbackSaved, setRootsFeedbackSaved] = useState(false)
+  const [rootsFeedbackSent, setRootsFeedbackSent] = useState(false)
+  const [sendingRootsFeedback, setSendingRootsFeedback] = useState(false)
+
   // ── ✅ Plate Calculator state ──
   const [calculatingPlate, setCalculatingPlate] = useState(false)
   const [plateResult, setPlateResult] = useState(null)
@@ -767,7 +780,7 @@ export default function AdminPage() {
             </div>
 
             <div style={{ display: 'flex', gap: 4, marginBottom: 16, flexWrap: 'wrap' }}>
-              {[{ k: 'logs', l: '📅 יומן' }, { k: 'questionnaire', l: '📋 שאלון' }, { k: 'blood', l: '🩸 בדיקות' }, { k: 'doctor', l: '📄 מכתב' }, { k: 'nutrition', l: '🥗 תזונה' }, { k: 'ai', l: '🧠 AI' }, { k: 'report', l: '📊 דוח' }, { k: 'stage', l: '🏆 שלב' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'pantry', l: '🛒 מזווה' }, { k: 'journey', l: '🧭 מטרה' }].map(function(t) {
+              {[{ k: 'logs', l: '📅 יומן' }, { k: 'questionnaire', l: '📋 שאלון' }, { k: 'blood', l: '🩸 בדיקות' }, { k: 'doctor', l: '📄 מכתב' }, { k: 'nutrition', l: '🥗 תזונה' }, { k: 'ai', l: '🧠 AI' }, { k: 'report', l: '📊 דוח' }, { k: 'stage', l: '🏆 שלב' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'pantry', l: '🛒 מזווה' }, { k: 'journey', l: '🧭 מטרה' }, { k: 'roots', l: '🌱 שורשים' }].map(function(t) {
                 return <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
               })}
             </div>
@@ -1365,6 +1378,187 @@ export default function AdminPage() {
                     </button>
                   </div>
                 )}
+              </div>
+            )}
+
+            {tab === 'roots' && (
+              <div style={{ direction: 'rtl' }}>
+
+                {/* כותרת */}
+                <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#1a6b3a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
+                  <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 4 }}>🌱 שאלון השורשים — {selectedClient?.name}</div>
+                  <div style={{ fontSize: 12, color: '#86efac' }}>הזיני הערות מהזום המקדים לפי קבוצות השאלות</div>
+                </div>
+
+                {/* 6 קבוצות שאלות */}
+                {[
+                  { key: 'home_background', icon: '🏠', title: 'הבית שגדלת בו', placeholder: 'מה היה האוכל בבית? כללים? אווירה בשולחן? מה נשאר?' },
+                  { key: 'family_identity', icon: '👁️', title: 'זהות וגוף בתוך המשפחה', placeholder: 'איך הרגישה בגוף שלה בתוך המשפחה? היה מישהו שנראה אחרת? משפט שנשאר?' },
+                  { key: 'today_patterns', icon: '🔄', title: 'מה עושים היום', placeholder: 'מה מזהה שמגיע מהבית? מה נשבעה שלא תעשה? מה קורה כשלחוצה?' },
+                  { key: 'forward_passing', icon: '➡️', title: 'מה עובר הלאה', placeholder: 'מה הצופה בארוחה היה רואה? מה מקווה שהילד לא ייקח? איך הילד מדבר על גוף?' },
+                  { key: 'beliefs_motivation', icon: '💡', title: 'אמונות ומוטיבציה', placeholder: 'מה קורה אחרי שבועיים-שלושה? מתי נופלת? מה הסיפור אחרי כישלון? מה מניע בהתחלה? מה מכבה?' },
+                  { key: 'resources', icon: '✨', title: 'משאבים וכוחות', placeholder: 'מה כבר עושה טוב? מתי הצליחה? מה עזר?' },
+                ].map(({ key, icon, title, placeholder }) => (
+                  <div key={key} style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 12, border: '1.5px solid #e5e7eb' }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#0f4c2a', marginBottom: 8 }}>{icon} {title}</div>
+                    <textarea
+                      value={rootsNotes[key]}
+                      onChange={e => setRootsNotes(prev => ({ ...prev, [key]: e.target.value }))}
+                      placeholder={placeholder}
+                      rows={3}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                    />
+                  </div>
+                ))}
+
+                {/* כפתור ניתוח */}
+                <button onClick={async () => {
+                  setRootsLoading(true); setRootsAnalysis(''); setRootsEditing(false)
+                  const notesText = Object.entries(rootsNotes).map(([k,v]) => {
+                    const labels = { home_background: 'הבית שגדלה בו', family_identity: 'זהות וגוף במשפחה', today_patterns: 'דפוסים היום', forward_passing: 'מה עובר הלאה', beliefs_motivation: 'אמונות ומוטיבציה', resources: 'משאבים' }
+                    return v.trim() ? labels[k] + ':
+' + v : ''
+                  }).filter(Boolean).join('
+
+')
+                  const prompt = `אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להתכונן לפגישת "שורשים" עם לקוחה.
+
+הערות מהזום המקדים:
+${notesText}
+
+נתוני הלקוחה: ${selectedClient?.name}, גיל ${selectedClient?.age || 'לא ידוע'}, מטרה: ${selectedClient?.goal || 'לא ידוע'}
+
+הפק ניתוח מעמיק לאתי לקראת הפגישה הפיזית. כתוב בעברית, גוף שלישי נקבה. כלול:
+
+**1. תמונת הבית שגדלה בו**
+מה עיצב את הקשר שלה עם אוכל ועם הגוף. ציטט ישירות מהדברים.
+
+**2. פצע הזהות הגופנית**
+איך חוותה את עצמה בתוך המשפחה — שייכות / נבדלות / השוואה. מה זה עשה לדימוי העצמי.
+
+**3. אמונות מגבילות שזוהו**
+רשימה ממוקדת. לכל אמונה — מה היא, מאיפה היא מגיעה, ואיך היא מתבטאת היום.
+
+**4. דפוסי מוטיבציה**
+מה מניע, מה מכבה, מה קורה אחרי כישלון. סוג המוטיבציה — חיצונית / פנימית.
+
+**5. מה עובר לילדים (אם רלוונטי)**
+דינמיקות ספציפיות שזוהו. מה הלקוחה מודעת אליו ומה לא.
+
+**6. מבנה מוצע לפגישה**
+סדר הנושאים + זמן משוער לכל נושא + על מה לשים דגש. כולל שאלת פתיחה מומלצת.
+
+**7. צעדים פרקטיים לשינוי**
+לפחות 6-8 צעדים קונקרטיים שאפשר לעשות מהיום — מותאמים ספציפית לה.
+
+**8. שאלות המשך אם משהו חסר**
+2-3 שאלות שכדאי לשאול בפגישה אם הנושא לא כוסה מספיק.`
+
+                  const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
+                  const data = await res.json()
+                  if (data.result) { setRootsAnalysis(data.result); setRootsEditing(true) }
+                  setRootsLoading(false)
+                }} disabled={rootsLoading || !Object.values(rootsNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: rootsLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
+                  {rootsLoading ? '⏳ מנתח...' : '🌱 הפק ניתוח AI לפגישה'}
+                </button>
+
+                {/* תצוגה מקדימה + עריכה */}
+                {rootsEditing && rootsAnalysis && (
+                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #0f4c2a', overflow: 'hidden', marginBottom: 16 }}>
+                    <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div>
+                        <div style={{ fontWeight: 800, fontSize: 14 }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
+                        <div style={{ fontSize: 11, color: '#86efac' }}>ערכי והוסיפי — ואז עבדי מחדש או סגרי</div>
+                      </div>
+                      <button onClick={() => { setRootsEditing(false); setRootsAnalysis('') }} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
+                    </div>
+                    <div style={{ padding: 16 }}>
+                      <textarea value={rootsAnalysis} onChange={e => setRootsAnalysis(e.target.value)} rows={20} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                      <button onClick={async () => {
+                        setRootsLoading(true)
+                        const prompt = `עדכני את הניתוח הבא לפי הגרסה הערוכה שניתנה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:
+
+${rootsAnalysis}`
+                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
+                        const data = await res.json()
+                        if (data.result) setRootsAnalysis(data.result)
+                        setRootsLoading(false)
+                      }} disabled={rootsLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {rootsLoading ? '⏳...' : '🔄 עבדי מחדש'}
+                      </button>
+                      <button onClick={async () => {
+                        setRootsFeedbackLoading(true)
+                        const prompt = `אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. צרי משוב חם, מעצים ואישי ל${selectedClient?.name} לאחר פגישת "השורשים".
+
+על בסיס הניתוח הבא:
+${rootsAnalysis}
+
+כתבי מסמך משוב ללקוחה בעברית, גוף שני נקבה, חיובי ומלא תקווה. מבנה:
+
+🌱 מה גילינו יחד
+[2-3 משפטים — תובנות מרכזיות שעלו, בשפתה]
+
+💫 הכוחות שלך
+[2 משפטים — מה את כבר עושה טוב שאולי לא ראית]
+
+🔓 מה משתחרר
+[1-2 משפטים — אמונה שהתחילה להשתנות]
+
+🌿 3 צעדים שמתחילים מהיום
+[3 צעדים קטנים וספציפיים — כתובים בחום ובאמונה בה]
+
+💚 מילה אחרונה
+[משפט אחד — חם, אישי, מעצים]
+
+ללא מבוא. ללא כותרת ראשית. ישר לתוכן.`
+                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
+                        const data = await res.json()
+                        if (data.result) setRootsFeedback(data.result)
+                        setRootsFeedbackLoading(false)
+                      }} disabled={rootsFeedbackLoading} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {rootsFeedbackLoading ? '⏳ מפיק...' : '📝 הפקי טיוטת משוב ללקוחה'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* משוב ללקוחה */}
+                {rootsFeedback && (
+                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #c4956a', overflow: 'hidden', marginBottom: 16 }}>
+                    <div style={{ background: 'linear-gradient(135deg,#c4956a,#e8c9a0)', padding: '14px 18px', color: '#fff' }}>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>💚 משוב ללקוחה — אחרי הפגישה</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>הוסיפי מה שעלה בפגישה → שמרי → שלחי</div>
+                    </div>
+                    <div style={{ padding: 16 }}>
+                      <textarea value={rootsFeedback} onChange={e => setRootsFeedback(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                      <button onClick={async () => {
+                        const { error } = await supabase.from('client_profiles').update({ roots_feedback: rootsFeedback, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        if (!error) { setRootsFeedbackSaved(true); setTimeout(() => setRootsFeedbackSaved(false), 3000) }
+                      }} style={{ flex: 1, padding: 12, borderRadius: 10, background: rootsFeedbackSaved ? '#16a34a' : '#f8f4ef', color: rootsFeedbackSaved ? '#fff' : '#0f4c2a', border: '1.5px solid #c4956a', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {rootsFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
+                      </button>
+                      <button onClick={async () => {
+                        if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
+                        setSendingRootsFeedback(true)
+                        await supabase.from('client_profiles').update({ roots_feedback: rootsFeedback, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        const phone = selectedClient.phone.replace(/^0/, '972')
+                        const msg = 'היי ' + selectedClient.name + '! 🌱
+
+המשוב האישי שלך מפגישת השורשים מוכן — היכנסי לאפליקציה לצפייה 💚
+https://project-l990h.vercel.app'
+                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+                        setSendingRootsFeedback(false); setRootsFeedbackSent(true); setTimeout(() => setRootsFeedbackSent(false), 4000)
+                      }} disabled={sendingRootsFeedback} style={{ flex: 2, padding: 12, borderRadius: 10, background: rootsFeedbackSent ? '#16a34a' : '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {sendingRootsFeedback ? '⏳...' : rootsFeedbackSent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
               </div>
             )}
 
