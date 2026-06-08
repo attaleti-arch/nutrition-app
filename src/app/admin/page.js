@@ -276,7 +276,7 @@ export default function AdminPage() {
   const [selectedTests, setSelectedTests] = useState({})
   const [newClient, setNewClient] = useState({ name: '', last_name: '', password: '', phone: '', id_number: '', age: '', weight: '', height: '', goal: '', activity: '', gender: '' })
   const [clientTrack, setClientTrack] = useState('') // 'self' | 'child' | 'both'
-  const [childData, setChildData] = useState({ name: '', age: '', weight: '', height: '', gender: '' })
+  const [childData, setChildData] = useState({ name: '', age: '', weight: '', height: '', gender: '', password: '' })
   const [addingClient, setAddingClient] = useState(false)
   const [clientAdded, setClientAdded] = useState('')
   const [foodDiary, setFoodDiary] = useState('')
@@ -617,12 +617,50 @@ export default function AdminPage() {
       var allowedKeys = ['sleep_quality','sleep_issues','wake_time','sleep_time','digestion','smoking','menstrual_cycle','menstrual_days','medications','therapists','medical_history','family_history','diet_restrictions','breakfast_habits','lunch_habits','dinner_habits','snack_habits','food_sensitivities','avoided_foods','cooks_at_home','restaurants_per_week','water_intake','coffee_intake','alcohol_intake','emotional_eating','work_hours','stress_level','energy_level','mood_notes','exercise_type','pain_issues','main_goal','goal_obstacles','goal_motivation','success_vision','important_values','positive_memories','blood_tests','extra_blood_notes','home_counter','home_shopping','home_never','home_fridge','home_children','home_family_meals','body_stomach','body_after_eating','body_food_link','body_headaches','body_fatigue','child_name','child_age','child_eating','child_eating_when','child_blood','child_mood','child_stress','child_calm','child_anxiety','child_food_comfort','family_atmosphere','siblings_rules','child_safe_person','family_meals_vibe','parent_food_model','parent_sport','home_junk','siblings_food_diff','child_eat_with','child_social_eating','child_friend','child_bedtime','child_screen_eat']
       allowedKeys.forEach(function(k) { if (profile[k] !== undefined) profileData[k] = profile[k] })
       var clientData = { age: selectedClient.age, weight: selectedClient.weight, height: selectedClient.height, gender: selectedClient.gender, activity: selectedClient.activity, goal: selectedClient.goal, target_weight: selectedClient.target_weight }
-      const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: selectedClient.name, mode: 'profile', profile: { ...profileData, ...clientData, extra_blood_notes: extraBloodNotes }, foodDiary: foodDiary || '' }) })
-      if (!res.ok) throw new Error('שגיאת שרת: ' + res.status)
-      const data = await res.json()
-      if (data.error) { alert('שגיאה: ' + data.error) } else {
-        setAiAnalysis(data.result); setEditableAnalysis(data.result)
-        await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, ai_report: data.result, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
+
+      // ניתוח מותאם לילד
+      if (selectedClient.is_child) {
+        const childPrompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. כתבי ניתוח מקיף לילד/ה ' + selectedClient.name + ' בגיל ' + (selectedClient.age || 'לא ידוע') + '.\n\n' +
+          'נתונים:\n' +
+          'משקל: ' + (selectedClient.weight || 'לא ידוע') + ' ק"ג | גובה: ' + (selectedClient.height || 'לא ידוע') + ' ס"מ\n' +
+          'אכילה: ' + (profileData.child_eating || 'לא מולא') + '\n' +
+          'מתי אוכל הכי הרבה: ' + (profileData.child_eating_when || 'לא מולא') + '\n' +
+          'מצב רוח: ' + (profileData.child_mood || 'לא מולא') + '\n' +
+          'מה מלחיץ: ' + (profileData.child_stress || 'לא מולא') + '\n' +
+          'מה מרגיע: ' + (profileData.child_calm || 'לא מולא') + '\n' +
+          'חרדה/חברתי: ' + (profileData.child_anxiety || 'לא מולא') + '\n' +
+          'אוכל כמקום בטוח: ' + (profileData.child_food_comfort || 'לא מולא') + '\n' +
+          'אווירה בבית: ' + (profileData.family_atmosphere || 'לא מולא') + '\n' +
+          'אחים: ' + (profileData.siblings_rules || 'לא מולא') + '\n' +
+          'מודל הורי: ' + (profileData.parent_food_model || 'לא מולא') + '\n' +
+          'ג\u05f3אנק בבית: ' + (profileData.home_junk || 'לא מולא') + '\n' +
+          'עם מי אוכל: ' + (profileData.child_eat_with || 'לא מולא') + '\n' +
+          'אירועים חברתיים: ' + (profileData.child_social_eating || 'לא מולא') + '\n' +
+          'לפני שינה: ' + (profileData.child_bedtime || 'לא מולא') + '\n' +
+          'מסך+אכילה: ' + (profileData.child_screen_eat || 'לא מולא') + '\n' +
+          'בדיקות דם: ' + JSON.stringify(profileData.blood_tests || {}) + '\n' +
+          'ערכים חריגים: ' + (extraBloodNotes || 'אין') + '\n\n' +
+          'כתבי ניתוח מעמיק לאתי. עברית, מקצועי. כלול:\n' +
+          '**✨ תמונת הילד — מי הוא**\nמה מאפיין אותו, כוחות, דפוסים.\n\n--\n\n' +
+          '**🔍 מה קורה סביב האוכל**\nדפוסי אכילה, טריגרים, קשר רגשי לאוכל.\n\n--\n\n' +
+          '**🩺 מה אומרות הבדיקות**\nלכל ערך חריג — שם + ערך + משמעות + המלצה.\n\n--\n\n' +
+          '**🏠 הדינמיקה הביתית**\nמה בבית תורם לדפוס? מה צריך לשנות?\n\n--\n\n' +
+          '**🎯 המלצות פרקטיות**\n5-6 צעדים קונקרטיים להורה — מה לשנות מחר.'
+        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: selectedClient.name, mode: 'rootsAnalysis', prompt: childPrompt }) })
+        if (!res.ok) throw new Error('שגיאת שרת: ' + res.status)
+        const data = await res.json()
+        if (data.result) {
+          setAiAnalysis(data.result); setEditableAnalysis(data.result)
+          await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, ai_report: data.result, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
+        }
+      } else {
+        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: selectedClient.name, mode: 'profile', profile: { ...profileData, ...clientData, extra_blood_notes: extraBloodNotes }, foodDiary: foodDiary || '' }) })
+        if (!res.ok) throw new Error('שגיאת שרת: ' + res.status)
+        const data = await res.json()
+        if (data.error) { alert('שגיאה: ' + data.error) } else {
+          setAiAnalysis(data.result); setEditableAnalysis(data.result)
+          await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, ai_report: data.result, updated_at: new Date().toISOString() }, { onConflict: 'client_password' })
+        }
       }
     } catch(err) { alert('שגיאה בניתוח: ' + err.message) }
     setAiLoading(false)
@@ -813,6 +851,45 @@ export default function AdminPage() {
 
         {selectedClient && (
           <>
+            <div style={{ background: '#fff', borderRadius: 18, padding: '12px 16px', marginBottom: 8, border: '1.5px solid #e5e7eb' }}>
+              <div style={{ fontWeight: 700, fontSize: 13, color: '#6b7280', marginBottom: 8 }}>🎯 מסלול לקוח</div>
+              <div style={{ display: 'flex', gap: 6, marginBottom: selectedClient.client_track === 'both' || selectedClient.client_track === 'child' ? 12 : 0 }}>
+                {[{ k: 'self', l: '👤 עצמי' }, { k: 'child', l: '👶 עבור ילד' }, { k: 'both', l: '👨‍👩‍👧 שניהם' }].map(t => (
+                  <button key={t.k} onClick={async () => {
+                    await supabase.from('clients').update({ client_track: t.k }).eq('id', selectedClient.id)
+                    setSelectedClient(c => ({ ...c, client_track: t.k }))
+                  }} style={{ flex: 1, padding: '8px 4px', borderRadius: 10, border: '2px solid ' + (selectedClient.client_track === t.k ? '#0f4c2a' : '#e5e7eb'), background: selectedClient.client_track === t.k ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: selectedClient.client_track === t.k ? '#0f4c2a' : '#555' }}>{t.l}</button>
+                ))}
+              </div>
+              {(selectedClient.client_track === 'both' || selectedClient.client_track === 'child') && (
+                <div style={{ background: '#faf5ff', borderRadius: 12, padding: 12, border: '1.5px solid #e9d5ff' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#7c3aed', marginBottom: 8 }}>👶 הוסיפי ילד</div>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <input placeholder="שם הילד *" id="quick_child_name" style={{ flex: 2, padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e9d5ff', fontSize: 13, textAlign: 'right', outline: 'none' }} />
+                    <input placeholder="גיל" id="quick_child_age" type="number" style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e9d5ff', fontSize: 13, textAlign: 'center', outline: 'none' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input placeholder='משקל (ק"ג)' id="quick_child_weight" type="number" style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e9d5ff', fontSize: 13, textAlign: 'center', outline: 'none' }} />
+                    <input placeholder="סיסמה (ברירת מחדל: כמו ההורה)" id="quick_child_password" style={{ flex: 2, padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e9d5ff', fontSize: 13, textAlign: 'right', outline: 'none' }} />
+                  </div>
+                  <button onClick={async () => {
+                    const name = document.getElementById('quick_child_name').value
+                    if (!name) { alert('שם הילד חובה'); return }
+                    const age = document.getElementById('quick_child_age').value
+                    const weight = document.getElementById('quick_child_weight').value
+                    const password = document.getElementById('quick_child_password').value || selectedClient.password
+                    await supabase.from('clients').insert({ name, age: age ? parseInt(age) : null, weight: weight ? parseFloat(weight) : null, password, parent_id: selectedClient.id, is_child: true, created_at: new Date().toISOString() })
+                    loadClients()
+                    document.getElementById('quick_child_name').value = ''
+                    document.getElementById('quick_child_age').value = ''
+                    document.getElementById('quick_child_weight').value = ''
+                    document.getElementById('quick_child_password').value = ''
+                    alert('✅ הילד נוסף!')
+                  }} style={{ width: '100%', marginTop: 8, padding: '10px', borderRadius: 10, background: '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>➕ הוסיפי ילד</button>
+                </div>
+              )}
+            </div>
+
             <div style={{ background: '#fff', borderRadius: 18, padding: '12px 16px', marginBottom: 12, border: '1.5px solid #fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a1a' }}>{selectedClient.name} {selectedClient.last_name || ''}</div>
               <button onClick={async () => {
@@ -1269,11 +1346,20 @@ export default function AdminPage() {
             {tab === 'ai' && (
               <div>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0', marginBottom: 12 }}>
-                  <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>🧠 ניתוח AI מקיף</div>
-                  <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>משלב: שאלון 360 + בדיקות דם + NLP + ימי אכילה</div>
-                  <textarea value={foodDiary} onChange={e => setFoodDiary(e.target.value)} placeholder='3 ימי אכילה אופייניים...' rows={8} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
-                  <button onClick={runProfileAnalysis} disabled={aiLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: aiLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: aiLoading ? 'default' : 'pointer', fontWeight: 700, fontSize: 16 }}>
-                    {aiLoading ? '⏳ מנתחת... (עד דקה)' : '🧠 הפעילי ניתוח מקיף'}
+                  {selectedClient?.is_child ? (
+                    <>
+                      <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4, color: '#7c3aed' }}>👶 ניתוח AI — {selectedClient.name}</div>
+                      <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>משלב: שאלון ילד + בדיקות דם + דינמיקה משפחתית</div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>🧠 ניתוח AI מקיף</div>
+                      <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>משלב: שאלון 360 + בדיקות דם + NLP + ימי אכילה</div>
+                      <textarea value={foodDiary} onChange={e => setFoodDiary(e.target.value)} placeholder='3 ימי אכילה אופייניים...' rows={8} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
+                    </>
+                  )}
+                  <button onClick={runProfileAnalysis} disabled={aiLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: aiLoading ? '#9ca3af' : selectedClient?.is_child ? 'linear-gradient(135deg,#7c3aed,#a855f7)' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: aiLoading ? 'default' : 'pointer', fontWeight: 700, fontSize: 16 }}>
+                    {aiLoading ? '⏳ מנתחת... (עד דקה)' : selectedClient?.is_child ? '👶 הפעילי ניתוח לילד' : '🧠 הפעילי ניתוח מקיף'}
                   </button>
                 </div>
                 {editableAnalysis && (
@@ -1374,6 +1460,7 @@ export default function AdminPage() {
                       <div style={{ background: '#faf5ff', borderRadius: 14, padding: 16, marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
                         <div style={{ fontWeight: 700, fontSize: 14, color: '#7c3aed', marginBottom: 10 }}>👶 פרטי הילד</div>
                         <Field label="שם הילד *" value={childData.name} onChange={v => setChildData(c => ({...c, name: v}))} />
+                        <Field label="סיסמה (אופציונלי — ברירת מחדל: סיסמת ההורה)" value={childData.password} onChange={v => setChildData(c => ({...c, password: v}))} />
                         <div style={{ display: 'flex', gap: 8 }}>
                           <div style={{ flex: 1 }}><Field label="גיל" value={childData.age} onChange={v => setChildData(c => ({...c, age: v}))} type="number" /></div>
                           <div style={{ flex: 1 }}><Field label='משקל (ק"ג)' value={childData.weight} onChange={v => setChildData(c => ({...c, weight: v}))} type="number" /></div>
@@ -1406,7 +1493,7 @@ export default function AdminPage() {
                         // הוסף ילד אם צריך
                         if ((clientTrack === 'child' || clientTrack === 'both') && childData.name) {
                           await supabase.from('clients').insert({
-                            name: childData.name, password: newClient.password + '_child',
+                            name: childData.name, password: childData.password || newClient.password,
                             age: childData.age ? parseInt(childData.age) : null,
                             weight: childData.weight ? parseFloat(childData.weight) : null,
                             height: childData.height ? parseFloat(childData.height) : null,
@@ -1419,7 +1506,7 @@ export default function AdminPage() {
 
                         setClientAdded('✅ ' + newClient.name + ' נוסף/ה בהצלחה!' + ((clientTrack === 'child' || clientTrack === 'both') && childData.name ? ' + ילד: ' + childData.name : ''))
                         setNewClient({ name: '', last_name: '', password: '', phone: '', id_number: '', age: '', weight: '', height: '', goal: '', activity: '', gender: '' })
-                        setChildData({ name: '', age: '', weight: '', height: '', gender: '' })
+                        setChildData({ name: '', age: '', weight: '', height: '', gender: '', password: '' })
                         setClientTrack('')
                         loadClients()
                       } catch(e) { alert('שגיאה: ' + e.message) }
