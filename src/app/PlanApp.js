@@ -699,6 +699,8 @@ export default function PlanApp({ clientName, userPassword }) {
   const [scanCarbs, setScanCarbs] = useState(0)
   const [joinedDate, setJoinedDate] = useState(null)
   const [feedback, setFeedback] = useState(null)
+  const [aiReport, setAiReport] = useState(null)
+  const [showAiReport, setShowAiReport] = useState(false)
   const [reportApproved, setReportApproved] = useState(false)
   const [activeTab, setActiveTab] = useState('diary')
   const [showDocsMenu, setShowDocsMenu] = useState(false)
@@ -747,9 +749,12 @@ export default function PlanApp({ clientName, userPassword }) {
         var d = client.data
         setClientData(d)
         // ✅ טוען אחוזי הצלחת מ-client_profiles
-        const profileRes = await supabase.from('client_profiles').select('welcome_doc_json').eq('client_password', dbKey).maybeSingle()
+        const profileRes = await supabase.from('client_profiles').select('welcome_doc_json, ai_report').eq('client_password', dbKey).maybeSingle()
         if (profileRes.data?.welcome_doc_json?.plate) {
           setClientPlate(profileRes.data.welcome_doc_json.plate)
+        }
+        if (profileRes.data?.ai_report) {
+          setAiReport(profileRes.data.ai_report)
         }
         if (d.weight) { setUserWeight(String(d.weight)); setProfileDone(true) }
         if (d.height) setUserHeight(String(d.height))
@@ -800,6 +805,29 @@ export default function PlanApp({ clientName, userPassword }) {
     }
     if (dbKey) load()
   }, [dbKey, todayKey])
+
+  // בדיקה תקופתית למשוב יומי חדש (כל 60 שניות)
+  useEffect(() => {
+    if (!dbKey || !todayKey) return
+    const interval = setInterval(async () => {
+      const { data } = await supabase.from('daily_logs').select('trainer_feedback, report_approved').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
+      if (data && data.report_approved && data.trainer_feedback) {
+        setFeedback(data.trainer_feedback)
+        setReportApproved(true)
+      }
+    }, 60000)
+    return () => clearInterval(interval)
+  }, [dbKey, todayKey])
+
+  // בדיקה תקופתית לניתוח AI מקיף חדש (כל 90 שניות)
+  useEffect(() => {
+    if (!dbKey) return
+    const interval = setInterval(async () => {
+      const { data } = await supabase.from('client_profiles').select('ai_report').eq('client_password', dbKey).maybeSingle()
+      if (data?.ai_report) setAiReport(data.ai_report)
+    }, 90000)
+    return () => clearInterval(interval)
+  }, [dbKey])
 
   const autoSaveRef = useRef(null)
   useEffect(() => {
@@ -1126,6 +1154,37 @@ export default function PlanApp({ clientName, userPassword }) {
         )}
       </div>
 
+      {showAiReport && aiReport && (
+        <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
+          <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
+            <button onClick={() => setShowAiReport(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
+          </div>
+          <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+                <div>
+                  <div style={{ fontWeight: 900, fontSize: 15 }}>הניתוח האישי שלך 🧠</div>
+                  <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · מאתי אטל</div>
+                </div>
+              </div>
+            </div>
+            {aiReport.split(/\n\s*--\s*\n/).filter(Boolean).map((section, i) => {
+              const lines = section.trim().split('\n')
+              const title = lines[0].replace(/^#+\s*/, '').replace(/\*\*/g, '').trim()
+              const body = lines.slice(1).join('\n').trim()
+              const colors = ['#f0fdf4','#eff6ff','#fffbeb','#fef2f2','#faf5ff','#f0fdfa']
+              const borders = ['#16a34a','#2563eb','#d97706','#dc2626','#7c3aed','#0d9488']
+              return (
+                <div key={i} style={{ background: colors[i % colors.length], borderRadius: 16, padding: '18px 20px', marginBottom: 14, borderRight: '4px solid ' + borders[i % borders.length] }}>
+                  {title && <div style={{ fontWeight: 800, fontSize: 15, color: borders[i % borders.length], marginBottom: 8 }}>{title}</div>}
+                  <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{body}</div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
       {showDailyFeedback && feedback && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
           <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
@@ -1324,6 +1383,18 @@ export default function PlanApp({ clientName, userPassword }) {
       )}
 
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '14px 14px 120px', display: activeTab === 'diary' ? 'block' : 'none' }}>
+        {aiReport && (
+          <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#1a6b3a)', borderRadius: 18, padding: '18px 20px', marginBottom: 14, color: '#fff', cursor: 'pointer' }} onClick={() => setShowAiReport(true)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontSize: 36 }}>🧠</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 900, fontSize: 15 }}>הניתוח האישי שלך מוכן!</div>
+                <div style={{ fontSize: 12, color: '#86efac', marginTop: 2 }}>מאתי · לחצי לצפייה מלאה</div>
+              </div>
+              <div style={{ fontSize: 22 }}>←</div>
+            </div>
+          </div>
+        )}
         {feedback && <FeedbackCard feedback={feedback} clientName={displayName} logDate={today} onOpenFull={() => setShowDailyFeedback(true)} />}
 
         <div style={{ background: '#fff', borderRadius: 18, padding: 18, border: '1.5px solid #e2e8f0', marginBottom: 14 }}>
