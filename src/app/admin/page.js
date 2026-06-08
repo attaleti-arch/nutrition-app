@@ -781,18 +781,46 @@ export default function AdminPage() {
 
       <div style={{ maxWidth: 700, margin: '0 auto', padding: '20px 16px' }}>
         <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 16, border: '1.5px solid #f0f0f0' }}>
-          <div style={{ fontWeight: 700, marginBottom: 10 }}>בחרי לקוח:</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {clients.map(c => (
-              <button key={c.id} onClick={() => loadProfile(c)} style={{ padding: '10px 16px', borderRadius: 10, border: '2px solid ' + (selectedClient?.id === c.id ? '#0f4c2a' : '#e5e7eb'), background: selectedClient?.id === c.id ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 14, color: selectedClient?.id === c.id ? '#0f4c2a' : '#333' }}>
-                {c.name}
-              </button>
-            ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <div style={{ fontWeight: 700 }}>בחרי לקוח:</div>
+            <button onClick={() => { setSelectedClient(null); setTab('newclient') }} style={{ padding: '8px 16px', borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>➕ הוסיפי לקוח</button>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            {clients.filter(c => !c.is_child).map(parent => {
+              const children = clients.filter(ch => ch.parent_id === parent.id)
+              return (
+                <div key={parent.id}>
+                  <button onClick={() => loadProfile(parent)} style={{ width: '100%', padding: '10px 16px', borderRadius: 10, border: '2px solid ' + (selectedClient?.id === parent.id ? '#0f4c2a' : '#e5e7eb'), background: selectedClient?.id === parent.id ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 14, color: selectedClient?.id === parent.id ? '#0f4c2a' : '#333', textAlign: 'right', display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <span>{parent.client_track === 'child' ? '👤' : parent.client_track === 'both' ? '👨‍👩‍👧' : '👤'}</span>
+                    <span>{parent.name} {parent.last_name || ''}</span>
+                    {parent.client_track && <span style={{ fontSize: 11, color: '#9ca3af', marginRight: 'auto' }}>{parent.client_track === 'self' ? 'עצמי' : parent.client_track === 'child' ? 'עבור ילד' : 'שניהם'}</span>}
+                  </button>
+                  {children.length > 0 && children.map(ch => (
+                    <button key={ch.id} onClick={() => loadProfile(ch)} style={{ width: '100%', padding: '8px 16px 8px 32px', borderRadius: 10, border: '2px solid ' + (selectedClient?.id === ch.id ? '#7c3aed' : '#e9d5ff'), background: selectedClient?.id === ch.id ? '#faf5ff' : '#fdfbff', cursor: 'pointer', fontWeight: 600, fontSize: 13, color: selectedClient?.id === ch.id ? '#7c3aed' : '#7c3aed', textAlign: 'right', display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, marginRight: 16 }}>
+                      <span>└ 👶</span>
+                      <span>{ch.name}</span>
+                      <span style={{ fontSize: 11, color: '#a78bfa', marginRight: 'auto' }}>גיל {ch.age || '?'}</span>
+                    </button>
+                  ))}
+                </div>
+              )
+            })}
           </div>
         </div>
 
         {selectedClient && (
           <>
+            <div style={{ background: '#fff', borderRadius: 18, padding: '12px 16px', marginBottom: 12, border: '1.5px solid #fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a1a' }}>{selectedClient.name} {selectedClient.last_name || ''}</div>
+              <button onClick={async () => {
+                if (!window.confirm('למחוק את ' + selectedClient.name + '? פעולה זו לא ניתנת לביטול.')) return
+                await supabase.from('daily_logs').delete().eq('client_name', selectedClient.password)
+                await supabase.from('client_profiles').delete().eq('client_password', selectedClient.password)
+                await supabase.from('clients').delete().eq('id', selectedClient.id)
+                setSelectedClient(null)
+                loadClients()
+              }} style={{ padding: '8px 16px', borderRadius: 10, background: '#fef2f2', color: '#ef4444', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>🗑️ מחקי לקוח</button>
+            </div>
             <div style={{ background: '#fff', borderRadius: 18, padding: '14px 18px', marginBottom: 16, border: '1.5px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 180 }}>
                 <div style={{ fontWeight: 800, fontSize: 14, color: '#1a1a1a', marginBottom: 2 }}>🌿 מסמך פתיחה אישי</div>
