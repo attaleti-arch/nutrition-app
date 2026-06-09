@@ -683,13 +683,16 @@ export default function AdminPage() {
 
 async function runLogsAnalysis(targetLog) {
   if (!filteredLogs.length) return
+
   setAiLoading(true)
   setAiAnalysis('')
   setDailyPreview('')
   setDailyEditing(false)
+
   var targets = calcTargets(selectedClient)
   var logsToAnalyze = []
   let reportType = 'weekly'
+
   if (filterMode === 'today' && targetLog) {
     logsToAnalyze = [targetLog]
     reportType = 'daily'
@@ -699,12 +702,22 @@ async function runLogsAnalysis(targetLog) {
     setDailyTargetLog(null)
     reportType = filterMode === 'custom' ? 'range' : 'weekly'
   }
+
   var summary = logsToAnalyze.map(function(l) {
     var nut = calcNutrition(l, nutritionData)
     var scanExtra = ''
-    if (l.scan_calories > 0) { scanExtra = ' | 📸 צילום: ' + l.scan_calories + ' קל'; if (l.scan_desc) scanExtra += ' (' + l.scan_desc + ')' }
-    return 'תאריך: ' + l.log_date + ' | קלוריות: ' + Math.round(nut.calories) + (targets ? ' (יעד: ' + targets.calories + ')' : '') + ' | חלבון: ' + Math.round(nut.protein) + 'g | שומן: ' + Math.round(nut.fat) + 'g | מים: ' + (l.water || 0) + ' ליטר | צעדים: ' + (l.steps || 0) + scanExtra + ' | הערה: ' + (l.note || '')
+    if (l.scan_calories > 0) { 
+      scanExtra = ' | 📸 צילום: ' + l.scan_calories + ' קל' 
+      if (l.scan_desc) scanExtra += ' (' + l.scan_desc + ')' 
+    }
+    return 'תאריך: ' + l.log_date + 
+           ' | קלוריות: ' + Math.round(nut.calories) + 
+           (targets ? ' (יעד: ' + targets.calories + ')' : '') + 
+           ' | חלבון: ' + Math.round(nut.protein) + 'g | שומן: ' + Math.round(nut.fat) + 'g | מים: ' + (l.water || 0) + ' ליטר | צעדים: ' + (l.steps || 0) + 
+           scanExtra + 
+           ' | הערה: ' + (l.note || '')
   }).join('\n')
+
   const res = await fetch('/api/analyze', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -729,6 +742,7 @@ async function runLogsAnalysis(targetLog) {
         .join(' | ')
     })
   })
+
   const data = await res.json()
   setDailyPreview(data.result)
   setDailyEditing(true)
