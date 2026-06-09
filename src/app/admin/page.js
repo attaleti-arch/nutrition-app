@@ -686,6 +686,14 @@ export default function AdminPage() {
     setAiLoading(true); setAiAnalysis(''); setDailyPreview(''); setDailyEditing(false); setDailyTargetLog(targetLog || null)
     var targets = calcTargets(selectedClient)
     var logsToAnalyze = targetLog ? [targetLog] : filteredLogs
+    let reportType = 'weekly'
+if (filterMode === 'today') {
+  reportType = 'daily'
+} else if (filterMode === 'week') {
+  reportType = 'weekly'
+} else if (filterMode === 'custom') {
+  reportType = 'range'
+}
     var summary = logsToAnalyze.map(function(l) {
       var nut = calcNutrition(l, nutritionData)
       var scanExtra = ''
@@ -694,8 +702,24 @@ export default function AdminPage() {
     }).join('\n')
     const res = await fetch('/api/analyze', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: selectedClient.name, gender: selectedClient.gender || 'נקבה', logs: summary, nlpSummary: logsToAnalyze.map(function(l) { var m = l.nlp_metrics || {}; if (!m.stress && !m.fatigue && !m.hunger && !m.mood) return null; return l.log_date + ': לחץ ' + (m.stress||0) + '/5, עייפות ' + (m.fatigue||0) + '/5, רעב ' + (m.hunger||0) + '/5, מצב רוח: ' + (m.mood||'לא צוין') }).filter(Boolean).join(' | ') })
+      body: JSON.stringify({
+  mode: 'logsReport',
+  name: selectedClient.name,
+  gender: selectedClient.gender || 'נקבה',
+  reportType,
+  logs: summary,
+  nlpSummary: logsToAnalyze
+    .map(function(l) {
+      var m = l.nlp_metrics || {}
+      if (!m.stress && !m.fatigue && !m.hunger && !m.mood) return null
+      return l.log_date + ': לחץ ' + (m.stress||0) +
+        '/5, עייפות ' + (m.fatigue||0) +
+        '/5, רעב ' + (m.hunger||0) +
+        '/5, מצב רוח: ' + (m.mood||'לא צוין')
     })
+    .filter(Boolean)
+    .join(' | ')
+})
     const data = await res.json()
     setDailyPreview(data.result); setDailyEditing(true); setAiLoading(false)
   }
