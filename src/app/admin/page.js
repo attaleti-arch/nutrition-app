@@ -2276,6 +2276,5 @@ async function runLogsAnalysis(targetLog) {
 )}
     </div>
           </div>
-          </div>
   )
 }
