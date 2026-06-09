@@ -681,19 +681,27 @@ export default function AdminPage() {
     }
   }
 
-  async function runLogsAnalysis(targetLog) {
-    if (!filteredLogs.length) return
-    setAiLoading(true); setAiAnalysis(''); setDailyPreview(''); setDailyEditing(false); setDailyTargetLog(targetLog || null)
-    var targets = calcTargets(selectedClient)
-    var logsToAnalyze = targetLog ? [targetLog] : filteredLogs
-    let reportType = 'weekly'
-if (filterMode === 'today') {
-  reportType = 'daily'
-} else if (filterMode === 'week') {
-  reportType = 'weekly'
-} else if (filterMode === 'custom') {
-  reportType = 'range'
-}
+ async function runLogsAnalysis(targetLog) {
+  if (!filteredLogs.length) return
+  setAiLoading(true)
+  setAiAnalysis('')
+  setDailyPreview('')
+  setDailyEditing(false)
+  var targets = calcTargets(selectedClient)
+  var logsToAnalyze = []
+  let reportType = 'weekly'
+  if (filterMode === 'today' && targetLog) {
+    logsToAnalyze = [targetLog]
+    reportType = 'daily'
+    setDailyTargetLog(targetLog)
+  } else {
+    logsToAnalyze = filteredLogs
+    setDailyTargetLog(null)
+    reportType =
+      filterMode === 'custom'
+        ? 'range'
+        : 'weekly'
+  }
     var summary = logsToAnalyze.map(function(l) {
       var nut = calcNutrition(l, nutritionData)
       var scanExtra = ''
