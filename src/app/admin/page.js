@@ -2266,15 +2266,11 @@ async function runLogsAnalysis(targetLog) {
                         {sendingChildFeedback ? '⏳...' : childFeedbackSent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
                       </button>
                     </div>
-                  </div>
-                )}
-
-              </div>
-            )}
-
-          </>
-)}
-    </div>
-          </div>
-  )
-}
+</div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
