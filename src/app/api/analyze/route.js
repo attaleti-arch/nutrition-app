@@ -664,31 +664,41 @@ ${sessionNotes ? 'מה גילינו בפגישה (מאתי): ' + sessionNotes : 
       return Response.json({ result: msg.content[0].text })
     }
 
-    if (logs && !mode) {
-      const gender = body.gender || 'נקבה'
-      const isMale = gender === 'זכר'
-      const genderNote = isMale
-        ? 'הלקוח הוא גבר. השתמש בגוף שני זכר בלבד: "אתה", "עשית", "תוכל". אסור לכתוב "אתת" או צורת נקבה.'
-        : 'הלקוחה היא אישה. השתמשי בגוף שני נקבה בלבד: "את", "עשית", "תוכלי". אסור לכתוב "אתת".'
-      const msg = await client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 700,
-        messages: [{ role: 'user', content:
-          'אתה אתי אטל — יועצת תזונה התנהגותית. כתוב משוב קצר ל-' + name + ' בעברית תקנית.\n'
-          + genderNote + '\n'
-          + 'חובה: עברית תקנית בלבד. "מדהים" ולא "אגודה". "נהדר" ולא מילים שגויות. בדוק שכל מילה היא מילה עברית אמיתית.\n'
-          + 'בסס על נתונים אמיתיים בלבד. ציין מספרים ספציפיים.\n'
-          + (body.nlpSummary ? 'NLP: ' + body.nlpSummary + '\n' : '')
-          + 'יומן: ' + String(logs).substring(0, 900) + '\n\n'
-          + '**✨ מה עבד השבוע** — הצלחה אחת ספציפית.\n\n'
-          + '**🎯 משימות לדיוק** — מה היה בפועל מול היעד + הסבר פיזיולוגי.\n\n'
-          + '**🚀 3 צעדים קטנים** — ספציפיים עם מספרים.\n\n'
-          + '**💚 מסר** — משפט אחד מעצים.'
-        }]
-      })
-      return Response.json({ result: msg.content[0].text })
-    }
-
+ if (mode === 'logsReport') {
+  const { logs } = body
+  const gender = body.gender || 'נקבה'
+  const isMale = gender === 'זכר'
+  const genderNote = isMale
+    ? 'הלקוח הוא גבר. השתמש בגוף שני זכר בלבד: "אתה", "עשית", "תוכל". אסור צורת נקבה.'
+    : 'הלקוחה היא אישה. השתמשי בגוף שני נקבה בלבד: "את", "עשית", "תוכלי". אסור צורת זכר.'
+  const reportType = body.reportType || 'weekly'
+  const dateLabel = body.dateLabel || ''
+  const reportInstruction =
+    reportType === 'daily'
+      ? `זהו דוח יומי לתאריך ${dateLabel}. התייחס רק ליום זה. אל תסכם שבוע.`
+      : reportType === 'range'
+      ? `זהו דוח לטווח תאריכים ${dateLabel}. אל תכתוב "השבוע".`
+      : `זהו דוח שבועי. סכם מגמות לאורך הימים שנשלחו.`
+  const msg = await client.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 900,
+    messages: [{
+      role: 'user',
+      content:
+        'אתה אתי אטל — יועצת תזונה התנהגותית.\n'
+        + genderNote + '\n'
+        + reportInstruction + '\n\n'
+        + 'נתונים:\n'
+        + String(logs || '').substring(0, 1500) + '\n\n'
+        + '**📊 סיכום תזונתי** — הסבר על הקלוריות והאיזון.\n\n'
+        + '**👏 מה עבד טוב** — חיזוק ספציפי.\n\n'
+        + '**🔎 מה דורש דיוק** — נקודה אחת בלבד.\n\n'
+        + '**🚀 צעד קדימה** — פעולה אחת מדידה.\n\n'
+        + 'עברית תקנית בלבד.'
+    }]
+  })
+  return Response.json({ result: msg.content[0].text })
+}
     // ── ניתוח פרופיל מלא ──
     if (mode === 'profile' && profile) {
       const p = profile
