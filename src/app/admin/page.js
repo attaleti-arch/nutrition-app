@@ -732,7 +732,6 @@ body: JSON.stringify({
     .filter(Boolean)
     .join(' | ')
 })
-})
 const data = await res.json()
     setDailyPreview(data.result); setDailyEditing(true); setAiLoading(false)
   }
