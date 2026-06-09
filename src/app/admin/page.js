@@ -2251,8 +2251,7 @@ async function runLogsAnalysis(targetLog) {
                     </div>
                   </div>
                 )}
-
-                {childFeedback && (
+               {childFeedback && (
                   <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
                     <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff' }}>
                       <div style={{ fontWeight: 800, fontSize: 14 }}>💚 מסמך סיכום להורה — אחרי הפגישה</div>
