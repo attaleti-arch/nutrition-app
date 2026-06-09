@@ -717,10 +717,11 @@ if (filterMode === 'today') {
         '/5, רעב ' + (m.hunger||0) +
         '/5, מצב רוח: ' + (m.mood||'לא צוין')
     })
-    .filter(Boolean)
+       .filter(Boolean)
     .join(' | ')
+  })
 })
-    const data = await res.json()
+const data = await res.json()
     setDailyPreview(data.result); setDailyEditing(true); setAiLoading(false)
   }
 
