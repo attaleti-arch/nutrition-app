@@ -2265,12 +2265,8 @@ async function runLogsAnalysis(targetLog) {
                       }} disabled={sendingChildFeedback} style={{ flex: 2, padding: 12, borderRadius: 10, background: childFeedbackSent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {sendingChildFeedback ? '⏳...' : childFeedbackSent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
                       </button>
-                    </div>
-</div>
-              )}
-            </>
-          )}
-        </div>
+    </div>
       </div>
-    );
-  }
+            </div>
+          )
+        }
