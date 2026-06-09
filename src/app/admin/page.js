@@ -710,11 +710,16 @@ export default function AdminPage() {
     }).join('\n')
     const res = await fetch('/api/analyze', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+body: JSON.stringify({
   mode: 'logsReport',
   name: selectedClient.name,
   gender: selectedClient.gender || 'נקבה',
   reportType,
+  dateLabel: reportType === 'daily'
+    ? (logsToAnalyze[0]?.log_date || '')
+    : reportType === 'range'
+    ? (dateFrom + ' עד ' + dateTo)
+    : 'שבוע אחרון',
   logs: summary,
   nlpSummary: logsToAnalyze
     .map(function(l) {
@@ -725,9 +730,9 @@ export default function AdminPage() {
         '/5, רעב ' + (m.hunger||0) +
         '/5, מצב רוח: ' + (m.mood||'לא צוין')
     })
-       .filter(Boolean)
+    .filter(Boolean)
     .join(' | ')
-  })
+})
 })
 const data = await res.json()
     setDailyPreview(data.result); setDailyEditing(true); setAiLoading(false)
