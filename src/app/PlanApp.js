@@ -65,6 +65,8 @@ const PLAN = {
     { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5% + ירקות', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b7', text: 'ביצים קשות / חביתה + ירקות', tags: [], hide: ['vegan', 'no_eggs'] },
+    { id: 'b_tuna_full', text: 'טונה — חבילה שלמה (160g)', tags: [], hide: ['vegan', 'vegetarian'] },
+    { id: 'b_tuna_half', text: 'טונה — חצי חבילה (80g)', tags: [], hide: ['vegan', 'vegetarian'] },
   ],
   bokerCarbs: [
     { id: 'b4', text: '5 פריכיות דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
@@ -711,6 +713,8 @@ export default function PlanApp({ clientName, userPassword }) {
   const [lunchOpt, setLunchOpt] = useState(null)
   const [benayimSel, setBenayimSel] = useState(null)
   const [hadSnack, setHadSnack] = useState(null)
+  const [drinkType, setDrinkType] = useState(null)
+  const [drinkCount, setDrinkCount] = useState(0)
   const [hadBenayim, setHadBenayim] = useState(null)
   const [water, setWater] = useState(0)
   const [steps, setSteps] = useState('')
@@ -838,7 +842,7 @@ export default function PlanApp({ clientName, userPassword }) {
         setBokerFree(t.boker_free || ''); setLunchFree(t.lunch_free || ''); setErevFree(t.erev_free || '')
         setBokerExtraCal(t.boker_extra_cal || 0); setLunchExtraCal(t.lunch_extra_cal || 0); setErevExtraCal(t.erev_extra_cal || 0)
         setBokerExtraProt(t.boker_extra_prot || 0); setLunchExtraProt(t.lunch_extra_prot || 0); setErevExtraProt(t.erev_extra_prot || 0)
-        setHadSnack(t.had_snack ?? null); setHadBenayim(t.had_benayim ?? null)
+        setHadSnack(t.had_snack ?? null); setHadBenayim(t.had_benayim ?? null); setDrinkType(t.drink_type || null); setDrinkCount(t.drink_count || 0)
         setSportDoneToday(t.sport_done_today || false)
         var dayOfWeek = new Date().getDay()
         setSportDaysThisWeek(dayOfWeek === 0 ? 0 : (t.sport_days_week || 0))
@@ -884,7 +888,7 @@ export default function PlanApp({ clientName, userPassword }) {
         water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
         boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
         boker_extra_prot: bokerExtraProt || 0, lunch_extra_prot: lunchExtraProt || 0, erev_extra_prot: erevExtraProt || 0,
-        had_snack: hadSnack, had_benayim: hadBenayim,
+        had_snack: hadSnack, had_benayim: hadBenayim, drink_type: drinkType, drink_count: drinkCount || 0,
         sport_done_today: sportDoneToday, sport_days_week: sportDaysThisWeek,
         scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
         diet_type: dietType, restrictions,
@@ -895,7 +899,7 @@ export default function PlanApp({ clientName, userPassword }) {
       if (error) console.error('❌ autosave failed:', error.message, error)
     }, 3000)
     return () => clearTimeout(autoSaveRef.current)
-  }, [checks, carbSel, protChecks, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood])
+  }, [checks, carbSel, protChecks, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount])
 
   useEffect(() => {
     function handleGuideClose(e) {
@@ -935,6 +939,8 @@ export default function PlanApp({ clientName, userPassword }) {
     if (fatSel) add(fatSel); if (veggieSel) add(veggieSel)
     if (benayimSel) add(benayimSel); if (hadBenayim) add('benayim')
     total += (bokerExtraCal || 0) + (lunchExtraCal || 0) + (erevExtraCal || 0) + (scanCalories || 0)
+    const DRINK_CALS = { wine: 120, beer: 150, cocktail: 200 }
+    if (drinkType && drinkCount > 0) total += (DRINK_CALS[drinkType] || 0) * drinkCount
     return total
   }
 
@@ -1760,6 +1766,44 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ fontWeight: 700, fontSize: 12, color: C.blue, padding: '8px 0 4px', textAlign: 'right' }}>בחר/י:</div>
           {filteredBenayim.map(o => <RadioRow key={o.id} id={o.id} text={o.text} accent={C.blue} selected={benayimSel} onSelect={setBenayimSel} />)}
           <YesNo value={hadBenayim} onChange={setHadBenayim} labelYes="✅ אכלתי" labelNo="❌ דילגתי" accent={C.blue} />
+        </Section>
+
+        <Section title="🍷 משקאות אלכוהוליים" icon="🍷" accent={'#7c3aed'} light={'#faf5ff'}>
+          <div style={{ background: '#fef3c7', borderRadius: 12, padding: '10px 14px', marginBottom: 14, border: '1px solid #fcd34d', fontSize: 13, color: '#92400e', lineHeight: 1.7, textAlign: 'right' }}>
+            🍷 אלכוהול מכיל קלוריות ריקות — ללא ערך תזונתי. בתהליך שמירה על משקל מומלץ להגביל עד כמה שאפשר. אם בחרת לשתות — כדאי שתדעי מה זה עולה מתוך היעד היומי שלך.
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 14, flexWrap: 'wrap' }}>
+            {[
+              { id: 'wine', label: '🍷 יין', sub: '120 קל לכוס' },
+              { id: 'beer', label: '🍺 בירה', sub: '150 קל לבקבוק' },
+              { id: 'cocktail', label: '🍹 קוקטייל', sub: '200 קל לכוס' },
+            ].map(d => (
+              <button key={d.id} onClick={() => setDrinkType(drinkType === d.id ? null : d.id)} style={{ flex: 1, minWidth: 80, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (drinkType === d.id ? '#7c3aed' : '#e5e7eb'), background: drinkType === d.id ? '#faf5ff' : '#fafafa', cursor: 'pointer', textAlign: 'center' }}>
+                <div style={{ fontWeight: 700, fontSize: 13, color: drinkType === d.id ? '#7c3aed' : '#333' }}>{d.label}</div>
+                <div style={{ fontSize: 11, color: '#9ca3af' }}>{d.sub}</div>
+              </button>
+            ))}
+          </div>
+          {drinkType && (
+            <div style={{ background: '#faf5ff', borderRadius: 12, padding: '12px 14px', border: '1.5px solid #e9d5ff' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#7c3aed', marginBottom: 10, textAlign: 'right' }}>כמה כוסות / בקבוקים?</div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 10 }}>
+                {[1,2,3,4,5].map(n => (
+                  <button key={n} onClick={() => setDrinkCount(drinkCount === n ? 0 : n)} style={{ width: 44, height: 44, borderRadius: 99, border: '2px solid ' + (drinkCount === n ? '#7c3aed' : '#e5e7eb'), background: drinkCount === n ? '#7c3aed' : '#fff', color: drinkCount === n ? '#fff' : '#555', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}>{n}</button>
+                ))}
+              </div>
+              {drinkCount > 0 && (() => {
+                const DRINK_CALS = { wine: 120, beer: 150, cocktail: 200 }
+                const totalDrinkCal = (DRINK_CALS[drinkType] || 0) * drinkCount
+                return (
+                  <div style={{ background: '#fff', borderRadius: 10, padding: '10px 14px', textAlign: 'center', border: '1px solid #e9d5ff' }}>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: '#7c3aed' }}>{totalDrinkCal} קל</div>
+                    <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>מתוך היעד היומי שלך נוצלו על משקה</div>
+                  </div>
+                )
+              })()}
+            </div>
+          )}
         </Section>
 
         <Section title="ארוחת ערב" icon="🌙" accent={C.purple} light={C.purpleLight}>
