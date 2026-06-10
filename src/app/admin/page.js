@@ -1029,6 +1029,81 @@ export default function AdminPage() {
 
             </div>
 
+            {logDetails && (
+              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => { if(e.target === e.currentTarget) setLogDetails(null) }}>
+                <div style={{ background: '#fff', borderRadius: '18px 18px 0 0', padding: 20, width: '100%', maxWidth: 520, maxHeight: '85vh', overflowY: 'auto', direction: 'rtl' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <div style={{ fontWeight: 800, fontSize: 16, color: '#0f4c2a' }}>🔍 פרטי יומן — {logDetails.log_date}</div>
+                    <button onClick={() => setLogDetails(null)} style={{ padding: '6px 14px', borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: 'none', cursor: 'pointer', fontWeight: 700 }}>✕ סגרי</button>
+                  </div>
+
+                  {logDetails.checks && Object.keys(logDetails.checks).filter(id => logDetails.checks[id]).length > 0 && (
+                    <div style={{ background: '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: '#555', marginBottom: 8 }}>✅ פריטים שסומנו</div>
+                      {Object.keys(logDetails.checks).filter(id => logDetails.checks[id]).map(id => {
+                        const item = nutritionData[id]
+                        return (
+                          <div key={id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: '1px solid #f0f0f0' }}>
+                            <span style={{ color: '#9ca3af', fontSize: 11 }}>{item ? Math.round(item.calories) + ' קל | ' + Math.round(item.protein||0) + 'g חלבון | ' + Math.round(item.fat||0) + 'g שומן | ' + Math.round(item.carbs||0) + 'g פחמימה' : 'אין נתונים'}</span>
+                            <span style={{ fontWeight: 600 }}>{item ? item.name : id}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  <div style={{ background: '#f0fdf4', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#0f4c2a', marginBottom: 10 }}>✏️ עריכה</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>💧 מים (ליטר)</div>
+                        <input type="number" step="0.1" value={logDetails.water || ''} onChange={e => setLogDetails(d => ({...d, water: parseFloat(e.target.value)||0}))} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>🚶 צעדים</div>
+                        <input type="number" value={logDetails.steps || ''} onChange={e => setLogDetails(d => ({...d, steps: parseInt(e.target.value)||0}))} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>⚡ קלוריות נוספות (אחר)</div>
+                        <input type="number" value={logDetails.boker_extra_cal || ''} onChange={e => setLogDetails(d => ({...d, boker_extra_cal: parseInt(e.target.value)||0}))} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
+                      </div>
+                      <div>
+                        <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>💪 חלבון נוסף (g)</div>
+                        <input type="number" value={logDetails.boker_extra_prot || ''} onChange={e => setLogDetails(d => ({...d, boker_extra_prot: parseInt(e.target.value)||0}))} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
+                      </div>
+                    </div>
+                    <div style={{ marginBottom: 8 }}>
+                      <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>📝 פרטים נוספים (אחר)</div>
+                      <textarea value={logDetails.boker_free || ''} onChange={e => setLogDetails(d => ({...d, boker_free: e.target.value}))} rows={2} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box', resize: 'none' }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>💬 הערה ליומן</div>
+                      <textarea value={logDetails.note || ''} onChange={e => setLogDetails(d => ({...d, note: e.target.value}))} rows={2} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box', resize: 'none' }} />
+                    </div>
+                  </div>
+
+                  <button onClick={async () => {
+                    setSavingLogEdit(true)
+                    await supabase.from('daily_logs').update({
+                      water: logDetails.water,
+                      steps: logDetails.steps,
+                      boker_extra_cal: logDetails.boker_extra_cal || 0,
+                      boker_extra_prot: logDetails.boker_extra_prot || 0,
+                      boker_free: logDetails.boker_free || '',
+                      note: logDetails.note || ''
+                    }).eq('id', logDetails.id)
+                    const { data } = await supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).order('log_date', { ascending: false }).limit(30)
+                    setLogs(data || [])
+                    setSavingLogEdit(false)
+                    setLogDetails(null)
+                  }} disabled={savingLogEdit} style={{ width: '100%', padding: 14, borderRadius: 12, background: savingLogEdit ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
+                    {savingLogEdit ? '⏳ שומר...' : '💾 שמרי שינויים'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+
             {tab === 'logs' && (
               <div>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
@@ -1110,83 +1185,6 @@ export default function AdminPage() {
               </div>
             )}
 
-            {logDetails && (
-              <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }} onClick={e => { if(e.target === e.currentTarget) setLogDetails(null) }}>
-                <div style={{ background: '#fff', borderRadius: '18px 18px 0 0', padding: 20, width: '100%', maxWidth: 520, maxHeight: '85vh', overflowY: 'auto', direction: 'rtl' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                    <div style={{ fontWeight: 800, fontSize: 16, color: '#0f4c2a' }}>🔍 פרטי יומן — {logDetails.log_date}</div>
-                    <button onClick={() => setLogDetails(null)} style={{ padding: '6px 14px', borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: 'none', cursor: 'pointer', fontWeight: 700 }}>✕ סגרי</button>
-                  </div>
-
-                  {logDetails.checks && Object.keys(logDetails.checks).filter(id => logDetails.checks[id]).length > 0 && (
-                    <div style={{ background: '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 12 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: '#555', marginBottom: 8 }}>✅ פריטים שסומנו</div>
-                      {Object.keys(logDetails.checks).filter(id => logDetails.checks[id]).map(id => {
-                        const item = nutritionData[id]
-                        return (
-                          <div key={id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: '1px solid #f0f0f0' }}>
-                            <span style={{ color: '#9ca3af', fontSize: 11 }}>{item ? Math.round(item.calories) + ' קל | ' + Math.round(item.protein||0) + 'g חלבון | ' + Math.round(item.fat||0) + 'g שומן | ' + Math.round(item.carbs||0) + 'g פחמימה' : 'אין נתונים'}</span>
-                            <span style={{ fontWeight: 600 }}>{item ? item.name : id}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-
-                  <div style={{ background: '#f0fdf4', borderRadius: 12, padding: 12, marginBottom: 12 }}>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: '#0f4c2a', marginBottom: 10 }}>✏️ עריכה</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>💧 מים (ליטר)</div>
-                        <input type="number" step="0.1" value={logDetails.water || ''} onChange={e => setLogDetails(d => ({...d, water: parseFloat(e.target.value)||0}))} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>🚶 צעדים</div>
-                        <input type="number" value={logDetails.steps || ''} onChange={e => setLogDetails(d => ({...d, steps: parseInt(e.target.value)||0}))} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>⚡ קלוריות נוספות (אחר)</div>
-                        <input type="number" value={logDetails.boker_extra_cal || ''} onChange={e => setLogDetails(d => ({...d, boker_extra_cal: parseInt(e.target.value)||0}))} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>💪 חלבון נוסף (g)</div>
-                        <input type="number" value={logDetails.boker_extra_prot || ''} onChange={e => setLogDetails(d => ({...d, boker_extra_prot: parseInt(e.target.value)||0}))} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
-                      </div>
-                    </div>
-                    <div style={{ marginBottom: 8 }}>
-                      <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>📝 פרטים נוספים (אחר)</div>
-                      <textarea value={logDetails.boker_free || ''} onChange={e => setLogDetails(d => ({...d, boker_free: e.target.value}))} rows={2} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box', resize: 'none' }} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>💬 הערה ליומן</div>
-                      <textarea value={logDetails.note || ''} onChange={e => setLogDetails(d => ({...d, note: e.target.value}))} rows={2} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box', resize: 'none' }} />
-                    </div>
-                  </div>
-
-                  <button onClick={async () => {
-                    setSavingLogEdit(true)
-                    await supabase.from('daily_logs').update({
-                      water: logDetails.water,
-                      steps: logDetails.steps,
-                      boker_extra_cal: logDetails.boker_extra_cal || 0,
-                      boker_extra_prot: logDetails.boker_extra_prot || 0,
-                      boker_free: logDetails.boker_free || '',
-                      note: logDetails.note || ''
-                    }).eq('id', logDetails.id)
-                    const { data } = await supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).order('log_date', { ascending: false }).limit(30)
-                    setLogs(data || [])
-                    setSavingLogEdit(false)
-                    setLogDetails(null)
-                  }} disabled={savingLogEdit} style={{ width: '100%', padding: 14, borderRadius: 12, background: savingLogEdit ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
-                    {savingLogEdit ? '⏳ שומר...' : '💾 שמרי שינויים'}
-                  </button>
-                </div>
-              </div>
-            )}
-
-
-              </div>
-            )}
 
             {tab === 'doctor' && (
               <div>
