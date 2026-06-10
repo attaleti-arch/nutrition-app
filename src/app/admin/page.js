@@ -681,73 +681,55 @@ export default function AdminPage() {
     }
   }
 
-async function runLogsAnalysis(targetLog) {
-  if (!filteredLogs.length) return
+  async function runLogsAnalysis(targetLog) {
+    if (!filteredLogs.length) return
+    setAiLoading(true); setAiAnalysis(''); setDailyPreview(''); setDailyEditing(false)
 
-  setAiLoading(true)
-  setAiAnalysis('')
-  setDailyPreview('')
-  setDailyEditing(false)
-
-  var targets = calcTargets(selectedClient)
-  var logsToAnalyze = []
-  let reportType = 'weekly'
-
-  if (filterMode === 'today' && targetLog) {
-    logsToAnalyze = [targetLog]
-    reportType = 'daily'
-    setDailyTargetLog(targetLog)
-  } else {
-    logsToAnalyze = filteredLogs
-    setDailyTargetLog(null)
-    reportType = filterMode === 'custom' ? 'range' : 'weekly'
-  }
-
-  var summary = logsToAnalyze.map(function(l) {
-    var nut = calcNutrition(l, nutritionData)
-    var scanExtra = ''
-    if (l.scan_calories > 0) { 
-      scanExtra = ' | 📸 צילום: ' + l.scan_calories + ' קל' 
-      if (l.scan_desc) scanExtra += ' (' + l.scan_desc + ')' 
+    // קבע אילו לוגים לנתח ומה סוג הדוח
+    var logsToAnalyze, reportType, dateLabel
+    if (filterMode === 'today') {
+      logsToAnalyze = filteredLogs
+      reportType = 'daily'
+      dateLabel = filteredLogs[0]?.log_date || new Date().toLocaleDateString('sv-SE')
+      setDailyTargetLog(filteredLogs[0] || null)
+    } else if (filterMode === 'custom' && dateFrom && dateTo) {
+      logsToAnalyze = filteredLogs
+      reportType = 'range'
+      dateLabel = dateFrom + ' עד ' + dateTo
+      setDailyTargetLog(null)
+    } else {
+      logsToAnalyze = filteredLogs
+      reportType = 'weekly'
+      dateLabel = 'שבוע אחרון'
+      setDailyTargetLog(null)
     }
-    return 'תאריך: ' + l.log_date + 
-           ' | קלוריות: ' + Math.round(nut.calories) + 
-           (targets ? ' (יעד: ' + targets.calories + ')' : '') + 
-           ' | חלבון: ' + Math.round(nut.protein) + 'g | שומן: ' + Math.round(nut.fat) + 'g | מים: ' + (l.water || 0) + ' ליטר | צעדים: ' + (l.steps || 0) + 
-           scanExtra + 
-           ' | הערה: ' + (l.note || '')
-  }).join('\n')
 
-  const res = await fetch('/api/analyze', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      mode: 'logsReport',
-      name: selectedClient.name,
-      gender: selectedClient.gender || 'נקבה',
-      reportType,
-      dateLabel: reportType === 'daily'
-        ? (logsToAnalyze[0]?.log_date || '')
-        : reportType === 'range'
-        ? (dateFrom + ' עד ' + dateTo)
-        : 'שבוע אחרון',
-      logs: summary,
-      nlpSummary: logsToAnalyze
-        .map(function(l) {
+    var targets = calcTargets(selectedClient)
+    var summary = logsToAnalyze.map(function(l) {
+      var nut = calcNutrition(l, nutritionData)
+      var scanExtra = ''
+      if (l.scan_calories > 0) { scanExtra = ' | 📸 צילום: ' + l.scan_calories + ' קל'; if (l.scan_desc) scanExtra += ' (' + l.scan_desc + ')' }
+      return 'תאריך: ' + l.log_date + ' | קלוריות: ' + Math.round(nut.calories) + (targets ? ' (יעד: ' + targets.calories + ')' : '') + ' | חלבון: ' + Math.round(nut.protein) + 'g | שומן: ' + Math.round(nut.fat) + 'g | מים: ' + (l.water || 0) + ' ליטר | צעדים: ' + (l.steps || 0) + scanExtra + (l.note ? ' | הערה: ' + l.note : '')
+    }).join('\n')
+
+    const res = await fetch('/api/analyze', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mode: 'logsReport',
+        name: selectedClient.name,
+        gender: selectedClient.gender || 'נקבה',
+        reportType,
+        dateLabel,
+        logs: summary,
+        nlpSummary: logsToAnalyze.map(function(l) {
           var m = l.nlp_metrics || {}
           if (!m.stress && !m.fatigue && !m.hunger && !m.mood) return null
           return l.log_date + ': לחץ ' + (m.stress||0) + '/5, עייפות ' + (m.fatigue||0) + '/5, רעב ' + (m.hunger||0) + '/5, מצב רוח: ' + (m.mood||'לא צוין')
-        })
-        .filter(Boolean)
-        .join(' | ')
+        }).filter(Boolean).join(' | ')
+      })
     })
-  })
-
-  const data = await res.json()
-  setDailyPreview(data.result)
-  setDailyEditing(true)
-  setAiLoading(false)
-}
+    const data = await res.json()
+    setDailyPreview(data.result); setDailyEditing(true); setAiLoading(false)
   }
 
   async function sendDailyFeedback() {
@@ -2251,7 +2233,8 @@ async function runLogsAnalysis(targetLog) {
                     </div>
                   </div>
                 )}
-               {childFeedback && (
+
+                {childFeedback && (
                   <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
                     <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff' }}>
                       <div style={{ fontWeight: 800, fontSize: 14 }}>💚 מסמך סיכום להורה — אחרי הפגישה</div>
@@ -2281,11 +2264,13 @@ async function runLogsAnalysis(targetLog) {
                     </div>
                   </div>
                 )}
+
               </div>
             )}
+
           </>
         )}
       </div>
     </div>
-  );
+  )
 }
