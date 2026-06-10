@@ -58,17 +58,35 @@ const BONUS_RECIPES = [
 
 const PLAN = {
   bokerSnack: 'לפני: נס קפה + חטיף בריאות עד 99 קל',
+  bokerProtein: [
+    { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
+    { id: 'b3', text: 'מעדן פרו + פרי', tags: ['vegan'] },
+    { id: 'b_kotej', text: 'קוטג׳ 5% (200g)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5% + ירקות', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b7', text: 'ביצים קשות / חביתה + ירקות', tags: [], hide: ['vegan', 'no_eggs'] },
+  ],
+  bokerCarbs: [
+    { id: 'b4', text: '5 פריכיות דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
+    { id: 'b6', text: 'פיתה כוסמין / 2 פרוסות לחם שיפון', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
+    { id: 'bnew1', text: '2 פרוסות לחם כוסמין', tags: [], hide: ['keto', 'no_gluten'] },
+  ],
+  bokerExtra: [
+    { id: 'b8', text: 'אבוקדו + ירקות', tags: ['vegan', 'keto'] },
+    { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto'], tags: ['vegetarian'] },
+  ],
   boker: [
     { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
     { id: 'b3', text: 'מעדן פרו + פרי', tags: ['vegan'] },
-    { id: 'b4', text: '3 פריכיות + קוטג׳ 5% + דבש', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b_kotej', text: 'קוטג׳ 5% (200g)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b4', text: '5 פריכיות דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5% + ירקות', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b6', text: 'פיתה כוסמין / 4 פריכיות / 2 פרוסות לחם שיפון', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
+    { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b7', text: 'ביצים קשות / חביתה + ירקות', tags: [], hide: ['vegan', 'no_eggs'] },
+    { id: 'b6', text: 'פיתה כוסמין / 4 פריכיות / 2 פרוסות לחם שיפון', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
+    { id: 'bnew1', text: '2 פרוסות לחם כוסמין', tags: [], hide: ['keto', 'no_gluten'] },
     { id: 'b8', text: 'אבוקדו + ירקות', tags: ['vegan', 'keto'] },
     { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto'], tags: ['vegetarian'] },
-    { id: 'bnew1', text: '2 פרוסות לחם כוסמין', tags: [], hide: ['keto', 'no_gluten'] },
-    { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
   ],
   carbOptions: [
     { id: 'c1', text: '150 גרם אורז מלא / קינואה', hide: ['keto', 'no_gluten'] },
@@ -92,7 +110,7 @@ const PLAN = {
     { id: 'p14', text: '200 גרם עדשים מבושלות', tags: ['vegan'] },
     { id: 'p15', text: '150 גרם שעועית / פול מבושל', tags: ['vegan'] },
     { id: 'p16', text: '150 גרם אדממה', tags: ['vegan'] },
-    { id: 'p17', text: '200 גרם קוטג׳ 5% / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'] },
+    { id: 'p17', text: '200 גרם קוטג׳ 3% / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'] },
     { id: 'p18', text: '200 גרם יוגורט יווני 0%', hide: ['vegan', 'no_lactose'] },
   ],
   fatOptions: [
@@ -565,17 +583,6 @@ function MealScanner({ gender, onAdd, joinedDate }) {
       {result.confidence === 'low' && <div style={{ fontSize: 11, color: '#f59e0b', marginBottom: 8 }}>⚠️ ביטחון נמוך — תקני או לחצי "חשב" אחרי עריכה</div>}
       <div style={{ display: 'flex', gap: 8 }}>
         <button onClick={() => { onAdd(editCal, editDesc, editProtein, editFat, editCarbs); setEditing(false); setResult(null) }} style={{ flex: 2, padding: 10, borderRadius: 10, background: '#0284c7', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✅ {fem ? 'הוסיפי' : 'הוסף'} לארוחה</button>
-        {(selectedClient?.client_track === 'both' || selectedClient?.client_track === 'child') && (
-  <QSection title="הורה בהקשר הילד" icon="👨‍👩‍👧">
-    <Field label="מה הילד רואה אותך אוכלת?" value={profile.parent_food_model} onChange={v => updateProfile('parent_food_model', v)} rows={2} />
-    <Field label="האם את עושה ספורט? מה הילד רואה?" value={profile.parent_sport} onChange={v => updateProfile('parent_sport', v)} rows={2} />
-    <Field label="כמה ג׳אנק / מזון מעובד נמצא בבית?" value={profile.home_junk} onChange={v => updateProfile('home_junk', v)} rows={2} />
-    <Field label="אווירה בארוחות — שקט / לחץ / מסכים?" value={profile.family_meals_vibe} onChange={v => updateProfile('family_meals_vibe', v)} rows={2} />
-    <Field label="הבדלים בין אחים — מי אוכל מה?" value={profile.siblings_food_diff} onChange={v => updateProfile('siblings_food_diff', v)} rows={2} />
-    <Field label="מה את מקווה שהילד לא ייקח ממך?" value={profile.forward_passing} onChange={v => updateProfile('forward_passing', v)} rows={2} />
-    <Field label="מה הילד אומר על גוף?" value={profile.child_body_talk} onChange={v => updateProfile('child_body_talk', v)} rows={2} />
-  </QSection>
-)}
         <button onClick={() => { setEditing(false); setResult(null) }} style={{ flex: 1, padding: 10, borderRadius: 10, background: '#fff', color: '#ef4444', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ ביטול</button>
       </div>
     </div>
@@ -995,6 +1002,9 @@ export default function PlanApp({ clientName, userPassword }) {
   const targets = calcTargets(parseFloat(userWeight), parseFloat(userHeight), parseInt(userAge), userGender, userActivity, userGoal)
   const eatenCalories = calcEatenCalories()
   const filteredBoker = PLAN.boker.filter(i => !shouldHide(i, dietType, restrictions))
+  const filteredBokerProtein = PLAN.bokerProtein.filter(i => !shouldHide(i, dietType, restrictions))
+  const filteredBokerCarbs = PLAN.bokerCarbs.filter(i => !shouldHide(i, dietType, restrictions))
+  const filteredBokerExtra = PLAN.bokerExtra.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredProt = PLAN.protOptions.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredErev = PLAN.erev.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredCarbs = PLAN.carbOptions.filter(i => !shouldHide(i, dietType, restrictions))
@@ -1559,7 +1569,24 @@ export default function PlanApp({ clientName, userPassword }) {
         <Section title="ארוחת בוקר" icon="☀️" accent={C.orange} light={C.orangeLight} defaultOpen={true}>
           <div style={{ fontSize: 12, color: '#9ca3af', padding: '8px 0 4px', textAlign: 'right' }}>{PLAN.bokerSnack}</div>
           <YesNo value={hadSnack} onChange={setHadSnack} labelYes="✅ אכלתי חטיף" labelNo="❌ דילגתי" accent={C.orange} />
-          {filteredBoker.map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
+          {filteredBokerProtein.length > 0 && (
+            <>
+              <div style={{ fontSize: 11, fontWeight: 700, color: C.orange, marginBottom: 4, marginTop: 4, textAlign: 'right' }}>🥛 חלבון</div>
+              {filteredBokerProtein.map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
+            </>
+          )}
+          {filteredBokerCarbs.length > 0 && (
+            <>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#d97706', marginBottom: 4, marginTop: 8, textAlign: 'right' }}>🍞 פחמימה</div>
+              {filteredBokerCarbs.map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
+            </>
+          )}
+          {filteredBokerExtra.length > 0 && (
+            <>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', marginBottom: 4, marginTop: 8, textAlign: 'right' }}>🌿 נוסף</div>
+              {filteredBokerExtra.map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
+            </>
+          )}
           <FreeText value={bokerFree} onChange={setBokerFree} placeholder="אכלתי גם / פרטים נוספים..." />
           <ExtraCal value={bokerExtraCal} onChange={setBokerExtraCal} valueProt={bokerExtraProt} onChangeProt={setBokerExtraProt} />
           <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setBokerExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
