@@ -53,10 +53,10 @@ function calcTargets(client) {
 }
 
 function calcNutrition(log, nutritionData) {
-  var total = { calories: 0, protein: 0, fat: 0, fiber: 0 }
+  var total = { calories: 0, protein: 0, fat: 0, fiber: 0, carbs: 0 }
   function add(id) {
     var item = nutritionData[id]
-    if (item) { total.calories += item.calories || 0; total.protein += item.protein || 0; total.fat += item.fat || 0; total.fiber += item.fiber || 0 }
+    if (item) { total.calories += item.calories || 0; total.protein += item.protein || 0; total.fat += item.fat || 0; total.fiber += item.fiber || 0; total.carbs += item.carbs || 0 }
   }
   if (log.had_snack) add('snack')
   if (log.checks) Object.keys(log.checks).forEach(function(id) { if (log.checks[id]) add(id) })
@@ -290,6 +290,8 @@ export default function AdminPage() {
   const [sendingToClient, setSendingToClient] = useState(false)
   const [sentToClient, setSentToClient] = useState(false)
   const [dailyPreview, setDailyPreview] = useState('')
+  const [logDetails, setLogDetails] = useState(null)
+  const [savingLogEdit, setSavingLogEdit] = useState(false)
   const [dailyEditing, setDailyEditing] = useState(false)
   const [dailyTargetLog, setDailyTargetLog] = useState(null)
   const [sendingDaily, setSendingDaily] = useState(false)
@@ -904,8 +906,14 @@ export default function AdminPage() {
                     <input placeholder="שם הילד *" id="quick_child_name" style={{ flex: 2, padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e9d5ff', fontSize: 13, textAlign: 'right', outline: 'none' }} />
                     <input placeholder="גיל" id="quick_child_age" type="number" style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e9d5ff', fontSize: 13, textAlign: 'center', outline: 'none' }} />
                   </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                     <input placeholder='משקל (ק"ג)' id="quick_child_weight" type="number" style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e9d5ff', fontSize: 13, textAlign: 'center', outline: 'none' }} />
+                    <input placeholder='גובה (ס"מ)' id="quick_child_height" type="number" style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e9d5ff', fontSize: 13, textAlign: 'center', outline: 'none' }} />
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    {['בן', 'בת'].map(g => (
+                      <button key={g} id={'quick_gender_' + g} onClick={e => { document.querySelectorAll('[id^=quick_gender_]').forEach(b => { b.style.background = '#faf5ff'; b.style.color = '#7c3aed'; b.style.borderColor = '#e9d5ff' }); e.target.style.background = '#7c3aed'; e.target.style.color = '#fff'; e.target.style.borderColor = '#7c3aed' }} style={{ flex: 1, padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e9d5ff', fontSize: 13, cursor: 'pointer', background: '#faf5ff', color: '#7c3aed', fontWeight: 700 }}>{g}</button>
+                    ))}
                     <input placeholder="סיסמה (ברירת מחדל: כמו ההורה)" id="quick_child_password" style={{ flex: 2, padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e9d5ff', fontSize: 13, textAlign: 'right', outline: 'none' }} />
                   </div>
                   <button onClick={async () => {
@@ -913,12 +921,16 @@ export default function AdminPage() {
                     if (!name) { alert('שם הילד חובה'); return }
                     const age = document.getElementById('quick_child_age').value
                     const weight = document.getElementById('quick_child_weight').value
+                    const height = document.getElementById('quick_child_height').value
                     const password = document.getElementById('quick_child_password').value || selectedClient.password
-                    await supabase.from('clients').insert({ name, age: age ? parseInt(age) : null, weight: weight ? parseFloat(weight) : null, password, parent_id: selectedClient.id, is_child: true, created_at: new Date().toISOString() })
+                    const genderBn = document.getElementById('quick_gender_בן')
+                    const gender = genderBn && genderBn.style.background === 'rgb(124, 58, 237)' ? 'זכר' : 'נקבה'
+                    await supabase.from('clients').insert({ name, age: age ? parseInt(age) : null, weight: weight ? parseFloat(weight) : null, height: height ? parseFloat(height) : null, gender, password, parent_id: selectedClient.id, is_child: true, created_at: new Date().toISOString() })
                     loadClients()
                     document.getElementById('quick_child_name').value = ''
                     document.getElementById('quick_child_age').value = ''
                     document.getElementById('quick_child_weight').value = ''
+                    document.getElementById('quick_child_height').value = ''
                     document.getElementById('quick_child_password').value = ''
                     alert('✅ הילד נוסף!')
                   }} style={{ width: '100%', marginTop: 8, padding: '10px', borderRadius: 10, background: '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>➕ הוסיפי ילד</button>
@@ -926,9 +938,10 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div style={{ background: '#fff', borderRadius: 18, padding: '12px 16px', marginBottom: 12, border: '1.5px solid #fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a1a' }}>{selectedClient.name} {selectedClient.last_name || ''}</div>
-              <button onClick={async () => {
+            <div style={{ background: '#fff', borderRadius: 18, padding: '12px 16px', marginBottom: 12, border: '1.5px solid #fee2e2' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#1a1a1a' }}>{selectedClient.name} {selectedClient.last_name || ''}</div>
+                <button onClick={async () => {
                 if (!window.confirm('למחוק את ' + selectedClient.name + '? פעולה זו לא ניתנת לביטול.')) return
                 await supabase.from('daily_logs').delete().eq('client_name', selectedClient.password)
                 await supabase.from('client_profiles').delete().eq('client_password', selectedClient.password)
@@ -936,6 +949,20 @@ export default function AdminPage() {
                 setSelectedClient(null)
                 loadClients()
               }} style={{ padding: '8px 16px', borderRadius: 10, background: '#fef2f2', color: '#ef4444', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>🗑️ מחקי לקוח</button>
+              </div>
+              {/* עריכת נתוני לקוח */}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input type="number" placeholder="גיל" value={selectedClient.age || ''} onChange={e => setSelectedClient(c => ({...c, age: e.target.value}))} onBlur={e => updateClientData('age', e.target.value ? parseInt(e.target.value) : null)} style={{ flex: 1, minWidth: 60, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
+                <input type="number" placeholder='משקל' value={selectedClient.weight || ''} onChange={e => setSelectedClient(c => ({...c, weight: e.target.value}))} onBlur={e => updateClientData('weight', e.target.value ? parseFloat(e.target.value) : null)} style={{ flex: 1, minWidth: 60, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
+                <input type="number" placeholder='גובה' value={selectedClient.height || ''} onChange={e => setSelectedClient(c => ({...c, height: e.target.value}))} onBlur={e => updateClientData('height', e.target.value ? parseFloat(e.target.value) : null)} style={{ flex: 1, minWidth: 60, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
+                <select value={selectedClient.gender || ''} onChange={async e => { await updateClientData('gender', e.target.value); setSelectedClient(c => ({...c, gender: e.target.value})) }} style={{ flex: 1, minWidth: 70, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, outline: 'none' }}>
+                  <option value="">מגדר</option>
+                  <option value="נקבה">נקבה</option>
+                  <option value="זכר">זכר</option>
+                  <option value="בן">בן</option>
+                  <option value="בת">בת</option>
+                </select>
+              </div>
             </div>
             <div style={{ background: '#fff', borderRadius: 18, padding: '14px 18px', marginBottom: 16, border: '1.5px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 180 }}>
@@ -1029,6 +1056,7 @@ export default function AdminPage() {
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                           {log.trainer_feedback && <span style={{ fontSize: 11, background: '#dcfce7', color: '#166534', borderRadius: 8, padding: '2px 8px' }}>✓ נענה</span>}
                           <span style={{ fontSize: 12, color: '#9ca3af' }}>💧{log.water || 0} 🚶{log.steps || 0}</span>
+                          <button onClick={() => setLogDetails({...log})} style={{ fontSize: 11, padding: '2px 10px', borderRadius: 8, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', cursor: 'pointer', fontWeight: 700 }}>🔍 פרטים</button>
                         </div>
                       </div>
                       <div style={{ padding: '12px 16px' }}>
