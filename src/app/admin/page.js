@@ -1037,20 +1037,30 @@ export default function AdminPage() {
                     <button onClick={() => setLogDetails(null)} style={{ padding: '6px 14px', borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: 'none', cursor: 'pointer', fontWeight: 700 }}>✕ סגרי</button>
                   </div>
 
-                  {logDetails.checks && Object.keys(logDetails.checks).filter(id => logDetails.checks[id]).length > 0 && (
-                    <div style={{ background: '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 12 }}>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: '#555', marginBottom: 8 }}>✅ פריטים שסומנו</div>
-                      {Object.keys(logDetails.checks).filter(id => logDetails.checks[id]).map(id => {
-                        const item = nutritionData[id]
-                        return (
-                          <div key={id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: '1px solid #f0f0f0' }}>
-                            <span style={{ color: '#9ca3af', fontSize: 11 }}>{item ? Math.round(item.calories) + ' קל | ' + Math.round(item.protein||0) + 'g חלבון | ' + Math.round(item.fat||0) + 'g שומן | ' + Math.round(item.carbs||0) + 'g פחמימה' : 'אין נתונים'}</span>
-                            <span style={{ fontWeight: 600 }}>{item ? item.name : id}</span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
+                  {(() => {
+                    const allIds = []
+                    if (logDetails.checks) Object.keys(logDetails.checks).filter(id => logDetails.checks[id]).forEach(id => allIds.push(id))
+                    if (logDetails.prot_checks) Object.keys(logDetails.prot_checks).filter(id => logDetails.prot_checks[id]).forEach(id => allIds.push(id))
+                    if (logDetails.carb_sel) allIds.push(logDetails.carb_sel)
+                    if (logDetails.fat_sel) allIds.push(logDetails.fat_sel)
+                    if (logDetails.veggie_sel) allIds.push(logDetails.veggie_sel)
+                    if (logDetails.benayim_sel) allIds.push(logDetails.benayim_sel)
+                    if (!allIds.length) return null
+                    return (
+                      <div style={{ background: '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 12 }}>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: '#555', marginBottom: 8 }}>✅ פריטים שסומנו</div>
+                        {allIds.map((id, i) => {
+                          const item = nutritionData[id]
+                          return (
+                            <div key={id + i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: '1px solid #f0f0f0' }}>
+                              <span style={{ color: '#9ca3af', fontSize: 11 }}>{item ? Math.round(item.calories) + ' קל | ' + Math.round(item.protein||0) + 'g חלבון | ' + Math.round(item.fat||0) + 'g שומן | ' + Math.round(item.carbs||0) + 'g פחמימה' : 'אין נתונים'}</span>
+                              <span style={{ fontWeight: 600 }}>{item ? item.name : id}</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
 
                   <div style={{ background: '#f0fdf4', borderRadius: 12, padding: 12, marginBottom: 12 }}>
                     <div style={{ fontWeight: 700, fontSize: 13, color: '#0f4c2a', marginBottom: 10 }}>✏️ עריכה</div>
