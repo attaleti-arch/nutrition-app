@@ -767,6 +767,8 @@ export default function PlanApp({ clientName, userPassword }) {
   const [streak, setStreak] = useState(0)
   const [weeklyDays, setWeeklyDays] = useState(0)
   const [weekDates, setWeekDates] = useState([])
+  const [avgStepsWeekly, setAvgStepsWeekly] = useState(0)
+  const [suggestedActivity, setSuggestedActivity] = useState(null)
   const [userWeight, setUserWeight] = useState('')
   const [userHeight, setUserHeight] = useState('')
   const [userAge, setUserAge] = useState('')
@@ -858,8 +860,8 @@ export default function PlanApp({ clientName, userPassword }) {
         if (t.nlp_metrics) { var m = t.nlp_metrics; setStressLevel(m.stress || 0); setFatigueLevel(m.fatigue || 0); setHungerLevel(m.hunger || 0); setUserMood(m.mood || null) }
       }
 
-      // חישוב רצף ושבוע
-      var { data: recentLogs } = await supabase.from('daily_logs').select('log_date').eq('client_name', dbKey).order('log_date', { ascending: false }).limit(90)
+      // חישוב רצף, שבוע, וממוצע צעדים
+      var { data: recentLogs } = await supabase.from('daily_logs').select('log_date, steps').eq('client_name', dbKey).order('log_date', { ascending: false }).limit(90)
       if (recentLogs && recentLogs.length > 0) {
         var loggedDates = new Set(recentLogs.map(function(l) { return l.log_date }))
         var streakCount = 0
@@ -878,6 +880,14 @@ export default function PlanApp({ clientName, userPassword }) {
         }
         setWeekDates(wkDays)
         setWeeklyDays(wkDays.filter(function(d) { return d.logged }).length)
+        // ממוצע צעדים מ-14 ימים אחרונים (לפחות 5 ימים עם נתוני צעדים)
+        var stepsLogs = recentLogs.filter(function(l) { return l.steps && parseInt(l.steps) > 0 }).slice(0, 14)
+        if (stepsLogs.length >= 5) {
+          var avgS = Math.round(stepsLogs.reduce(function(s, l) { return s + parseInt(l.steps) }, 0) / stepsLogs.length)
+          setAvgStepsWeekly(avgS)
+          var inferred = avgS < 4000 ? 'יושבני' : avgS < 7000 ? 'קל' : avgS < 10000 ? 'בינוני' : avgS < 13000 ? 'פעיל' : 'מאוד פעיל'
+          setSuggestedActivity(inferred)
+        }
       }
     }
     if (dbKey) load()
@@ -1624,6 +1634,44 @@ export default function PlanApp({ clientName, userPassword }) {
                 )
               })}
             </div>
+          </div>
+        )}
+
+        {/* ✅ הצעת עדכון רמת פעילות לפי צעדים אמיתיים */}
+        {suggestedActivity && suggestedActivity !== userActivity && avgStepsWeekly > 0 &&
+          !localStorage.getItem('activitySuggestDismiss_' + dbKey + '_' + suggestedActivity) && targets && (
+          <div style={{ background: 'linear-gradient(135deg,#eff6ff,#dbeafe)', borderRadius: 18, padding: '14px 18px', marginBottom: 14, border: '1.5px solid #93c5fd' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 22 }}>👟</span>
+                <div style={{ fontWeight: 800, fontSize: 14, color: '#1d4ed8' }}>פעילות בפועל vs. הצהרה</div>
+              </div>
+              <button onClick={() => { localStorage.setItem('activitySuggestDismiss_' + dbKey + '_' + suggestedActivity, '1'); setSuggestedActivity(null) }} style={{ background: 'transparent', border: 'none', fontSize: 16, cursor: 'pointer', color: '#93c5fd', padding: 0 }}>✕</button>
+            </div>
+            <div style={{ fontSize: 13, color: '#1e40af', lineHeight: 1.6, marginBottom: 10 }}>
+              לפי הצעדים שתיעדת ב-14 ימים אחרונים,<br />
+              הממוצע שלך הוא <strong>{avgStepsWeekly.toLocaleString()} צעדים/יום</strong>.<br />
+              זה מתאים לרמת פעילות: <strong>{suggestedActivity}</strong>
+              {' '}(הגדרת: <strong>{userActivity}</strong>).
+            </div>
+            {(() => {
+              var suggested = calcTargets(parseFloat(userWeight), parseFloat(userHeight), parseInt(userAge), userGender, suggestedActivity, userGoal)
+              var diff = suggested ? suggested.calories - targets.calories : 0
+              return suggested ? (
+                <div style={{ fontSize: 12, color: '#3b82f6', marginBottom: 12, background: '#dbeafe', borderRadius: 8, padding: '6px 10px' }}>
+                  עדכון יחליף את היעד: <strong>{targets.calories} קל</strong> → <strong>{suggested.calories} קל</strong>
+                  {' '}({diff > 0 ? '+' : ''}{diff} קל)
+                </div>
+              ) : null
+            })()}
+            <button onClick={async () => {
+              await supabase.from('clients').update({ activity: suggestedActivity }).eq('password', dbKey)
+              setUserActivity(suggestedActivity)
+              localStorage.setItem('activitySuggestDismiss_' + dbKey + '_' + suggestedActivity, '1')
+              setSuggestedActivity(null)
+            }} style={{ width: '100%', padding: '10px 0', borderRadius: 10, background: '#2563eb', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+              עדכוני ל"{suggestedActivity}" 👟
+            </button>
           </div>
         )}
 
