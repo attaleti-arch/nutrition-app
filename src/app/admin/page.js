@@ -495,8 +495,9 @@ export default function AdminPage() {
     const sd = data?.sessions_data || {}
     sessionDataRef.current = sd
     const lsLoad = (key, isJson) => { try { const v = localStorage.getItem('sd_' + key + '_' + pw); return v ? (isJson ? JSON.parse(v) : v) : null } catch(e) { return null } }
-    const jA = sd.journey_answers || lsLoad('journey_answers', true); if (jA) setJourneyAnswers(a => ({ ...a, ...jA }))
-    const jAn = sd.journey_analysis || lsLoad('journey_analysis', false); if (jAn) setJourneyAnalysis(jAn)
+    // journey — עמודות ייעודיות (עדיפות), fallback ל-sessions_data ול-localStorage
+    const jA = data?.journey_answers || sd.journey_answers || lsLoad('journey_answers', true); if (jA) setJourneyAnswers(a => ({ ...a, ...jA }))
+    const jAn = data?.journey_analysis || sd.journey_analysis || lsLoad('journey_analysis', false); if (jAn) setJourneyAnalysis(jAn)
     const sN = sd.session_notes || lsLoad('session_notes', false); if (sN) setSessionNotes(sN)
     const rN = sd.roots_notes || lsLoad('roots_notes', true); if (rN) setRootsNotes(n => ({ ...n, ...rN }))
     const rAn = sd.roots_analysis || lsLoad('roots_analysis', false); if (rAn) { setRootsAnalysis(rAn); setRootsEditing(true); setRootsViewMode('view') }
@@ -549,6 +550,21 @@ export default function AdminPage() {
     // Supabase sessions_data — שמירה בענן
     setProfile(p => ({ ...p, sessions_data: merged }))
     supabase.from('client_profiles').upsert({ client_password: selectedClient.password, sessions_data: merged }, { onConflict: 'client_password' }).then(() => {}).catch(() => {})
+  }
+
+  function saveJourney(answers, analysis) {
+    if (!selectedClient?.password) return
+    const pw = selectedClient.password
+    const upsertData = { client_password: pw }
+    if (answers !== undefined) {
+      upsertData.journey_answers = answers
+      try { localStorage.setItem('sd_journey_answers_' + pw, JSON.stringify(answers)) } catch(e) {}
+    }
+    if (analysis !== undefined) {
+      upsertData.journey_analysis = analysis
+      try { localStorage.setItem('sd_journey_analysis_' + pw, analysis) } catch(e) {}
+    }
+    supabase.from('client_profiles').upsert(upsertData, { onConflict: 'client_password' }).then(() => {}).catch(() => {})
   }
 
   // ── ✅ פונקציות Agent Instructions ──
@@ -1973,7 +1989,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveSessionKey('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -1989,7 +2005,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#0284c7', marginBottom: 4, fontStyle: 'italic' }}>💙 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveSessionKey('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -2005,7 +2021,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#0d9488', marginBottom: 4, fontStyle: 'italic' }}>💚 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveSessionKey('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -2020,7 +2036,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#dc2626', marginBottom: 4, fontStyle: 'italic' }}>❤️ {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveSessionKey('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -2034,7 +2050,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#d97706', marginBottom: 4, fontStyle: 'italic' }}>🧡 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveSessionKey('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -2050,7 +2066,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveSessionKey('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -2062,8 +2078,7 @@ export default function AdminPage() {
                   const data = await res.json()
                   const jResult = data.result || ''
                   setJourneyAnalysis(jResult)
-                  saveSessionKey('journey_answers', journeyAnswers)
-                  saveSessionKey('journey_analysis', jResult)
+                  saveJourney(journeyAnswers, jResult)
                   setJourneyLoading(false)
                 }} disabled={journeyLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
                   {journeyLoading ? '⏳ מנתח...' : '🔍 הפק ניתוח לפגישה (לעיניך בלבד)'}
