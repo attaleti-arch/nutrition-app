@@ -1271,6 +1271,24 @@ export default function PlanApp({ clientName, userPassword }) {
                 📊 הניתוח האישי — יתווסף לאחר הפגישה הראשונה
               </div>
             )}
+            {rootsFeedback ? (
+              <button onClick={() => { setShowRootsFeedback(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#fdf8f4,#fef3e8)', border: '1.5px solid #c4956a', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#92683a', textAlign: 'right' }}>
+                🌱 המשוב האישי שלי — פגישת השורשים
+              </button>
+            ) : (
+              <div style={{ padding: '12px 16px', borderRadius: 12, background: '#f3f4f6', border: '1.5px solid #e5e7eb', fontSize: 13, color: '#9ca3af', textAlign: 'right' }}>
+                🌱 פגישת השורשים — יתווסף לאחר הפגישה
+              </div>
+            )}
+            {bodyFeedback ? (
+              <button onClick={() => { setShowBodyFeedback(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#f0fdfa,#e6faf8)', border: '1.5px solid #0d9488', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#0f766e', textAlign: 'right' }}>
+                🩺 המשוב האישי שלי — הגוף מדבר
+              </button>
+            ) : (
+              <div style={{ padding: '12px 16px', borderRadius: 12, background: '#f3f4f6', border: '1.5px solid #e5e7eb', fontSize: 13, color: '#9ca3af', textAlign: 'right' }}>
+                🩺 הגוף מדבר — יתווסף לאחר הפגישה
+              </div>
+            )}
             {clientData?.outcome_doc ? (
               <button onClick={() => { setShowOutcomeDoc(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#faf5ff,#eff6ff)', border: '1.5px solid #7c3aed', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#7c3aed', textAlign: 'right' }}>
                 🧭 המטרה שלי — מסע התוצאה
@@ -1287,7 +1305,7 @@ export default function PlanApp({ clientName, userPassword }) {
       {showAiReport && aiReport && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
           <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
-            <button onClick={() => setShowAiReport(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
+            <button onClick={() => { setShowAiReport(false); setAiReport(null); supabase.from('client_profiles').update({ ai_report: null }).eq('client_password', dbKey).then(() => {}).catch(() => {}) }} style={{ padding: '10px 18px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
           </div>
           <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
             <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
@@ -1303,11 +1321,12 @@ export default function PlanApp({ clientName, userPassword }) {
               const lines = section.trim().split('\n')
               const title = lines[0].replace(/^#+\s*/, '').replace(/\*\*/g, '').trim()
               const body = lines.slice(1).join('\n').trim()
-              const colors = ['#f0fdf4','#eff6ff','#fffbeb','#fef2f2','#faf5ff','#f0fdfa']
-              const borders = ['#16a34a','#2563eb','#d97706','#dc2626','#7c3aed','#0d9488']
+              const colors = ['#f0fdf4','#eff6ff','#fffbeb','#fef2f2','#faf5ff','#f0fdfa','#fff7ed']
+              const borders = ['#16a34a','#2563eb','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
+              const titleColors = ['#15803d','#1d4ed8','#b45309','#b91c1c','#6d28d9','#0f766e','#c2410c']
               return (
-                <div key={i} style={{ background: colors[i % colors.length], borderRadius: 16, padding: '18px 20px', marginBottom: 14, borderRight: '4px solid ' + borders[i % borders.length] }}>
-                  {title && <div style={{ fontWeight: 800, fontSize: 15, color: borders[i % borders.length], marginBottom: 8 }}>{title}</div>}
+                <div key={i} style={{ background: colors[i % colors.length], borderRadius: 16, padding: '18px 20px', marginBottom: 14, border: '1.5px solid ' + borders[i % borders.length] }}>
+                  {title && <div style={{ fontWeight: 800, fontSize: 15, color: titleColors[i % titleColors.length], marginBottom: 8 }}>{title}</div>}
                   <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{body}</div>
                 </div>
               )
@@ -1496,9 +1515,28 @@ export default function PlanApp({ clientName, userPassword }) {
                 </div>
               </div>
             </div>
-            <div style={{ background: '#fff', borderRadius: 18, padding: '20px 18px', border: '1.5px solid #e9d5ff' }}>
-              <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>{clientData.outcome_doc}</div>
-            </div>
+            {(() => {
+              const BG = ['#f0fdf4','#eff6ff','#fffbeb','#fef2f2','#faf5ff','#f0fdfa','#fff7ed']
+              const BD = ['#16a34a','#2563eb','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
+              const TC = ['#15803d','#1d4ed8','#b45309','#b91c1c','#6d28d9','#0f766e','#c2410c']
+              const renderLine = (line, accent) => {
+                const inl = s => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                if (line.startsWith('- ') || line.startsWith('• ')) return <div key={line} style={{ display:'flex', gap:6, margin:'2px 0' }}><span style={{ color:accent, fontWeight:700, flexShrink:0 }}>•</span><span dangerouslySetInnerHTML={{ __html: inl(line.slice(2)) }} /></div>
+                if (line.trim() === '') return <div key={line + Math.random()} style={{ height:4 }} />
+                return <div key={line} style={{ margin:'2px 0', lineHeight:1.8 }} dangerouslySetInnerHTML={{ __html: inl(line) }} />
+              }
+              return clientData.outcome_doc.split(/\n\s*---\s*\n/).filter(Boolean).map((section, i) => {
+                const lines = section.trim().split('\n')
+                const firstLine = lines[0].replace(/^#+\s*/, '').replace(/\*\*/g, '').trim()
+                const rest = lines.slice(1)
+                return (
+                  <div key={i} style={{ background: BG[i % BG.length], borderRadius: 16, padding: '18px 20px', marginBottom: 12, border: '1.5px solid ' + BD[i % BD.length] }}>
+                    {firstLine && <div style={{ fontWeight: 800, fontSize: 15, color: TC[i % TC.length], marginBottom: 8 }}>{firstLine}</div>}
+                    <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.8 }}>{rest.map(l => renderLine(l, BD[i % BD.length]))}</div>
+                  </div>
+                )
+              })
+            })()}
           </div>
         </div>
       )}
