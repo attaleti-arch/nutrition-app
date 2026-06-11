@@ -253,6 +253,45 @@ function NutritionRow({ item, onSave }) {
   )
 }
 
+const VISIT_CHECKLIST = [
+  { section: '🥫 מזווה', items: [
+    { id: 'white_sugar', label: 'סוכר לבן' },
+    { id: 'biscuits', label: 'ביסקוויטים / עוגיות קנויות' },
+    { id: 'sweet_cereal', label: 'דגני בוקר ממותקים' },
+    { id: 'white_pasta', label: 'פסטה / אורז לבן' },
+    { id: 'ww_flour', label: 'קמח כוסמין / מלא' },
+    { id: 'oats', label: 'שיבולת שועל' },
+    { id: 'legumes', label: 'קטניות (עדשים / חומוס / שעועית)' },
+    { id: 'olive_oil', label: 'שמן זית' },
+    { id: 'tahini_raw', label: 'טחינה גולמית' },
+    { id: 'nuts', label: 'אגוזים / שקדים טבעיים' },
+    { id: 'brown_rice', label: 'אורז מלא / קינואה' },
+    { id: 'canned_tomato', label: 'עגבניות / רסק משומר' },
+  ]},
+  { section: '🧊 מקרר', items: [
+    { id: 'eggs', label: 'ביצים' },
+    { id: 'cottage', label: 'קוטג׳ / גבינה לבנה 5%' },
+    { id: 'greek_yogurt', label: 'יוגורט יווני 0%' },
+    { id: 'labneh', label: 'לאבנה' },
+    { id: 'fresh_veggies', label: 'ירקות טריים' },
+    { id: 'fruit_juice', label: 'מיצי פירות קנויים' },
+    { id: 'sweet_yogurt', label: 'יוגורטים ממותקים' },
+    { id: 'sausages', label: 'נקניקיות / מוצרים מעובדים' },
+  ]},
+  { section: '❄️ מקפיא', items: [
+    { id: 'frozen_chicken', label: 'עוף / הודו' },
+    { id: 'frozen_fish', label: 'דגים' },
+    { id: 'frozen_veggies', label: 'ירקות קפואים' },
+    { id: 'frozen_ready', label: 'ארוחות מוכנות קנויות' },
+  ]},
+]
+
+const VISIT_STATUS = {
+  green: { emoji: '✅', label: 'מצוין', bg: '#dcfce7', border: '#16a34a' },
+  yellow: { emoji: '🟡', label: 'לאזן', bg: '#fef9c3', border: '#ca8a04' },
+  red: { emoji: '🔴', label: 'להוציא', bg: '#fee2e2', border: '#ef4444' },
+}
+
 export default function AdminPage() {
   const [pin, setPin] = useState('')
   const [auth, setAuth] = useState(false)
@@ -299,6 +338,9 @@ export default function AdminPage() {
   const [inventory, setInventory] = useState([])
   const [newItemName, setNewItemName] = useState('')
   const [addingItem, setAddingItem] = useState(false)
+  const [visitOpen, setVisitOpen] = useState(false)
+  const [visitFindings, setVisitFindings] = useState({})
+  const [visitNotes, setVisitNotes] = useState('')
   const [previewDoc, setPreviewDoc] = useState(false)
   const [previewReport, setPreviewReport] = useState(false)
   const [togglingDoc, setTogglingDoc] = useState(false)
@@ -1671,6 +1713,70 @@ export default function AdminPage() {
 
             {tab === 'pantry' && (
               <div>
+
+                {/* ✅ צ׳קליסט ביקור בית */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '2px solid #bbf7d0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => setVisitOpen(v => !v)}>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: '#0f4c2a' }}>🏠 צ׳קליסט ביקור בית — {selectedClient?.name}</div>
+                    <span style={{ fontSize: 13, color: '#16a34a', fontWeight: 700 }}>{visitOpen ? '▲ סגרי' : '▼ פתחי'}</span>
+                  </div>
+                  {!visitOpen && Object.keys(visitFindings).length > 0 && (
+                    <div style={{ marginTop: 6, fontSize: 12, color: '#6b7280' }}>
+                      {Object.values(visitFindings).filter(v => v === 'red').length} להוציא · {Object.values(visitFindings).filter(v => v === 'green').length} מצוין
+                    </div>
+                  )}
+                  {visitOpen && (
+                    <div style={{ marginTop: 14 }}>
+                      {VISIT_CHECKLIST.map(section => (
+                        <div key={section.section} style={{ marginBottom: 16 }}>
+                          <div style={{ fontWeight: 800, fontSize: 13, color: '#374151', marginBottom: 8, paddingBottom: 4, borderBottom: '1.5px solid #f3f4f6' }}>{section.section}</div>
+                          {section.items.map(item => {
+                            const status = visitFindings[item.id] || null
+                            return (
+                              <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #f9fafb' }}>
+                                <div style={{ fontSize: 13, color: status ? VISIT_STATUS[status]?.border : '#374151', fontWeight: status ? 700 : 400 }}>{item.label}</div>
+                                <div style={{ display: 'flex', gap: 4 }}>
+                                  {Object.entries(VISIT_STATUS).map(([s, v]) => (
+                                    <button key={s} onClick={() => setVisitFindings(f => ({ ...f, [item.id]: f[item.id] === s ? null : s }))}
+                                      style={{ width: 34, height: 28, borderRadius: 8, border: '1.5px solid ' + (status === s ? v.border : '#e5e7eb'), background: status === s ? v.bg : '#fff', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}>
+                                      {v.emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ))}
+                      <textarea value={visitNotes} onChange={e => setVisitNotes(e.target.value)}
+                        placeholder="הערות חופשיות מהביקור — סביבה, הרגלים, מה ראית..." rows={3}
+                        style={{ width: '100%', marginTop: 4, padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', boxSizing: 'border-box', textAlign: 'right', lineHeight: 1.6 }} />
+                      <button onClick={() => {
+                        const lines = ['📋 סיכום ביקור בית — ' + selectedClient?.name + ':\n']
+                        VISIT_CHECKLIST.forEach(section => {
+                          const reds = section.items.filter(i => visitFindings[i.id] === 'red').map(i => i.label)
+                          const yellows = section.items.filter(i => visitFindings[i.id] === 'yellow').map(i => i.label)
+                          const greens = section.items.filter(i => visitFindings[i.id] === 'green').map(i => i.label)
+                          if (reds.length || yellows.length || greens.length) {
+                            lines.push(section.section)
+                            if (reds.length) lines.push('🔴 להוציא: ' + reds.join(', '))
+                            if (yellows.length) lines.push('🟡 לאזן: ' + yellows.join(', '))
+                            if (greens.length) lines.push('✅ מצוין: ' + greens.join(', '))
+                            lines.push('')
+                          }
+                        })
+                        if (visitNotes.trim()) lines.push('📝 הערות: ' + visitNotes.trim())
+                        const summary = lines.join('\n')
+                        setSelectedClient(prev => ({ ...prev, pantry_notes: summary }))
+                        updateClientData('pantry_notes', summary)
+                        setVisitOpen(false)
+                      }} style={{ width: '100%', marginTop: 10, padding: 12, borderRadius: 10, background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+                        💾 סכמי וסגרי ← שמרי להנחיות מזווה
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8, color: '#0f4c2a' }}>🎥 וידאו אישי למטופלת</div>
                   <input value={selectedClient.video_url || ''} onChange={e => setSelectedClient(prev => ({ ...prev, video_url: e.target.value }))} onBlur={e => updateClientData('video_url', e.target.value)} placeholder="קישור YouTube או Vimeo..." style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />

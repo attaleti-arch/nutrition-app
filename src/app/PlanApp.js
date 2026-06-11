@@ -106,7 +106,7 @@ const PLAN = {
     { id: 'p1', text: '200 גרם דג לבן (אמנון / בקלה)', hide: ['vegan', 'no_fish'], prot: 40, protDefaultQty: 200 },
     { id: 'p2', text: '100 גרם סלמון', hide: ['vegan', 'no_fish'], prot: 20, protDefaultQty: 100 },
     { id: 'p9', text: '100 גרם טונה / סרדינים', hide: ['vegan', 'no_fish'], prot: 25, protDefaultQty: 100 },
-    { id: 'p10', text: 'גרם חזה עוף', hide: ['vegan', 'vegetarian'], prot: 38, protDefaultQty: 150 },
+    { id: 'p10', text: '150 גרם חזה עוף', hide: ['vegan', 'vegetarian'], prot: 38, protDefaultQty: 150 },
     { id: 'p5', text: '140 גרם ירך עוף / 100 גרם הודו טחון', hide: ['vegan', 'vegetarian'], prot: 28, protDefaultQty: 140 },
     { id: 'p3', text: '150 גרם טופו', tags: ['vegan'], prot: 16, protDefaultQty: 150 },
     { id: 'p8', text: '2 ביצים / חביתה', hide: ['vegan', 'no_eggs'], prot: 13 },
@@ -125,6 +125,8 @@ const PLAN = {
     { id: 'f3', text: '50 גרם אבוקדו (רבע)', tags: ['vegan', 'keto'] },
     { id: 'f4', text: 'חופן אגוזי מלך / שקדים (30 גרם)', tags: ['vegan', 'keto'], hide: ['no_nuts'] },
     { id: 'f5', text: '30 גרם גבינה צהובה 5%', hide: ['vegan', 'no_lactose'] },
+    { id: 'f6', text: '2 כפות חמאת שקדים / בוטנים טבעית', tags: ['vegan'], hide: ['no_nuts'] },
+    { id: 'f7', text: '2 כפות לאבנה', hide: ['vegan', 'no_lactose'] },
   ],
   veggieOptions: [
     { id: 'v1', text: 'סלט טרי — מלפפון, עגבנייה, לימון + מלח' },
