@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import WelcomeDocument from '../WelcomeDocument'
@@ -425,6 +425,7 @@ export default function AdminPage() {
   const [sendingRootsFeedback, setSendingRootsFeedback] = useState(false)
   const [rootsViewMode, setRootsViewMode] = useState('view')
   const [bodyViewMode, setBodyViewMode] = useState('view')
+  const sessionDataRef = useRef({})
 
   // ── ✅ Plate Calculator state ──
   const [calculatingPlate, setCalculatingPlate] = useState(false)
@@ -492,6 +493,7 @@ export default function AdminPage() {
     // טעינה מ-sessions_data (Supabase) — fallback ל-localStorage
     const pw = client.password
     const sd = data?.sessions_data || {}
+    sessionDataRef.current = sd
     const lsLoad = (key, isJson) => { try { const v = localStorage.getItem('sd_' + key + '_' + pw); return v ? (isJson ? JSON.parse(v) : v) : null } catch(e) { return null } }
     const jA = sd.journey_answers || lsLoad('journey_answers', true); if (jA) setJourneyAnswers(a => ({ ...a, ...jA }))
     const jAn = sd.journey_analysis || lsLoad('journey_analysis', false); if (jAn) setJourneyAnalysis(jAn)
@@ -539,11 +541,12 @@ export default function AdminPage() {
 
   function saveSessionKey(key, value) {
     if (!selectedClient?.password) return
+    // ref — תמיד עדכני, אין stale closure
+    sessionDataRef.current = { ...sessionDataRef.current, [key]: value }
+    const merged = sessionDataRef.current
     // localStorage — גיבוי מיידי
     try { localStorage.setItem('sd_' + key + '_' + selectedClient.password, typeof value === 'string' ? value : JSON.stringify(value)) } catch(e) {}
     // Supabase sessions_data — שמירה בענן
-    const current = profile?.sessions_data || {}
-    const merged = { ...current, [key]: value }
     setProfile(p => ({ ...p, sessions_data: merged }))
     supabase.from('client_profiles').upsert({ client_password: selectedClient.password, sessions_data: merged }, { onConflict: 'client_password' }).then(() => {}).catch(() => {})
   }
