@@ -298,19 +298,27 @@ function renderMd(text) {
   const inl = s => esc(s)
     .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
     .replace(/`(.+?)`/g,'<code style="background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:11px">$1</code>')
-  const html = text.split('\n').map(line => {
-    if (/^---+$/.test(line.trim())) return '<hr style="border:none;border-top:1.5px solid #e5e7eb;margin:14px 0"/>'
-    if (line.startsWith('## ')) return `<div style="font-size:15px;font-weight:800;color:#0f4c2a;margin:18px 0 6px;border-bottom:2px solid #dcfce7;padding-bottom:4px">${inl(line.slice(3))}</div>`
-    if (line.startsWith('### ')) return `<div style="font-size:14px;font-weight:700;color:#374151;margin:12px 0 4px">${inl(line.slice(4))}</div>`
-    if (line.startsWith('#### ')) return `<div style="font-size:13px;font-weight:600;color:#6b7280;margin:8px 0 2px">${inl(line.slice(5))}</div>`
-    if (/^\|.+\|$/.test(line)) return `<div style="font-family:monospace;font-size:12px;background:#f9fafb;padding:3px 6px;margin:1px 0;border-radius:4px">${esc(line)}</div>`
-    if (line.startsWith('- ') || line.startsWith('• ')) return `<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#16a34a;flex-shrink:0">•</span><span>${inl(line.slice(2))}</span></div>`
+  const lines = text.split('\n')
+  const html = []
+  let blankCount = 0
+  for (const line of lines) {
+    if (/^---+$/.test(line.trim())) { blankCount = 0; continue } // דלג על קווי הפרדה
+    if (line.trim() === '') {
+      blankCount++
+      if (blankCount === 1) html.push('<div style="height:5px"></div>') // שורה ריקה אחת בלבד
+      continue
+    }
+    blankCount = 0
+    if (line.startsWith('## ')) { html.push(`<div style="font-size:15px;font-weight:800;color:#0f4c2a;margin:14px 0 5px;border-bottom:2px solid #dcfce7;padding-bottom:3px">${inl(line.slice(3))}</div>`); continue }
+    if (line.startsWith('### ')) { html.push(`<div style="font-size:14px;font-weight:700;color:#374151;margin:10px 0 3px">${inl(line.slice(4))}</div>`); continue }
+    if (line.startsWith('#### ')) { html.push(`<div style="font-size:13px;font-weight:600;color:#6b7280;margin:6px 0 2px">${inl(line.slice(5))}</div>`); continue }
+    if (/^\|.+\|$/.test(line)) { html.push(`<div style="font-family:monospace;font-size:12px;background:#f9fafb;padding:3px 6px;margin:1px 0;border-radius:4px">${esc(line)}</div>`); continue }
+    if (line.startsWith('- ') || line.startsWith('• ')) { html.push(`<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#16a34a;flex-shrink:0">•</span><span>${inl(line.slice(2))}</span></div>`); continue }
     const nm = line.match(/^(\d+)\.\s(.+)/)
-    if (nm) return `<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#7c3aed;font-weight:700;flex-shrink:0">${nm[1]}.</span><span>${inl(nm[2])}</span></div>`
-    if (line.trim() === '') return '<div style="height:6px"></div>'
-    return `<div style="margin:2px 0;line-height:1.7">${inl(line)}</div>`
-  }).join('')
-  return { __html: html }
+    if (nm) { html.push(`<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#7c3aed;font-weight:700;flex-shrink:0">${nm[1]}.</span><span>${inl(nm[2])}</span></div>`); continue }
+    html.push(`<div style="margin:2px 0;line-height:1.7">${inl(line)}</div>`)
+  }
+  return { __html: html.join('') }
 }
 
 export default function AdminPage() {
