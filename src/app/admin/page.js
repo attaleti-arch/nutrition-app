@@ -292,6 +292,27 @@ const VISIT_STATUS = {
   red: { emoji: '🔴', label: 'להוציא', bg: '#fee2e2', border: '#ef4444' },
 }
 
+function renderMd(text) {
+  if (!text) return { __html: '' }
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  const inl = s => esc(s)
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/`(.+?)`/g,'<code style="background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:11px">$1</code>')
+  const html = text.split('\n').map(line => {
+    if (/^---+$/.test(line.trim())) return '<hr style="border:none;border-top:1.5px solid #e5e7eb;margin:14px 0"/>'
+    if (line.startsWith('## ')) return `<div style="font-size:15px;font-weight:800;color:#0f4c2a;margin:18px 0 6px;border-bottom:2px solid #dcfce7;padding-bottom:4px">${inl(line.slice(3))}</div>`
+    if (line.startsWith('### ')) return `<div style="font-size:14px;font-weight:700;color:#374151;margin:12px 0 4px">${inl(line.slice(4))}</div>`
+    if (line.startsWith('#### ')) return `<div style="font-size:13px;font-weight:600;color:#6b7280;margin:8px 0 2px">${inl(line.slice(5))}</div>`
+    if (/^\|.+\|$/.test(line)) return `<div style="font-family:monospace;font-size:12px;background:#f9fafb;padding:3px 6px;margin:1px 0;border-radius:4px">${esc(line)}</div>`
+    if (line.startsWith('- ') || line.startsWith('• ')) return `<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#16a34a;flex-shrink:0">•</span><span>${inl(line.slice(2))}</span></div>`
+    const nm = line.match(/^(\d+)\.\s(.+)/)
+    if (nm) return `<div style="display:flex;gap:6px;margin:3px 0"><span style="color:#7c3aed;font-weight:700;flex-shrink:0">${nm[1]}.</span><span>${inl(nm[2])}</span></div>`
+    if (line.trim() === '') return '<div style="height:6px"></div>'
+    return `<div style="margin:2px 0;line-height:1.7">${inl(line)}</div>`
+  }).join('')
+  return { __html: html }
+}
+
 export default function AdminPage() {
   const [pin, setPin] = useState('')
   const [auth, setAuth] = useState(false)
@@ -402,6 +423,8 @@ export default function AdminPage() {
   const [rootsFeedbackSaved, setRootsFeedbackSaved] = useState(false)
   const [rootsFeedbackSent, setRootsFeedbackSent] = useState(false)
   const [sendingRootsFeedback, setSendingRootsFeedback] = useState(false)
+  const [rootsViewMode, setRootsViewMode] = useState('view')
+  const [bodyViewMode, setBodyViewMode] = useState('view')
 
   // ── ✅ Plate Calculator state ──
   const [calculatingPlate, setCalculatingPlate] = useState(false)
@@ -462,7 +485,20 @@ export default function AdminPage() {
       setFoodDiary(data.food_diary || '')
       setExtraBloodNotes(data.extra_blood_notes || '')
       if (data.ai_report) { setAiAnalysis(data.ai_report); setEditableAnalysis(data.ai_report) }
+      if (data.roots_feedback) setRootsFeedback(data.roots_feedback)
+      if (data.body_feedback) setBodyFeedback(data.body_feedback)
     } else setProfile({ client_password: client.password, blood_tests: {} })
+
+    // טעינה מ-localStorage
+    const pw = client.password
+    const lsLoad = (key, isJson) => { try { const v = localStorage.getItem('sd_' + key + '_' + pw); return v ? (isJson ? JSON.parse(v) : v) : null } catch(e) { return null } }
+    const jA = lsLoad('journey_answers', true); if (jA) setJourneyAnswers(a => ({ ...a, ...jA }))
+    const jAn = lsLoad('journey_analysis', false); if (jAn) setJourneyAnalysis(jAn)
+    const sN = lsLoad('session_notes', false); if (sN) setSessionNotes(sN)
+    const rN = lsLoad('roots_notes', true); if (rN) setRootsNotes(n => ({ ...n, ...rN }))
+    const rAn = lsLoad('roots_analysis', false); if (rAn) { setRootsAnalysis(rAn); setRootsEditing(true); setRootsViewMode('view') }
+    const bN = lsLoad('body_notes', true); if (bN) setBodyNotes(n => ({ ...n, ...bN }))
+    const bAn = lsLoad('body_analysis', false); if (bAn) { setBodyAnalysis(bAn); setBodyEditing(true); setBodyViewMode('view') }
     const { data: nd } = await supabase.from('nutrition_data').select('*').order('id')
     setNutritionItems(nd || [])
     const { data: logsData } = await supabase.from('daily_logs').select('*').eq('client_name', client.password).order('log_date', { ascending: false }).limit(30)
@@ -498,6 +534,19 @@ export default function AdminPage() {
     if (!selectedClient) return
     const { error } = await supabase.from('clients').update({ [field]: value }).eq('id', selectedClient.id)
     if (!error) setSelectedClient(prev => ({ ...prev, [field]: value }))
+  }
+
+  function saveLocal(key, value) {
+    if (!selectedClient?.password) return
+    try { localStorage.setItem('sd_' + key + '_' + selectedClient.password, typeof value === 'string' ? value : JSON.stringify(value)) } catch(e) {}
+  }
+  function loadLocal(key, isJson) {
+    if (!selectedClient?.password) return isJson ? null : ''
+    try {
+      const v = localStorage.getItem('sd_' + key + '_' + selectedClient.password)
+      if (!v) return isJson ? null : ''
+      return isJson ? JSON.parse(v) : v
+    } catch(e) { return isJson ? null : '' }
   }
 
   // ── ✅ פונקציות Agent Instructions ──
@@ -1922,7 +1971,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveLocal('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -1938,7 +1987,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#0284c7', marginBottom: 4, fontStyle: 'italic' }}>💙 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveLocal('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -1954,7 +2003,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#0d9488', marginBottom: 4, fontStyle: 'italic' }}>💚 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveLocal('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -1969,7 +2018,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#dc2626', marginBottom: 4, fontStyle: 'italic' }}>❤️ {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveLocal('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -1983,7 +2032,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#d97706', marginBottom: 4, fontStyle: 'italic' }}>🧡 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveLocal('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -1999,7 +2048,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveLocal('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -2009,7 +2058,10 @@ export default function AdminPage() {
                   const profileSummary = `מחלות: ${profile.medical_history || 'לא צוין'} | תרופות: ${profile.medications || 'לא צוין'} | אכילה רגשית: ${profile.emotional_eating || 'לא צוין'} | מה מעכב: ${profile.goal_obstacles || 'לא צוין'}`
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, clientProfile: profileSummary, outputType: 'analysis' }) })
                   const data = await res.json()
-                  setJourneyAnalysis(data.result || '')
+                  const jResult = data.result || ''
+                  setJourneyAnalysis(jResult)
+                  saveLocal('journey_answers', journeyAnswers)
+                  saveLocal('journey_analysis', jResult)
                   setJourneyLoading(false)
                 }} disabled={journeyLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
                   {journeyLoading ? '⏳ מנתח...' : '🔍 הפק ניתוח לפגישה (לעיניך בלבד)'}
@@ -2018,7 +2070,7 @@ export default function AdminPage() {
                 {journeyAnalysis && (
                   <div style={{ background: '#fff', borderRadius: 18, padding: '18px', marginBottom: 16, border: '2px solid #7c3aed' }}>
                     <div style={{ fontWeight: 800, fontSize: 15, color: '#7c3aed', marginBottom: 12 }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
-                    <div style={{ fontSize: 13, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>{journeyAnalysis}</div>
+                    <div style={{ fontSize: 13, color: '#333', lineHeight: 1.9, textAlign: 'right', direction: 'rtl' }} dangerouslySetInnerHTML={renderMd(journeyAnalysis)} />
                   </div>
                 )}
 
@@ -2026,7 +2078,7 @@ export default function AdminPage() {
                   <div style={{ background: '#fff', borderRadius: 18, padding: '18px', border: '1.5px solid #e9d5ff' }}>
                     <div style={{ fontWeight: 800, fontSize: 14, color: '#7c3aed', marginBottom: 8 }}>📝 מה גילינו בפגישה 2</div>
                     <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>הוסיפי בקצרה מה השתנה, מה פירקנו, מה האמונה החדשה</div>
-                    <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
+                    <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} onBlur={() => saveLocal('session_notes', sessionNotes)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
                     <button onClick={async () => {
                       setJourneyDocLoading(true)
                       const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, sessionNotes, outputType: 'clientDoc' }) })
@@ -2069,6 +2121,7 @@ export default function AdminPage() {
                     <textarea
                       value={rootsNotes[key]}
                       onChange={e => setRootsNotes(prev => ({ ...prev, [key]: e.target.value }))}
+                      onBlur={() => saveLocal('roots_notes', rootsNotes)}
                       placeholder={placeholder}
                       rows={3}
                       style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
@@ -2100,7 +2153,11 @@ export default function AdminPage() {
 
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
                   const data = await res.json()
-                  if (data.result) { setRootsAnalysis(data.result); setRootsEditing(true) }
+                  if (data.result) {
+                    setRootsAnalysis(data.result); setRootsEditing(true); setRootsViewMode('view')
+                    saveLocal('roots_notes', rootsNotes)
+                    saveLocal('roots_analysis', data.result)
+                  }
                   setRootsLoading(false)
                 }} disabled={rootsLoading || !Object.values(rootsNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: rootsLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {rootsLoading ? '⏳ מנתח...' : '🌱 הפק ניתוח AI לפגישה'}
@@ -2112,12 +2169,18 @@ export default function AdminPage() {
                     <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div>
                         <div style={{ fontWeight: 800, fontSize: 14 }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
-                        <div style={{ fontSize: 11, color: '#86efac' }}>ערכי והוסיפי — ואז עבדי מחדש או סגרי</div>
+                        <div style={{ fontSize: 11, color: '#86efac' }}>{rootsViewMode === 'view' ? 'לחצי ✏️ לעריכה' : 'ערכי → onBlur שומר אוטומטית'}</div>
                       </div>
-                      <button onClick={() => { setRootsEditing(false); setRootsAnalysis('') }} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => setRootsViewMode(m => m === 'view' ? 'edit' : 'view')} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{rootsViewMode === 'view' ? '✏️ ערכי' : '👁️ צפי'}</button>
+                        <button onClick={() => { setRootsEditing(false); setRootsAnalysis(''); saveLocal('roots_analysis', '') }} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕</button>
+                      </div>
                     </div>
                     <div style={{ padding: 16 }}>
-                      <textarea value={rootsAnalysis} onChange={e => setRootsAnalysis(e.target.value)} rows={20} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      {rootsViewMode === 'view'
+                        ? <div style={{ fontSize: 13, color: '#1a1a1a', lineHeight: 1.8, textAlign: 'right', direction: 'rtl' }} dangerouslySetInnerHTML={renderMd(rootsAnalysis)} />
+                        : <textarea value={rootsAnalysis} onChange={e => setRootsAnalysis(e.target.value)} onBlur={() => saveLocal('roots_analysis', rootsAnalysis)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      }
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
                       <button onClick={async () => {
@@ -2125,7 +2188,7 @@ export default function AdminPage() {
                         const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה שניתנה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + rootsAnalysis
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
                         const data = await res.json()
-                        if (data.result) setRootsAnalysis(data.result)
+                        if (data.result) { setRootsAnalysis(data.result); setRootsViewMode('view'); saveLocal('roots_analysis', data.result) }
                         setRootsLoading(false)
                       }} disabled={rootsLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {rootsLoading ? '⏳...' : '🔄 עבדי מחדש'}
@@ -2207,7 +2270,7 @@ export default function AdminPage() {
                 ].map(({ key, icon, title, placeholder }) => (
                   <div key={key} style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 12, border: '1.5px solid #e5e7eb' }}>
                     <div style={{ fontWeight: 700, fontSize: 14, color: '#0f4c2a', marginBottom: 8 }}>{icon} {title}</div>
-                    <textarea value={bodyNotes[key]} onChange={e => setBodyNotes(prev => ({ ...prev, [key]: e.target.value }))} placeholder={placeholder} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }} />
+                    <textarea value={bodyNotes[key]} onChange={e => setBodyNotes(prev => ({ ...prev, [key]: e.target.value }))} onBlur={() => saveLocal('body_notes', bodyNotes)} placeholder={placeholder} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }} />
                   </div>
                 ))}
 
@@ -2277,7 +2340,11 @@ export default function AdminPage() {
 
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
                   const data = await res.json()
-                  if (data.result) { setBodyAnalysis(data.result); setBodyEditing(true) }
+                  if (data.result) {
+                    setBodyAnalysis(data.result); setBodyEditing(true); setBodyViewMode('view')
+                    saveLocal('body_notes', bodyNotes)
+                    saveLocal('body_analysis', data.result)
+                  }
                   setBodyLoading(false)
                 }} disabled={bodyLoading || !Object.values(bodyNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: bodyLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {bodyLoading ? '⏳ מנתח...' : '🩺 הפק ניתוח AI לפגישה'}
@@ -2288,12 +2355,18 @@ export default function AdminPage() {
                     <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div>
                         <div style={{ fontWeight: 800, fontSize: 14 }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
-                        <div style={{ fontSize: 11, color: '#86efac' }}>ערכי והוסיפי — ואז עבדי מחדש או הפיקי משוב</div>
+                        <div style={{ fontSize: 11, color: '#86efac' }}>{bodyViewMode === 'view' ? 'לחצי ✏️ לעריכה' : 'ערכי → onBlur שומר אוטומטית'}</div>
                       </div>
-                      <button onClick={() => { setBodyEditing(false); setBodyAnalysis('') }} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => setBodyViewMode(m => m === 'view' ? 'edit' : 'view')} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{bodyViewMode === 'view' ? '✏️ ערכי' : '👁️ צפי'}</button>
+                        <button onClick={() => { setBodyEditing(false); setBodyAnalysis(''); saveLocal('body_analysis', '') }} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕</button>
+                      </div>
                     </div>
                     <div style={{ padding: 16 }}>
-                      <textarea value={bodyAnalysis} onChange={e => setBodyAnalysis(e.target.value)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      {bodyViewMode === 'view'
+                        ? <div style={{ fontSize: 13, color: '#1a1a1a', lineHeight: 1.8, textAlign: 'right', direction: 'rtl' }} dangerouslySetInnerHTML={renderMd(bodyAnalysis)} />
+                        : <textarea value={bodyAnalysis} onChange={e => setBodyAnalysis(e.target.value)} onBlur={() => saveLocal('body_analysis', bodyAnalysis)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      }
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
                       <button onClick={async () => {
@@ -2301,7 +2374,7 @@ export default function AdminPage() {
                         const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + bodyAnalysis
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
                         const data = await res.json()
-                        if (data.result) setBodyAnalysis(data.result)
+                        if (data.result) { setBodyAnalysis(data.result); setBodyViewMode('view'); saveLocal('body_analysis', data.result) }
                         setBodyLoading(false)
                       }} disabled={bodyLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {bodyLoading ? '⏳...' : '🔄 עבדי מחדש'}
