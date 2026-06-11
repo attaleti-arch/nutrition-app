@@ -59,14 +59,14 @@ const BONUS_RECIPES = [
 const PLAN = {
   bokerSnack: 'לפני: נס קפה + חטיף בריאות עד 99 קל',
   bokerProtein: [
-    { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
-    { id: 'b3', text: 'מעדן פרו + פרי', tags: ['vegan'] },
-    { id: 'b_kotej', text: 'קוטג׳ 5% (200g)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b7', text: '2 ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'] },
-    { id: 'b_tuna_full', text: 'טונה — חבילה שלמה (160g)', tags: [], hide: ['vegan', 'vegetarian'] },
-    { id: 'b_tuna_half', text: 'טונה — חצי חבילה (80g)', tags: [], hide: ['vegan', 'vegetarian'] },
+    { id: 'b1', text: 'משקה / חטיף חלבון', tags: [], prot: 25 },
+    { id: 'b3', text: 'מעדן פרו + פרי', tags: ['vegan'], prot: 15 },
+    { id: 'b_kotej', text: 'קוטג׳ 5% (200g)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 22 },
+    { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 14 },
+    { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 7 },
+    { id: 'b7', text: '2 ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'], prot: 13 },
+    { id: 'b_tuna_full', text: 'טונה — חבילה שלמה (160g)', tags: [], hide: ['vegan', 'vegetarian'], prot: 35 },
+    { id: 'b_tuna_half', text: 'טונה — חצי חבילה (80g)', tags: [], hide: ['vegan', 'vegetarian'], prot: 18 },
   ],
   bokerCarbs: [
     { id: 'b4', text: '5 פריכיות דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
@@ -103,21 +103,21 @@ const PLAN = {
     { id: 'c_gf2', text: '150 גרם פסטה מאורז / תירס', tags: ['vegan'], hide: ['keto'] },
   ],
   protOptions: [
-    { id: 'p1', text: '200 גרם דג לבן (אמנון / בקלה)', hide: ['vegan', 'no_fish'] },
-    { id: 'p2', text: '100 גרם סלמון', hide: ['vegan', 'no_fish'] },
-    { id: 'p9', text: '100 גרם טונה / סרדינים', hide: ['vegan', 'no_fish'] },
-    { id: 'p10', text: 'גרם חזה עוף', hide: ['vegan', 'vegetarian'] },
-    { id: 'p5', text: '140 גרם ירך עוף / 100 גרם הודו טחון', hide: ['vegan', 'vegetarian'] },
-    { id: 'p3', text: '150 גרם טופו', tags: ['vegan'] },
-    { id: 'p8', text: '2 ביצים / חביתה', hide: ['vegan', 'no_eggs'] },
-    { id: 'p11', text: '150 גרם מג׳דרה (עדשים + אורז)', tags: ['vegan'] },
-    { id: 'p6', text: '2 המבורגר צמחוני', tags: ['vegan'] },
-    { id: 'p13', text: '200 גרם גרגירי חומוס מבושל', tags: ['vegan'] },
-    { id: 'p14', text: '200 גרם עדשים מבושלות', tags: ['vegan'] },
-    { id: 'p15', text: '150 גרם שעועית / פול מבושל', tags: ['vegan'] },
-    { id: 'p16', text: '150 גרם אדממה', tags: ['vegan'] },
-    { id: 'p17', text: '200 גרם קוטג׳ 3% / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'] },
-    { id: 'p18', text: '200 גרם יוגורט יווני 0%', hide: ['vegan', 'no_lactose'] },
+    { id: 'p1', text: '200 גרם דג לבן (אמנון / בקלה)', hide: ['vegan', 'no_fish'], prot: 40, protDefaultQty: 200 },
+    { id: 'p2', text: '100 גרם סלמון', hide: ['vegan', 'no_fish'], prot: 20, protDefaultQty: 100 },
+    { id: 'p9', text: '100 גרם טונה / סרדינים', hide: ['vegan', 'no_fish'], prot: 25, protDefaultQty: 100 },
+    { id: 'p10', text: 'גרם חזה עוף', hide: ['vegan', 'vegetarian'], prot: 38, protDefaultQty: 150 },
+    { id: 'p5', text: '140 גרם ירך עוף / 100 גרם הודו טחון', hide: ['vegan', 'vegetarian'], prot: 28, protDefaultQty: 140 },
+    { id: 'p3', text: '150 גרם טופו', tags: ['vegan'], prot: 16, protDefaultQty: 150 },
+    { id: 'p8', text: '2 ביצים / חביתה', hide: ['vegan', 'no_eggs'], prot: 13 },
+    { id: 'p11', text: '150 גרם מג׳דרה (עדשים + אורז)', tags: ['vegan'], prot: 12, protDefaultQty: 150 },
+    { id: 'p6', text: '2 המבורגר צמחוני', tags: ['vegan'], prot: 16 },
+    { id: 'p13', text: '200 גרם גרגירי חומוס מבושל', tags: ['vegan'], prot: 14, protDefaultQty: 200 },
+    { id: 'p14', text: '200 גרם עדשים מבושלות', tags: ['vegan'], prot: 18, protDefaultQty: 200 },
+    { id: 'p15', text: '150 גרם שעועית / פול מבושל', tags: ['vegan'], prot: 11, protDefaultQty: 150 },
+    { id: 'p16', text: '150 גרם אדממה', tags: ['vegan'], prot: 18, protDefaultQty: 150 },
+    { id: 'p17', text: '200 גרם קוטג׳ 3% / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'], prot: 22, protDefaultQty: 200 },
+    { id: 'p18', text: '200 גרם יוגורט יווני 0%', hide: ['vegan', 'no_lactose'], prot: 20, protDefaultQty: 200 },
   ],
   fatOptions: [
     { id: 'f1', text: 'כף שמן זית', tags: ['vegan', 'keto'] },
@@ -764,6 +764,9 @@ export default function PlanApp({ clientName, userPassword }) {
   const [fatigueLevel, setFatigueLevel] = useState(0)
   const [hungerLevel, setHungerLevel] = useState(0)
   const [userMood, setUserMood] = useState(null)
+  const [streak, setStreak] = useState(0)
+  const [weeklyDays, setWeeklyDays] = useState(0)
+  const [weekDates, setWeekDates] = useState([])
   const [userWeight, setUserWeight] = useState('')
   const [userHeight, setUserHeight] = useState('')
   const [userAge, setUserAge] = useState('')
@@ -853,6 +856,28 @@ export default function PlanApp({ clientName, userPassword }) {
         setScanCalories(t.scan_calories || 0); setScanDesc(t.scan_desc || '')
         setFeedback(t.trainer_feedback || null); setReportApproved(t.report_approved || false)
         if (t.nlp_metrics) { var m = t.nlp_metrics; setStressLevel(m.stress || 0); setFatigueLevel(m.fatigue || 0); setHungerLevel(m.hunger || 0); setUserMood(m.mood || null) }
+      }
+
+      // חישוב רצף ושבוע
+      var { data: recentLogs } = await supabase.from('daily_logs').select('log_date').eq('client_name', dbKey).order('log_date', { ascending: false }).limit(90)
+      if (recentLogs && recentLogs.length > 0) {
+        var loggedDates = new Set(recentLogs.map(function(l) { return l.log_date }))
+        var streakCount = 0
+        var checkD = new Date()
+        if (!loggedDates.has(checkD.toLocaleDateString('sv-SE'))) checkD.setDate(checkD.getDate() - 1)
+        while (loggedDates.has(checkD.toLocaleDateString('sv-SE'))) {
+          streakCount++; checkD.setDate(checkD.getDate() - 1)
+        }
+        setStreak(streakCount)
+        var today2 = new Date()
+        var dow = today2.getDay()
+        var wkDays = []
+        for (var i = 0; i <= 6; i++) {
+          var d3 = new Date(today2); d3.setDate(today2.getDate() - dow + i)
+          wkDays.push({ date: d3.toLocaleDateString('sv-SE'), logged: loggedDates.has(d3.toLocaleDateString('sv-SE')) })
+        }
+        setWeekDates(wkDays)
+        setWeeklyDays(wkDays.filter(function(d) { return d.logged }).length)
       }
     }
     if (dbKey) load()
@@ -952,6 +977,26 @@ export default function PlanApp({ clientName, userPassword }) {
     return (bokerExtraProt || 0) + (lunchExtraProt || 0) + (erevExtraProt || 0)
   }
 
+  function calcEatenProtein() {
+    var total = 0
+    var bokerProtMap = {}
+    PLAN.bokerProtein.forEach(function(item) { if (item.prot) bokerProtMap[item.id] = item })
+    if (checks) Object.keys(checks).forEach(function(id) { if (checks[id] && bokerProtMap[id]) total += bokerProtMap[id].prot })
+    var protOptMap = {}
+    PLAN.protOptions.forEach(function(item) { if (item.prot) protOptMap[item.id] = item })
+    Object.keys(protChecks).forEach(function(id) {
+      if (protChecks[id] && protOptMap[id]) {
+        var item = protOptMap[id]
+        if (id === 'p8') { total += Math.round((protQty[id] || 2) * 6.5) }
+        else if (item.protDefaultQty && protQty[id]) { total += Math.round(item.prot * (protQty[id] / item.protDefaultQty)) }
+        else { total += item.prot }
+      }
+    })
+    total += calcExtraProt()
+    total += (scanProtein || 0)
+    return total
+  }
+
   const saveProfile = async function() {
     if (!userWeight || !userHeight || !userAge) return
     await supabase.from('clients').update({
@@ -1011,6 +1056,7 @@ export default function PlanApp({ clientName, userPassword }) {
 
   const targets = calcTargets(parseFloat(userWeight), parseFloat(userHeight), parseInt(userAge), userGender, userActivity, userGoal)
   const eatenCalories = calcEatenCalories()
+  const eatenProtein = calcEatenProtein()
   const filteredBoker = PLAN.boker.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerProtein = PLAN.bokerProtein.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerCarbs = PLAN.bokerCarbs.filter(i => !shouldHide(i, dietType, restrictions))
@@ -1102,34 +1148,44 @@ export default function PlanApp({ clientName, userPassword }) {
     <div style={{ minHeight: '100vh', background: '#f8fafc', direction: 'rtl' }}>
       {showConfetti && <Confetti />}
 
-      {/* ✅ בר קלוריות צף */}
+      {/* ✅ בר קלוריות וחלבון צף */}
       {activeTab === 'diary' && profileDone && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
           background: '#fff', borderTop: '1px solid #e5e7eb',
           padding: '8px 16px 20px', boxShadow: '0 -4px 16px rgba(0,0,0,0.08)',
         }}>
-          <div style={{ maxWidth: 520, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#555', marginBottom: 4 }}>
-                <span>🔥 {Math.round(eatenCalories)} קל</span>
-                <span style={{ color: eatenCalories >= targets.calories ? '#f97316' : '#16a34a', fontWeight: 700 }}>
-                  {eatenCalories >= targets.calories ? '✅ הגעת ליעד!' : `נשאר ${targets.calories - Math.round(eatenCalories)} קל`}
+          <div style={{ maxWidth: 520, margin: '0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#555', marginBottom: 4 }}>
+                  <span>🔥 {Math.round(eatenCalories)} קל</span>
+                  <span style={{ color: eatenCalories >= targets.calories ? '#f97316' : '#16a34a', fontWeight: 700 }}>
+                    {eatenCalories >= targets.calories ? '✅ הגעת ליעד!' : `נשאר ${targets.calories - Math.round(eatenCalories)} קל`}
+                  </span>
+                  <span>{targets.calories} קל</span>
+                </div>
+                <div style={{ height: 6, background: '#f3f4f6', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{
+                    width: Math.min(100, Math.round((eatenCalories / targets.calories) * 100)) + '%',
+                    height: '100%',
+                    background: eatenCalories >= targets.calories ? '#f97316' : '#16a34a',
+                    borderRadius: 99, transition: 'width 0.3s'
+                  }} />
+                </div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: eatenCalories >= targets.calories ? '#f97316' : '#0f4c2a', flexShrink: 0 }}>
+                {Math.min(100, Math.round((eatenCalories / targets.calories) * 100))}%
+              </div>
+            </div>
+            {targets && eatenProtein > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 11, color: eatenProtein >= targets.protein ? '#16a34a' : '#6b7280', fontWeight: 700 }}>
+                  🥩 {Math.round(eatenProtein)}g / {targets.protein}g חלבון
                 </span>
-                <span>{targets.calories} קל</span>
+                {eatenProtein >= targets.protein && <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>✅</span>}
               </div>
-              <div style={{ height: 6, background: '#f3f4f6', borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{
-                  width: Math.min(100, Math.round((eatenCalories / targets.calories) * 100)) + '%',
-                  height: '100%',
-                  background: eatenCalories >= targets.calories ? '#f97316' : '#16a34a',
-                  borderRadius: 99, transition: 'width 0.3s'
-                }} />
-              </div>
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: eatenCalories >= targets.calories ? '#f97316' : '#0f4c2a', flexShrink: 0 }}>
-              {Math.min(100, Math.round((eatenCalories / targets.calories) * 100))}%
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -1528,6 +1584,48 @@ export default function PlanApp({ clientName, userPassword }) {
           </div>
         )}
         {feedback && <FeedbackCard feedback={feedback} clientName={displayName} logDate={today} onOpenFull={() => setShowDailyFeedback(true)} />}
+
+        {/* ✅ כרטיס רצף ושבוע */}
+        {weekDates.length > 0 && (
+          <div style={{ background: 'linear-gradient(135deg,#fff7ed,#fef3c7)', borderRadius: 18, padding: '14px 18px', marginBottom: 14, border: '1.5px solid #fed7aa' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {streak >= 2 ? (
+                  <>
+                    <span style={{ fontSize: 22 }}>🔥</span>
+                    <div>
+                      <div style={{ fontWeight: 900, fontSize: 14, color: '#c2410c' }}>{streak} ימים ברצף!</div>
+                      <div style={{ fontSize: 11, color: '#9a3412' }}>המשיכי כך</div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ fontSize: 22 }}>📅</span>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: '#92400e' }}>שבוע זה</div>
+                      <div style={{ fontSize: 11, color: '#a16207' }}>{weeklyDays} {weeklyDays === 1 ? 'יום' : 'ימים'} מתועדים</div>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#92400e' }}>{weeklyDays}/7</div>
+            </div>
+            <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+              {weekDates.map(function(day, i) {
+                const labels = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש']
+                const isToday = day.date === todayKey
+                return (
+                  <div key={day.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: day.logged ? '#16a34a' : isToday ? '#fed7aa' : '#f3f4f6', border: isToday ? '2px solid #f97316' : '2px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {day.logged && <span style={{ color: '#fff', fontSize: 14 }}>✓</span>}
+                    </div>
+                    <div style={{ fontSize: 9, color: isToday ? '#f97316' : '#9ca3af', fontWeight: isToday ? 800 : 400 }}>{labels[i]}</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
 
         <div style={{ background: '#fff', borderRadius: 18, padding: 18, border: '1.5px solid #e2e8f0', marginBottom: 14 }}>
           <div style={{ fontWeight: 800, fontSize: 15, color: C.greenDark, marginBottom: 12, textAlign: 'right' }}>🧠 מודעות והקשבה לגוף</div>
