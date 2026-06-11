@@ -489,16 +489,17 @@ export default function AdminPage() {
       if (data.body_feedback) setBodyFeedback(data.body_feedback)
     } else setProfile({ client_password: client.password, blood_tests: {} })
 
-    // טעינה מ-localStorage
+    // טעינה מ-sessions_data (Supabase) — fallback ל-localStorage
     const pw = client.password
+    const sd = data?.sessions_data || {}
     const lsLoad = (key, isJson) => { try { const v = localStorage.getItem('sd_' + key + '_' + pw); return v ? (isJson ? JSON.parse(v) : v) : null } catch(e) { return null } }
-    const jA = lsLoad('journey_answers', true); if (jA) setJourneyAnswers(a => ({ ...a, ...jA }))
-    const jAn = lsLoad('journey_analysis', false); if (jAn) setJourneyAnalysis(jAn)
-    const sN = lsLoad('session_notes', false); if (sN) setSessionNotes(sN)
-    const rN = lsLoad('roots_notes', true); if (rN) setRootsNotes(n => ({ ...n, ...rN }))
-    const rAn = lsLoad('roots_analysis', false); if (rAn) { setRootsAnalysis(rAn); setRootsEditing(true); setRootsViewMode('view') }
-    const bN = lsLoad('body_notes', true); if (bN) setBodyNotes(n => ({ ...n, ...bN }))
-    const bAn = lsLoad('body_analysis', false); if (bAn) { setBodyAnalysis(bAn); setBodyEditing(true); setBodyViewMode('view') }
+    const jA = sd.journey_answers || lsLoad('journey_answers', true); if (jA) setJourneyAnswers(a => ({ ...a, ...jA }))
+    const jAn = sd.journey_analysis || lsLoad('journey_analysis', false); if (jAn) setJourneyAnalysis(jAn)
+    const sN = sd.session_notes || lsLoad('session_notes', false); if (sN) setSessionNotes(sN)
+    const rN = sd.roots_notes || lsLoad('roots_notes', true); if (rN) setRootsNotes(n => ({ ...n, ...rN }))
+    const rAn = sd.roots_analysis || lsLoad('roots_analysis', false); if (rAn) { setRootsAnalysis(rAn); setRootsEditing(true); setRootsViewMode('view') }
+    const bN = sd.body_notes || lsLoad('body_notes', true); if (bN) setBodyNotes(n => ({ ...n, ...bN }))
+    const bAn = sd.body_analysis || lsLoad('body_analysis', false); if (bAn) { setBodyAnalysis(bAn); setBodyEditing(true); setBodyViewMode('view') }
     const { data: nd } = await supabase.from('nutrition_data').select('*').order('id')
     setNutritionItems(nd || [])
     const { data: logsData } = await supabase.from('daily_logs').select('*').eq('client_name', client.password).order('log_date', { ascending: false }).limit(30)
@@ -536,17 +537,15 @@ export default function AdminPage() {
     if (!error) setSelectedClient(prev => ({ ...prev, [field]: value }))
   }
 
-  function saveLocal(key, value) {
+  function saveSessionKey(key, value) {
     if (!selectedClient?.password) return
+    // localStorage — גיבוי מיידי
     try { localStorage.setItem('sd_' + key + '_' + selectedClient.password, typeof value === 'string' ? value : JSON.stringify(value)) } catch(e) {}
-  }
-  function loadLocal(key, isJson) {
-    if (!selectedClient?.password) return isJson ? null : ''
-    try {
-      const v = localStorage.getItem('sd_' + key + '_' + selectedClient.password)
-      if (!v) return isJson ? null : ''
-      return isJson ? JSON.parse(v) : v
-    } catch(e) { return isJson ? null : '' }
+    // Supabase sessions_data — שמירה בענן
+    const current = profile?.sessions_data || {}
+    const merged = { ...current, [key]: value }
+    setProfile(p => ({ ...p, sessions_data: merged }))
+    supabase.from('client_profiles').upsert({ client_password: selectedClient.password, sessions_data: merged }, { onConflict: 'client_password' }).then(() => {}).catch(() => {})
   }
 
   // ── ✅ פונקציות Agent Instructions ──
@@ -1971,7 +1970,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveLocal('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveSessionKey('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -1987,7 +1986,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#0284c7', marginBottom: 4, fontStyle: 'italic' }}>💙 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveLocal('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveSessionKey('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -2003,7 +2002,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#0d9488', marginBottom: 4, fontStyle: 'italic' }}>💚 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveLocal('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveSessionKey('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -2018,7 +2017,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#dc2626', marginBottom: 4, fontStyle: 'italic' }}>❤️ {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveLocal('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveSessionKey('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -2032,7 +2031,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#d97706', marginBottom: 4, fontStyle: 'italic' }}>🧡 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveLocal('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveSessionKey('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -2048,7 +2047,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveLocal('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveSessionKey('journey_answers', journeyAnswers)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -2060,8 +2059,8 @@ export default function AdminPage() {
                   const data = await res.json()
                   const jResult = data.result || ''
                   setJourneyAnalysis(jResult)
-                  saveLocal('journey_answers', journeyAnswers)
-                  saveLocal('journey_analysis', jResult)
+                  saveSessionKey('journey_answers', journeyAnswers)
+                  saveSessionKey('journey_analysis', jResult)
                   setJourneyLoading(false)
                 }} disabled={journeyLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
                   {journeyLoading ? '⏳ מנתח...' : '🔍 הפק ניתוח לפגישה (לעיניך בלבד)'}
@@ -2078,7 +2077,7 @@ export default function AdminPage() {
                   <div style={{ background: '#fff', borderRadius: 18, padding: '18px', border: '1.5px solid #e9d5ff' }}>
                     <div style={{ fontWeight: 800, fontSize: 14, color: '#7c3aed', marginBottom: 8 }}>📝 מה גילינו בפגישה 2</div>
                     <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>הוסיפי בקצרה מה השתנה, מה פירקנו, מה האמונה החדשה</div>
-                    <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} onBlur={() => saveLocal('session_notes', sessionNotes)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
+                    <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} onBlur={() => saveSessionKey('session_notes', sessionNotes)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
                     <button onClick={async () => {
                       setJourneyDocLoading(true)
                       const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, sessionNotes, outputType: 'clientDoc' }) })
@@ -2121,7 +2120,7 @@ export default function AdminPage() {
                     <textarea
                       value={rootsNotes[key]}
                       onChange={e => setRootsNotes(prev => ({ ...prev, [key]: e.target.value }))}
-                      onBlur={() => saveLocal('roots_notes', rootsNotes)}
+                      onBlur={() => saveSessionKey('roots_notes', rootsNotes)}
                       placeholder={placeholder}
                       rows={3}
                       style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
@@ -2155,8 +2154,8 @@ export default function AdminPage() {
                   const data = await res.json()
                   if (data.result) {
                     setRootsAnalysis(data.result); setRootsEditing(true); setRootsViewMode('view')
-                    saveLocal('roots_notes', rootsNotes)
-                    saveLocal('roots_analysis', data.result)
+                    saveSessionKey('roots_notes', rootsNotes)
+                    saveSessionKey('roots_analysis', data.result)
                   }
                   setRootsLoading(false)
                 }} disabled={rootsLoading || !Object.values(rootsNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: rootsLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
@@ -2173,13 +2172,13 @@ export default function AdminPage() {
                       </div>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button onClick={() => setRootsViewMode(m => m === 'view' ? 'edit' : 'view')} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{rootsViewMode === 'view' ? '✏️ ערכי' : '👁️ צפי'}</button>
-                        <button onClick={() => { setRootsEditing(false); setRootsAnalysis(''); saveLocal('roots_analysis', '') }} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕</button>
+                        <button onClick={() => { setRootsEditing(false); setRootsAnalysis(''); saveSessionKey('roots_analysis', '') }} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕</button>
                       </div>
                     </div>
                     <div style={{ padding: 16 }}>
                       {rootsViewMode === 'view'
                         ? <div style={{ fontSize: 13, color: '#1a1a1a', lineHeight: 1.8, textAlign: 'right', direction: 'rtl' }} dangerouslySetInnerHTML={renderMd(rootsAnalysis)} />
-                        : <textarea value={rootsAnalysis} onChange={e => setRootsAnalysis(e.target.value)} onBlur={() => saveLocal('roots_analysis', rootsAnalysis)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                        : <textarea value={rootsAnalysis} onChange={e => setRootsAnalysis(e.target.value)} onBlur={() => saveSessionKey('roots_analysis', rootsAnalysis)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
                       }
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
@@ -2188,7 +2187,7 @@ export default function AdminPage() {
                         const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה שניתנה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + rootsAnalysis
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
                         const data = await res.json()
-                        if (data.result) { setRootsAnalysis(data.result); setRootsViewMode('view'); saveLocal('roots_analysis', data.result) }
+                        if (data.result) { setRootsAnalysis(data.result); setRootsViewMode('view'); saveSessionKey('roots_analysis', data.result) }
                         setRootsLoading(false)
                       }} disabled={rootsLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {rootsLoading ? '⏳...' : '🔄 עבדי מחדש'}
@@ -2270,7 +2269,7 @@ export default function AdminPage() {
                 ].map(({ key, icon, title, placeholder }) => (
                   <div key={key} style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 12, border: '1.5px solid #e5e7eb' }}>
                     <div style={{ fontWeight: 700, fontSize: 14, color: '#0f4c2a', marginBottom: 8 }}>{icon} {title}</div>
-                    <textarea value={bodyNotes[key]} onChange={e => setBodyNotes(prev => ({ ...prev, [key]: e.target.value }))} onBlur={() => saveLocal('body_notes', bodyNotes)} placeholder={placeholder} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }} />
+                    <textarea value={bodyNotes[key]} onChange={e => setBodyNotes(prev => ({ ...prev, [key]: e.target.value }))} onBlur={() => saveSessionKey('body_notes', bodyNotes)} placeholder={placeholder} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }} />
                   </div>
                 ))}
 
@@ -2342,8 +2341,8 @@ export default function AdminPage() {
                   const data = await res.json()
                   if (data.result) {
                     setBodyAnalysis(data.result); setBodyEditing(true); setBodyViewMode('view')
-                    saveLocal('body_notes', bodyNotes)
-                    saveLocal('body_analysis', data.result)
+                    saveSessionKey('body_notes', bodyNotes)
+                    saveSessionKey('body_analysis', data.result)
                   }
                   setBodyLoading(false)
                 }} disabled={bodyLoading || !Object.values(bodyNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: bodyLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
@@ -2359,13 +2358,13 @@ export default function AdminPage() {
                       </div>
                       <div style={{ display: 'flex', gap: 8 }}>
                         <button onClick={() => setBodyViewMode(m => m === 'view' ? 'edit' : 'view')} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{bodyViewMode === 'view' ? '✏️ ערכי' : '👁️ צפי'}</button>
-                        <button onClick={() => { setBodyEditing(false); setBodyAnalysis(''); saveLocal('body_analysis', '') }} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕</button>
+                        <button onClick={() => { setBodyEditing(false); setBodyAnalysis(''); saveSessionKey('body_analysis', '') }} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕</button>
                       </div>
                     </div>
                     <div style={{ padding: 16 }}>
                       {bodyViewMode === 'view'
                         ? <div style={{ fontSize: 13, color: '#1a1a1a', lineHeight: 1.8, textAlign: 'right', direction: 'rtl' }} dangerouslySetInnerHTML={renderMd(bodyAnalysis)} />
-                        : <textarea value={bodyAnalysis} onChange={e => setBodyAnalysis(e.target.value)} onBlur={() => saveLocal('body_analysis', bodyAnalysis)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                        : <textarea value={bodyAnalysis} onChange={e => setBodyAnalysis(e.target.value)} onBlur={() => saveSessionKey('body_analysis', bodyAnalysis)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
                       }
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
@@ -2374,7 +2373,7 @@ export default function AdminPage() {
                         const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + bodyAnalysis
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
                         const data = await res.json()
-                        if (data.result) { setBodyAnalysis(data.result); setBodyViewMode('view'); saveLocal('body_analysis', data.result) }
+                        if (data.result) { setBodyAnalysis(data.result); setBodyViewMode('view'); saveSessionKey('body_analysis', data.result) }
                         setBodyLoading(false)
                       }} disabled={bodyLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {bodyLoading ? '⏳...' : '🔄 עבדי מחדש'}
