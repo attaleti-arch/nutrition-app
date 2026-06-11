@@ -1305,7 +1305,7 @@ export default function PlanApp({ clientName, userPassword }) {
       {showAiReport && aiReport && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
           <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
-            <button onClick={() => { setShowAiReport(false); setAiReport(null); supabase.from('client_profiles').update({ ai_report: null }).eq('client_password', dbKey).then(() => {}).catch(() => {}) }} style={{ padding: '10px 18px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
+            <button onClick={() => setShowAiReport(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
           </div>
           <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
             <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
