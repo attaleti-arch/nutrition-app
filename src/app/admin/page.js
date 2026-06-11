@@ -294,31 +294,60 @@ const VISIT_STATUS = {
 
 function renderMd(text) {
   if (!text) return { __html: '' }
+  const SECTION_COLORS = [
+    { bg: '#f0fdf4', border: '#16a34a', title: '#15803d' },
+    { bg: '#eff6ff', border: '#2563eb', title: '#1d4ed8' },
+    { bg: '#fffbeb', border: '#d97706', title: '#b45309' },
+    { bg: '#fef2f2', border: '#dc2626', title: '#b91c1c' },
+    { bg: '#faf5ff', border: '#7c3aed', title: '#6d28d9' },
+    { bg: '#f0fdfa', border: '#0d9488', title: '#0f766e' },
+    { bg: '#fff7ed', border: '#f97316', title: '#c2410c' },
+  ]
+  const SESSION_COLOR = { bg: '#f0fdf4', border: '#0f4c2a', title: '#0f4c2a' }
   const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-  const inl = s => esc(s)
-    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-    .replace(/`(.+?)`/g,'<code style="background:#f3f4f6;padding:1px 4px;border-radius:3px;font-size:11px">$1</code>')
-  const lines = text.split('\n')
-  const html = []
-  let blankCount = 0
-  for (const line of lines) {
-    if (/^---+$/.test(line.trim())) { blankCount = 0; continue } // דלג על קווי הפרדה
-    if (line.trim() === '') {
-      blankCount++
-      if (blankCount === 1) html.push('<div style="height:5px"></div>') // שורה ריקה אחת בלבד
-      continue
+  const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`(.+?)`/g,'<code style="background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;font-size:11px">$1</code>')
+
+  // פרסור לבלוקים לפי ## headers
+  const blocks = []
+  let cur = null
+  for (const line of text.split('\n')) {
+    if (/^---+$/.test(line.trim())) continue
+    if (line.startsWith('## ')) {
+      const title = line.slice(3).trim()
+      const m = title.match(/^(\d+)\./)
+      const color = m ? (SECTION_COLORS[parseInt(m[1]) - 1] || SESSION_COLOR) : SESSION_COLOR
+      cur = { color, title, lines: [] }
+      blocks.push(cur)
+    } else {
+      if (!cur) { cur = { color: SESSION_COLOR, title: null, lines: [] }; blocks.push(cur) }
+      cur.lines.push(line)
     }
-    blankCount = 0
-    if (line.startsWith('## ')) { html.push(`<div style="font-size:15px;font-weight:800;color:#0f4c2a;margin:14px 0 5px;border-bottom:2px solid #dcfce7;padding-bottom:3px">${inl(line.slice(3))}</div>`); continue }
-    if (line.startsWith('### ')) { html.push(`<div style="font-size:14px;font-weight:700;color:#374151;margin:10px 0 3px">${inl(line.slice(4))}</div>`); continue }
-    if (line.startsWith('#### ')) { html.push(`<div style="font-size:13px;font-weight:600;color:#6b7280;margin:6px 0 2px">${inl(line.slice(5))}</div>`); continue }
-    if (/^\|.+\|$/.test(line)) { html.push(`<div style="font-family:monospace;font-size:12px;background:#f9fafb;padding:3px 6px;margin:1px 0;border-radius:4px">${esc(line)}</div>`); continue }
-    if (line.startsWith('- ') || line.startsWith('• ')) { html.push(`<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#16a34a;flex-shrink:0">•</span><span>${inl(line.slice(2))}</span></div>`); continue }
-    const nm = line.match(/^(\d+)\.\s(.+)/)
-    if (nm) { html.push(`<div style="display:flex;gap:6px;margin:2px 0"><span style="color:#7c3aed;font-weight:700;flex-shrink:0">${nm[1]}.</span><span>${inl(nm[2])}</span></div>`); continue }
-    html.push(`<div style="margin:2px 0;line-height:1.7">${inl(line)}</div>`)
   }
-  return { __html: html.join('') }
+
+  const renderLines = (lines, accent) => {
+    const out = []
+    let blanks = 0
+    for (const line of lines) {
+      if (line.trim() === '') { blanks++; if (blanks === 1) out.push('<div style="height:4px"></div>'); continue }
+      blanks = 0
+      if (line.startsWith('### ')) { out.push(`<div style="font-size:13px;font-weight:700;color:${accent};margin:8px 0 3px">${inl(line.slice(4))}</div>`); continue }
+      if (line.startsWith('#### ')) { out.push(`<div style="font-size:12px;font-weight:600;color:#6b7280;margin:5px 0 2px">${inl(line.slice(5))}</div>`); continue }
+      if (/^\|.+\|$/.test(line)) { out.push(`<div style="font-family:monospace;font-size:11px;background:rgba(0,0,0,0.04);padding:3px 6px;margin:1px 0;border-radius:4px">${esc(line)}</div>`); continue }
+      if (line.startsWith('- ') || line.startsWith('• ')) { out.push(`<div style="display:flex;gap:6px;margin:2px 0"><span style="color:${accent};flex-shrink:0;font-weight:700">•</span><span>${inl(line.slice(2))}</span></div>`); continue }
+      const nm = line.match(/^(\d+)\.\s(.+)/)
+      if (nm) { out.push(`<div style="display:flex;gap:6px;margin:2px 0"><span style="color:${accent};font-weight:700;flex-shrink:0">${nm[1]}.</span><span>${inl(nm[2])}</span></div>`); continue }
+      out.push(`<div style="margin:2px 0;line-height:1.7">${inl(line)}</div>`)
+    }
+    return out.join('')
+  }
+
+  const html = blocks.map(b =>
+    `<div style="background:${b.color.bg};border:1.5px solid ${b.color.border};border-radius:12px;padding:14px 16px;margin-bottom:10px">` +
+    (b.title ? `<div style="font-size:15px;font-weight:800;color:${b.color.title};margin-bottom:8px">${inl(b.title)}</div>` : '') +
+    renderLines(b.lines, b.color.border) +
+    '</div>'
+  ).join('')
+  return { __html: html }
 }
 
 export default function AdminPage() {
