@@ -747,7 +747,7 @@ ${sessionNotes ? 'מה גילינו בפגישה (הערות אתי): ' + sessio
     if (mode === 'rootsAnalysis' && body.prompt) {
       const msg = await client.messages.create({
         model: 'claude-sonnet-4-6',
-        max_tokens: 2500,
+        max_tokens: 4000,
         messages: [{ role: 'user', content: body.prompt }]
       })
       return Response.json({ result: msg.content[0].text })
