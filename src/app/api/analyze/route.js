@@ -661,7 +661,7 @@ ${clientProfile ? 'פרופיל: ' + clientProfile : ''}
 
         const msg = await client.messages.create({
           model: 'claude-sonnet-4-6',
-          max_tokens: 6000,
+          max_tokens: 4000,
           messages: [{ role: 'user', content: prompt }]
         })
         return Response.json({ result: msg.content[0].text })
