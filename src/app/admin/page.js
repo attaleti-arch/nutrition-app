@@ -1068,7 +1068,7 @@ export default function AdminPage() {
                     const age = document.getElementById('quick_child_age').value
                     const weight = document.getElementById('quick_child_weight').value
                     const height = document.getElementById('quick_child_height').value
-                    const password = document.getElementById('quick_child_password').value || selectedClient.password
+                    const password = document.getElementById('quick_child_password').value || (selectedClient.password + '_child_' + Date.now().toString(36))
                     const genderBn = document.getElementById('quick_gender_בן')
                     const gender = genderBn && genderBn.style.background === 'rgb(124, 58, 237)' ? 'זכר' : 'נקבה'
                     await supabase.from('clients').insert({ name, age: age ? parseInt(age) : null, weight: weight ? parseFloat(weight) : null, height: height ? parseFloat(height) : null, gender, password, parent_id: selectedClient.id, is_child: true, created_at: new Date().toISOString() })
