@@ -419,6 +419,8 @@ export default function AdminPage() {
   const [sessionNotes, setSessionNotes] = useState('')
   const [journeyDocLoading, setJourneyDocLoading] = useState(false)
   const [journeyDocSent, setJourneyDocSent] = useState(false)
+  const [journeyClientDocPreview, setJourneyClientDocPreview] = useState('')
+  const [journeyDocApproving, setJourneyDocApproving] = useState(false)
 
   // ── 👨‍👩‍👧 הורה-ילד state ──
   const [childNotes, setChildNotes] = useState({
@@ -718,7 +720,7 @@ export default function AdminPage() {
 <title>מסע המטרה — ${selectedClient?.name || ''}</title>
 <style>
   body { font-family: 'Arial', sans-serif; direction: rtl; background: #f8fafc; color: #111827; margin: 0; padding: 40px; }
-  @media print { body { padding: 20px; background: white; } }
+  @media print { body { padding: 20px; background: white; } .no-print { display: none; } }
   .logo { text-align: center; margin-bottom: 32px; }
   .logo-title { font-size: 28px; font-weight: 900; color: #0f4c2a; }
   .logo-sub { font-size: 14px; color: #6b7280; margin-top: 4px; }
@@ -726,6 +728,9 @@ export default function AdminPage() {
   .section-title { font-size: 20px; font-weight: 900; color: #0f4c2a; border-bottom: 2px solid #dcfce7; padding-bottom: 8px; margin: 28px 0 16px; }
   h1,h2,h3 { color: #0f4c2a; }
 </style></head><body>
+<div style="text-align:center;margin-bottom:16px;" class="no-print">
+  <button onclick="window.print()" style="padding:10px 32px;background:#0f4c2a;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">🖨️ הדפס / שמור PDF</button>
+</div>
 <div class="logo">
   <div class="logo-title">בין הראש לצלחת</div>
   <div class="logo-sub">אתי אטל — תוכנית תזונה אישית</div>
@@ -739,20 +744,9 @@ ${questionsHtml}
 ${journeyAnalysis ? `<div class="section-title">ניתוח לפגישה</div>${analysisHtml}` : ''}
 </body></html>`
 
-    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-    if (isIOS) {
-      window.open(url, '_blank')
-    } else {
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `מסע-המטרה-${selectedClient?.name || 'לקוחה'}-${new Date().toLocaleDateString('he-IL').replace(/\//g,'-')}.html`
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-    }
-    setTimeout(() => URL.revokeObjectURL(url), 3000)
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close() }
+    else { alert('הדפדפן חסם את הפתיחה — אפשרי חלונות קופצים בהגדרות הדפדפן') }
   }
 
   // ── ✅ פונקציות Agent Instructions ──
@@ -2301,18 +2295,43 @@ ${journeyAnalysis ? `<div class="section-title">ניתוח לפגישה</div>${a
                     <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} onBlur={() => saveSessionKey('session_notes', sessionNotes)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
                     <button onClick={async () => {
                       setJourneyDocLoading(true)
+                      setJourneyClientDocPreview('')
                       const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, sessionNotes, outputType: 'clientDoc' }) })
                       const data = await res.json()
-                      if (data.result) {
-                        await supabase.from('clients').update({ outcome_doc: data.result }).eq('id', selectedClient.id)
-                        setSelectedClient(prev => ({ ...prev, outcome_doc: data.result }))
-                        setJourneyDocSent(true)
-                        setTimeout(() => setJourneyDocSent(false), 4000)
-                      }
+                      if (data.result) setJourneyClientDocPreview(data.result)
                       setJourneyDocLoading(false)
-                    }} disabled={journeyDocLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyDocLoading ? '#9ca3af' : journeyDocSent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: journeyDocLoading ? 'default' : 'pointer', fontWeight: 700, fontSize: 15 }}>
-                      {journeyDocLoading ? '⏳ מפיק...' : journeyDocSent ? '✅ נשמר אצלה!' : '🧭 הפק מסמך ושלחי אליה'}
+                    }} disabled={journeyDocLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyDocLoading ? '#9ca3af' : '#7c3aed', color: '#fff', border: 'none', cursor: journeyDocLoading ? 'default' : 'pointer', fontWeight: 700, fontSize: 15, marginBottom: journeyClientDocPreview ? 12 : 0 }}>
+                      {journeyDocLoading ? '⏳ מפיק...' : '🧭 הפק מסמך ללקוחה (תצוגה מקדימה)'}
                     </button>
+
+                    {journeyClientDocPreview && (
+                      <div style={{ border: '2px solid #7c3aed', borderRadius: 14, overflow: 'hidden' }}>
+                        <div style={{ background: '#7c3aed', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה — לפני שליחה ללקוחה</div>
+                          <button onClick={() => setJourneyClientDocPreview('')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+                        </div>
+                        <div style={{ padding: 16, maxHeight: 400, overflowY: 'auto', background: '#faf5ff' }}>
+                          <textarea value={journeyClientDocPreview} onChange={e => setJourneyClientDocPreview(e.target.value)} rows={16} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                        </div>
+                        <div style={{ padding: '12px 16px', display: 'flex', gap: 8 }}>
+                          <button onClick={async () => {
+                            setJourneyDocApproving(true)
+                            await supabase.from('clients').update({ outcome_doc: journeyClientDocPreview }).eq('id', selectedClient.id)
+                            setSelectedClient(prev => ({ ...prev, outcome_doc: journeyClientDocPreview }))
+                            setJourneyDocSent(true)
+                            setJourneyClientDocPreview('')
+                            setJourneyDocApproving(false)
+                            setTimeout(() => setJourneyDocSent(false), 4000)
+                          }} disabled={journeyDocApproving} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#16a34a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                            {journeyDocApproving ? '⏳...' : '✅ אשרי ושלחי אליה'}
+                          </button>
+                          <button onClick={() => setJourneyClientDocPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                            ✕ בטלי
+                          </button>
+                        </div>
+                        {journeyDocSent && <div style={{ textAlign: 'center', padding: '8px', color: '#16a34a', fontWeight: 700 }}>✅ נשמר אצלה!</div>}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
