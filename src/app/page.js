@@ -3,27 +3,82 @@ import { useState } from 'react'
 import { supabase } from './supabase'
 import PlanApp from './PlanApp'
 
+const TERMS_TEXT = `שירות "בין הראש לצלחת" — תנאי שימוש
+
+1. השירות אינו תחליף לייעוץ רפואי, תזונאי קליני או כל איש מקצוע רפואי מורשה.
+
+2. המידע, ההמלצות והתכנים המוצגים מיועדים לתמיכה אישית בלבד, ואינם מהווים אבחנה רפואית, מרשם, או טיפול רפואי.
+
+3. במצב חירום רפואי או תחושה של מצוקה פיזית/נפשית חריגה — יש לפנות מיידית לרופא, מד"א (101) או חדר מיון.
+
+4. השימוש בשירות כפוף לשיקול דעת אישי, ומפעיל השירות אינו נושא באחריות לתוצאות הנובעות משימוש בתכנים.
+
+5. כל המידע האישי מועבר ומאוחסן בצורה מאובטחת ולא יועבר לצד שלישי.`
+
 export default function Home() {
   const [password, setPassword] = useState('')
   const [clientName, setClientName] = useState('')
   const [started, setStarted] = useState(false)
   const [error, setError] = useState('')
+  const [showTerms, setShowTerms] = useState(false)
+  const [pendingPassword, setPendingPassword] = useState('')
+  const [pendingName, setPendingName] = useState('')
 
   async function handleStart() {
     if (!password.trim()) return
     const { data } = await supabase.from('clients').select('name').eq('password', password.trim()).single()
     if (data) {
-      setClientName(data.name)
-      setStarted(true)
+      const accepted = localStorage.getItem('terms_accepted_' + password.trim())
+      if (accepted) {
+        setClientName(data.name)
+        setStarted(true)
+      } else {
+        setPendingPassword(password.trim())
+        setPendingName(data.name)
+        setShowTerms(true)
+      }
     } else {
       setError('סיסמה לא נמצאה, נסי שוב')
     }
   }
 
-  if (started) return <PlanApp clientName={clientName} userPassword={password} />
+  function acceptTerms() {
+    localStorage.setItem('terms_accepted_' + pendingPassword, '1')
+    setClientName(pendingName)
+    setPassword(pendingPassword)
+    setShowTerms(false)
+    setStarted(true)
+  }
+
+  if (started) return <PlanApp clientName={clientName} userPassword={pendingPassword || password} />
 
   return (
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'linear-gradient(160deg,#f0fdf4,#eff6ff)',padding:24}}>
+    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',background:'linear-gradient(160deg,#f0fdf4,#eff6ff)',padding:24,direction:'rtl'}}>
+
+      {showTerms && (
+        <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
+          <div style={{background:'#fff',borderRadius:20,maxWidth:480,width:'100%',maxHeight:'85vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
+            <div style={{background:'linear-gradient(135deg,#0f4c2a,#16a34a)',padding:'18px 24px',color:'#fff'}}>
+              <div style={{fontWeight:900,fontSize:17}}>תנאי שימוש — בין הראש לצלחת</div>
+              <div style={{fontSize:12,opacity:0.85,marginTop:4}}>יש לקרוא ולאשר לפני הכניסה לראשונה</div>
+            </div>
+            <div style={{overflowY:'auto',padding:'20px 24px',flex:1}}>
+              {TERMS_TEXT.split('\n\n').map((p, i) => (
+                <p key={i} style={{fontSize:14,color:'#374151',lineHeight:1.8,marginBottom:12,direction:'rtl',textAlign:'right'}}>{p}</p>
+              ))}
+            </div>
+            <div style={{padding:'16px 24px',borderTop:'1px solid #f0f0f0',display:'flex',gap:10}}>
+              <button onClick={acceptTerms} style={{flex:2,padding:'12px 0',borderRadius:12,background:'#16a34a',color:'#fff',border:'none',cursor:'pointer',fontWeight:800,fontSize:15}}>
+                קראתי ואני מסכימ/ה — כניסה
+              </button>
+              <button onClick={() => setShowTerms(false)} style={{flex:1,padding:'12px 0',borderRadius:12,background:'#f3f4f6',color:'#6b7280',border:'none',cursor:'pointer',fontWeight:700,fontSize:14}}>
+                ביטול
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div style={{fontSize:28,fontWeight:900,marginBottom:20}}>בין הראש לצלחת</div>
       <div style={{fontSize:14,color:'#6b7280',marginBottom:30}}>אתי אטל - תוכנית תזונה אישית</div>
       <input value={password} onChange={function(e){setPassword(e.target.value);setError('')}}
