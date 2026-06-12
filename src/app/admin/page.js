@@ -739,9 +739,13 @@ ${questionsHtml}
 ${journeyAnalysis ? `<div class="section-title">ניתוח לפגישה</div>${analysisHtml}` : ''}
 </body></html>`
 
-    const w = window.open('', '_blank')
-    w.document.write(html)
-    w.document.close()
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `מסע-המטרה-${selectedClient?.name || 'לקוחה'}-${new Date().toLocaleDateString('he-IL').replace(/\//g,'-')}.html`
+    a.click()
+    setTimeout(() => URL.revokeObjectURL(url), 1000)
   }
 
   // ── ✅ פונקציות Agent Instructions ──
