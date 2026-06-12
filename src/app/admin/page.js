@@ -633,6 +633,117 @@ export default function AdminPage() {
     setTimeout(() => setJourneySaved(false), 3000)
   }
 
+  function exportJourneyHTML() {
+    const BG = ['#f0fdf4','#eff6ff','#fffbeb','#fef2f2','#faf5ff','#f0fdfa','#fff7ed']
+    const BD = ['#16a34a','#2563eb','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
+    const TC = ['#15803d','#1d4ed8','#b45309','#b91c1c','#6d28d9','#0f766e','#c2410c']
+    const SECTIONS = [
+      { title: '🌱 חלק 1 — הגדרת המטרה', questions: [
+        { label: 'מה הביא אותך לכאן?', key: 'goal_reason' },
+        { label: 'מה את רוצה? איך את רוצה להשתנות?', key: 'goal_what' },
+        { label: 'באיזה הקשר? מתי? עם מי? איפה?', key: 'goal_context' },
+        { label: 'למה זה חשוב לך?', key: 'goal_why' },
+        { label: 'איך תדעי שהגעת?', key: 'goal_proof' },
+      ]},
+      { title: '✨ חלק 2 — החזון הסנסורי', questions: [
+        { label: 'מה את רואה סביבך כשאת פוקחת עיניים?', key: 'vision_see' },
+        { label: 'מה את שומעת?', key: 'vision_hear' },
+        { label: 'מהי התחושה הגופנית המדויקת?', key: 'vision_feel' },
+      ]},
+      { title: '🌿 חלק 3 — הרמוניה ואיזון', questions: [
+        { label: 'כשתשיגי את המטרה — האם תפסידי משהו?', key: 'ecology_keep' },
+        { label: 'איך תשמרי על מה שחשוב לך בתוך השינוי?', key: 'ecology_harmony' },
+        { label: 'במי תלויה השגת המטרה?', key: 'ecology_who' },
+      ]},
+      { title: '🔍 חלק 4 — חשיפת היתד', questions: [
+        { label: 'מה גורם לך להרגיש שזה קשה?', key: 'belief_hard' },
+        { label: 'מתי החלטת שזה המצב?', key: 'belief_when' },
+      ]},
+      { title: '💎 חלק 5 — ארגז הכלים', questions: [
+        { label: 'אילו משאבים כבר יש לך?', key: 'resources_has' },
+        { label: 'רגע שהיית מרוצה מעצמך — מה היה שם?', key: 'resources_past' },
+      ]},
+      { title: '🛡️ חלק 6 — החיסונים וההתחייבות', questions: [
+        { label: 'הרגע הכי קשה ביום', key: 'vaccine_moment' },
+        { label: 'הפעולה הקטנה שמתחייבת', key: 'vaccine_action' },
+        { label: 'משפט העוגן', key: 'vaccine_anchor' },
+        { label: 'הצעד הראשון לשבוע הקרוב', key: 'first_step' },
+      ]},
+    ]
+    const ja = journeyAnswersRef.current
+    const date = new Date().toLocaleDateString('he-IL')
+
+    // Build analysis HTML sections
+    let analysisHtml = ''
+    if (journeyAnalysis) {
+      const blocks = []
+      let current = null
+      journeyAnalysis.split('\n').forEach(line => {
+        if (/^##\s/.test(line)) {
+          if (current) blocks.push(current)
+          current = { title: line.replace(/^##\s*/, '').trim(), lines: [] }
+        } else if (current) {
+          if (!/^---$/.test(line)) current.lines.push(line)
+        }
+      })
+      if (current) blocks.push(current)
+      analysisHtml = blocks.map((b, i) => {
+        const content = b.lines.join('\n')
+          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+          .replace(/\n/g, '<br/>')
+        return `<div style="background:${BG[i%BG.length]};border:1.5px solid ${BD[i%BD.length]};border-radius:14px;padding:18px 22px;margin-bottom:16px;direction:rtl;">
+          <div style="font-weight:800;font-size:16px;color:${TC[i%TC.length]};margin-bottom:10px;">${b.title}</div>
+          <div style="font-size:14px;color:#374151;line-height:1.9;">${content}</div>
+        </div>`
+      }).join('')
+    }
+
+    const questionsHtml = SECTIONS.map((sec, si) => {
+      const qs = sec.questions.map(q => {
+        const ans = ja[q.key]
+        if (!ans) return ''
+        return `<div style="margin-bottom:14px;padding:12px 16px;background:#f9fafb;border-radius:10px;border-right:3px solid ${BD[si%BD.length]};">
+          <div style="font-weight:700;font-size:13px;color:#374151;margin-bottom:6px;">${q.label}</div>
+          <div style="font-size:14px;color:#111827;line-height:1.8;">${ans.replace(/\n/g,'<br/>')}</div>
+        </div>`
+      }).filter(Boolean).join('')
+      if (!qs) return ''
+      return `<div style="background:#fff;border-radius:16px;padding:20px;margin-bottom:18px;border:1.5px solid ${BD[si%BD.length]};">
+        <div style="font-weight:800;font-size:15px;color:${TC[si%TC.length]};margin-bottom:14px;">${sec.title}</div>
+        ${qs}
+      </div>`
+    }).filter(Boolean).join('')
+
+    const html = `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"/>
+<title>מסע המטרה — ${selectedClient?.name || ''}</title>
+<style>
+  body { font-family: 'Arial', sans-serif; direction: rtl; background: #f8fafc; color: #111827; margin: 0; padding: 40px; }
+  @media print { body { padding: 20px; background: white; } }
+  .logo { text-align: center; margin-bottom: 32px; }
+  .logo-title { font-size: 28px; font-weight: 900; color: #0f4c2a; }
+  .logo-sub { font-size: 14px; color: #6b7280; margin-top: 4px; }
+  .client-header { background: linear-gradient(135deg,#0f4c2a,#16a34a); color: white; border-radius: 16px; padding: 20px 28px; margin-bottom: 28px; }
+  .section-title { font-size: 20px; font-weight: 900; color: #0f4c2a; border-bottom: 2px solid #dcfce7; padding-bottom: 8px; margin: 28px 0 16px; }
+  h1,h2,h3 { color: #0f4c2a; }
+</style></head><body>
+<div class="logo">
+  <div class="logo-title">בין הראש לצלחת</div>
+  <div class="logo-sub">אתי אטל — תוכנית תזונה אישית</div>
+</div>
+<div class="client-header">
+  <div style="font-size:22px;font-weight:900;">${selectedClient?.name || ''} ${selectedClient?.last_name || ''}</div>
+  <div style="font-size:13px;opacity:0.85;margin-top:6px;">📅 ${date} | 🧭 שאלון מסע המטרה</div>
+</div>
+<div class="section-title">שאלות ותשובות</div>
+${questionsHtml}
+${journeyAnalysis ? `<div class="section-title">ניתוח לפגישה</div>${analysisHtml}` : ''}
+</body></html>`
+
+    const w = window.open('', '_blank')
+    w.document.write(html)
+    w.document.close()
+  }
+
   // ── ✅ פונקציות Agent Instructions ──
   async function generateAgentInstructions() {
     if (!selectedClient) return
@@ -2140,9 +2251,14 @@ export default function AdminPage() {
                   ))}
                 </div>
 
-                <button onClick={handleSaveJourney} disabled={journeySaving} style={{ width: '100%', padding: 13, borderRadius: 12, background: journeySaved ? '#16a34a' : journeySaving ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: journeySaving ? 'default' : 'pointer', fontWeight: 700, fontSize: 15, marginBottom: 10 }}>
-                  {journeySaving ? '⏳ שומר...' : journeySaved ? '✅ נשמר!' : '💾 שמרי תשובות'}
-                </button>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                  <button onClick={handleSaveJourney} disabled={journeySaving} style={{ flex: 2, padding: 13, borderRadius: 12, background: journeySaved ? '#16a34a' : journeySaving ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: journeySaving ? 'default' : 'pointer', fontWeight: 700, fontSize: 15 }}>
+                    {journeySaving ? '⏳ שומר...' : journeySaved ? '✅ נשמר!' : '💾 שמרי תשובות'}
+                  </button>
+                  <button onClick={exportJourneyHTML} style={{ flex: 1, padding: 13, borderRadius: 12, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
+                    📄 ייצוא
+                  </button>
+                </div>
 
                 <button onClick={async () => {
                   setJourneyLoading(true); setJourneyAnalysis('')
