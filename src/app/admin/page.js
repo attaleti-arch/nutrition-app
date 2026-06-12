@@ -561,9 +561,9 @@ export default function AdminPage() {
     const rAn = sd.roots_analysis || lsLoad('roots_analysis', false); if (rAn) { setRootsAnalysis(rAn); setRootsEditing(true); setRootsViewMode('view') }
     const bN = sd.body_notes || lsLoad('body_notes', true); if (bN) setBodyNotes(n => ({ ...n, ...bN }))
     const bAn = sd.body_analysis || lsLoad('body_analysis', false); if (bAn) { setBodyAnalysis(bAn); setBodyEditing(true); setBodyViewMode('view') }
-    const rFbD = sd.roots_feedback_draft || lsLoad('roots_feedback_draft', false); if (rFbD) setRootsFeedback(rFbD) else if (data?.roots_feedback) setRootsFeedback(data.roots_feedback)
-    const bFbD = sd.body_feedback_draft || lsLoad('body_feedback_draft', false); if (bFbD) setBodyFeedback(bFbD) else if (data?.body_feedback) setBodyFeedback(data.body_feedback)
-    const cFbD = sd.child_feedback_draft || lsLoad('child_feedback_draft', false); if (cFbD) setChildFeedback(cFbD) else if (data?.child_feedback) setChildFeedback(data.child_feedback)
+    const rFbD = sd.roots_feedback_draft || lsLoad('roots_feedback_draft', false); if (rFbD) { setRootsFeedback(rFbD) } else if (data?.roots_feedback) { setRootsFeedback(data.roots_feedback) }
+    const bFbD = sd.body_feedback_draft || lsLoad('body_feedback_draft', false); if (bFbD) { setBodyFeedback(bFbD) } else if (data?.body_feedback) { setBodyFeedback(data.body_feedback) }
+    const cFbD = sd.child_feedback_draft || lsLoad('child_feedback_draft', false); if (cFbD) { setChildFeedback(cFbD) } else if (data?.child_feedback) { setChildFeedback(data.child_feedback) }
     const cAn = sd.child_analysis || lsLoad('child_analysis', false); if (cAn) { setChildAnalysis(cAn); setChildEditing(true) }
     const jCDD = sd.journey_client_doc_draft || lsLoad('journey_client_doc_draft', false); if (jCDD) setJourneyClientDocPreview(jCDD)
     const { data: nd } = await supabase.from('nutrition_data').select('*').order('id')
