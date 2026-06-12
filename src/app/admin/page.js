@@ -741,11 +741,18 @@ ${journeyAnalysis ? `<div class="section-title">ניתוח לפגישה</div>${a
 
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
     const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `מסע-המטרה-${selectedClient?.name || 'לקוחה'}-${new Date().toLocaleDateString('he-IL').replace(/\//g,'-')}.html`
-    a.click()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    if (isIOS) {
+      window.open(url, '_blank')
+    } else {
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `מסע-המטרה-${selectedClient?.name || 'לקוחה'}-${new Date().toLocaleDateString('he-IL').replace(/\//g,'-')}.html`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 3000)
   }
 
   // ── ✅ פונקציות Agent Instructions ──
@@ -2300,8 +2307,8 @@ ${journeyAnalysis ? `<div class="section-title">ניתוח לפגישה</div>${a
                         setTimeout(() => setJourneyDocSent(false), 4000)
                       }
                       setJourneyDocLoading(false)
-                    }} disabled={journeyDocLoading || !sessionNotes.trim()} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyDocSent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
-                      {journeyDocLoading ? '⏳ מפיק...' : journeyDocSent ? '✅ נשלח אליה!' : '🧭 הפק מסמך ושלחי אליה'}
+                    }} disabled={journeyDocLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyDocLoading ? '#9ca3af' : journeyDocSent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: journeyDocLoading ? 'default' : 'pointer', fontWeight: 700, fontSize: 15 }}>
+                      {journeyDocLoading ? '⏳ מפיק...' : journeyDocSent ? '✅ נשמר אצלה!' : '🧭 הפק מסמך ושלחי אליה'}
                     </button>
                   </div>
                 )}
