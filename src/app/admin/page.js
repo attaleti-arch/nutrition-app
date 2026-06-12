@@ -533,8 +533,8 @@ export default function AdminPage() {
     sessionDataRef.current = sd
     const lsLoad = (key, isJson) => { try { const v = localStorage.getItem('sd_' + key + '_' + pw); return v ? (isJson ? JSON.parse(v) : v) : null } catch(e) { return null } }
     // journey — עמודות ייעודיות (עדיפות), fallback ל-sessions_data ול-localStorage
-    const jA = data?.journey_answers || sd.journey_answers || lsLoad('journey_answers', true); if (jA) setJourneyAnswers(a => ({ ...a, ...jA }))
-    const jAn = data?.journey_analysis || sd.journey_analysis || lsLoad('journey_analysis', false); if (jAn) setJourneyAnalysis(jAn)
+    const jA = (data?.journey_answers && Object.keys(data.journey_answers).length > 0) ? data.journey_answers : (sd.journey_answers || lsLoad('journey_answers', true)); if (jA) setJourneyAnswers(a => ({ ...a, ...jA }))
+    const jAn = (data?.journey_analysis && data.journey_analysis.length > 0) ? data.journey_analysis : (sd.journey_analysis || lsLoad('journey_analysis', false)); if (jAn) setJourneyAnalysis(jAn)
     const sN = sd.session_notes || lsLoad('session_notes', false); if (sN) setSessionNotes(sN)
     const rN = sd.roots_notes || lsLoad('roots_notes', true); if (rN) setRootsNotes(n => ({ ...n, ...rN }))
     const rAn = sd.roots_analysis || lsLoad('roots_analysis', false); if (rAn) { setRootsAnalysis(rAn); setRootsEditing(true); setRootsViewMode('view') }
