@@ -59,23 +59,24 @@ const BONUS_RECIPES = [
 const PLAN = {
   bokerSnack: 'לפני: נס קפה + חטיף בריאות עד 99 קל',
   bokerProtein: [
-    { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
-    { id: 'b3', text: 'מעדן פרו + פרי', tags: ['vegan'] },
-    { id: 'b_kotej', text: 'קוטג׳ 5% (200g)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b7', text: '2 ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'] },
-    { id: 'b_tuna_full', text: 'טונה — חבילה שלמה (160g)', tags: [], hide: ['vegan', 'vegetarian'] },
-    { id: 'b_tuna_half', text: 'טונה — חצי חבילה (80g)', tags: [], hide: ['vegan', 'vegetarian'] },
+    { id: 'b1', text: 'משקה / חטיף חלבון', tags: [], prot: 25 },
+    { id: 'b3', text: 'מעדן פרו + פרי', tags: ['vegan'], prot: 15 },
+    { id: 'b_kotej', text: 'קוטג׳ 5% (200g)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 22 },
+    { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 14 },
+    { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 7 },
+    { id: 'b7', text: '2 ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'], prot: 13 },
+    { id: 'b_tuna_full', text: 'טונה — חבילה שלמה (160g)', tags: [], hide: ['vegan', 'vegetarian'], prot: 35 },
+    { id: 'b_tuna_half', text: 'טונה — חצי חבילה (80g)', tags: [], hide: ['vegan', 'vegetarian'], prot: 18 },
   ],
   bokerCarbs: [
     { id: 'b4', text: '5 פריכיות דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'b6', text: 'פיתה כוסמין / 2 פרוסות לחם שיפון', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'bnew1', text: '2 פרוסות לחם כוסמין', tags: [], hide: ['keto', 'no_gluten'] },
+    { id: 'bc_gf1', text: '2 פרוסות לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'] },
   ],
   bokerExtra: [
     { id: 'b8', text: '½ אבוקדו (100g)', tags: ['vegan', 'keto'] },
-    { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto'], tags: ['vegetarian'] },
+    { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto', 'no_gluten'], tags: ['vegetarian'] },
   ],
   boker: [
     { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
@@ -87,33 +88,36 @@ const PLAN = {
     { id: 'b7', text: '2 ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'] },
     { id: 'b6', text: 'פיתה כוסמין / 4 פריכיות / 2 פרוסות לחם שיפון', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'bnew1', text: '2 פרוסות לחם כוסמין', tags: [], hide: ['keto', 'no_gluten'] },
+    { id: 'bc_gf1', text: '2 פרוסות לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'] },
     { id: 'b8', text: '½ אבוקדו (100g)', tags: ['vegan', 'keto'] },
-    { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto'], tags: ['vegetarian'] },
+    { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto', 'no_gluten'], tags: ['vegetarian'] },
   ],
   carbOptions: [
-    { id: 'c1', text: '150 גרם אורז מלא / קינואה', hide: ['keto', 'no_gluten'] },
-    { id: 'c2', text: '200 גרם בורגול / כוסמת', hide: ['keto', 'no_gluten'] },
+    { id: 'c1', text: '150 גרם אורז מלא / קינואה', hide: ['keto'] },
+    { id: 'c2', text: '200 גרם בורגול / כוסמין', hide: ['keto', 'no_gluten'] },
     { id: 'c4', text: '170 גרם תפוחי אדמה / בטטה', hide: ['keto'] },
     { id: 'c5', text: '150 גרם כרובית / ברוקולי (קיטו)', tags: ['keto'] },
     { id: 'c6', text: '150 גרם עדשים / חומוס מבושל', tags: ['vegan'] },
     { id: 'c7', text: '100 גרם שעועית לבנה / אדומה', tags: ['vegan'] },
+    { id: 'c_gf1', text: '150 גרם כוסמת מבושלת', tags: ['vegan'], hide: ['keto'] },
+    { id: 'c_gf2', text: '150 גרם פסטה מאורז / תירס', tags: ['vegan'], hide: ['keto'] },
   ],
   protOptions: [
-    { id: 'p1', text: '200 גרם דג לבן (אמנון / בקלה)', hide: ['vegan', 'no_fish'] },
-    { id: 'p2', text: '100 גרם סלמון', hide: ['vegan', 'no_fish'] },
-    { id: 'p9', text: '100 גרם טונה / סרדינים', hide: ['vegan', 'no_fish'] },
-    { id: 'p10', text: 'גרם חזה עוף', hide: ['vegan', 'vegetarian'] },
-    { id: 'p5', text: '140 גרם ירך עוף / 100 גרם הודו טחון', hide: ['vegan', 'vegetarian'] },
-    { id: 'p3', text: '150 גרם טופו', tags: ['vegan'] },
-    { id: 'p8', text: '2 ביצים / חביתה', hide: ['vegan', 'no_eggs'] },
-    { id: 'p11', text: '150 גרם מג׳דרה (עדשים + אורז)', tags: ['vegan'] },
-    { id: 'p6', text: '2 המבורגר צמחוני', tags: ['vegan'] },
-    { id: 'p13', text: '200 גרם גרגירי חומוס מבושל', tags: ['vegan'] },
-    { id: 'p14', text: '200 גרם עדשים מבושלות', tags: ['vegan'] },
-    { id: 'p15', text: '150 גרם שעועית / פול מבושל', tags: ['vegan'] },
-    { id: 'p16', text: '150 גרם אדממה', tags: ['vegan'] },
-    { id: 'p17', text: '200 גרם קוטג׳ 3% / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'] },
-    { id: 'p18', text: '200 גרם יוגורט יווני 0%', hide: ['vegan', 'no_lactose'] },
+    { id: 'p1', text: '200 גרם דג לבן (אמנון / בקלה)', hide: ['vegan', 'no_fish'], prot: 40, protDefaultQty: 200 },
+    { id: 'p2', text: '100 גרם סלמון', hide: ['vegan', 'no_fish'], prot: 20, protDefaultQty: 100 },
+    { id: 'p9', text: '100 גרם טונה / סרדינים', hide: ['vegan', 'no_fish'], prot: 25, protDefaultQty: 100 },
+    { id: 'p10', text: '150 גרם חזה עוף', hide: ['vegan', 'vegetarian'], prot: 38, protDefaultQty: 150 },
+    { id: 'p5', text: '140 גרם ירך עוף / 100 גרם הודו טחון', hide: ['vegan', 'vegetarian'], prot: 28, protDefaultQty: 140 },
+    { id: 'p3', text: '150 גרם טופו', tags: ['vegan'], prot: 16, protDefaultQty: 150 },
+    { id: 'p8', text: '2 ביצים / חביתה', hide: ['vegan', 'no_eggs'], prot: 13 },
+    { id: 'p11', text: '150 גרם מג׳דרה (עדשים + אורז)', tags: ['vegan'], prot: 12, protDefaultQty: 150 },
+    { id: 'p6', text: '2 המבורגר צמחוני', tags: ['vegan'], prot: 16 },
+    { id: 'p13', text: '200 גרם גרגירי חומוס מבושל', tags: ['vegan'], prot: 14, protDefaultQty: 200 },
+    { id: 'p14', text: '200 גרם עדשים מבושלות', tags: ['vegan'], prot: 18, protDefaultQty: 200 },
+    { id: 'p15', text: '150 גרם שעועית / פול מבושל', tags: ['vegan'], prot: 11, protDefaultQty: 150 },
+    { id: 'p16', text: '150 גרם אדממה', tags: ['vegan'], prot: 18, protDefaultQty: 150 },
+    { id: 'p17', text: '200 גרם קוטג׳ 3% / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'], prot: 22, protDefaultQty: 200 },
+    { id: 'p18', text: '200 גרם יוגורט יווני 0%', hide: ['vegan', 'no_lactose'], prot: 20, protDefaultQty: 200 },
   ],
   fatOptions: [
     { id: 'f1', text: 'כף שמן זית', tags: ['vegan', 'keto'] },
@@ -121,6 +125,8 @@ const PLAN = {
     { id: 'f3', text: '50 גרם אבוקדו (רבע)', tags: ['vegan', 'keto'] },
     { id: 'f4', text: 'חופן אגוזי מלך / שקדים (30 גרם)', tags: ['vegan', 'keto'], hide: ['no_nuts'] },
     { id: 'f5', text: '30 גרם גבינה צהובה 5%', hide: ['vegan', 'no_lactose'] },
+    { id: 'f6', text: '2 כפות חמאת שקדים / בוטנים טבעית', tags: ['vegan'], hide: ['no_nuts'] },
+    { id: 'f7', text: '2 כפות לאבנה', hide: ['vegan', 'no_lactose'] },
   ],
   veggieOptions: [
     { id: 'v1', text: 'סלט טרי — מלפפון, עגבנייה, לימון + מלח' },
@@ -130,7 +136,7 @@ const PLAN = {
   ],
   erev: [
     { id: 'e1', text: 'קוטג׳ / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'] },
-    { id: 'e2', text: '50 גרם ברנפלקס + חלב / משקה צמחי', hide: ['keto'] },
+    { id: 'e2', text: '50 גרם ברנפלקס + חלב / משקה צמחי', hide: ['keto', 'no_gluten'] },
     { id: 'e4', text: 'פיתה / 4 פריכיות / 2 פרוסות לחם שיפון', hide: ['keto', 'no_gluten'] },
     { id: 'e5', text: 'סלט ירקות + טחינה / שמן זית', tags: ['vegan', 'keto'] },
     { id: 'e6', text: 'יוגורט יווני 0% + פירות יער', hide: ['vegan', 'no_lactose', 'keto'] },
@@ -760,6 +766,11 @@ export default function PlanApp({ clientName, userPassword }) {
   const [fatigueLevel, setFatigueLevel] = useState(0)
   const [hungerLevel, setHungerLevel] = useState(0)
   const [userMood, setUserMood] = useState(null)
+  const [streak, setStreak] = useState(0)
+  const [weeklyDays, setWeeklyDays] = useState(0)
+  const [weekDates, setWeekDates] = useState([])
+  const [avgStepsWeekly, setAvgStepsWeekly] = useState(0)
+  const [suggestedActivity, setSuggestedActivity] = useState(null)
   const [userWeight, setUserWeight] = useState('')
   const [userHeight, setUserHeight] = useState('')
   const [userAge, setUserAge] = useState('')
@@ -849,6 +860,36 @@ export default function PlanApp({ clientName, userPassword }) {
         setScanCalories(t.scan_calories || 0); setScanDesc(t.scan_desc || '')
         setFeedback(t.trainer_feedback || null); setReportApproved(t.report_approved || false)
         if (t.nlp_metrics) { var m = t.nlp_metrics; setStressLevel(m.stress || 0); setFatigueLevel(m.fatigue || 0); setHungerLevel(m.hunger || 0); setUserMood(m.mood || null) }
+      }
+
+      // חישוב רצף, שבוע, וממוצע צעדים
+      var { data: recentLogs } = await supabase.from('daily_logs').select('log_date, steps').eq('client_name', dbKey).order('log_date', { ascending: false }).limit(90)
+      if (recentLogs && recentLogs.length > 0) {
+        var loggedDates = new Set(recentLogs.map(function(l) { return l.log_date }))
+        var streakCount = 0
+        var checkD = new Date()
+        if (!loggedDates.has(checkD.toLocaleDateString('sv-SE'))) checkD.setDate(checkD.getDate() - 1)
+        while (loggedDates.has(checkD.toLocaleDateString('sv-SE'))) {
+          streakCount++; checkD.setDate(checkD.getDate() - 1)
+        }
+        setStreak(streakCount)
+        var today2 = new Date()
+        var dow = today2.getDay()
+        var wkDays = []
+        for (var i = 0; i <= 6; i++) {
+          var d3 = new Date(today2); d3.setDate(today2.getDate() - dow + i)
+          wkDays.push({ date: d3.toLocaleDateString('sv-SE'), logged: loggedDates.has(d3.toLocaleDateString('sv-SE')) })
+        }
+        setWeekDates(wkDays)
+        setWeeklyDays(wkDays.filter(function(d) { return d.logged }).length)
+        // ממוצע צעדים מ-14 ימים אחרונים (לפחות 5 ימים עם נתוני צעדים)
+        var stepsLogs = recentLogs.filter(function(l) { return l.steps && parseInt(l.steps) > 0 }).slice(0, 14)
+        if (stepsLogs.length >= 5) {
+          var avgS = Math.round(stepsLogs.reduce(function(s, l) { return s + parseInt(l.steps) }, 0) / stepsLogs.length)
+          setAvgStepsWeekly(avgS)
+          var inferred = avgS < 4000 ? 'יושבני' : avgS < 7000 ? 'קל' : avgS < 10000 ? 'בינוני' : avgS < 13000 ? 'פעיל' : 'מאוד פעיל'
+          setSuggestedActivity(inferred)
+        }
       }
     }
     if (dbKey) load()
@@ -948,6 +989,26 @@ export default function PlanApp({ clientName, userPassword }) {
     return (bokerExtraProt || 0) + (lunchExtraProt || 0) + (erevExtraProt || 0)
   }
 
+  function calcEatenProtein() {
+    var total = 0
+    var bokerProtMap = {}
+    PLAN.bokerProtein.forEach(function(item) { if (item.prot) bokerProtMap[item.id] = item })
+    if (checks) Object.keys(checks).forEach(function(id) { if (checks[id] && bokerProtMap[id]) total += bokerProtMap[id].prot })
+    var protOptMap = {}
+    PLAN.protOptions.forEach(function(item) { if (item.prot) protOptMap[item.id] = item })
+    Object.keys(protChecks).forEach(function(id) {
+      if (protChecks[id] && protOptMap[id]) {
+        var item = protOptMap[id]
+        if (id === 'p8') { total += Math.round((protQty[id] || 2) * 6.5) }
+        else if (item.protDefaultQty && protQty[id]) { total += Math.round(item.prot * (protQty[id] / item.protDefaultQty)) }
+        else { total += item.prot }
+      }
+    })
+    total += calcExtraProt()
+    total += (scanProtein || 0)
+    return total
+  }
+
   const saveProfile = async function() {
     if (!userWeight || !userHeight || !userAge) return
     await supabase.from('clients').update({
@@ -1007,6 +1068,7 @@ export default function PlanApp({ clientName, userPassword }) {
 
   const targets = calcTargets(parseFloat(userWeight), parseFloat(userHeight), parseInt(userAge), userGender, userActivity, userGoal)
   const eatenCalories = calcEatenCalories()
+  const eatenProtein = calcEatenProtein()
   const filteredBoker = PLAN.boker.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerProtein = PLAN.bokerProtein.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerCarbs = PLAN.bokerCarbs.filter(i => !shouldHide(i, dietType, restrictions))
@@ -1098,34 +1160,44 @@ export default function PlanApp({ clientName, userPassword }) {
     <div style={{ minHeight: '100vh', background: '#f8fafc', direction: 'rtl' }}>
       {showConfetti && <Confetti />}
 
-      {/* ✅ בר קלוריות צף */}
+      {/* ✅ בר קלוריות וחלבון צף */}
       {activeTab === 'diary' && profileDone && (
         <div style={{
           position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 100,
           background: '#fff', borderTop: '1px solid #e5e7eb',
           padding: '8px 16px 20px', boxShadow: '0 -4px 16px rgba(0,0,0,0.08)',
         }}>
-          <div style={{ maxWidth: 520, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#555', marginBottom: 4 }}>
-                <span>🔥 {Math.round(eatenCalories)} קל</span>
-                <span style={{ color: eatenCalories >= targets.calories ? '#f97316' : '#16a34a', fontWeight: 700 }}>
-                  {eatenCalories >= targets.calories ? '✅ הגעת ליעד!' : `נשאר ${targets.calories - Math.round(eatenCalories)} קל`}
+          <div style={{ maxWidth: 520, margin: '0 auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#555', marginBottom: 4 }}>
+                  <span>🔥 {Math.round(eatenCalories)} קל</span>
+                  <span style={{ color: eatenCalories >= targets.calories ? '#f97316' : '#16a34a', fontWeight: 700 }}>
+                    {eatenCalories >= targets.calories ? '✅ הגעת ליעד!' : `נשאר ${targets.calories - Math.round(eatenCalories)} קל`}
+                  </span>
+                  <span>{targets.calories} קל</span>
+                </div>
+                <div style={{ height: 6, background: '#f3f4f6', borderRadius: 99, overflow: 'hidden' }}>
+                  <div style={{
+                    width: Math.min(100, Math.round((eatenCalories / targets.calories) * 100)) + '%',
+                    height: '100%',
+                    background: eatenCalories >= targets.calories ? '#f97316' : '#16a34a',
+                    borderRadius: 99, transition: 'width 0.3s'
+                  }} />
+                </div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: eatenCalories >= targets.calories ? '#f97316' : '#0f4c2a', flexShrink: 0 }}>
+                {Math.min(100, Math.round((eatenCalories / targets.calories) * 100))}%
+              </div>
+            </div>
+            {targets && eatenProtein > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 11, color: eatenProtein >= targets.protein ? '#16a34a' : '#6b7280', fontWeight: 700 }}>
+                  🥩 {Math.round(eatenProtein)}g / {targets.protein}g חלבון
                 </span>
-                <span>{targets.calories} קל</span>
+                {eatenProtein >= targets.protein && <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>✅</span>}
               </div>
-              <div style={{ height: 6, background: '#f3f4f6', borderRadius: 99, overflow: 'hidden' }}>
-                <div style={{
-                  width: Math.min(100, Math.round((eatenCalories / targets.calories) * 100)) + '%',
-                  height: '100%',
-                  background: eatenCalories >= targets.calories ? '#f97316' : '#16a34a',
-                  borderRadius: 99, transition: 'width 0.3s'
-                }} />
-              </div>
-            </div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: eatenCalories >= targets.calories ? '#f97316' : '#0f4c2a', flexShrink: 0 }}>
-              {Math.min(100, Math.round((eatenCalories / targets.calories) * 100))}%
-            </div>
+            )}
           </div>
         </div>
       )}
@@ -1199,6 +1271,24 @@ export default function PlanApp({ clientName, userPassword }) {
                 📊 הניתוח האישי — יתווסף לאחר הפגישה הראשונה
               </div>
             )}
+            {rootsFeedback ? (
+              <button onClick={() => { setShowRootsFeedback(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#fdf8f4,#fef3e8)', border: '1.5px solid #c4956a', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#92683a', textAlign: 'right' }}>
+                🌱 המשוב האישי שלי — פגישת השורשים
+              </button>
+            ) : (
+              <div style={{ padding: '12px 16px', borderRadius: 12, background: '#f3f4f6', border: '1.5px solid #e5e7eb', fontSize: 13, color: '#9ca3af', textAlign: 'right' }}>
+                🌱 פגישת השורשים — יתווסף לאחר הפגישה
+              </div>
+            )}
+            {bodyFeedback ? (
+              <button onClick={() => { setShowBodyFeedback(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#f0fdfa,#e6faf8)', border: '1.5px solid #0d9488', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#0f766e', textAlign: 'right' }}>
+                🩺 המשוב האישי שלי — הגוף מדבר
+              </button>
+            ) : (
+              <div style={{ padding: '12px 16px', borderRadius: 12, background: '#f3f4f6', border: '1.5px solid #e5e7eb', fontSize: 13, color: '#9ca3af', textAlign: 'right' }}>
+                🩺 הגוף מדבר — יתווסף לאחר הפגישה
+              </div>
+            )}
             {clientData?.outcome_doc ? (
               <button onClick={() => { setShowOutcomeDoc(true); setShowDocsMenu(false) }} style={{ padding: '12px 16px', borderRadius: 12, background: 'linear-gradient(135deg,#faf5ff,#eff6ff)', border: '1.5px solid #7c3aed', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#7c3aed', textAlign: 'right' }}>
                 🧭 המטרה שלי — מסע התוצאה
@@ -1231,11 +1321,12 @@ export default function PlanApp({ clientName, userPassword }) {
               const lines = section.trim().split('\n')
               const title = lines[0].replace(/^#+\s*/, '').replace(/\*\*/g, '').trim()
               const body = lines.slice(1).join('\n').trim()
-              const colors = ['#f0fdf4','#eff6ff','#fffbeb','#fef2f2','#faf5ff','#f0fdfa']
-              const borders = ['#16a34a','#2563eb','#d97706','#dc2626','#7c3aed','#0d9488']
+              const colors = ['#f0fdf4','#eff6ff','#fffbeb','#fef2f2','#faf5ff','#f0fdfa','#fff7ed']
+              const borders = ['#16a34a','#2563eb','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
+              const titleColors = ['#15803d','#1d4ed8','#b45309','#b91c1c','#6d28d9','#0f766e','#c2410c']
               return (
-                <div key={i} style={{ background: colors[i % colors.length], borderRadius: 16, padding: '18px 20px', marginBottom: 14, borderRight: '4px solid ' + borders[i % borders.length] }}>
-                  {title && <div style={{ fontWeight: 800, fontSize: 15, color: borders[i % borders.length], marginBottom: 8 }}>{title}</div>}
+                <div key={i} style={{ background: colors[i % colors.length], borderRadius: 16, padding: '18px 20px', marginBottom: 14, border: '1.5px solid ' + borders[i % borders.length] }}>
+                  {title && <div style={{ fontWeight: 800, fontSize: 15, color: titleColors[i % titleColors.length], marginBottom: 8 }}>{title}</div>}
                   <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{body}</div>
                 </div>
               )
@@ -1424,9 +1515,28 @@ export default function PlanApp({ clientName, userPassword }) {
                 </div>
               </div>
             </div>
-            <div style={{ background: '#fff', borderRadius: 18, padding: '20px 18px', border: '1.5px solid #e9d5ff' }}>
-              <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>{clientData.outcome_doc}</div>
-            </div>
+            {(() => {
+              const BG = ['#f0fdf4','#eff6ff','#fffbeb','#fef2f2','#faf5ff','#f0fdfa','#fff7ed']
+              const BD = ['#16a34a','#2563eb','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
+              const TC = ['#15803d','#1d4ed8','#b45309','#b91c1c','#6d28d9','#0f766e','#c2410c']
+              const renderLine = (line, accent) => {
+                const inl = s => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                if (line.startsWith('- ') || line.startsWith('• ')) return <div key={line} style={{ display:'flex', gap:6, margin:'2px 0' }}><span style={{ color:accent, fontWeight:700, flexShrink:0 }}>•</span><span dangerouslySetInnerHTML={{ __html: inl(line.slice(2)) }} /></div>
+                if (line.trim() === '') return <div key={line + Math.random()} style={{ height:4 }} />
+                return <div key={line} style={{ margin:'2px 0', lineHeight:1.8 }} dangerouslySetInnerHTML={{ __html: inl(line) }} />
+              }
+              return clientData.outcome_doc.split(/\n\s*---\s*\n/).filter(Boolean).map((section, i) => {
+                const lines = section.trim().split('\n')
+                const firstLine = lines[0].replace(/^#+\s*/, '').replace(/\*\*/g, '').trim()
+                const rest = lines.slice(1)
+                return (
+                  <div key={i} style={{ background: BG[i % BG.length], borderRadius: 16, padding: '18px 20px', marginBottom: 12, border: '1.5px solid ' + BD[i % BD.length] }}>
+                    {firstLine && <div style={{ fontWeight: 800, fontSize: 15, color: TC[i % TC.length], marginBottom: 8 }}>{firstLine}</div>}
+                    <div style={{ fontSize: 14, color: '#374151', lineHeight: 1.8 }}>{rest.map(l => renderLine(l, BD[i % BD.length]))}</div>
+                  </div>
+                )
+              })
+            })()}
           </div>
         </div>
       )}
@@ -1524,6 +1634,86 @@ export default function PlanApp({ clientName, userPassword }) {
           </div>
         )}
         {feedback && <FeedbackCard feedback={feedback} clientName={displayName} logDate={today} onOpenFull={() => setShowDailyFeedback(true)} />}
+
+        {/* ✅ כרטיס רצף ושבוע */}
+        {weekDates.length > 0 && (
+          <div style={{ background: 'linear-gradient(135deg,#fff7ed,#fef3c7)', borderRadius: 18, padding: '14px 18px', marginBottom: 14, border: '1.5px solid #fed7aa' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                {streak >= 2 ? (
+                  <>
+                    <span style={{ fontSize: 22 }}>🔥</span>
+                    <div>
+                      <div style={{ fontWeight: 900, fontSize: 14, color: '#c2410c' }}>{streak} ימים ברצף!</div>
+                      <div style={{ fontSize: 11, color: '#9a3412' }}>המשיכי כך</div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <span style={{ fontSize: 22 }}>📅</span>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 14, color: '#92400e' }}>שבוע זה</div>
+                      <div style={{ fontSize: 11, color: '#a16207' }}>{weeklyDays} {weeklyDays === 1 ? 'יום' : 'ימים'} מתועדים</div>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: '#92400e' }}>{weeklyDays}/7</div>
+            </div>
+            <div style={{ display: 'flex', gap: 4, justifyContent: 'center' }}>
+              {weekDates.map(function(day, i) {
+                const labels = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש']
+                const isToday = day.date === todayKey
+                return (
+                  <div key={day.date} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                    <div style={{ width: 28, height: 28, borderRadius: '50%', background: day.logged ? '#16a34a' : isToday ? '#fed7aa' : '#f3f4f6', border: isToday ? '2px solid #f97316' : '2px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {day.logged && <span style={{ color: '#fff', fontSize: 14 }}>✓</span>}
+                    </div>
+                    <div style={{ fontSize: 9, color: isToday ? '#f97316' : '#9ca3af', fontWeight: isToday ? 800 : 400 }}>{labels[i]}</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ✅ הצעת עדכון רמת פעילות לפי צעדים אמיתיים */}
+        {suggestedActivity && suggestedActivity !== userActivity && avgStepsWeekly > 0 &&
+          !localStorage.getItem('activitySuggestDismiss_' + dbKey + '_' + suggestedActivity) && targets && (
+          <div style={{ background: 'linear-gradient(135deg,#eff6ff,#dbeafe)', borderRadius: 18, padding: '14px 18px', marginBottom: 14, border: '1.5px solid #93c5fd' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 22 }}>👟</span>
+                <div style={{ fontWeight: 800, fontSize: 14, color: '#1d4ed8' }}>פעילות בפועל vs. הצהרה</div>
+              </div>
+              <button onClick={() => { localStorage.setItem('activitySuggestDismiss_' + dbKey + '_' + suggestedActivity, '1'); setSuggestedActivity(null) }} style={{ background: 'transparent', border: 'none', fontSize: 16, cursor: 'pointer', color: '#93c5fd', padding: 0 }}>✕</button>
+            </div>
+            <div style={{ fontSize: 13, color: '#1e40af', lineHeight: 1.6, marginBottom: 10 }}>
+              לפי הצעדים שתיעדת ב-14 ימים אחרונים,<br />
+              הממוצע שלך הוא <strong>{avgStepsWeekly.toLocaleString()} צעדים/יום</strong>.<br />
+              זה מתאים לרמת פעילות: <strong>{suggestedActivity}</strong>
+              {' '}(הגדרת: <strong>{userActivity}</strong>).
+            </div>
+            {(() => {
+              var suggested = calcTargets(parseFloat(userWeight), parseFloat(userHeight), parseInt(userAge), userGender, suggestedActivity, userGoal)
+              var diff = suggested ? suggested.calories - targets.calories : 0
+              return suggested ? (
+                <div style={{ fontSize: 12, color: '#3b82f6', marginBottom: 12, background: '#dbeafe', borderRadius: 8, padding: '6px 10px' }}>
+                  עדכון יחליף את היעד: <strong>{targets.calories} קל</strong> → <strong>{suggested.calories} קל</strong>
+                  {' '}({diff > 0 ? '+' : ''}{diff} קל)
+                </div>
+              ) : null
+            })()}
+            <button onClick={async () => {
+              await supabase.from('clients').update({ activity: suggestedActivity }).eq('password', dbKey)
+              setUserActivity(suggestedActivity)
+              localStorage.setItem('activitySuggestDismiss_' + dbKey + '_' + suggestedActivity, '1')
+              setSuggestedActivity(null)
+            }} style={{ width: '100%', padding: '10px 0', borderRadius: 10, background: '#2563eb', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+              עדכוני ל"{suggestedActivity}" 👟
+            </button>
+          </div>
+        )}
 
         <div style={{ background: '#fff', borderRadius: 18, padding: 18, border: '1.5px solid #e2e8f0', marginBottom: 14 }}>
           <div style={{ fontWeight: 800, fontSize: 15, color: C.greenDark, marginBottom: 12, textAlign: 'right' }}>🧠 מודעות והקשבה לגוף</div>

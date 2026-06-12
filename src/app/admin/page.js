@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import WelcomeDocument from '../WelcomeDocument'
@@ -253,6 +253,103 @@ function NutritionRow({ item, onSave }) {
   )
 }
 
+const VISIT_CHECKLIST = [
+  { section: '🥫 מזווה', items: [
+    { id: 'white_sugar', label: 'סוכר לבן' },
+    { id: 'biscuits', label: 'ביסקוויטים / עוגיות קנויות' },
+    { id: 'sweet_cereal', label: 'דגני בוקר ממותקים' },
+    { id: 'white_pasta', label: 'פסטה / אורז לבן' },
+    { id: 'ww_flour', label: 'קמח כוסמין / מלא' },
+    { id: 'oats', label: 'שיבולת שועל' },
+    { id: 'legumes', label: 'קטניות (עדשים / חומוס / שעועית)' },
+    { id: 'olive_oil', label: 'שמן זית' },
+    { id: 'tahini_raw', label: 'טחינה גולמית' },
+    { id: 'nuts', label: 'אגוזים / שקדים טבעיים' },
+    { id: 'brown_rice', label: 'אורז מלא / קינואה' },
+    { id: 'canned_tomato', label: 'עגבניות / רסק משומר' },
+  ]},
+  { section: '🧊 מקרר', items: [
+    { id: 'eggs', label: 'ביצים' },
+    { id: 'cottage', label: 'קוטג׳ / גבינה לבנה 5%' },
+    { id: 'greek_yogurt', label: 'יוגורט יווני 0%' },
+    { id: 'labneh', label: 'לאבנה' },
+    { id: 'fresh_veggies', label: 'ירקות טריים' },
+    { id: 'fruit_juice', label: 'מיצי פירות קנויים' },
+    { id: 'sweet_yogurt', label: 'יוגורטים ממותקים' },
+    { id: 'sausages', label: 'נקניקיות / מוצרים מעובדים' },
+  ]},
+  { section: '❄️ מקפיא', items: [
+    { id: 'frozen_chicken', label: 'עוף / הודו' },
+    { id: 'frozen_fish', label: 'דגים' },
+    { id: 'frozen_veggies', label: 'ירקות קפואים' },
+    { id: 'frozen_ready', label: 'ארוחות מוכנות קנויות' },
+  ]},
+]
+
+const VISIT_STATUS = {
+  green: { emoji: '✅', label: 'מצוין', bg: '#dcfce7', border: '#16a34a' },
+  yellow: { emoji: '🟡', label: 'לאזן', bg: '#fef9c3', border: '#ca8a04' },
+  red: { emoji: '🔴', label: 'להוציא', bg: '#fee2e2', border: '#ef4444' },
+}
+
+function renderMd(text) {
+  if (!text) return { __html: '' }
+  const SECTION_COLORS = [
+    { bg: '#f0fdf4', border: '#16a34a', title: '#15803d' },
+    { bg: '#eff6ff', border: '#2563eb', title: '#1d4ed8' },
+    { bg: '#fffbeb', border: '#d97706', title: '#b45309' },
+    { bg: '#fef2f2', border: '#dc2626', title: '#b91c1c' },
+    { bg: '#faf5ff', border: '#7c3aed', title: '#6d28d9' },
+    { bg: '#f0fdfa', border: '#0d9488', title: '#0f766e' },
+    { bg: '#fff7ed', border: '#f97316', title: '#c2410c' },
+  ]
+  const SESSION_COLOR = { bg: '#f0fdf4', border: '#0f4c2a', title: '#0f4c2a' }
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  const inl = s => esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`(.+?)`/g,'<code style="background:rgba(0,0,0,0.07);padding:1px 4px;border-radius:3px;font-size:11px">$1</code>')
+
+  // פרסור לבלוקים לפי ## headers
+  const blocks = []
+  let cur = null
+  for (const line of text.split('\n')) {
+    if (/^---+$/.test(line.trim())) continue
+    if (line.startsWith('## ')) {
+      const title = line.slice(3).trim()
+      const m = title.match(/^(\d+)\./)
+      const color = m ? (SECTION_COLORS[parseInt(m[1]) - 1] || SESSION_COLOR) : SESSION_COLOR
+      cur = { color, title, lines: [] }
+      blocks.push(cur)
+    } else {
+      if (!cur) { cur = { color: SESSION_COLOR, title: null, lines: [] }; blocks.push(cur) }
+      cur.lines.push(line)
+    }
+  }
+
+  const renderLines = (lines, accent) => {
+    const out = []
+    let blanks = 0
+    for (const line of lines) {
+      if (line.trim() === '') { blanks++; if (blanks === 1) out.push('<div style="height:4px"></div>'); continue }
+      blanks = 0
+      if (line.startsWith('### ')) { out.push(`<div style="font-size:13px;font-weight:700;color:${accent};margin:8px 0 3px">${inl(line.slice(4))}</div>`); continue }
+      if (line.startsWith('#### ')) { out.push(`<div style="font-size:12px;font-weight:600;color:#6b7280;margin:5px 0 2px">${inl(line.slice(5))}</div>`); continue }
+      if (/^\|.+\|$/.test(line)) { out.push(`<div style="font-family:monospace;font-size:11px;background:rgba(0,0,0,0.04);padding:3px 6px;margin:1px 0;border-radius:4px">${esc(line)}</div>`); continue }
+      if (line.startsWith('- ') || line.startsWith('• ')) { out.push(`<div style="display:flex;gap:6px;margin:2px 0"><span style="color:${accent};flex-shrink:0;font-weight:700">•</span><span>${inl(line.slice(2))}</span></div>`); continue }
+      const nm = line.match(/^(\d+)\.\s(.+)/)
+      if (nm) { out.push(`<div style="display:flex;gap:6px;margin:2px 0"><span style="color:${accent};font-weight:700;flex-shrink:0">${nm[1]}.</span><span>${inl(nm[2])}</span></div>`); continue }
+      out.push(`<div style="margin:2px 0;line-height:1.7">${inl(line)}</div>`)
+    }
+    return out.join('')
+  }
+
+  const html = blocks.map(b =>
+    `<div style="background:${b.color.bg};border:1.5px solid ${b.color.border};border-radius:12px;padding:14px 16px;margin-bottom:10px">` +
+    (b.title ? `<div style="font-size:15px;font-weight:800;color:${b.color.title};margin-bottom:8px">${inl(b.title)}</div>` : '') +
+    renderLines(b.lines, b.color.border) +
+    '</div>'
+  ).join('')
+  return { __html: html }
+}
+
 export default function AdminPage() {
   const [pin, setPin] = useState('')
   const [auth, setAuth] = useState(false)
@@ -299,6 +396,9 @@ export default function AdminPage() {
   const [inventory, setInventory] = useState([])
   const [newItemName, setNewItemName] = useState('')
   const [addingItem, setAddingItem] = useState(false)
+  const [visitOpen, setVisitOpen] = useState(false)
+  const [visitFindings, setVisitFindings] = useState({})
+  const [visitNotes, setVisitNotes] = useState('')
   const [previewDoc, setPreviewDoc] = useState(false)
   const [previewReport, setPreviewReport] = useState(false)
   const [togglingDoc, setTogglingDoc] = useState(false)
@@ -313,6 +413,9 @@ export default function AdminPage() {
   })
   const [journeyAnalysis, setJourneyAnalysis] = useState('')
   const [journeyLoading, setJourneyLoading] = useState(false)
+  const [journeySaving, setJourneySaving] = useState(false)
+  const [journeySaved, setJourneySaved] = useState(false)
+  const journeyAnswersRef = useRef({})
   const [sessionNotes, setSessionNotes] = useState('')
   const [journeyDocLoading, setJourneyDocLoading] = useState(false)
   const [journeyDocSent, setJourneyDocSent] = useState(false)
@@ -332,7 +435,7 @@ export default function AdminPage() {
 
   // ── 🩺 הגוף מדבר state ──
   const [bodyNotes, setBodyNotes] = useState({
-    body_signals: '', body_history: '', emotion_body: '', energy_sleep: '', hunger_satiety: '', already_knows: ''
+    body_signals: '', body_history: '', emotion_body: '', energy_sleep: '', hunger_satiety: '', already_knows: '', main_complaint: ''
   })
   const [bodyAnalysis, setBodyAnalysis] = useState('')
   const [bodyLoading, setBodyLoading] = useState(false)
@@ -360,6 +463,9 @@ export default function AdminPage() {
   const [rootsFeedbackSaved, setRootsFeedbackSaved] = useState(false)
   const [rootsFeedbackSent, setRootsFeedbackSent] = useState(false)
   const [sendingRootsFeedback, setSendingRootsFeedback] = useState(false)
+  const [rootsViewMode, setRootsViewMode] = useState('view')
+  const [bodyViewMode, setBodyViewMode] = useState('view')
+  const sessionDataRef = useRef({})
 
   // ── ✅ Plate Calculator state ──
   const [calculatingPlate, setCalculatingPlate] = useState(false)
@@ -382,6 +488,8 @@ export default function AdminPage() {
   }
 
   const login = () => { if (pin === 'Esterika26') setAuth(true) }
+
+  useEffect(function() { journeyAnswersRef.current = journeyAnswers }, [journeyAnswers])
 
   useEffect(function() { if (auth) { loadClients(); loadNutritionData() } }, [auth])
 
@@ -407,6 +515,9 @@ export default function AdminPage() {
     setSelectedTests({})
     setInventory([])
     setPreviewDoc(false)
+    setJourneyAnswers({ goal_reason: '', goal_what: '', goal_context: '', goal_why: '', goal_proof: '', vision_see: '', vision_hear: '', vision_feel: '', ecology_keep: '', ecology_harmony: '', ecology_who: '', belief_hard: '', belief_when: '', resources_has: '', resources_past: '', vaccine_moment: '', vaccine_action: '', vaccine_anchor: '', first_step: '' })
+    setJourneyAnalysis('')
+    setJourneySaved(false)
 
     // ✅ תמיד טוען נתונים טריים מה-DB — מונע באג של welcome_doc_enabled שמתאפס
     const { data: freshClient } = await supabase.from('clients').select('*').eq('id', client.id).maybeSingle()
@@ -414,13 +525,35 @@ export default function AdminPage() {
     setSelectedClient(activeClient)
     setAgentInstructions(activeClient.agent_instructions || '')
 
-    const { data } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
+    let { data } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
+    if (!data) {
+      // יצירת שורה ריקה — מבטיח שכל update עתידי יעבוד
+      await supabase.from('client_profiles').insert({ client_password: client.password, blood_tests: {} })
+      const { data: newData } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
+      data = newData
+    }
     if (data) {
       setProfile(data)
       setFoodDiary(data.food_diary || '')
       setExtraBloodNotes(data.extra_blood_notes || '')
       if (data.ai_report) { setAiAnalysis(data.ai_report); setEditableAnalysis(data.ai_report) }
+      if (data.roots_feedback) setRootsFeedback(data.roots_feedback)
+      if (data.body_feedback) setBodyFeedback(data.body_feedback)
     } else setProfile({ client_password: client.password, blood_tests: {} })
+
+    // טעינה מ-sessions_data (Supabase) — fallback ל-localStorage
+    const pw = client.password
+    const sd = data?.sessions_data || {}
+    sessionDataRef.current = sd
+    const lsLoad = (key, isJson) => { try { const v = localStorage.getItem('sd_' + key + '_' + pw); return v ? (isJson ? JSON.parse(v) : v) : null } catch(e) { return null } }
+    // journey — עמודות ייעודיות (עדיפות), fallback ל-sessions_data ול-localStorage
+    const jA = (data?.journey_answers && Object.keys(data.journey_answers).length > 0) ? data.journey_answers : (sd.journey_answers || lsLoad('journey_answers', true)); if (jA) setJourneyAnswers(prev => ({ ...prev, ...jA }))
+    const jAn = (data?.journey_analysis && data.journey_analysis.length > 0) ? data.journey_analysis : (sd.journey_analysis || lsLoad('journey_analysis', false)); if (jAn) setJourneyAnalysis(jAn)
+    const sN = sd.session_notes || lsLoad('session_notes', false); if (sN) setSessionNotes(sN)
+    const rN = sd.roots_notes || lsLoad('roots_notes', true); if (rN) setRootsNotes(n => ({ ...n, ...rN }))
+    const rAn = sd.roots_analysis || lsLoad('roots_analysis', false); if (rAn) { setRootsAnalysis(rAn); setRootsEditing(true); setRootsViewMode('view') }
+    const bN = sd.body_notes || lsLoad('body_notes', true); if (bN) setBodyNotes(n => ({ ...n, ...bN }))
+    const bAn = sd.body_analysis || lsLoad('body_analysis', false); if (bAn) { setBodyAnalysis(bAn); setBodyEditing(true); setBodyViewMode('view') }
     const { data: nd } = await supabase.from('nutrition_data').select('*').order('id')
     setNutritionItems(nd || [])
     const { data: logsData } = await supabase.from('daily_logs').select('*').eq('client_name', client.password).order('log_date', { ascending: false }).limit(30)
@@ -456,6 +589,48 @@ export default function AdminPage() {
     if (!selectedClient) return
     const { error } = await supabase.from('clients').update({ [field]: value }).eq('id', selectedClient.id)
     if (!error) setSelectedClient(prev => ({ ...prev, [field]: value }))
+  }
+
+  function saveSessionKey(key, value) {
+    if (!selectedClient?.password) return
+    // ref — תמיד עדכני, אין stale closure
+    sessionDataRef.current = { ...sessionDataRef.current, [key]: value }
+    const merged = sessionDataRef.current
+    // localStorage — גיבוי מיידי
+    try { localStorage.setItem('sd_' + key + '_' + selectedClient.password, typeof value === 'string' ? value : JSON.stringify(value)) } catch(e) {}
+    // Supabase sessions_data — שמירה בענן
+    setProfile(p => ({ ...p, sessions_data: merged }))
+    supabase.from('client_profiles').upsert({ client_password: selectedClient.password, sessions_data: merged }, { onConflict: 'client_password' }).then(() => {}).catch(() => {})
+  }
+
+  function saveJourney(answers, analysis) {
+    if (!selectedClient?.password) return
+    const pw = selectedClient.password
+    const upsertData = { client_password: pw }
+    if (answers !== undefined) {
+      upsertData.journey_answers = answers
+      try { localStorage.setItem('sd_journey_answers_' + pw, JSON.stringify(answers)) } catch(e) {}
+    }
+    if (analysis !== undefined) {
+      upsertData.journey_analysis = analysis
+      try { localStorage.setItem('sd_journey_analysis_' + pw, analysis) } catch(e) {}
+    }
+    supabase.from('client_profiles').upsert(upsertData, { onConflict: 'client_password' }).then(({ error }) => { if (error) console.error('saveJourney error:', error) }).catch((e) => console.error('saveJourney catch:', e))
+  }
+
+  async function handleSaveJourney() {
+    if (!selectedClient?.password) return
+    setJourneySaving(true)
+    const pw = selectedClient.password
+    const answers = journeyAnswersRef.current
+    const upsertData = { client_password: pw, journey_answers: answers }
+    if (journeyAnalysis) upsertData.journey_analysis = journeyAnalysis
+    try { localStorage.setItem('sd_journey_answers_' + pw, JSON.stringify(answers)) } catch(e) {}
+    const { error } = await supabase.from('client_profiles').upsert(upsertData, { onConflict: 'client_password' })
+    if (error) { console.error('handleSaveJourney error:', error); alert('שגיאה בשמירה: ' + error.message) }
+    setJourneySaving(false)
+    setJourneySaved(true)
+    setTimeout(() => setJourneySaved(false), 3000)
   }
 
   // ── ✅ פונקציות Agent Instructions ──
@@ -711,7 +886,7 @@ export default function AdminPage() {
       var nut = calcNutrition(l, nutritionData)
       var scanExtra = ''
       if (l.scan_calories > 0) { scanExtra = ' | 📸 צילום: ' + l.scan_calories + ' קל'; if (l.scan_desc) scanExtra += ' (' + l.scan_desc + ')' }
-      return 'תאריך: ' + l.log_date + ' | קלוריות: ' + Math.round(nut.calories) + (targets ? ' (יעד: ' + targets.calories + ')' : '') + ' | חלבון: ' + Math.round(nut.protein) + 'g | שומן: ' + Math.round(nut.fat) + 'g | מים: ' + (l.water || 0) + ' ליטר | צעדים: ' + (l.steps || 0) + scanExtra + (l.note ? ' | הערה: ' + l.note : '')
+      return 'תאריך: ' + l.log_date + ' | קלוריות: ' + Math.round(nut.calories) + (targets ? ' (יעד: ' + targets.calories + ')' : '') + ' | חלבון: ' + Math.round(nut.protein) + 'g' + (targets ? ' (יעד: ' + targets.protein + 'g)' : '') + ' | שומן: ' + Math.round(nut.fat) + 'g | פחמימות: ' + Math.round(nut.carbs) + 'g | מים: ' + (l.water || 0) + ' ליטר | צעדים: ' + (l.steps || 0) + scanExtra + (l.note ? ' | הערה: ' + l.note : '')
     }).join('\n')
 
     const res = await fetch('/api/analyze', {
@@ -922,7 +1097,7 @@ export default function AdminPage() {
                     const age = document.getElementById('quick_child_age').value
                     const weight = document.getElementById('quick_child_weight').value
                     const height = document.getElementById('quick_child_height').value
-                    const password = document.getElementById('quick_child_password').value || selectedClient.password
+                    const password = document.getElementById('quick_child_password').value || (selectedClient.password + '_child_' + Date.now().toString(36))
                     const genderBn = document.getElementById('quick_gender_בן')
                     const gender = genderBn && genderBn.style.background === 'rgb(124, 58, 237)' ? 'זכר' : 'נקבה'
                     await supabase.from('clients').insert({ name, age: age ? parseInt(age) : null, weight: weight ? parseFloat(weight) : null, height: height ? parseFloat(height) : null, gender, password, parent_id: selectedClient.id, is_child: true, created_at: new Date().toISOString() })
@@ -951,6 +1126,9 @@ export default function AdminPage() {
               }} style={{ padding: '8px 16px', borderRadius: 10, background: '#fef2f2', color: '#ef4444', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>🗑️ מחקי לקוח</button>
               </div>
               {/* עריכת נתוני לקוח */}
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                <input type="text" placeholder="סיסמה" defaultValue={selectedClient.password || ''} key={selectedClient.id + '_pw'} onBlur={async e => { const v = e.target.value.trim(); if (v && v !== selectedClient.password) { await updateClientData('password', v); setSelectedClient(c => ({...c, password: v})) } }} style={{ flex: 2, minWidth: 100, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
+              </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <input type="number" placeholder="גיל" value={selectedClient.age || ''} onChange={e => setSelectedClient(c => ({...c, age: e.target.value}))} onBlur={e => updateClientData('age', e.target.value ? parseInt(e.target.value) : null)} style={{ flex: 1, minWidth: 60, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
                 <input type="number" placeholder='משקל' value={selectedClient.weight || ''} onChange={e => setSelectedClient(c => ({...c, weight: e.target.value}))} onBlur={e => updateClientData('weight', e.target.value ? parseFloat(e.target.value) : null)} style={{ flex: 1, minWidth: 60, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
@@ -1671,6 +1849,70 @@ export default function AdminPage() {
 
             {tab === 'pantry' && (
               <div>
+
+                {/* ✅ צ׳קליסט ביקור בית */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '2px solid #bbf7d0' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => setVisitOpen(v => !v)}>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: '#0f4c2a' }}>🏠 צ׳קליסט ביקור בית — {selectedClient?.name}</div>
+                    <span style={{ fontSize: 13, color: '#16a34a', fontWeight: 700 }}>{visitOpen ? '▲ סגרי' : '▼ פתחי'}</span>
+                  </div>
+                  {!visitOpen && Object.keys(visitFindings).length > 0 && (
+                    <div style={{ marginTop: 6, fontSize: 12, color: '#6b7280' }}>
+                      {Object.values(visitFindings).filter(v => v === 'red').length} להוציא · {Object.values(visitFindings).filter(v => v === 'green').length} מצוין
+                    </div>
+                  )}
+                  {visitOpen && (
+                    <div style={{ marginTop: 14 }}>
+                      {VISIT_CHECKLIST.map(section => (
+                        <div key={section.section} style={{ marginBottom: 16 }}>
+                          <div style={{ fontWeight: 800, fontSize: 13, color: '#374151', marginBottom: 8, paddingBottom: 4, borderBottom: '1.5px solid #f3f4f6' }}>{section.section}</div>
+                          {section.items.map(item => {
+                            const status = visitFindings[item.id] || null
+                            return (
+                              <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '7px 0', borderBottom: '1px solid #f9fafb' }}>
+                                <div style={{ fontSize: 13, color: status ? VISIT_STATUS[status]?.border : '#374151', fontWeight: status ? 700 : 400 }}>{item.label}</div>
+                                <div style={{ display: 'flex', gap: 4 }}>
+                                  {Object.entries(VISIT_STATUS).map(([s, v]) => (
+                                    <button key={s} onClick={() => setVisitFindings(f => ({ ...f, [item.id]: f[item.id] === s ? null : s }))}
+                                      style={{ width: 34, height: 28, borderRadius: 8, border: '1.5px solid ' + (status === s ? v.border : '#e5e7eb'), background: status === s ? v.bg : '#fff', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}>
+                                      {v.emoji}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ))}
+                      <textarea value={visitNotes} onChange={e => setVisitNotes(e.target.value)}
+                        placeholder="הערות חופשיות מהביקור — סביבה, הרגלים, מה ראית..." rows={3}
+                        style={{ width: '100%', marginTop: 4, padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', boxSizing: 'border-box', textAlign: 'right', lineHeight: 1.6 }} />
+                      <button onClick={() => {
+                        const lines = ['📋 סיכום ביקור בית — ' + selectedClient?.name + ':\n']
+                        VISIT_CHECKLIST.forEach(section => {
+                          const reds = section.items.filter(i => visitFindings[i.id] === 'red').map(i => i.label)
+                          const yellows = section.items.filter(i => visitFindings[i.id] === 'yellow').map(i => i.label)
+                          const greens = section.items.filter(i => visitFindings[i.id] === 'green').map(i => i.label)
+                          if (reds.length || yellows.length || greens.length) {
+                            lines.push(section.section)
+                            if (reds.length) lines.push('🔴 להוציא: ' + reds.join(', '))
+                            if (yellows.length) lines.push('🟡 לאזן: ' + yellows.join(', '))
+                            if (greens.length) lines.push('✅ מצוין: ' + greens.join(', '))
+                            lines.push('')
+                          }
+                        })
+                        if (visitNotes.trim()) lines.push('📝 הערות: ' + visitNotes.trim())
+                        const summary = lines.join('\n')
+                        setSelectedClient(prev => ({ ...prev, pantry_notes: summary }))
+                        updateClientData('pantry_notes', summary)
+                        setVisitOpen(false)
+                      }} style={{ width: '100%', marginTop: 10, padding: 12, borderRadius: 10, background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+                        💾 סכמי וסגרי ← שמרי להנחיות מזווה
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8, color: '#0f4c2a' }}>🎥 וידאו אישי למטופלת</div>
                   <input value={selectedClient.video_url || ''} onChange={e => setSelectedClient(prev => ({ ...prev, video_url: e.target.value }))} onBlur={e => updateClientData('video_url', e.target.value)} placeholder="קישור YouTube או Vimeo..." style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
@@ -1816,7 +2058,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -1832,7 +2074,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#0284c7', marginBottom: 4, fontStyle: 'italic' }}>💙 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -1848,7 +2090,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#0d9488', marginBottom: 4, fontStyle: 'italic' }}>💚 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -1863,7 +2105,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#dc2626', marginBottom: 4, fontStyle: 'italic' }}>❤️ {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -1877,7 +2119,7 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#d97706', marginBottom: 4, fontStyle: 'italic' }}>🧡 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -1893,17 +2135,23 @@ export default function AdminPage() {
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
+
+                <button onClick={handleSaveJourney} disabled={journeySaving} style={{ width: '100%', padding: 13, borderRadius: 12, background: journeySaved ? '#16a34a' : journeySaving ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: journeySaving ? 'default' : 'pointer', fontWeight: 700, fontSize: 15, marginBottom: 10 }}>
+                  {journeySaving ? '⏳ שומר...' : journeySaved ? '✅ נשמר!' : '💾 שמרי תשובות'}
+                </button>
 
                 <button onClick={async () => {
                   setJourneyLoading(true); setJourneyAnalysis('')
                   const profileSummary = `מחלות: ${profile.medical_history || 'לא צוין'} | תרופות: ${profile.medications || 'לא צוין'} | אכילה רגשית: ${profile.emotional_eating || 'לא צוין'} | מה מעכב: ${profile.goal_obstacles || 'לא צוין'}`
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, clientProfile: profileSummary, outputType: 'analysis' }) })
                   const data = await res.json()
-                  setJourneyAnalysis(data.result || '')
+                  const jResult = data.result || ''
+                  setJourneyAnalysis(jResult)
+                  saveJourney(journeyAnswers, jResult)
                   setJourneyLoading(false)
                 }} disabled={journeyLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
                   {journeyLoading ? '⏳ מנתח...' : '🔍 הפק ניתוח לפגישה (לעיניך בלבד)'}
@@ -1912,7 +2160,7 @@ export default function AdminPage() {
                 {journeyAnalysis && (
                   <div style={{ background: '#fff', borderRadius: 18, padding: '18px', marginBottom: 16, border: '2px solid #7c3aed' }}>
                     <div style={{ fontWeight: 800, fontSize: 15, color: '#7c3aed', marginBottom: 12 }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
-                    <div style={{ fontSize: 13, color: '#333', lineHeight: 1.9, whiteSpace: 'pre-wrap', textAlign: 'right' }}>{journeyAnalysis}</div>
+                    <div style={{ fontSize: 13, color: '#333', lineHeight: 1.9, textAlign: 'right', direction: 'rtl' }} dangerouslySetInnerHTML={renderMd(journeyAnalysis)} />
                   </div>
                 )}
 
@@ -1920,7 +2168,7 @@ export default function AdminPage() {
                   <div style={{ background: '#fff', borderRadius: 18, padding: '18px', border: '1.5px solid #e9d5ff' }}>
                     <div style={{ fontWeight: 800, fontSize: 14, color: '#7c3aed', marginBottom: 8 }}>📝 מה גילינו בפגישה 2</div>
                     <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>הוסיפי בקצרה מה השתנה, מה פירקנו, מה האמונה החדשה</div>
-                    <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
+                    <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} onBlur={() => saveSessionKey('session_notes', sessionNotes)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
                     <button onClick={async () => {
                       setJourneyDocLoading(true)
                       const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, sessionNotes, outputType: 'clientDoc' }) })
@@ -1963,6 +2211,7 @@ export default function AdminPage() {
                     <textarea
                       value={rootsNotes[key]}
                       onChange={e => setRootsNotes(prev => ({ ...prev, [key]: e.target.value }))}
+                      onBlur={() => saveSessionKey('roots_notes', rootsNotes)}
                       placeholder={placeholder}
                       rows={3}
                       style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
@@ -1979,20 +2228,26 @@ export default function AdminPage() {
                   }).filter(Boolean).join('\n\n')
                   const prompt = 'אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להתכונן לפגישת שורשים עם לקוחה.\n\n' +
                     'הערות מהזום המקדים:\n' + notesText + '\n\n' +
-                    'נתוני הלקוחה: ' + (selectedClient?.name||'') + ', גיל ' + (selectedClient?.age||'לא ידוע') + ', מטרה: ' + (selectedClient?.goal||'לא ידוע') + '\n\n' +
+                    'נתוני הלקוחה: ' + (selectedClient?.name||'') + ', גיל ' + (selectedClient?.age||'לא ידוע') + ', מטרה: ' + (selectedClient?.goal||'לא ידוע') + ', מסלול: ' + (selectedClient?.client_track === 'child' ? 'עבור ילד' : selectedClient?.client_track === 'both' ? 'שניהם' : 'עצמי') + '\n\n' +
                     'הפק ניתוח מעמיק לאתי לקראת הפגישה הפיזית. כתוב בעברית, גוף שלישי נקבה. כלול:\n\n' +
                     '**1. תמונת הבית שגדלה בו**\nמה עיצב את הקשר שלה עם אוכל ועם הגוף. ציטט ישירות מהדברים.\n\n' +
                     '**2. פצע הזהות הגופנית**\nאיך חוותה את עצמה בתוך המשפחה — שייכות / נבדלות / השוואה. מה זה עשה לדימוי העצמי.\n\n' +
                     '**3. אמונות מגבילות שזוהו**\nרשימה ממוקדת. לכל אמונה — מה היא, מאיפה היא מגיעה, ואיך היא מתבטאת היום.\n\n' +
                     '**4. דפוסי מוטיבציה**\nמה מניע, מה מכבה, מה קורה אחרי כישלון. סוג המוטיבציה — חיצונית / פנימית.\n\n' +
-                    '**5. מה עובר לילדים (אם רלוונטי)**\nדינמיקות ספציפיות שזוהו. מה הלקוחה מודעת אליו ומה לא.\n\n' +
+                    ((selectedClient?.client_track === 'child' || selectedClient?.client_track === 'both')
+                      ? '**5. הגלגל הדורי — חובה לכלול**\nהלקוחה היא הורה. ציין בדיוק: מה הועבר אליה מהדור הקודם ← מה היא כרגע מעבירה לילד/ה שלה ← מה ניתן לעצור. זה לב הפגישה עבורה.\n\n'
+                      : '**5. דפוסים בין-דוריים**\nכלול רק אם עלה בתשובות קשר לדינמיקות בין-דוריות. אם לא — השמט לחלוטין.\n\n') +
                     '**6. מבנה מוצע לפגישה**\nסדר הנושאים + זמן משוער לכל נושא + על מה לשים דגש. כולל שאלת פתיחה מומלצת.\n\n' +
                     '**7. צעדים פרקטיים לשינוי**\nלפחות 6-8 צעדים קונקרטיים שאפשר לעשות מהיום — מותאמים ספציפית לה.\n\n' +
                     '**8. שאלות המשך אם משהו חסר**\n2-3 שאלות שכדאי לשאול בפגישה אם הנושא לא כוסה מספיק.'
 
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
                   const data = await res.json()
-                  if (data.result) { setRootsAnalysis(data.result); setRootsEditing(true) }
+                  if (data.result) {
+                    setRootsAnalysis(data.result); setRootsEditing(true); setRootsViewMode('view')
+                    saveSessionKey('roots_notes', rootsNotes)
+                    saveSessionKey('roots_analysis', data.result)
+                  }
                   setRootsLoading(false)
                 }} disabled={rootsLoading || !Object.values(rootsNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: rootsLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {rootsLoading ? '⏳ מנתח...' : '🌱 הפק ניתוח AI לפגישה'}
@@ -2004,12 +2259,18 @@ export default function AdminPage() {
                     <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div>
                         <div style={{ fontWeight: 800, fontSize: 14 }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
-                        <div style={{ fontSize: 11, color: '#86efac' }}>ערכי והוסיפי — ואז עבדי מחדש או סגרי</div>
+                        <div style={{ fontSize: 11, color: '#86efac' }}>{rootsViewMode === 'view' ? 'לחצי ✏️ לעריכה' : 'ערכי → onBlur שומר אוטומטית'}</div>
                       </div>
-                      <button onClick={() => { setRootsEditing(false); setRootsAnalysis('') }} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => setRootsViewMode(m => m === 'view' ? 'edit' : 'view')} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{rootsViewMode === 'view' ? '✏️ ערכי' : '👁️ צפי'}</button>
+                        <button onClick={() => { setRootsEditing(false); setRootsAnalysis(''); saveSessionKey('roots_analysis', '') }} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕</button>
+                      </div>
                     </div>
                     <div style={{ padding: 16 }}>
-                      <textarea value={rootsAnalysis} onChange={e => setRootsAnalysis(e.target.value)} rows={20} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      {rootsViewMode === 'view'
+                        ? <div style={{ fontSize: 13, color: '#1a1a1a', lineHeight: 1.8, textAlign: 'right', direction: 'rtl' }} dangerouslySetInnerHTML={renderMd(rootsAnalysis)} />
+                        : <textarea value={rootsAnalysis} onChange={e => setRootsAnalysis(e.target.value)} onBlur={() => saveSessionKey('roots_analysis', rootsAnalysis)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      }
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
                       <button onClick={async () => {
@@ -2017,7 +2278,7 @@ export default function AdminPage() {
                         const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה שניתנה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + rootsAnalysis
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
                         const data = await res.json()
-                        if (data.result) setRootsAnalysis(data.result)
+                        if (data.result) { setRootsAnalysis(data.result); setRootsViewMode('view'); saveSessionKey('roots_analysis', data.result) }
                         setRootsLoading(false)
                       }} disabled={rootsLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {rootsLoading ? '⏳...' : '🔄 עבדי מחדש'}
@@ -2095,17 +2356,18 @@ export default function AdminPage() {
                   { key: 'energy_sleep', icon: '😴', title: 'אנרגיה ושינה', placeholder: 'איך האנרגיה לאורך היום? ירידות — מתי? כמה שעות שינה? קימה — קלה או קשה?' },
                   { key: 'hunger_satiety', icon: '🍽️', title: 'רעב ושובע', placeholder: 'איך יודעת שרעבה? איך יודעת שבעה? מרגישה הבדל בין רעב פיזי לרגשי?' },
                   { key: 'already_knows', icon: '💡', title: 'מה היא כבר יודעת', placeholder: 'יש משהו שחושדת שהגוף מנסה לומר ועדיין לא הקשיבה? אם הגוף יכול לדבר — מה הוא מבקש?' },
+                  { key: 'main_complaint', icon: '🎯', title: 'מה הגוף שלה צועק עליו', placeholder: 'מה היא הכי רוצה לפתור? מה מפריע לה — גופנית, אנרגטית, ויזואלית?' },
                 ].map(({ key, icon, title, placeholder }) => (
                   <div key={key} style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 12, border: '1.5px solid #e5e7eb' }}>
                     <div style={{ fontWeight: 700, fontSize: 14, color: '#0f4c2a', marginBottom: 8 }}>{icon} {title}</div>
-                    <textarea value={bodyNotes[key]} onChange={e => setBodyNotes(prev => ({ ...prev, [key]: e.target.value }))} placeholder={placeholder} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }} />
+                    <textarea value={bodyNotes[key]} onChange={e => setBodyNotes(prev => ({ ...prev, [key]: e.target.value }))} onBlur={() => saveSessionKey('body_notes', bodyNotes)} placeholder={placeholder} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }} />
                   </div>
                 ))}
 
                 <button onClick={async () => {
                   setBodyLoading(true); setBodyAnalysis(''); setBodyEditing(false)
                   const notesText = Object.entries(bodyNotes).map(([k,v]) => {
-                    const labels = { body_signals: 'מה הגוף אומר היום', body_history: 'היסטוריה של הגוף', emotion_body: 'קשר רגש-גוף', energy_sleep: 'אנרגיה ושינה', hunger_satiety: 'רעב ושובע', already_knows: 'מה היא כבר יודעת' }
+                    const labels = { body_signals: 'מה הגוף אומר היום', body_history: 'היסטוריה של הגוף', emotion_body: 'קשר רגש-גוף', energy_sleep: 'אנרגיה ושינה', hunger_satiety: 'רעב ושובע', already_knows: 'מה היא כבר יודעת', main_complaint: 'מה הגוף שלה צועק עליו' }
                     return v.trim() ? labels[k] + ':\n' + v : ''
                   }).filter(Boolean).join('\n\n')
 
@@ -2124,14 +2386,14 @@ export default function AdminPage() {
                   ) : ''
 
                   const TOPICS = '12 נושאי חובה שיש לשלב כשרלוונטי:\n' +
-                    '1. סוכר ואינסולין — עודף סוכר שאינסולין לא מכניס לתא הופך לשומן. קפיצה ונפילה. חשק למתוק = נפילת סוכר.\n' +
+                    '1. סוכר ואינסולין — עודף סוכר שאינסולין לא מכניס לתא הופך לשומן. קפיצה ונפילה. חשק למתוק = נפילת סוכר. פרוקטוז (מיצים/פירות מרוכזים) → כבד → ישירות שומן קרביים.\n' +
                     '2. חלבון — בלי מספיק: הגוף מפרק שריר. פחות שריר = מטבוליזם איטי = קשה לרדת.\n' +
-                    '3. שומן בריא vs. לא בריא — שמן זית/אבוקדו/אומגה 3 vs. שמן מעובד/טרנס. שומן לא משמין — הסוג הלא נכון משמין.\n' +
+                    '3. שומן בריא vs. לא בריא — שמן זית/אבוקדו/אומגה 3 vs. שמן מעובד/טרנס. שומן לא משמין — הסוג הלא נכון משמין. אלכוהול: מכבה שריפת שומן + מנתב קלוריות ישירות לאחסון בטני.\n' +
                     '4. פחמימות — מהירות (קפיצת סוכר) vs. מורכבות (אנרגיה יציבה). GI נמוך = שובע ממושך.\n' +
                     '5. סיבים — מזון לחיידקי המעי, שובע, ויסות סוכר, מניעת עצירות.\n' +
                     '6. ויטמינים ומינרלים — תת תזונה בעודף משקל: B12, ברזל, ויטמין D, מגנזיום. חסר = עייפות, קושי בירידה.\n' +
                     '7. הפסקות בין ארוחות — אינסולין גבוה כל הזמן = הגוף לא שורף שומן. צריך חלון.\n' +
-                    '8. סטרס וקורטיזול — קורטיזול מעלה סוכר → מעלה אינסולין → מאחסן שומן בבטן.\n' +
+                    '8. סטרס וקורטיזול — קורטיזול מעלה סוכר → מעלה אינסולין → מאחסן שומן בבטן. השמנה בטנית = צומת: גירעון קלורי הוא הבסיס, קורטיזול+פרוקטוז+אלכוהול+פחמימות מהירות מכוונים ספציפית לאזור הבטן.\n' +
                     '9. שינה — חוסר שינה: גרלין עולה (רעב) + לפטין יורד (שובע). לילה של 5 שעות = 300 קלוריות נוספות ביום אחרי.\n' +
                     '10. 3 מוחות + ENS — קורטקס, אוטומטי, ENS (500M נוירונים). 90% סרוטונין במעי. עצב הואגוס דו-כיווני.\n' +
                     '11. פסיכוסומטי — כל רגש יש לו ביטוי פיזי. מחקר שוודי: חרם → פי 1.3 מחלת מעי דלקתית גם 20 שנה אחרי. טריגרים שנוצרים.\n' +
@@ -2142,15 +2404,21 @@ export default function AdminPage() {
                     'נתוני שאלון 360:\n' + profile360 + '\n\n' +
                     'הערות מהזום המקדים:\n' + notesText + '\n\n' +
                     TOPICS + '\n\n' +
+                    'גישת הניתוח: הגוף אינו אויב — הוא שפה. כל סימפטום הוא הודעה, לא כשל. לכל דפוס שזיהית — שאל: מה הגוף שלה מנסה לשמור? על מה הוא מגן? הסבר תמיד מתחיל מ"הגוף עושה זאת כי..." ולא "יש לה בעיה עם...".\n\n' +
                     'הפק ניתוח מעמיק לאתי. כתוב בעברית, מקצועי וישיר. המבנה:\n\n' +
-                    '**דפוסים שזוהו — כל אחד עם הסבר רלוונטי**\n' +
-                    'לכל דפוס שזוהה מהשאלון/זום:\n' +
-                    '• [מה היא אמרה / מה עלה בשאלון]\n' +
-                    '• [ההסבר הפיזיולוגי/מדעי הרלוונטי מרשימת ה-12 — בשפה פשוטה]\n' +
-                    '• [מה זה אומר עבורה ספציפית]\n' +
-                    'אין הגבלה לכמות הדפוסים — כלול את כולם.\n\n' +
-                    '**ידע חובה לשלב בשיעור (לפי הרלוונטיות אליה)**\n' +
-                    'אילו מ-12 הנושאים חייבים להיכנס לשיעור שלה — ולמה.\n\n' +
+                    '**מה הגוף שלה אומר — תרגום**\n' +
+                    'בחר את 2-3 הסימפטומים/דפוסים הבולטים ביותר שעלו. לכל אחד:\n' +
+                    '• [מה היא חוותה — בלשונה]\n' +
+                    '• [מה הגוף עושה ולמה — לא "מה הבעיה" אלא "מה הגוף מנסה לשמור"]\n' +
+                    '• [ההודעה הרגשית שמאחורי הסימפטום]\n\n' +
+                    '**ניתוח סיבתי — אם ציינה תלונה ספציפית**\n' +
+                    'אם עלתה תלונה ספציפית (השמנה בטנית, נפיחות, עייפות כרונית, ריבאונד) — פרק את כל הגורמים הרלוונטיים לנתוניה. לכל גורם:\n' +
+                    '• [מנגנון — מה הגוף עושה ולמה]\n' +
+                    '• [האם נתוניה תומכים בכך — כן/לא]\n' +
+                    '• [צעד קונקרטי אחד לטיפול]\n' +
+                    'אל תסתפק בסיבה אחת. השמנה בטנית לדוגמה: גירעון קלורי + קורטיזול + פרוקטוז + אלכוהול + שינה — כל אחד בנפרד.\n\n' +
+                    '**ידע שמשלים את התמונה — רק מה שרלוונטי לה**\n' +
+                    'מתוך 12 הנושאים — בחר אך ורק את אלה שמסבירים ישירות סימפטום שהיא ציינה. אל תכלול נושאים שלא עלו ממנה.\n\n' +
                     '**מבנה מוצע לשעה הפיזית**\n' +
                     'סדר הנושאים + זמן + שאלת פתיחה מומלצת + רגעי חיבור אישי.\n\n' +
                     '**משפטי חיבור אישי מוכנים**\n' +
@@ -2162,7 +2430,11 @@ export default function AdminPage() {
 
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
                   const data = await res.json()
-                  if (data.result) { setBodyAnalysis(data.result); setBodyEditing(true) }
+                  if (data.result) {
+                    setBodyAnalysis(data.result); setBodyEditing(true); setBodyViewMode('view')
+                    saveSessionKey('body_notes', bodyNotes)
+                    saveSessionKey('body_analysis', data.result)
+                  }
                   setBodyLoading(false)
                 }} disabled={bodyLoading || !Object.values(bodyNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: bodyLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {bodyLoading ? '⏳ מנתח...' : '🩺 הפק ניתוח AI לפגישה'}
@@ -2173,12 +2445,18 @@ export default function AdminPage() {
                     <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div>
                         <div style={{ fontWeight: 800, fontSize: 14 }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
-                        <div style={{ fontSize: 11, color: '#86efac' }}>ערכי והוסיפי — ואז עבדי מחדש או הפיקי משוב</div>
+                        <div style={{ fontSize: 11, color: '#86efac' }}>{bodyViewMode === 'view' ? 'לחצי ✏️ לעריכה' : 'ערכי → onBlur שומר אוטומטית'}</div>
                       </div>
-                      <button onClick={() => { setBodyEditing(false); setBodyAnalysis('') }} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => setBodyViewMode(m => m === 'view' ? 'edit' : 'view')} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{bodyViewMode === 'view' ? '✏️ ערכי' : '👁️ צפי'}</button>
+                        <button onClick={() => { setBodyEditing(false); setBodyAnalysis(''); saveSessionKey('body_analysis', '') }} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕</button>
+                      </div>
                     </div>
                     <div style={{ padding: 16 }}>
-                      <textarea value={bodyAnalysis} onChange={e => setBodyAnalysis(e.target.value)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      {bodyViewMode === 'view'
+                        ? <div style={{ fontSize: 13, color: '#1a1a1a', lineHeight: 1.8, textAlign: 'right', direction: 'rtl' }} dangerouslySetInnerHTML={renderMd(bodyAnalysis)} />
+                        : <textarea value={bodyAnalysis} onChange={e => setBodyAnalysis(e.target.value)} onBlur={() => saveSessionKey('body_analysis', bodyAnalysis)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      }
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
                       <button onClick={async () => {
@@ -2186,7 +2464,7 @@ export default function AdminPage() {
                         const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + bodyAnalysis
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
                         const data = await res.json()
-                        if (data.result) setBodyAnalysis(data.result)
+                        if (data.result) { setBodyAnalysis(data.result); setBodyViewMode('view'); saveSessionKey('body_analysis', data.result) }
                         setBodyLoading(false)
                       }} disabled={bodyLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {bodyLoading ? '⏳...' : '🔄 עבדי מחדש'}
