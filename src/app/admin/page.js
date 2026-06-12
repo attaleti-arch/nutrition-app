@@ -510,6 +510,8 @@ export default function AdminPage() {
     setSelectedTests({})
     setInventory([])
     setPreviewDoc(false)
+    setJourneyAnswers({ goal_reason: '', goal_what: '', goal_context: '', goal_why: '', goal_proof: '', vision_see: '', vision_hear: '', vision_feel: '', ecology_keep: '', ecology_harmony: '', ecology_who: '', belief_hard: '', belief_when: '', resources_has: '', resources_past: '', vaccine_moment: '', vaccine_action: '', vaccine_anchor: '', first_step: '' })
+    setJourneyAnalysis('')
 
     // ✅ תמיד טוען נתונים טריים מה-DB — מונע באג של welcome_doc_enabled שמתאפס
     const { data: freshClient } = await supabase.from('clients').select('*').eq('id', client.id).maybeSingle()
@@ -533,7 +535,7 @@ export default function AdminPage() {
     sessionDataRef.current = sd
     const lsLoad = (key, isJson) => { try { const v = localStorage.getItem('sd_' + key + '_' + pw); return v ? (isJson ? JSON.parse(v) : v) : null } catch(e) { return null } }
     // journey — עמודות ייעודיות (עדיפות), fallback ל-sessions_data ול-localStorage
-    const jA = (data?.journey_answers && Object.keys(data.journey_answers).length > 0) ? data.journey_answers : (sd.journey_answers || lsLoad('journey_answers', true)); if (jA) setJourneyAnswers(a => ({ ...a, ...jA }))
+    const jA = (data?.journey_answers && Object.keys(data.journey_answers).length > 0) ? data.journey_answers : (sd.journey_answers || lsLoad('journey_answers', true)); if (jA) setJourneyAnswers(prev => ({ ...prev, ...jA }))
     const jAn = (data?.journey_analysis && data.journey_analysis.length > 0) ? data.journey_analysis : (sd.journey_analysis || lsLoad('journey_analysis', false)); if (jAn) setJourneyAnalysis(jAn)
     const sN = sd.session_notes || lsLoad('session_notes', false); if (sN) setSessionNotes(sN)
     const rN = sd.roots_notes || lsLoad('roots_notes', true); if (rN) setRootsNotes(n => ({ ...n, ...rN }))
@@ -601,7 +603,7 @@ export default function AdminPage() {
       upsertData.journey_analysis = analysis
       try { localStorage.setItem('sd_journey_analysis_' + pw, analysis) } catch(e) {}
     }
-    supabase.from('client_profiles').upsert(upsertData, { onConflict: 'client_password' }).then(() => {}).catch(() => {})
+    supabase.from('client_profiles').upsert(upsertData, { onConflict: 'client_password' }).then(({ error }) => { if (error) console.error('saveJourney error:', error) }).catch((e) => console.error('saveJourney catch:', e))
   }
 
   // ── ✅ פונקציות Agent Instructions ──
