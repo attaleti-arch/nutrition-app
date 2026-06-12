@@ -1098,7 +1098,7 @@ export default function AdminPage() {
               </div>
               {/* עריכת נתוני לקוח */}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                <input type="text" placeholder="סיסמה" value={selectedClient.password || ''} onChange={e => setSelectedClient(c => ({...c, password: e.target.value}))} onBlur={e => updateClientData('password', e.target.value)} style={{ flex: 2, minWidth: 100, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
+                <input type="text" placeholder="סיסמה" defaultValue={selectedClient.password || ''} key={selectedClient.id + '_pw'} onBlur={async e => { const v = e.target.value.trim(); if (v && v !== selectedClient.password) { await updateClientData('password', v); setSelectedClient(c => ({...c, password: v})) } }} style={{ flex: 2, minWidth: 100, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <input type="number" placeholder="גיל" value={selectedClient.age || ''} onChange={e => setSelectedClient(c => ({...c, age: e.target.value}))} onBlur={e => updateClientData('age', e.target.value ? parseInt(e.target.value) : null)} style={{ flex: 1, minWidth: 60, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
