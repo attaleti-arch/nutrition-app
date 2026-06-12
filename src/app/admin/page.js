@@ -465,6 +465,9 @@ export default function AdminPage() {
   const [rootsFeedbackSaved, setRootsFeedbackSaved] = useState(false)
   const [rootsFeedbackSent, setRootsFeedbackSent] = useState(false)
   const [sendingRootsFeedback, setSendingRootsFeedback] = useState(false)
+  const [rootsNotesSaved, setRootsNotesSaved] = useState(false)
+  const [bodyNotesSaved, setBodyNotesSaved] = useState(false)
+  const [childNotesSaved, setChildNotesSaved] = useState(false)
   const [rootsViewMode, setRootsViewMode] = useState('view')
   const [bodyViewMode, setBodyViewMode] = useState('view')
   const sessionDataRef = useRef({})
@@ -2140,6 +2143,10 @@ export default function AdminPage() {
                   </div>
                 ))}
 
+                <button onClick={() => { saveSessionKey('roots_notes', rootsNotes); setRootsNotesSaved(true); setTimeout(() => setRootsNotesSaved(false), 3000) }} style={{ width: '100%', padding: 12, borderRadius: 12, background: rootsNotesSaved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
+                  {rootsNotesSaved ? '✅ נשמר!' : '💾 שמרי הערות'}
+                </button>
+
                 {/* כפתור ניתוח */}
                 <button onClick={async () => {
                   setRootsLoading(true); setRootsAnalysis(''); setRootsEditing(false)
@@ -2284,6 +2291,10 @@ export default function AdminPage() {
                     <textarea value={bodyNotes[key]} onChange={e => setBodyNotes(prev => ({ ...prev, [key]: e.target.value }))} onBlur={() => saveSessionKey('body_notes', bodyNotes)} placeholder={placeholder} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }} />
                   </div>
                 ))}
+
+                <button onClick={() => { saveSessionKey('body_notes', bodyNotes); setBodyNotesSaved(true); setTimeout(() => setBodyNotesSaved(false), 3000) }} style={{ width: '100%', padding: 12, borderRadius: 12, background: bodyNotesSaved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
+                  {bodyNotesSaved ? '✅ נשמר!' : '💾 שמרי הערות'}
+                </button>
 
                 <button onClick={async () => {
                   setBodyLoading(true); setBodyAnalysis(''); setBodyEditing(false)
@@ -2466,6 +2477,10 @@ export default function AdminPage() {
                     <textarea value={childNotes[key]} onChange={e => setChildNotes(prev => ({ ...prev, [key]: e.target.value }))} placeholder={placeholder} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }} />
                   </div>
                 ))}
+
+                <button onClick={() => { saveSessionKey('child_notes', childNotes); setChildNotesSaved(true); setTimeout(() => setChildNotesSaved(false), 3000) }} style={{ width: '100%', padding: 12, borderRadius: 12, background: childNotesSaved ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
+                  {childNotesSaved ? '✅ נשמר!' : '💾 שמרי הערות'}
+                </button>
 
                 <button onClick={async () => {
                   setChildLoading(true); setChildAnalysis(''); setChildEditing(false)
