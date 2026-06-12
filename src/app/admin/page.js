@@ -2280,9 +2280,12 @@ ${journeyAnalysis ? `<div class="section-title">ניתוח לפגישה</div>${a
                   setJourneyAnalysis(jResult)
                   saveJourney(journeyAnswers, jResult)
                   setJourneyLoading(false)
-                }} disabled={journeyLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginBottom: 12 }}>
-                  {journeyLoading ? '⏳ מנתח...' : '🔍 הפק ניתוח לפגישה (לעיניך בלבד)'}
+                }} disabled={journeyLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginBottom: 8 }}>
+                  {journeyLoading ? '⏳ מנתח... (עד דקה וחצי)' : '🔍 הפק ניתוח לפגישה (לעיניך בלבד)'}
                 </button>
+                {!journeyLoading && journeyAnalysis && (
+                  <div style={{ textAlign: 'center', fontSize: 12, color: '#16a34a', marginBottom: 10, fontWeight: 600 }}>✅ הניתוח נשמר — בטוח לסגור</div>
+                )}
 
                 {journeyAnalysis && (
                   <div style={{ background: '#fff', borderRadius: 18, padding: '18px', marginBottom: 16, border: '2px solid #7c3aed' }}>
