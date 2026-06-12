@@ -413,6 +413,9 @@ export default function AdminPage() {
   })
   const [journeyAnalysis, setJourneyAnalysis] = useState('')
   const [journeyLoading, setJourneyLoading] = useState(false)
+  const [journeySaving, setJourneySaving] = useState(false)
+  const [journeySaved, setJourneySaved] = useState(false)
+  const journeyAnswersRef = useRef({})
   const [sessionNotes, setSessionNotes] = useState('')
   const [journeyDocLoading, setJourneyDocLoading] = useState(false)
   const [journeyDocSent, setJourneyDocSent] = useState(false)
@@ -486,6 +489,8 @@ export default function AdminPage() {
 
   const login = () => { if (pin === 'Esterika26') setAuth(true) }
 
+  useEffect(function() { journeyAnswersRef.current = journeyAnswers }, [journeyAnswers])
+
   useEffect(function() { if (auth) { loadClients(); loadNutritionData() } }, [auth])
 
   async function loadNutritionData() {
@@ -512,6 +517,7 @@ export default function AdminPage() {
     setPreviewDoc(false)
     setJourneyAnswers({ goal_reason: '', goal_what: '', goal_context: '', goal_why: '', goal_proof: '', vision_see: '', vision_hear: '', vision_feel: '', ecology_keep: '', ecology_harmony: '', ecology_who: '', belief_hard: '', belief_when: '', resources_has: '', resources_past: '', vaccine_moment: '', vaccine_action: '', vaccine_anchor: '', first_step: '' })
     setJourneyAnalysis('')
+    setJourneySaved(false)
 
     // ✅ תמיד טוען נתונים טריים מה-DB — מונע באג של welcome_doc_enabled שמתאפס
     const { data: freshClient } = await supabase.from('clients').select('*').eq('id', client.id).maybeSingle()
@@ -604,6 +610,21 @@ export default function AdminPage() {
       try { localStorage.setItem('sd_journey_analysis_' + pw, analysis) } catch(e) {}
     }
     supabase.from('client_profiles').upsert(upsertData, { onConflict: 'client_password' }).then(({ error }) => { if (error) console.error('saveJourney error:', error) }).catch((e) => console.error('saveJourney catch:', e))
+  }
+
+  async function handleSaveJourney() {
+    if (!selectedClient?.password) return
+    setJourneySaving(true)
+    const pw = selectedClient.password
+    const answers = journeyAnswersRef.current
+    const upsertData = { client_password: pw, journey_answers: answers }
+    if (journeyAnalysis) upsertData.journey_analysis = journeyAnalysis
+    try { localStorage.setItem('sd_journey_answers_' + pw, JSON.stringify(answers)) } catch(e) {}
+    const { error } = await supabase.from('client_profiles').upsert(upsertData, { onConflict: 'client_password' })
+    if (error) { console.error('handleSaveJourney error:', error); alert('שגיאה בשמירה: ' + error.message) }
+    setJourneySaving(false)
+    setJourneySaved(true)
+    setTimeout(() => setJourneySaved(false), 3000)
   }
 
   // ── ✅ פונקציות Agent Instructions ──
@@ -2112,6 +2133,10 @@ export default function AdminPage() {
                     </div>
                   ))}
                 </div>
+
+                <button onClick={handleSaveJourney} disabled={journeySaving} style={{ width: '100%', padding: 13, borderRadius: 12, background: journeySaved ? '#16a34a' : journeySaving ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: journeySaving ? 'default' : 'pointer', fontWeight: 700, fontSize: 15, marginBottom: 10 }}>
+                  {journeySaving ? '⏳ שומר...' : journeySaved ? '✅ נשמר!' : '💾 שמרי תשובות'}
+                </button>
 
                 <button onClick={async () => {
                   setJourneyLoading(true); setJourneyAnalysis('')
