@@ -112,6 +112,8 @@ export default function PrintPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [editMode, setEditMode] = useState(false)
+  const [editedAnalysis, setEditedAnalysis] = useState('')
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -128,6 +130,17 @@ export default function PrintPage() {
     }
     load()
   }, [])
+
+  useEffect(() => {
+    if (!data) return
+    const { type, sd, profile } = data
+    const src = type === 'journey' ? (profile?.journey_analysis || '')
+      : type === 'roots' ? (sd.roots_analysis || '')
+      : type === 'body' ? (sd.body_analysis || '')
+      : type === 'child' ? (sd.child_analysis || '')
+      : ''
+    setEditedAnalysis(src)
+  }, [data])
 
   if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: 18, color: '#6b7280' }}>⏳ טוען...</div>
   if (error) return <div style={{ padding: 40, color: 'red' }}>{error}</div>
@@ -156,13 +169,21 @@ export default function PrintPage() {
       `}</style>
 
       {/* Print bar */}
-      <div className="no-print" style={{ position: 'sticky', top: 0, zIndex: 100, background: '#0f4c2a', padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>
+      <div className="no-print" style={{ position: 'sticky', top: 0, zIndex: 100, background: '#0f4c2a', padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+        <div style={{ color: '#fff', fontWeight: 700, fontSize: 15, flexShrink: 0 }}>
           {typeTitle} — {client.name} {client.last_name || ''}
         </div>
-        <button onClick={() => window.print()} style={{ padding: '8px 24px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-          🖨️ הדפס / שמור PDF
-        </button>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button onClick={() => window.print()} style={{ padding: '8px 18px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+            🖨️ הדפס / שמור PDF
+          </button>
+          <button onClick={() => setEditMode(e => !e)} style={{ padding: '8px 14px', background: editMode ? '#f59e0b' : '#1e6b3f', color: '#fff', border: '1.5px solid rgba(255,255,255,0.3)', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+            {editMode ? '👁️ תצוגה' : '✏️ ערכי'}
+          </button>
+          <button onClick={() => window.close()} style={{ padding: '8px 14px', background: 'transparent', color: '#fff', border: '1.5px solid rgba(255,255,255,0.4)', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+            ✕ סגור
+          </button>
+        </div>
       </div>
 
       <div style={{ maxWidth: 820, margin: '0 auto', padding: '32px 24px' }}>
@@ -201,12 +222,15 @@ export default function PrintPage() {
               )
             })}
 
-            {analysis && (
+            {(analysis || editedAnalysis) && (
               <>
                 <div className="page-break" style={{ fontSize: 18, fontWeight: 900, color: '#0f4c2a', borderBottom: '2px solid #dcfce7', paddingBottom: 8, marginBottom: 20, marginTop: 32 }}>
                   ניתוח לפגישה
                 </div>
-                {renderAnalysis(analysis)}
+                {editMode
+                  ? <textarea value={editedAnalysis} onChange={e => setEditedAnalysis(e.target.value)} rows={30} style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '2px solid #f59e0b', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', background: '#fffbeb' }} />
+                  : renderAnalysis(editedAnalysis || analysis)
+                }
               </>
             )}
           </>
@@ -217,12 +241,15 @@ export default function PrintPage() {
           <>
             <div style={{ fontSize: 18, fontWeight: 900, color: '#0f4c2a', borderBottom: '2px solid #dcfce7', paddingBottom: 8, marginBottom: 20 }}>הערות פגישה</div>
             {renderNotes(sd.roots_notes, ROOTS_LABELS, '#0f4c2a')}
-            {sd.roots_analysis && (
+            {(sd.roots_analysis || editedAnalysis) && (
               <>
                 <div className="page-break" style={{ fontSize: 18, fontWeight: 900, color: '#0f4c2a', borderBottom: '2px solid #dcfce7', paddingBottom: 8, marginBottom: 20, marginTop: 32 }}>
                   ניתוח לפגישה
                 </div>
-                {renderAnalysis(sd.roots_analysis)}
+                {editMode
+                  ? <textarea value={editedAnalysis} onChange={e => setEditedAnalysis(e.target.value)} rows={30} style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '2px solid #f59e0b', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', background: '#fffbeb' }} />
+                  : renderAnalysis(editedAnalysis || sd.roots_analysis)
+                }
               </>
             )}
           </>
@@ -233,12 +260,15 @@ export default function PrintPage() {
           <>
             <div style={{ fontSize: 18, fontWeight: 900, color: '#0f4c2a', borderBottom: '2px solid #dcfce7', paddingBottom: 8, marginBottom: 20 }}>הערות פגישה</div>
             {renderNotes(sd.body_notes, BODY_LABELS, '#0f4c2a')}
-            {sd.body_analysis && (
+            {(sd.body_analysis || editedAnalysis) && (
               <>
                 <div className="page-break" style={{ fontSize: 18, fontWeight: 900, color: '#0f4c2a', borderBottom: '2px solid #dcfce7', paddingBottom: 8, marginBottom: 20, marginTop: 32 }}>
                   ניתוח לפגישה
                 </div>
-                {renderAnalysis(sd.body_analysis)}
+                {editMode
+                  ? <textarea value={editedAnalysis} onChange={e => setEditedAnalysis(e.target.value)} rows={30} style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '2px solid #f59e0b', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', background: '#fffbeb' }} />
+                  : renderAnalysis(editedAnalysis || sd.body_analysis)
+                }
               </>
             )}
           </>
@@ -249,12 +279,15 @@ export default function PrintPage() {
           <>
             <div style={{ fontSize: 18, fontWeight: 900, color: '#7c3aed', borderBottom: '2px solid #e9d5ff', paddingBottom: 8, marginBottom: 20 }}>הערות פגישה</div>
             {renderNotes(sd.child_notes, CHILD_LABELS, '#7c3aed')}
-            {sd.child_analysis && (
+            {(sd.child_analysis || editedAnalysis) && (
               <>
                 <div className="page-break" style={{ fontSize: 18, fontWeight: 900, color: '#7c3aed', borderBottom: '2px solid #e9d5ff', paddingBottom: 8, marginBottom: 20, marginTop: 32 }}>
                   ניתוח לפגישה
                 </div>
-                {renderAnalysis(sd.child_analysis)}
+                {editMode
+                  ? <textarea value={editedAnalysis} onChange={e => setEditedAnalysis(e.target.value)} rows={30} style={{ width: '100%', padding: '12px 16px', borderRadius: 12, border: '2px solid #f59e0b', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', background: '#fffbeb' }} />
+                  : renderAnalysis(editedAnalysis || sd.child_analysis)
+                }
               </>
             )}
           </>
