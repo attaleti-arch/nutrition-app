@@ -525,7 +525,13 @@ export default function AdminPage() {
     setSelectedClient(activeClient)
     setAgentInstructions(activeClient.agent_instructions || '')
 
-    const { data } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
+    let { data } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
+    if (!data) {
+      // יצירת שורה ריקה — מבטיח שכל update עתידי יעבוד
+      await supabase.from('client_profiles').insert({ client_password: client.password, blood_tests: {} })
+      const { data: newData } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
+      data = newData
+    }
     if (data) {
       setProfile(data)
       setFoodDiary(data.food_diary || '')
