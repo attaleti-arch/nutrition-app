@@ -114,6 +114,10 @@ export default function PrintPage() {
   const [error, setError] = useState('')
   const [editMode, setEditMode] = useState(false)
   const [editedAnalysis, setEditedAnalysis] = useState('')
+  const [savingAnalysis, setSavingAnalysis] = useState(false)
+  const [savedAnalysis, setSavedAnalysis] = useState(false)
+  const [sendingToClient, setSendingToClient] = useState(false)
+  const [sentToClient, setSentToClient] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -147,6 +151,27 @@ export default function PrintPage() {
   if (!data) return null
 
   const { client, profile, type, sd } = data
+
+  async function saveAnalysis() {
+    setSavingAnalysis(true)
+    if (type === 'journey') {
+      await supabase.from('client_profiles').update({ journey_analysis: editedAnalysis }).eq('client_password', client.password)
+    } else {
+      const newSd = { ...sd, [type + '_analysis']: editedAnalysis }
+      await supabase.from('client_profiles').update({ sessions_data: newSd }).eq('client_password', client.password)
+    }
+    setSavingAnalysis(false); setSavedAnalysis(true); setTimeout(() => setSavedAnalysis(false), 3000)
+  }
+
+  async function sendToClient() {
+    setSendingToClient(true)
+    if (type === 'journey') {
+      await supabase.from('clients').update({ outcome_doc: editedAnalysis }).eq('id', client.id)
+    } else {
+      await supabase.from('client_profiles').update({ [type + '_feedback']: editedAnalysis, [type + '_feedback_at']: new Date().toISOString() }).eq('client_password', client.password)
+    }
+    setSendingToClient(false); setSentToClient(true); setTimeout(() => setSentToClient(false), 3000)
+  }
   const ja = profile?.journey_answers || {}
   const analysis = profile?.journey_analysis || ''
   const date = new Date().toLocaleDateString('he-IL')
@@ -185,6 +210,17 @@ export default function PrintPage() {
           </button>
         </div>
       </div>
+
+      {editMode && (
+        <div className="no-print" style={{ background: '#fffbeb', borderBottom: '2px solid #f59e0b', padding: '10px 24px', display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+          <button onClick={saveAnalysis} disabled={savingAnalysis} style={{ padding: '8px 18px', background: savedAnalysis ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+            {savingAnalysis ? '⏳...' : savedAnalysis ? '✅ נשמר!' : '💾 שמרי שינויים'}
+          </button>
+          <button onClick={sendToClient} disabled={sendingToClient} style={{ padding: '8px 18px', background: sentToClient ? '#16a34a' : '#c4956a', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+            {sendingToClient ? '⏳...' : sentToClient ? '✅ נשלח ללקוחה!' : '📤 שלחי ללקוחה'}
+          </button>
+        </div>
+      )}
 
       <div style={{ maxWidth: 820, margin: '0 auto', padding: '32px 24px' }}>
         {/* Header */}
