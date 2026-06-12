@@ -468,6 +468,9 @@ export default function AdminPage() {
   const [rootsNotesSaved, setRootsNotesSaved] = useState(false)
   const [bodyNotesSaved, setBodyNotesSaved] = useState(false)
   const [childNotesSaved, setChildNotesSaved] = useState(false)
+  const [rootsAnalysisSaved, setRootsAnalysisSaved] = useState(false)
+  const [bodyAnalysisSaved, setBodyAnalysisSaved] = useState(false)
+  const [childAnalysisSaved, setChildAnalysisSaved] = useState(false)
   const [rootsViewMode, setRootsViewMode] = useState('view')
   const [bodyViewMode, setBodyViewMode] = useState('view')
   const sessionDataRef = useRef({})
@@ -542,8 +545,7 @@ export default function AdminPage() {
       setFoodDiary(data.food_diary || '')
       setExtraBloodNotes(data.extra_blood_notes || '')
       if (data.ai_report) { setAiAnalysis(data.ai_report); setEditableAnalysis(data.ai_report) }
-      if (data.roots_feedback) setRootsFeedback(data.roots_feedback)
-      if (data.body_feedback) setBodyFeedback(data.body_feedback)
+      // feedback drafts are admin-only (in sessions_data), don't load client-visible feedback unless no draft
     } else setProfile({ client_password: client.password, blood_tests: {} })
 
     // טעינה מ-sessions_data (Supabase) — fallback ל-localStorage
@@ -559,6 +561,11 @@ export default function AdminPage() {
     const rAn = sd.roots_analysis || lsLoad('roots_analysis', false); if (rAn) { setRootsAnalysis(rAn); setRootsEditing(true); setRootsViewMode('view') }
     const bN = sd.body_notes || lsLoad('body_notes', true); if (bN) setBodyNotes(n => ({ ...n, ...bN }))
     const bAn = sd.body_analysis || lsLoad('body_analysis', false); if (bAn) { setBodyAnalysis(bAn); setBodyEditing(true); setBodyViewMode('view') }
+    const rFbD = sd.roots_feedback_draft || lsLoad('roots_feedback_draft', false); if (rFbD) setRootsFeedback(rFbD) else if (data?.roots_feedback) setRootsFeedback(data.roots_feedback)
+    const bFbD = sd.body_feedback_draft || lsLoad('body_feedback_draft', false); if (bFbD) setBodyFeedback(bFbD) else if (data?.body_feedback) setBodyFeedback(data.body_feedback)
+    const cFbD = sd.child_feedback_draft || lsLoad('child_feedback_draft', false); if (cFbD) setChildFeedback(cFbD) else if (data?.child_feedback) setChildFeedback(data.child_feedback)
+    const cAn = sd.child_analysis || lsLoad('child_analysis', false); if (cAn) { setChildAnalysis(cAn); setChildEditing(true) }
+    const jCDD = sd.journey_client_doc_draft || lsLoad('journey_client_doc_draft', false); if (jCDD) setJourneyClientDocPreview(jCDD)
     const { data: nd } = await supabase.from('nutrition_data').select('*').order('id')
     setNutritionItems(nd || [])
     const { data: logsData } = await supabase.from('daily_logs').select('*').eq('client_name', client.password).order('log_date', { ascending: false }).limit(30)
@@ -2073,7 +2080,7 @@ export default function AdminPage() {
                       setJourneyClientDocPreview('')
                       const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, sessionNotes, outputType: 'clientDoc' }) })
                       const data = await res.json()
-                      if (data.result) setJourneyClientDocPreview(data.result)
+                      if (data.result) { setJourneyClientDocPreview(data.result); saveSessionKey('journey_client_doc_draft', data.result) }
                       setJourneyDocLoading(false)
                     }} disabled={journeyDocLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyDocLoading ? '#9ca3af' : '#7c3aed', color: '#fff', border: 'none', cursor: journeyDocLoading ? 'default' : 'pointer', fontWeight: 700, fontSize: 15, marginBottom: journeyClientDocPreview ? 12 : 0 }}>
                       {journeyDocLoading ? '⏳ מפיק...' : '🧭 הפק מסמך ללקוחה (תצוגה מקדימה)'}
@@ -2143,9 +2150,14 @@ export default function AdminPage() {
                   </div>
                 ))}
 
-                <button onClick={() => { saveSessionKey('roots_notes', rootsNotes); setRootsNotesSaved(true); setTimeout(() => setRootsNotesSaved(false), 3000) }} style={{ width: '100%', padding: 12, borderRadius: 12, background: rootsNotesSaved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
-                  {rootsNotesSaved ? '✅ נשמר!' : '💾 שמרי הערות'}
-                </button>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                  <button onClick={() => { saveSessionKey('roots_notes', rootsNotes); setRootsNotesSaved(true); setTimeout(() => setRootsNotesSaved(false), 3000) }} style={{ flex: 2, padding: 12, borderRadius: 12, background: rootsNotesSaved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                    {rootsNotesSaved ? '✅ נשמר!' : '💾 שמרי הערות'}
+                  </button>
+                  <button onClick={() => window.open('/print?client=' + encodeURIComponent(selectedClient.password) + '&type=roots', '_blank')} style={{ flex: 1, padding: 12, borderRadius: 12, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                    📄 ייצוא
+                  </button>
+                </div>
 
                 {/* כפתור ניתוח */}
                 <button onClick={async () => {
@@ -2175,11 +2187,15 @@ export default function AdminPage() {
                     setRootsAnalysis(data.result); setRootsEditing(true); setRootsViewMode('view')
                     saveSessionKey('roots_notes', rootsNotes)
                     saveSessionKey('roots_analysis', data.result)
+                    setRootsAnalysisSaved(true)
                   }
                   setRootsLoading(false)
                 }} disabled={rootsLoading || !Object.values(rootsNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: rootsLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {rootsLoading ? '⏳ מנתח...' : '🌱 הפק ניתוח AI לפגישה'}
                 </button>
+                {!rootsLoading && rootsAnalysis && (
+                  <div style={{ textAlign: 'center', fontSize: 12, color: '#16a34a', marginBottom: 10, fontWeight: 600 }}>✅ הניתוח נשמר — בטוח לסגור</div>
+                )}
 
                 {/* תצוגה מקדימה + עריכה */}
                 {rootsEditing && rootsAnalysis && (
@@ -2224,7 +2240,7 @@ export default function AdminPage() {
                           'ללא מבוא. ללא כותרת ראשית. ישר לתוכן.'
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
                         const data = await res.json()
-                        if (data.result) setRootsFeedback(data.result)
+                        if (data.result) { setRootsFeedback(data.result); saveSessionKey('roots_feedback_draft', data.result) }
                         setRootsFeedbackLoading(false)
                       }} disabled={rootsFeedbackLoading} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {rootsFeedbackLoading ? '⏳ מפיק...' : '📝 הפקי טיוטת משוב ללקוחה'}
@@ -2244,9 +2260,9 @@ export default function AdminPage() {
                       <textarea value={rootsFeedback} onChange={e => setRootsFeedback(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
-                      <button onClick={async () => {
-                        const { error } = await supabase.from('client_profiles').update({ roots_feedback: rootsFeedback, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
-                        if (!error) { setRootsFeedbackSaved(true); setTimeout(() => setRootsFeedbackSaved(false), 3000) }
+                      <button onClick={() => {
+                        saveSessionKey('roots_feedback_draft', rootsFeedback)
+                        setRootsFeedbackSaved(true); setTimeout(() => setRootsFeedbackSaved(false), 3000)
                       }} style={{ flex: 1, padding: 12, borderRadius: 10, background: rootsFeedbackSaved ? '#16a34a' : '#f8f4ef', color: rootsFeedbackSaved ? '#fff' : '#0f4c2a', border: '1.5px solid #c4956a', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {rootsFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
                       </button>
@@ -2292,9 +2308,14 @@ export default function AdminPage() {
                   </div>
                 ))}
 
-                <button onClick={() => { saveSessionKey('body_notes', bodyNotes); setBodyNotesSaved(true); setTimeout(() => setBodyNotesSaved(false), 3000) }} style={{ width: '100%', padding: 12, borderRadius: 12, background: bodyNotesSaved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
-                  {bodyNotesSaved ? '✅ נשמר!' : '💾 שמרי הערות'}
-                </button>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                  <button onClick={() => { saveSessionKey('body_notes', bodyNotes); setBodyNotesSaved(true); setTimeout(() => setBodyNotesSaved(false), 3000) }} style={{ flex: 2, padding: 12, borderRadius: 12, background: bodyNotesSaved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                    {bodyNotesSaved ? '✅ נשמר!' : '💾 שמרי הערות'}
+                  </button>
+                  <button onClick={() => window.open('/print?client=' + encodeURIComponent(selectedClient.password) + '&type=body', '_blank')} style={{ flex: 1, padding: 12, borderRadius: 12, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                    📄 ייצוא
+                  </button>
+                </div>
 
                 <button onClick={async () => {
                   setBodyLoading(true); setBodyAnalysis(''); setBodyEditing(false)
@@ -2366,11 +2387,15 @@ export default function AdminPage() {
                     setBodyAnalysis(data.result); setBodyEditing(true); setBodyViewMode('view')
                     saveSessionKey('body_notes', bodyNotes)
                     saveSessionKey('body_analysis', data.result)
+                    setBodyAnalysisSaved(true)
                   }
                   setBodyLoading(false)
                 }} disabled={bodyLoading || !Object.values(bodyNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: bodyLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {bodyLoading ? '⏳ מנתח...' : '🩺 הפק ניתוח AI לפגישה'}
                 </button>
+                {!bodyLoading && bodyAnalysis && (
+                  <div style={{ textAlign: 'center', fontSize: 12, color: '#16a34a', marginBottom: 10, fontWeight: 600 }}>✅ הניתוח נשמר — בטוח לסגור</div>
+                )}
 
                 {bodyEditing && bodyAnalysis && (
                   <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #0f4c2a', overflow: 'hidden', marginBottom: 16 }}>
@@ -2414,7 +2439,7 @@ export default function AdminPage() {
                           'ללא מבוא. ללא כותרת ראשית. ישר לתוכן. שפה של אדם — לא של רופא.'
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
                         const data = await res.json()
-                        if (data.result) setBodyFeedback(data.result)
+                        if (data.result) { setBodyFeedback(data.result); saveSessionKey('body_feedback_draft', data.result) }
                         setBodyFeedbackLoading(false)
                       }} disabled={bodyFeedbackLoading} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {bodyFeedbackLoading ? '⏳ מפיק...' : '📝 הפקי טיוטת משוב ללקוחה'}
@@ -2433,9 +2458,9 @@ export default function AdminPage() {
                       <textarea value={bodyFeedback} onChange={e => setBodyFeedback(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
-                      <button onClick={async () => {
-                        const { error } = await supabase.from('client_profiles').update({ body_feedback: bodyFeedback, body_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
-                        if (!error) { setBodyFeedbackSaved(true); setTimeout(() => setBodyFeedbackSaved(false), 3000) }
+                      <button onClick={() => {
+                        saveSessionKey('body_feedback_draft', bodyFeedback)
+                        setBodyFeedbackSaved(true); setTimeout(() => setBodyFeedbackSaved(false), 3000)
                       }} style={{ flex: 1, padding: 12, borderRadius: 10, background: bodyFeedbackSaved ? '#16a34a' : '#f0fdfa', color: bodyFeedbackSaved ? '#fff' : '#0d9488', border: '1.5px solid #0d9488', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {bodyFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
                       </button>
@@ -2478,9 +2503,14 @@ export default function AdminPage() {
                   </div>
                 ))}
 
-                <button onClick={() => { saveSessionKey('child_notes', childNotes); setChildNotesSaved(true); setTimeout(() => setChildNotesSaved(false), 3000) }} style={{ width: '100%', padding: 12, borderRadius: 12, background: childNotesSaved ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
-                  {childNotesSaved ? '✅ נשמר!' : '💾 שמרי הערות'}
-                </button>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                  <button onClick={() => { saveSessionKey('child_notes', childNotes); setChildNotesSaved(true); setTimeout(() => setChildNotesSaved(false), 3000) }} style={{ flex: 2, padding: 12, borderRadius: 12, background: childNotesSaved ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                    {childNotesSaved ? '✅ נשמר!' : '💾 שמרי הערות'}
+                  </button>
+                  <button onClick={() => window.open('/print?client=' + encodeURIComponent(selectedClient.password) + '&type=child', '_blank')} style={{ flex: 1, padding: 12, borderRadius: 12, background: '#faf5ff', color: '#7c3aed', border: '1.5px solid #e9d5ff', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                    📄 ייצוא
+                  </button>
+                </div>
 
                 <button onClick={async () => {
                   setChildLoading(true); setChildAnalysis(''); setChildEditing(false)
@@ -2511,11 +2541,14 @@ export default function AdminPage() {
 
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
                   const data = await res.json()
-                  if (data.result) { setChildAnalysis(data.result); setChildEditing(true) }
+                  if (data.result) { setChildAnalysis(data.result); setChildEditing(true); saveSessionKey('child_analysis', data.result); setChildAnalysisSaved(true) }
                   setChildLoading(false)
                 }} disabled={childLoading || !Object.values(childNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: childLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {childLoading ? '⏳ מנתח...' : '👨‍👩‍👧 הפק מערך מפגש AI'}
                 </button>
+                {!childLoading && childAnalysis && (
+                  <div style={{ textAlign: 'center', fontSize: 12, color: '#16a34a', marginBottom: 10, fontWeight: 600 }}>✅ הניתוח נשמר — בטוח לסגור</div>
+                )}
 
                 {childEditing && childAnalysis && (
                   <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
@@ -2553,7 +2586,7 @@ export default function AdminPage() {
                           'ללא מבוא. ללא כותרת ראשית. שפה של אדם — לא של מטפל.'
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
                         const data = await res.json()
-                        if (data.result) setChildFeedback(data.result)
+                        if (data.result) { setChildFeedback(data.result); saveSessionKey('child_feedback_draft', data.result) }
                         setChildFeedbackLoading(false)
                       }} disabled={childFeedbackLoading} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {childFeedbackLoading ? '⏳ מפיק...' : '📝 הפיקי מסמך להורה'}
@@ -2572,9 +2605,9 @@ export default function AdminPage() {
                       <textarea value={childFeedback} onChange={e => setChildFeedback(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
-                      <button onClick={async () => {
-                        const { error } = await supabase.from('client_profiles').update({ child_feedback: childFeedback, child_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
-                        if (!error) { setChildFeedbackSaved(true); setTimeout(() => setChildFeedbackSaved(false), 3000) }
+                      <button onClick={() => {
+                        saveSessionKey('child_feedback_draft', childFeedback)
+                        setChildFeedbackSaved(true); setTimeout(() => setChildFeedbackSaved(false), 3000)
                       }} style={{ flex: 1, padding: 12, borderRadius: 10, background: childFeedbackSaved ? '#16a34a' : '#faf5ff', color: childFeedbackSaved ? '#fff' : '#7c3aed', border: '1.5px solid #7c3aed', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {childFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
                       </button>

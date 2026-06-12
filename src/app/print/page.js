@@ -40,6 +40,33 @@ const JOURNEY_SECTIONS = [
   ]},
 ]
 
+const ROOTS_LABELS = {
+  home_background: 'הבית שגדלת בו',
+  family_identity: 'זהות וגוף במשפחה',
+  today_patterns: 'דפוסים היום',
+  forward_passing: 'מה עובר הלאה',
+  beliefs_motivation: 'אמונות ומוטיבציה',
+  resources: 'משאבים וכוחות',
+}
+
+const BODY_LABELS = {
+  body_signals: 'מה הגוף אומר היום',
+  body_history: 'היסטוריה של הגוף',
+  emotion_body: 'קשר רגש-גוף',
+  energy_sleep: 'אנרגיה ושינה',
+  hunger_satiety: 'רעב ושובע',
+  already_knows: 'מה היא כבר יודעת',
+  main_complaint: 'מה הגוף שלה צועק עליו',
+}
+
+const CHILD_LABELS = {
+  child_self: 'הילד עצמו',
+  state_of_mind: 'סטייט אוף מיינד',
+  family_dynamics: 'דינמיקה משפחתית',
+  parent_model: 'ההורה כמודל',
+  triggers_social: 'טריגרים וחברתי',
+}
+
 function renderAnalysis(text) {
   if (!text) return null
   const blocks = []
@@ -67,6 +94,20 @@ function renderAnalysis(text) {
   ))
 }
 
+function renderNotes(notes, labels, color) {
+  if (!notes || typeof notes !== 'object') return null
+  return Object.entries(labels).map(([key, label], i) => {
+    const value = notes[key]
+    if (!value) return null
+    return (
+      <div key={key} style={{ background: '#fff', borderRadius: 16, padding: '18px 22px', marginBottom: 18, border: `1.5px solid ${BD[i % BD.length]}`, pageBreakInside: 'avoid' }}>
+        <div style={{ fontWeight: 800, fontSize: 14, color: TC[i % TC.length], marginBottom: 10 }}>{label}</div>
+        <div style={{ fontSize: 14, color: '#111827', lineHeight: 1.8, paddingRight: 12, borderRight: `3px solid ${BD[i % BD.length]}` }}>{value}</div>
+      </div>
+    )
+  })
+}
+
 export default function PrintPage() {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -82,7 +123,7 @@ export default function PrintPage() {
       const { data: client } = await supabase.from('clients').select('*').eq('password', clientPw).maybeSingle()
       const { data: profile } = await supabase.from('client_profiles').select('*').eq('client_password', clientPw).maybeSingle()
       if (!client) { setError('לקוח לא נמצא'); setLoading(false); return }
-      setData({ client, profile, type })
+      setData({ client, profile, type, sd: profile?.sessions_data || {} })
       setLoading(false)
     }
     load()
@@ -92,10 +133,16 @@ export default function PrintPage() {
   if (error) return <div style={{ padding: 40, color: 'red' }}>{error}</div>
   if (!data) return null
 
-  const { client, profile, type } = data
+  const { client, profile, type, sd } = data
   const ja = profile?.journey_answers || {}
   const analysis = profile?.journey_analysis || ''
   const date = new Date().toLocaleDateString('he-IL')
+
+  const typeTitle = type === 'journey' ? '🧭 מסע המטרה'
+    : type === 'roots' ? '🌱 שאלון השורשים'
+    : type === 'body' ? '🩺 הגוף מדבר'
+    : type === 'child' ? '👨‍👩‍👧 הורה-ילד'
+    : type
 
   return (
     <div style={{ direction: 'rtl', fontFamily: 'Arial, sans-serif', background: '#f8fafc', minHeight: '100vh' }}>
@@ -111,7 +158,7 @@ export default function PrintPage() {
       {/* Print bar */}
       <div className="no-print" style={{ position: 'sticky', top: 0, zIndex: 100, background: '#0f4c2a', padding: '10px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ color: '#fff', fontWeight: 700, fontSize: 15 }}>
-          {type === 'journey' ? '🧭 מסע המטרה' : type} — {client.name} {client.last_name || ''}
+          {typeTitle} — {client.name} {client.last_name || ''}
         </div>
         <button onClick={() => window.print()} style={{ padding: '8px 24px', background: '#16a34a', color: '#fff', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
           🖨️ הדפס / שמור PDF
@@ -128,10 +175,10 @@ export default function PrintPage() {
         {/* Client header */}
         <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', borderRadius: 16, padding: '20px 28px', marginBottom: 28 }}>
           <div style={{ fontSize: 22, fontWeight: 900 }}>{client.name} {client.last_name || ''}</div>
-          <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>📅 {date} | 🧭 שאלון מסע המטרה</div>
+          <div style={{ fontSize: 13, opacity: 0.85, marginTop: 6 }}>📅 {date} | {typeTitle}</div>
         </div>
 
-        {/* Questions & Answers */}
+        {/* Journey */}
         {type === 'journey' && (
           <>
             <div style={{ fontSize: 18, fontWeight: 900, color: '#0f4c2a', borderBottom: '2px solid #dcfce7', paddingBottom: 8, marginBottom: 20 }}>שאלות ותשובות</div>
@@ -160,6 +207,54 @@ export default function PrintPage() {
                   ניתוח לפגישה
                 </div>
                 {renderAnalysis(analysis)}
+              </>
+            )}
+          </>
+        )}
+
+        {/* Roots */}
+        {type === 'roots' && (
+          <>
+            <div style={{ fontSize: 18, fontWeight: 900, color: '#0f4c2a', borderBottom: '2px solid #dcfce7', paddingBottom: 8, marginBottom: 20 }}>הערות פגישה</div>
+            {renderNotes(sd.roots_notes, ROOTS_LABELS, '#0f4c2a')}
+            {sd.roots_analysis && (
+              <>
+                <div className="page-break" style={{ fontSize: 18, fontWeight: 900, color: '#0f4c2a', borderBottom: '2px solid #dcfce7', paddingBottom: 8, marginBottom: 20, marginTop: 32 }}>
+                  ניתוח לפגישה
+                </div>
+                {renderAnalysis(sd.roots_analysis)}
+              </>
+            )}
+          </>
+        )}
+
+        {/* Body */}
+        {type === 'body' && (
+          <>
+            <div style={{ fontSize: 18, fontWeight: 900, color: '#0f4c2a', borderBottom: '2px solid #dcfce7', paddingBottom: 8, marginBottom: 20 }}>הערות פגישה</div>
+            {renderNotes(sd.body_notes, BODY_LABELS, '#0f4c2a')}
+            {sd.body_analysis && (
+              <>
+                <div className="page-break" style={{ fontSize: 18, fontWeight: 900, color: '#0f4c2a', borderBottom: '2px solid #dcfce7', paddingBottom: 8, marginBottom: 20, marginTop: 32 }}>
+                  ניתוח לפגישה
+                </div>
+                {renderAnalysis(sd.body_analysis)}
+              </>
+            )}
+          </>
+        )}
+
+        {/* Child */}
+        {type === 'child' && (
+          <>
+            <div style={{ fontSize: 18, fontWeight: 900, color: '#7c3aed', borderBottom: '2px solid #e9d5ff', paddingBottom: 8, marginBottom: 20 }}>הערות פגישה</div>
+            {renderNotes(sd.child_notes, CHILD_LABELS, '#7c3aed')}
+            {sd.child_analysis && (
+              <>
+                <div className="page-break" style={{ fontSize: 18, fontWeight: 900, color: '#7c3aed', borderBottom: '2px solid #e9d5ff', paddingBottom: 8, marginBottom: 20, marginTop: 32 }}>
+                  ניתוח לפגישה
+                </div>
+                {renderAnalysis(sd.child_analysis)}
               </>
             )}
           </>
