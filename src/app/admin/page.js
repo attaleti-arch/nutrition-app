@@ -636,117 +636,8 @@ export default function AdminPage() {
   }
 
   function exportJourneyHTML() {
-    const BG = ['#f0fdf4','#eff6ff','#fffbeb','#fef2f2','#faf5ff','#f0fdfa','#fff7ed']
-    const BD = ['#16a34a','#2563eb','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
-    const TC = ['#15803d','#1d4ed8','#b45309','#b91c1c','#6d28d9','#0f766e','#c2410c']
-    const SECTIONS = [
-      { title: '🌱 חלק 1 — הגדרת המטרה', questions: [
-        { label: 'מה הביא אותך לכאן?', key: 'goal_reason' },
-        { label: 'מה את רוצה? איך את רוצה להשתנות?', key: 'goal_what' },
-        { label: 'באיזה הקשר? מתי? עם מי? איפה?', key: 'goal_context' },
-        { label: 'למה זה חשוב לך?', key: 'goal_why' },
-        { label: 'איך תדעי שהגעת?', key: 'goal_proof' },
-      ]},
-      { title: '✨ חלק 2 — החזון הסנסורי', questions: [
-        { label: 'מה את רואה סביבך כשאת פוקחת עיניים?', key: 'vision_see' },
-        { label: 'מה את שומעת?', key: 'vision_hear' },
-        { label: 'מהי התחושה הגופנית המדויקת?', key: 'vision_feel' },
-      ]},
-      { title: '🌿 חלק 3 — הרמוניה ואיזון', questions: [
-        { label: 'כשתשיגי את המטרה — האם תפסידי משהו?', key: 'ecology_keep' },
-        { label: 'איך תשמרי על מה שחשוב לך בתוך השינוי?', key: 'ecology_harmony' },
-        { label: 'במי תלויה השגת המטרה?', key: 'ecology_who' },
-      ]},
-      { title: '🔍 חלק 4 — חשיפת היתד', questions: [
-        { label: 'מה גורם לך להרגיש שזה קשה?', key: 'belief_hard' },
-        { label: 'מתי החלטת שזה המצב?', key: 'belief_when' },
-      ]},
-      { title: '💎 חלק 5 — ארגז הכלים', questions: [
-        { label: 'אילו משאבים כבר יש לך?', key: 'resources_has' },
-        { label: 'רגע שהיית מרוצה מעצמך — מה היה שם?', key: 'resources_past' },
-      ]},
-      { title: '🛡️ חלק 6 — החיסונים וההתחייבות', questions: [
-        { label: 'הרגע הכי קשה ביום', key: 'vaccine_moment' },
-        { label: 'הפעולה הקטנה שמתחייבת', key: 'vaccine_action' },
-        { label: 'משפט העוגן', key: 'vaccine_anchor' },
-        { label: 'הצעד הראשון לשבוע הקרוב', key: 'first_step' },
-      ]},
-    ]
-    const ja = journeyAnswersRef.current
-    const date = new Date().toLocaleDateString('he-IL')
-
-    // Build analysis HTML sections
-    let analysisHtml = ''
-    if (journeyAnalysis) {
-      const blocks = []
-      let current = null
-      journeyAnalysis.split('\n').forEach(line => {
-        if (/^##\s/.test(line)) {
-          if (current) blocks.push(current)
-          current = { title: line.replace(/^##\s*/, '').trim(), lines: [] }
-        } else if (current) {
-          if (!/^---$/.test(line)) current.lines.push(line)
-        }
-      })
-      if (current) blocks.push(current)
-      analysisHtml = blocks.map((b, i) => {
-        const content = b.lines.join('\n')
-          .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-          .replace(/\n/g, '<br/>')
-        return `<div style="background:${BG[i%BG.length]};border:1.5px solid ${BD[i%BD.length]};border-radius:14px;padding:18px 22px;margin-bottom:16px;direction:rtl;">
-          <div style="font-weight:800;font-size:16px;color:${TC[i%TC.length]};margin-bottom:10px;">${b.title}</div>
-          <div style="font-size:14px;color:#374151;line-height:1.9;">${content}</div>
-        </div>`
-      }).join('')
-    }
-
-    const questionsHtml = SECTIONS.map((sec, si) => {
-      const qs = sec.questions.map(q => {
-        const ans = ja[q.key]
-        if (!ans) return ''
-        return `<div style="margin-bottom:14px;padding:12px 16px;background:#f9fafb;border-radius:10px;border-right:3px solid ${BD[si%BD.length]};">
-          <div style="font-weight:700;font-size:13px;color:#374151;margin-bottom:6px;">${q.label}</div>
-          <div style="font-size:14px;color:#111827;line-height:1.8;">${ans.replace(/\n/g,'<br/>')}</div>
-        </div>`
-      }).filter(Boolean).join('')
-      if (!qs) return ''
-      return `<div style="background:#fff;border-radius:16px;padding:20px;margin-bottom:18px;border:1.5px solid ${BD[si%BD.length]};">
-        <div style="font-weight:800;font-size:15px;color:${TC[si%TC.length]};margin-bottom:14px;">${sec.title}</div>
-        ${qs}
-      </div>`
-    }).filter(Boolean).join('')
-
-    const html = `<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"/>
-<title>מסע המטרה — ${selectedClient?.name || ''}</title>
-<style>
-  body { font-family: 'Arial', sans-serif; direction: rtl; background: #f8fafc; color: #111827; margin: 0; padding: 40px; }
-  @media print { body { padding: 20px; background: white; } .no-print { display: none; } }
-  .logo { text-align: center; margin-bottom: 32px; }
-  .logo-title { font-size: 28px; font-weight: 900; color: #0f4c2a; }
-  .logo-sub { font-size: 14px; color: #6b7280; margin-top: 4px; }
-  .client-header { background: linear-gradient(135deg,#0f4c2a,#16a34a); color: white; border-radius: 16px; padding: 20px 28px; margin-bottom: 28px; }
-  .section-title { font-size: 20px; font-weight: 900; color: #0f4c2a; border-bottom: 2px solid #dcfce7; padding-bottom: 8px; margin: 28px 0 16px; }
-  h1,h2,h3 { color: #0f4c2a; }
-</style></head><body>
-<div style="text-align:center;margin-bottom:16px;" class="no-print">
-  <button onclick="window.print()" style="padding:10px 32px;background:#0f4c2a;color:white;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;">🖨️ הדפס / שמור PDF</button>
-</div>
-<div class="logo">
-  <div class="logo-title">בין הראש לצלחת</div>
-  <div class="logo-sub">אתי אטל — תוכנית תזונה אישית</div>
-</div>
-<div class="client-header">
-  <div style="font-size:22px;font-weight:900;">${selectedClient?.name || ''} ${selectedClient?.last_name || ''}</div>
-  <div style="font-size:13px;opacity:0.85;margin-top:6px;">📅 ${date} | 🧭 שאלון מסע המטרה</div>
-</div>
-<div class="section-title">שאלות ותשובות</div>
-${questionsHtml}
-${journeyAnalysis ? `<div class="section-title">ניתוח לפגישה</div>${analysisHtml}` : ''}
-</body></html>`
-
-    const w = window.open('', '_blank')
-    if (w) { w.document.write(html); w.document.close() }
-    else { alert('הדפדפן חסם את הפתיחה — אפשרי חלונות קופצים בהגדרות הדפדפן') }
+    if (!selectedClient?.password) return
+    window.open('/print?client=' + encodeURIComponent(selectedClient.password) + '&type=journey', '_blank')
   }
 
   // ── ✅ פונקציות Agent Instructions ──
@@ -1844,125 +1735,6 @@ ${journeyAnalysis ? `<div class="section-title">ניתוח לפגישה</div>${a
               </div>
             )}
 
-            {tab === 'newclient' && (
-              <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
-                <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 16 }}>➕ הוספת לקוח/ה חדש/ה</div>
-                {clientAdded && <div style={{ background: '#dcfce7', color: '#166534', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontWeight: 700 }}>{clientAdded}</div>}
-
-                {/* בחירת מסלול */}
-                <div style={{ marginBottom: 20 }}>
-                  <div style={{ fontSize: 13, color: '#555', marginBottom: 8, fontWeight: 700 }}>🎯 התהליך הוא עבור:</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    {[
-                      { k: 'self', l: '👤 עבור עצמו/ה בלבד', desc: 'תהליך אישי — ללא ילדים או עם ילדים ללא בעיית משקל' },
-                      { k: 'child', l: '👶 עבור הילד בלבד', desc: 'ההורה עובר תהליך כדי לשנות את הבית עבור הילד' },
-                      { k: 'both', l: '👨‍👩‍👧 שניהם — הורה + ילד', desc: 'תהליך אישי + פרופיל ילד מקושר' },
-                    ].map(t => (
-                      <button key={t.k} onClick={() => setClientTrack(t.k)} style={{ padding: '12px 16px', borderRadius: 12, border: '2px solid ' + (clientTrack === t.k ? '#0f4c2a' : '#e5e7eb'), background: clientTrack === t.k ? '#dcfce7' : '#fafafa', cursor: 'pointer', textAlign: 'right', transition: 'all 0.15s' }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: clientTrack === t.k ? '#0f4c2a' : '#333' }}>{t.l}</div>
-                        <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{t.desc}</div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* פרטי לקוח */}
-                {clientTrack && (
-                  <>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#0f4c2a', marginBottom: 10, paddingBottom: 6, borderBottom: '1.5px solid #e5e7eb' }}>
-                      {clientTrack === 'child' ? '👤 פרטי ההורה' : '👤 פרטי הלקוח/ה'}
-                    </div>
-                    <Field label="שם פרטי *" value={newClient.name} onChange={v => setNewClient(c => ({...c, name: v}))} />
-                    <Field label="שם משפחה" value={newClient.last_name} onChange={v => setNewClient(c => ({...c, last_name: v}))} />
-                    <Field label="סיסמה *" value={newClient.password} onChange={v => setNewClient(c => ({...c, password: v}))} />
-                    <Field label="טלפון" value={newClient.phone} onChange={v => setNewClient(c => ({...c, phone: v}))} />
-                    <Field label="תעודת זהות" value={newClient.id_number} onChange={v => setNewClient(c => ({...c, id_number: v}))} />
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <div style={{ flex: 1 }}><Field label="גיל" value={newClient.age} onChange={v => setNewClient(c => ({...c, age: v}))} type="number" /></div>
-                      <div style={{ flex: 1 }}><Field label='משקל (ק"ג)' value={newClient.weight} onChange={v => setNewClient(c => ({...c, weight: v}))} type="number" /></div>
-                      <div style={{ flex: 1 }}><Field label='גובה (ס"מ)' value={newClient.height} onChange={v => setNewClient(c => ({...c, height: v}))} type="number" /></div>
-                    </div>
-                    <div style={{ marginBottom: 12 }}>
-                      <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>מגדר</div>
-                      <div style={{ display: 'flex', gap: 8 }}>{['נקבה', 'זכר'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, gender: g}))} style={{ flex: 1, padding: 8, borderRadius: 10, border: '2px solid ' + (newClient.gender === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.gender === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: newClient.gender === g ? '#0f4c2a' : '#555' }}>{g}</button>)}</div>
-                    </div>
-                    {clientTrack !== 'child' && (
-                      <>
-                        <div style={{ marginBottom: 12 }}>
-                          <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>מטרה</div>
-                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{['ירידה במשקל', 'שמירה על משקל', 'עלייה במסה'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, goal: g}))} style={{ flex: 1, padding: 8, borderRadius: 10, border: '2px solid ' + (newClient.goal === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.goal === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: newClient.goal === g ? '#0f4c2a' : '#555', minWidth: 100 }}>{g}</button>)}</div>
-                        </div>
-                        <div style={{ marginBottom: 16 }}>
-                          <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>רמת פעילות</div>
-                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{['יושבני', 'קל', 'בינוני', 'פעיל', 'מאוד פעיל'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, activity: g}))} style={{ padding: '6px 10px', borderRadius: 10, border: '2px solid ' + (newClient.activity === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.activity === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: newClient.activity === g ? '#0f4c2a' : '#555' }}>{g}</button>)}</div>
-                        </div>
-                      </>
-                    )}
-
-                    {/* פרטי ילד */}
-                    {(clientTrack === 'child' || clientTrack === 'both') && (
-                      <div style={{ background: '#faf5ff', borderRadius: 14, padding: 16, marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: '#7c3aed', marginBottom: 10 }}>👶 פרטי הילד</div>
-                        <Field label="שם הילד *" value={childData.name} onChange={v => setChildData(c => ({...c, name: v}))} />
-                        <Field label="סיסמה (אופציונלי — ברירת מחדל: סיסמת ההורה)" value={childData.password} onChange={v => setChildData(c => ({...c, password: v}))} />
-                        <div style={{ display: 'flex', gap: 8 }}>
-                          <div style={{ flex: 1 }}><Field label="גיל" value={childData.age} onChange={v => setChildData(c => ({...c, age: v}))} type="number" /></div>
-                          <div style={{ flex: 1 }}><Field label='משקל (ק"ג)' value={childData.weight} onChange={v => setChildData(c => ({...c, weight: v}))} type="number" /></div>
-                          <div style={{ flex: 1 }}><Field label='גובה (ס"מ)' value={childData.height} onChange={v => setChildData(c => ({...c, height: v}))} type="number" /></div>
-                        </div>
-                        <div style={{ marginBottom: 8 }}>
-                          <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>מגדר</div>
-                          <div style={{ display: 'flex', gap: 8 }}>{['בן', 'בת'].map(g => <button key={g} onClick={() => setChildData(c => ({...c, gender: g}))} style={{ flex: 1, padding: 8, borderRadius: 10, border: '2px solid ' + (childData.gender === g ? '#7c3aed' : '#e5e7eb'), background: childData.gender === g ? '#faf5ff' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: childData.gender === g ? '#7c3aed' : '#555' }}>{g}</button>)}</div>
-                        </div>
-                      </div>
-                    )}
-
-                    <button onClick={async () => {
-                      if (!newClient.name || !newClient.password) { alert('שם וסיסמה הם שדות חובה'); return }
-                      if ((clientTrack === 'child' || clientTrack === 'both') && !childData.name) { alert('שם הילד הוא שדה חובה'); return }
-                      setAddingClient(true)
-                      try {
-                        const { data: parentData, error } = await supabase.from('clients').insert({
-                          name: newClient.name, last_name: newClient.last_name, password: newClient.password,
-                          phone: newClient.phone, id_number: newClient.id_number || null,
-                          age: newClient.age ? parseInt(newClient.age) : null,
-                          weight: newClient.weight ? parseFloat(newClient.weight) : null,
-                          height: newClient.height ? parseFloat(newClient.height) : null,
-                          goal: newClient.goal || 'ירידה במשקל', activity: newClient.activity, gender: newClient.gender,
-                          client_track: clientTrack,
-                          created_at: new Date().toISOString()
-                        }).select().single()
-                        if (error) throw error
-
-                        // הוסף ילד אם צריך
-                        if ((clientTrack === 'child' || clientTrack === 'both') && childData.name) {
-                          await supabase.from('clients').insert({
-                            name: childData.name, password: childData.password || newClient.password,
-                            age: childData.age ? parseInt(childData.age) : null,
-                            weight: childData.weight ? parseFloat(childData.weight) : null,
-                            height: childData.height ? parseFloat(childData.height) : null,
-                            gender: childData.gender,
-                            parent_id: parentData.id,
-                            is_child: true,
-                            created_at: new Date().toISOString()
-                          })
-                        }
-
-                        setClientAdded('✅ ' + newClient.name + ' נוסף/ה בהצלחה!' + ((clientTrack === 'child' || clientTrack === 'both') && childData.name ? ' + ילד: ' + childData.name : ''))
-                        setNewClient({ name: '', last_name: '', password: '', phone: '', id_number: '', age: '', weight: '', height: '', goal: '', activity: '', gender: '' })
-                        setChildData({ name: '', age: '', weight: '', height: '', gender: '', password: '' })
-                        setClientTrack('')
-                        loadClients()
-                      } catch(e) { alert('שגיאה: ' + e.message) }
-                      setAddingClient(false)
-                    }} disabled={addingClient || !clientTrack} style={{ width: '100%', padding: 14, borderRadius: 12, background: addingClient ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
-                      {addingClient ? '⏳ מוסיף/ה...' : '➕ הוסיפי לקוח/ה'}
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
-
             {tab === 'pantry' && (
               <div>
 
@@ -2810,6 +2582,124 @@ ${journeyAnalysis ? `<div class="section-title">ניתוח לפגישה</div>${a
             )}
 
           </>
+        )}
+
+        {tab === 'newclient' && (
+          <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
+            <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 16 }}>➕ הוספת לקוח/ה חדש/ה</div>
+            {clientAdded && <div style={{ background: '#dcfce7', color: '#166534', borderRadius: 10, padding: '10px 14px', marginBottom: 16, fontWeight: 700 }}>{clientAdded}</div>}
+
+            {/* בחירת מסלול */}
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 13, color: '#555', marginBottom: 8, fontWeight: 700 }}>🎯 התהליך הוא עבור:</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { k: 'self', l: '👤 עבור עצמו/ה בלבד', desc: 'תהליך אישי — ללא ילדים או עם ילדים ללא בעיית משקל' },
+                  { k: 'child', l: '👶 עבור הילד בלבד', desc: 'ההורה עובר תהליך כדי לשנות את הבית עבור הילד' },
+                  { k: 'both', l: '👨‍👩‍👧 שניהם — הורה + ילד', desc: 'תהליך אישי + פרופיל ילד מקושר' },
+                ].map(t => (
+                  <button key={t.k} onClick={() => setClientTrack(t.k)} style={{ padding: '12px 16px', borderRadius: 12, border: '2px solid ' + (clientTrack === t.k ? '#0f4c2a' : '#e5e7eb'), background: clientTrack === t.k ? '#dcfce7' : '#fafafa', cursor: 'pointer', textAlign: 'right', transition: 'all 0.15s' }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: clientTrack === t.k ? '#0f4c2a' : '#333' }}>{t.l}</div>
+                    <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 2 }}>{t.desc}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* פרטי לקוח */}
+            {clientTrack && (
+              <>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#0f4c2a', marginBottom: 10, paddingBottom: 6, borderBottom: '1.5px solid #e5e7eb' }}>
+                  {clientTrack === 'child' ? '👤 פרטי ההורה' : '👤 פרטי הלקוח/ה'}
+                </div>
+                <Field label="שם פרטי *" value={newClient.name} onChange={v => setNewClient(c => ({...c, name: v}))} />
+                <Field label="שם משפחה" value={newClient.last_name} onChange={v => setNewClient(c => ({...c, last_name: v}))} />
+                <Field label="סיסמה *" value={newClient.password} onChange={v => setNewClient(c => ({...c, password: v}))} />
+                <Field label="טלפון" value={newClient.phone} onChange={v => setNewClient(c => ({...c, phone: v}))} />
+                <Field label="תעודת זהות" value={newClient.id_number} onChange={v => setNewClient(c => ({...c, id_number: v}))} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <div style={{ flex: 1 }}><Field label="גיל" value={newClient.age} onChange={v => setNewClient(c => ({...c, age: v}))} type="number" /></div>
+                  <div style={{ flex: 1 }}><Field label='משקל (ק"ג)' value={newClient.weight} onChange={v => setNewClient(c => ({...c, weight: v}))} type="number" /></div>
+                  <div style={{ flex: 1 }}><Field label='גובה (ס"מ)' value={newClient.height} onChange={v => setNewClient(c => ({...c, height: v}))} type="number" /></div>
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>מגדר</div>
+                  <div style={{ display: 'flex', gap: 8 }}>{['נקבה', 'זכר'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, gender: g}))} style={{ flex: 1, padding: 8, borderRadius: 10, border: '2px solid ' + (newClient.gender === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.gender === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: newClient.gender === g ? '#0f4c2a' : '#555' }}>{g}</button>)}</div>
+                </div>
+                {clientTrack !== 'child' && (
+                  <>
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>מטרה</div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{['ירידה במשקל', 'שמירה על משקל', 'עלייה במסה'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, goal: g}))} style={{ flex: 1, padding: 8, borderRadius: 10, border: '2px solid ' + (newClient.goal === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.goal === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: newClient.goal === g ? '#0f4c2a' : '#555', minWidth: 100 }}>{g}</button>)}</div>
+                    </div>
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>רמת פעילות</div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>{['יושבני', 'קל', 'בינוני', 'פעיל', 'מאוד פעיל'].map(g => <button key={g} onClick={() => setNewClient(c => ({...c, activity: g}))} style={{ padding: '6px 10px', borderRadius: 10, border: '2px solid ' + (newClient.activity === g ? '#0f4c2a' : '#e5e7eb'), background: newClient.activity === g ? '#dcfce7' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: newClient.activity === g ? '#0f4c2a' : '#555' }}>{g}</button>)}</div>
+                    </div>
+                  </>
+                )}
+
+                {/* פרטי ילד */}
+                {(clientTrack === 'child' || clientTrack === 'both') && (
+                  <div style={{ background: '#faf5ff', borderRadius: 14, padding: 16, marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#7c3aed', marginBottom: 10 }}>👶 פרטי הילד</div>
+                    <Field label="שם הילד *" value={childData.name} onChange={v => setChildData(c => ({...c, name: v}))} />
+                    <Field label="סיסמה (אופציונלי — ברירת מחדל: סיסמת ההורה)" value={childData.password} onChange={v => setChildData(c => ({...c, password: v}))} />
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <div style={{ flex: 1 }}><Field label="גיל" value={childData.age} onChange={v => setChildData(c => ({...c, age: v}))} type="number" /></div>
+                      <div style={{ flex: 1 }}><Field label='משקל (ק"ג)' value={childData.weight} onChange={v => setChildData(c => ({...c, weight: v}))} type="number" /></div>
+                      <div style={{ flex: 1 }}><Field label='גובה (ס"מ)' value={childData.height} onChange={v => setChildData(c => ({...c, height: v}))} type="number" /></div>
+                    </div>
+                    <div style={{ marginBottom: 8 }}>
+                      <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>מגדר</div>
+                      <div style={{ display: 'flex', gap: 8 }}>{['בן', 'בת'].map(g => <button key={g} onClick={() => setChildData(c => ({...c, gender: g}))} style={{ flex: 1, padding: 8, borderRadius: 10, border: '2px solid ' + (childData.gender === g ? '#7c3aed' : '#e5e7eb'), background: childData.gender === g ? '#faf5ff' : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: childData.gender === g ? '#7c3aed' : '#555' }}>{g}</button>)}</div>
+                    </div>
+                  </div>
+                )}
+
+                <button onClick={async () => {
+                  if (!newClient.name || !newClient.password) { alert('שם וסיסמה הם שדות חובה'); return }
+                  if ((clientTrack === 'child' || clientTrack === 'both') && !childData.name) { alert('שם הילד הוא שדה חובה'); return }
+                  setAddingClient(true)
+                  try {
+                    const { data: parentData, error } = await supabase.from('clients').insert({
+                      name: newClient.name, last_name: newClient.last_name, password: newClient.password,
+                      phone: newClient.phone, id_number: newClient.id_number || null,
+                      age: newClient.age ? parseInt(newClient.age) : null,
+                      weight: newClient.weight ? parseFloat(newClient.weight) : null,
+                      height: newClient.height ? parseFloat(newClient.height) : null,
+                      goal: newClient.goal || 'ירידה במשקל', activity: newClient.activity, gender: newClient.gender,
+                      client_track: clientTrack,
+                      created_at: new Date().toISOString()
+                    }).select().single()
+                    if (error) throw error
+
+                    if ((clientTrack === 'child' || clientTrack === 'both') && childData.name) {
+                      await supabase.from('clients').insert({
+                        name: childData.name, password: childData.password || newClient.password,
+                        age: childData.age ? parseInt(childData.age) : null,
+                        weight: childData.weight ? parseFloat(childData.weight) : null,
+                        height: childData.height ? parseFloat(childData.height) : null,
+                        gender: childData.gender,
+                        parent_id: parentData.id,
+                        is_child: true,
+                        created_at: new Date().toISOString()
+                      })
+                    }
+
+                    setClientAdded('✅ ' + newClient.name + ' נוסף/ה בהצלחה!' + ((clientTrack === 'child' || clientTrack === 'both') && childData.name ? ' + ילד: ' + childData.name : ''))
+                    setNewClient({ name: '', last_name: '', password: '', phone: '', id_number: '', age: '', weight: '', height: '', goal: '', activity: '', gender: '' })
+                    setChildData({ name: '', age: '', weight: '', height: '', gender: '', password: '' })
+                    setClientTrack('')
+                    loadClients()
+                  } catch(e) { alert('שגיאה: ' + e.message) }
+                  setAddingClient(false)
+                }} disabled={addingClient || !clientTrack} style={{ width: '100%', padding: 14, borderRadius: 12, background: addingClient ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
+                  {addingClient ? '⏳ מוסיף/ה...' : '➕ הוסיפי לקוח/ה'}
+                </button>
+              </>
+            )}
+          </div>
         )}
       </div>
     </div>
