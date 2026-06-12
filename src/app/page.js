@@ -3,17 +3,19 @@ import { useState } from 'react'
 import { supabase } from './supabase'
 import PlanApp from './PlanApp'
 
-const TERMS_TEXT = `שירות "בין הראש לצלחת" — תנאי שימוש
+const TERMS_TEXT = `ברוכה הבאה למסע — בין הראש לצלחת
 
-1. השירות אינו תחליף לייעוץ רפואי, תזונאי קליני או כל איש מקצוע רפואי מורשה.
+מה המסע הזה נותן לך?
+"בין הראש לצלחת" הוא תהליך ליווי אישי לשינוי הרגלי אכילה, דפוסי חשיבה ומערכת היחסים שלך עם אוכל ועם הגוף. התהליך כולל כלים התנהגותיים, עבודה על דפוסים רגשיים, ובניית שגרה שמחזיקה לאורך זמן — בצורה שמתאימה לחיים האמיתיים שלך.
 
-2. המידע, ההמלצות והתכנים המוצגים מיועדים לתמיכה אישית בלבד, ואינם מהווים אבחנה רפואית, מרשם, או טיפול רפואי.
+מה קיבלת כאן?
+ליווי מותאם אישית מאתי אטל, יועצת לבריאות ותזונה התנהגותית — שמביאה כלים, ידע ותמיכה לדרך. הכל בנוי סביב השינוי שרלוונטי לך, לא על פרוטוקול אחיד.
 
-3. במצב חירום רפואי או תחושה של מצוקה פיזית/נפשית חריגה — יש לפנות מיידית לרופא, מד"א (101) או חדר מיון.
+הגבול שחשוב לדעת
+הכלים וההמלצות שתקבלי אינם מחליפים ייעוץ מרופא, תזונאי קליני, או כל גורם רפואי מורשה. אם יש בעיה רפואית פעילה — חשוב להיוועץ בגורם מקצועי לפני ובמהלך התהליך. במצב חירום — מד"א 101.
 
-4. השימוש בשירות כפוף לשיקול דעת אישי, ומפעיל השירות אינו נושא באחריות לתוצאות הנובעות משימוש בתכנים.
-
-5. כל המידע האישי מועבר ומאוחסן בצורה מאובטחת ולא יועבר לצד שלישי.`
+הפרטיות שלך
+כל המידע שלך מאובטח ולא יועבר לשום גורם חיצוני.`
 
 export default function Home() {
   const [password, setPassword] = useState('')
@@ -59,8 +61,8 @@ export default function Home() {
         <div style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.6)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:16}}>
           <div style={{background:'#fff',borderRadius:20,maxWidth:480,width:'100%',maxHeight:'85vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 20px 60px rgba(0,0,0,0.3)'}}>
             <div style={{background:'linear-gradient(135deg,#0f4c2a,#16a34a)',padding:'18px 24px',color:'#fff'}}>
-              <div style={{fontWeight:900,fontSize:17}}>תנאי שימוש — בין הראש לצלחת</div>
-              <div style={{fontSize:12,opacity:0.85,marginTop:4}}>יש לקרוא ולאשר לפני הכניסה לראשונה</div>
+              <div style={{fontWeight:900,fontSize:17}}>לפני שמתחילים — בין הראש לצלחת</div>
+              <div style={{fontSize:12,opacity:0.85,marginTop:4}}>רגע קצר לפני הכניסה</div>
             </div>
             <div style={{overflowY:'auto',padding:'20px 24px',flex:1}}>
               {TERMS_TEXT.split('\n\n').map((p, i) => (
