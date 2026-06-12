@@ -1097,9 +1097,8 @@ export default function AdminPage() {
               }} style={{ padding: '8px 16px', borderRadius: 10, background: '#fef2f2', color: '#ef4444', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>🗑️ מחקי לקוח</button>
               </div>
               {/* עריכת נתוני לקוח */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, background: '#f8fafc', borderRadius: 8, padding: '6px 10px' }}>
-                <div style={{ fontSize: 12, color: '#9ca3af', flexShrink: 0 }}>🔑 סיסמה:</div>
-                <input value={selectedClient.password || ''} onChange={e => setSelectedClient(c => ({...c, password: e.target.value}))} onBlur={e => updateClientData('password', e.target.value)} placeholder="הגדירי סיסמה..." style={{ flex: 1, padding: '4px 8px', borderRadius: 6, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right' }} />
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                <input type="text" placeholder="סיסמה" value={selectedClient.password || ''} onChange={e => setSelectedClient(c => ({...c, password: e.target.value}))} onBlur={e => updateClientData('password', e.target.value)} style={{ flex: 2, minWidth: 100, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <input type="number" placeholder="גיל" value={selectedClient.age || ''} onChange={e => setSelectedClient(c => ({...c, age: e.target.value}))} onBlur={e => updateClientData('age', e.target.value ? parseInt(e.target.value) : null)} style={{ flex: 1, minWidth: 60, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
