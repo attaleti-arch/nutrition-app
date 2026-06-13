@@ -391,7 +391,7 @@ function calcTargets(weight, height, age, gender, activity, goal) {
   var bmr = calcBMR(weight, height, age, gender)
   if (!bmr) return null
   var tdee = bmr * (ACTIVITY_MULT[activity] || 1.55)
-  var adjust = goal === 'ירידה במשקל' ? -400 : goal === 'חיטוב' ? -200 : goal === 'עלייה במסה' ? 300 : 0
+  var adjust = goal === 'ירידה במשקל' ? -660 : goal === 'חיטוב' ? -330 : goal === 'עלייה במסה' ? 300 : 0
   var calories = Math.round(tdee + adjust)
   var split = GOALS_SPLIT[goal] || GOALS_SPLIT['ירידה במשקל']
   return {
