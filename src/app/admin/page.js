@@ -2181,18 +2181,18 @@ export default function AdminPage() {
                     '**7. צעדים פרקטיים לשינוי**\nלפחות 6-8 צעדים קונקרטיים שאפשר לעשות מהיום — מותאמים ספציפית לה.\n\n' +
                     '**8. שאלות המשך אם משהו חסר**\n2-3 שאלות שכדאי לשאול בפגישה אם הנושא לא כוסה מספיק.'
 
+                  let rootsResult = ''
                   try {
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
                   if (!res.ok) throw new Error('API error')
-                  const reader = res.body.getReader(); const decoder = new TextDecoder(); let result = ''
+                  const reader = res.body.getReader(); const decoder = new TextDecoder()
                   setRootsEditing(true); setRootsViewMode('view')
                   while (true) {
                     const { done, value } = await reader.read(); if (done) break
-                    result += decoder.decode(value, { stream: true }); setRootsAnalysis(result)
+                    rootsResult += decoder.decode(value, { stream: true }); setRootsAnalysis(rootsResult)
                   }
-                  if (result) { saveSessionKey('roots_notes', rootsNotes); saveSessionKey('roots_analysis', result); setRootsAnalysisSaved(true) }
-                  else { alert('לא התקבל ניתוח — נסי שוב') }
-                  } catch(e) { alert('שגיאת רשת — נסי שוב') }
+                  } catch(e) { if (!rootsResult) alert('שגיאת רשת — נסי שוב') }
+                  if (rootsResult) { saveSessionKey('roots_notes', rootsNotes); saveSessionKey('roots_analysis', rootsResult); setRootsAnalysisSaved(true) }
                   setRootsLoading(false)
                 }} disabled={rootsLoading || !Object.values(rootsNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: rootsLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {rootsLoading ? '⏳ מנתח...' : '🌱 הפק ניתוח AI לפגישה'}
@@ -2385,18 +2385,18 @@ export default function AdminPage() {
                     '**שאלות שכדאי לשאול בפגישה**\n' +
                     '2-3 שאלות אם נושא לא כוסה מספיק בזום.'
 
+                  let bodyResult = ''
                   try {
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
                   if (!res.ok) throw new Error('API error')
-                  const reader = res.body.getReader(); const decoder = new TextDecoder(); let result = ''
+                  const reader = res.body.getReader(); const decoder = new TextDecoder()
                   setBodyEditing(true); setBodyViewMode('view')
                   while (true) {
                     const { done, value } = await reader.read(); if (done) break
-                    result += decoder.decode(value, { stream: true }); setBodyAnalysis(result)
+                    bodyResult += decoder.decode(value, { stream: true }); setBodyAnalysis(bodyResult)
                   }
-                  if (result) { saveSessionKey('body_notes', bodyNotes); saveSessionKey('body_analysis', result); setBodyAnalysisSaved(true) }
-                  else { alert('לא התקבל ניתוח — נסי שוב') }
-                  } catch(e) { alert('שגיאת רשת — נסי שוב') }
+                  } catch(e) { if (!bodyResult) alert('שגיאת רשת — נסי שוב') }
+                  if (bodyResult) { saveSessionKey('body_notes', bodyNotes); saveSessionKey('body_analysis', bodyResult); setBodyAnalysisSaved(true) }
                   setBodyLoading(false)
                 }} disabled={bodyLoading || !Object.values(bodyNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: bodyLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {bodyLoading ? '⏳ מנתח...' : '🩺 הפק ניתוח AI לפגישה'}
@@ -2547,18 +2547,18 @@ export default function AdminPage() {
                     '**7. שאלות המשך לפגישה**\n' +
                     '2-3 שאלות אם נושא לא כוסה מספיק.'
 
+                  let childResult = ''
                   try {
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
                   if (!res.ok) throw new Error('API error')
-                  const reader = res.body.getReader(); const decoder = new TextDecoder(); let result = ''
+                  const reader = res.body.getReader(); const decoder = new TextDecoder()
                   setChildEditing(true)
                   while (true) {
                     const { done, value } = await reader.read(); if (done) break
-                    result += decoder.decode(value, { stream: true }); setChildAnalysis(result)
+                    childResult += decoder.decode(value, { stream: true }); setChildAnalysis(childResult)
                   }
-                  if (result) { saveSessionKey('child_analysis', result); setChildAnalysisSaved(true) }
-                  else { alert('לא התקבל ניתוח — נסי שוב') }
-                  } catch(e) { alert('שגיאת רשת — נסי שוב') }
+                  } catch(e) { if (!childResult) alert('שגיאת רשת — נסי שוב') }
+                  if (childResult) { saveSessionKey('child_analysis', childResult); setChildAnalysisSaved(true) }
                   setChildLoading(false)
                 }} disabled={childLoading || !Object.values(childNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: childLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {childLoading ? '⏳ מנתח...' : '👨‍👩‍👧 הפק מערך מפגש AI'}
