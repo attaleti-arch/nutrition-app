@@ -2277,16 +2277,22 @@ export default function AdminPage() {
                   <div style={{ padding: '0 16px 16px' }}>
                     <button onClick={async () => {
                       setRootsDocLoading(true); setRootsClientDocPreview('')
-                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית.\n' +
-                        'כתבי סיכום אישי חם ל-' + (selectedClient?.name||'') + ' לאחר פגישת השורשים.\n\n' +
-                        (rootsAnalysis ? 'ניתוח מקדים:\n' + rootsAnalysis.substring(0,2000) + '\n\n' : '') +
-                        (rootsSessionNotes.trim() ? 'מה עלה במפגש:\n' + rootsSessionNotes + '\n\n' : '') +
-                        'כתבי מסמך בעברית, גוף שני נקבה, ישיר, חם ואישי. מבנה קבוע — ללא הקדמה:\n\n' +
-                        '🏠 מה עלה מהבית שגדלת בו\n[2-3 משפטים ספציפיים]\n\n' +
-                        '🔄 מה מועבר הלאה\n[הדפוס הדורי שזוהה]\n\n' +
-                        '💡 האסימון שנפל\n[רגע ספציפי שהתחבר, בשפתה]\n\n' +
-                        '🌱 מה את לוקחת\n[2-3 דברים קונקרטיים]\n\n' +
-                        '🚀 קדימה במסע\n[מה להמשיך לשים לב אליו]'
+                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. כתבי מסמך שיקוף אישי ל-' + (selectedClient?.name||'') + ' לאחר פגישת השורשים.\n\n' +
+                        (rootsAnalysis ? 'ניתוח שהכנת לפגישה:\n' + rootsAnalysis.substring(0,2000) + '\n\n' : '') +
+                        (rootsSessionNotes.trim() ? 'מה עלה בפגישה:\n' + rootsSessionNotes + '\n\n' : '') +
+                        'כתבי בעברית, גוף שני נקבה, חמה ואישית. מבנה קבוע — ללא הקדמה, ישר לתוכן:\n\n' +
+                        '---\n\n' +
+                        '🏠 **מה עלה מהבית שגדלת בו**\n[2-3 משפטים ספציפיים על מה שעלה]\n\n' +
+                        '---\n\n' +
+                        '🔄 **מה מועבר הלאה**\n[תארי את הדפוס הדורי הספציפי שזוהה]\n\n' +
+                        '---\n\n' +
+                        '💡 **האסימון שנפל**\n[רגע ספציפי שהתחבר, בשפתה]\n\n' +
+                        '---\n\n' +
+                        '🌱 **מה את לוקחת**\n[2-3 דברים קונקרטיים שלוקחת מהפגישה]\n\n' +
+                        '---\n\n' +
+                        '🚀 **קדימה במסע**\n[מה להמשיך לשים לב אליו]\n\n' +
+                        '---\n\n' +
+                        'ללא מבוא. ללא סיכום. ללא הסברים בסוגריים. רק התוכן עצמו — חם, ממוקד, שלה.'
                       let result = ''
                       try {
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
@@ -2509,16 +2515,22 @@ export default function AdminPage() {
                   <div style={{ padding: '0 16px 16px' }}>
                     <button onClick={async () => {
                       setBodyDocLoading(true); setBodyClientDocPreview('')
-                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית.\n' +
-                        'כתבי סיכום אישי חם ל-' + (selectedClient?.name||'') + ' לאחר פגישת הגוף מדבר.\n\n' +
-                        (bodyAnalysis ? 'ניתוח מקדים:\n' + bodyAnalysis.substring(0,2000) + '\n\n' : '') +
-                        (bodySessionNotes.trim() ? 'מה עלה במפגש:\n' + bodySessionNotes + '\n\n' : '') +
-                        'כתבי מסמך בעברית, גוף שני נקבה, ישיר, חם ואישי. מבנה קבוע — ללא הקדמה:\n\n' +
-                        '🩺 מה הגוף שלך אמר\n[ההודעה הספציפית שזוהתה, בשפתה]\n\n' +
-                        '💔 הקשר שגילינו\n[רגש ← גוף — הקישור הספציפי]\n\n' +
-                        '🔬 מנגנון שמעכשיו מובן\n[משהו שהסתבר לה: סוכר / קורטיזול / שינה...]\n\n' +
-                        '🌿 מה את לוקחת\n[2-3 דברים קונקרטיים]\n\n' +
-                        '🚀 קדימה במסע\n[מה לשים לב אליו, מה לצפות]'
+                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. כתבי מסמך שיקוף אישי ל-' + (selectedClient?.name||'') + ' לאחר פגישת הגוף מדבר.\n\n' +
+                        (bodyAnalysis ? 'ניתוח שהכנת לפגישה:\n' + bodyAnalysis.substring(0,2000) + '\n\n' : '') +
+                        (bodySessionNotes.trim() ? 'מה עלה בפגישה:\n' + bodySessionNotes + '\n\n' : '') +
+                        'כתבי בעברית, גוף שני נקבה, חמה ואישית. מבנה קבוע — ללא הקדמה, ישר לתוכן:\n\n' +
+                        '---\n\n' +
+                        '🩺 **מה הגוף שלך אמר**\n[ההודעה הספציפית שזוהתה, בשפתה]\n\n' +
+                        '---\n\n' +
+                        '💔 **הקשר שגילינו**\n[רגש ← גוף — הקישור הספציפי]\n\n' +
+                        '---\n\n' +
+                        '🔬 **מנגנון שמעכשיו מובן**\n[משהו שהסתבר לה: סוכר / קורטיזול / שינה...]\n\n' +
+                        '---\n\n' +
+                        '🌿 **מה את לוקחת**\n[2-3 דברים קונקרטיים שלוקחת מהפגישה]\n\n' +
+                        '---\n\n' +
+                        '🚀 **קדימה במסע**\n[מה לשים לב אליו, מה לצפות]\n\n' +
+                        '---\n\n' +
+                        'ללא מבוא. ללא סיכום. ללא הסברים בסוגריים. רק התוכן עצמו — חם, ממוקד, שלה.'
                       let result = ''
                       try {
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
@@ -2696,16 +2708,22 @@ export default function AdminPage() {
                   <div style={{ padding: '0 16px 16px' }}>
                     <button onClick={async () => {
                       setChildDocLoading(true); setChildClientDocPreview('')
-                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית.\n' +
-                        'כתבי סיכום אישי חם ל-' + (selectedClient?.name||'') + ' לאחר פגישת הורה-ילד.\n\n' +
-                        (childAnalysis ? 'ניתוח מקדים:\n' + childAnalysis.substring(0,2000) + '\n\n' : '') +
-                        (childSessionNotes.trim() ? 'מה עלה במפגש:\n' + childSessionNotes + '\n\n' : '') +
-                        'כתבי מסמך בעברית, גוף שני נקבה, ישיר, חם ואישי. מבנה קבוע — ללא הקדמה:\n\n' +
-                        '🌟 מה ראינו על הילד שלך\n[תובנה ספציפית על הילד — כוח / דפוס]\n\n' +
-                        '🏠 הדינמיקה שזוהתה\n[מה בבית תורם לדפוס]\n\n' +
-                        '👁️ מה את יכולה לשנות\n[מה ההורה עצמה עושה שונה — לא האשמה]\n\n' +
-                        '🌿 פרקטיקה ביתית\n[3-4 שינויים קונקרטיים]\n\n' +
-                        '🚀 לשבוע הקרוב\n[מה לשים לב אליו, מה לצפות]'
+                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. כתבי מסמך שיקוף אישי ל-' + (selectedClient?.name||'') + ' לאחר פגישת הורה-ילד.\n\n' +
+                        (childAnalysis ? 'ניתוח שהכנת לפגישה:\n' + childAnalysis.substring(0,2000) + '\n\n' : '') +
+                        (childSessionNotes.trim() ? 'מה עלה בפגישה:\n' + childSessionNotes + '\n\n' : '') +
+                        'כתבי בעברית, גוף שני נקבה, חמה ואישית. מבנה קבוע — ללא הקדמה, ישר לתוכן:\n\n' +
+                        '---\n\n' +
+                        '🌟 **מה ראינו על הילד שלך**\n[תובנה ספציפית על הילד — כוח / דפוס]\n\n' +
+                        '---\n\n' +
+                        '🏠 **הדינמיקה שזוהתה**\n[מה בבית תורם לדפוס]\n\n' +
+                        '---\n\n' +
+                        '👁️ **מה את יכולה לשנות**\n[מה ההורה עצמה עושה שונה — לא האשמה]\n\n' +
+                        '---\n\n' +
+                        '🌿 **פרקטיקה ביתית**\n[3-4 שינויים קונקרטיים שאפשר להתחיל עכשיו]\n\n' +
+                        '---\n\n' +
+                        '🚀 **לשבוע הקרוב**\n[מה לשים לב אליו, מה לצפות]\n\n' +
+                        '---\n\n' +
+                        'ללא מבוא. ללא סיכום. ללא הסברים בסוגריים. רק התוכן עצמו — חם, ממוקד, שלה.'
                       let result = ''
                       try {
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
