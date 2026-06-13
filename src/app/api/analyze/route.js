@@ -731,7 +731,7 @@ ${sessionNotes ? 'מה גילינו בפגישה (הערות אתי): ' + sessio
     if (mode === 'rootsAnalysis' && body.prompt) {
       const stream = client.messages.stream({
         model: 'claude-sonnet-4-6',
-        max_tokens: 5000,
+        max_tokens: 8000,
         messages: [{ role: 'user', content: body.prompt }]
       })
       const readable = new ReadableStream({
