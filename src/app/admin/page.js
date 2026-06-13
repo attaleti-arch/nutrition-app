@@ -473,6 +473,15 @@ export default function AdminPage() {
   const [childAnalysisSaved, setChildAnalysisSaved] = useState(false)
   const [rootsViewMode, setRootsViewMode] = useState('view')
   const [bodyViewMode, setBodyViewMode] = useState('view')
+  const [rootsMeetingSummary, setRootsMeetingSummary] = useState({ home_discovery: '', generational: '', aha_moment: '', practice: '', forward: '' })
+  const [bodyMeetingSummary, setBodyMeetingSummary] = useState({ body_message: '', emotion_link: '', mechanism: '', practice: '', forward: '' })
+  const [childMeetingSummary, setChildMeetingSummary] = useState({ child_insight: '', dynamics: '', parent_change: '', home_practice: '', observation: '' })
+  const [sendingRootsSummary, setSendingRootsSummary] = useState(false)
+  const [rootsSummarySent, setRootsSummarySent] = useState(false)
+  const [sendingBodySummary, setSendingBodySummary] = useState(false)
+  const [bodySummarySent, setBodySummarySent] = useState(false)
+  const [sendingChildSummary, setSendingChildSummary] = useState(false)
+  const [childSummarySent, setChildSummarySent] = useState(false)
   const sessionDataRef = useRef({})
 
   // ── ✅ Plate Calculator state ──
@@ -566,6 +575,9 @@ export default function AdminPage() {
     const cFbD = sd.child_feedback_draft || lsLoad('child_feedback_draft', false); if (cFbD) { setChildFeedback(cFbD) } else if (data?.child_feedback) { setChildFeedback(data.child_feedback) }
     const cAn = sd.child_analysis || lsLoad('child_analysis', false); if (cAn) { setChildAnalysis(cAn); setChildEditing(true) }
     const jCDD = sd.journey_client_doc_draft || lsLoad('journey_client_doc_draft', false); if (jCDD) setJourneyClientDocPreview(jCDD)
+    const rMs = sd.roots_meeting_summary || lsLoad('roots_meeting_summary', true); if (rMs) setRootsMeetingSummary(prev => ({ ...prev, ...rMs }))
+    const bMs = sd.body_meeting_summary || lsLoad('body_meeting_summary', true); if (bMs) setBodyMeetingSummary(prev => ({ ...prev, ...bMs }))
+    const cMs = sd.child_meeting_summary || lsLoad('child_meeting_summary', true); if (cMs) setChildMeetingSummary(prev => ({ ...prev, ...cMs }))
     const { data: nd } = await supabase.from('nutrition_data').select('*').order('id')
     setNutritionItems(nd || [])
     const { data: logsData } = await supabase.from('daily_logs').select('*').eq('client_name', client.password).order('log_date', { ascending: false }).limit(30)
@@ -2228,54 +2240,67 @@ export default function AdminPage() {
                         const data = await res.json()
                         if (data.result) { setRootsAnalysis(data.result); setRootsViewMode('view'); saveSessionKey('roots_analysis', data.result) }
                         setRootsLoading(false)
-                      }} disabled={rootsLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      }} disabled={rootsLoading} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {rootsLoading ? '⏳...' : '🔄 עבדי מחדש'}
-                      </button>
-                      <button onClick={async () => {
-                        if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
-                        await supabase.from('client_profiles').update({ roots_feedback: rootsAnalysis, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
-                        saveSessionKey('roots_feedback_draft', rootsAnalysis)
-                        const phone = selectedClient.phone.replace(/^0/, '972')
-                        const msg = 'היי ' + selectedClient.name + '! 🌱\n\nהמשוב האישי שלך מפגישת השורשים מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
-                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                      }} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        📤 שלחי ללקוחה
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* משוב ללקוחה */}
-                {rootsFeedback && (
-                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #c4956a', overflow: 'hidden', marginBottom: 16 }}>
-                    <div style={{ background: 'linear-gradient(135deg,#c4956a,#e8c9a0)', padding: '14px 18px', color: '#fff' }}>
-                      <div style={{ fontWeight: 800, fontSize: 14 }}>💚 משוב ללקוחה — אחרי הפגישה</div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>הוסיפי מה שעלה בפגישה → שמרי → שלחי</div>
-                    </div>
-                    <div style={{ padding: 16 }}>
-                      <textarea value={rootsFeedback} onChange={e => setRootsFeedback(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
-                      <button onClick={() => {
-                        saveSessionKey('roots_feedback_draft', rootsFeedback)
-                        setRootsFeedbackSaved(true); setTimeout(() => setRootsFeedbackSaved(false), 3000)
-                      }} style={{ flex: 1, padding: 12, borderRadius: 10, background: rootsFeedbackSaved ? '#16a34a' : '#f8f4ef', color: rootsFeedbackSaved ? '#fff' : '#0f4c2a', border: '1.5px solid #c4956a', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {rootsFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
-                      </button>
-                      <button onClick={async () => {
-                        if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
-                        setSendingRootsFeedback(true)
-                        await supabase.from('client_profiles').update({ roots_feedback: rootsFeedback, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
-                        const phone = selectedClient.phone.replace(/^0/, '972')
-                        const msg = 'היי ' + selectedClient.name + '! 🌱\n\nהמשוב האישי שלך מפגישת השורשים מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
-                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                        setSendingRootsFeedback(false); setRootsFeedbackSent(true); setTimeout(() => setRootsFeedbackSent(false), 4000)
-                      }} disabled={sendingRootsFeedback} style={{ flex: 2, padding: 12, borderRadius: 10, background: rootsFeedbackSent ? '#16a34a' : '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {sendingRootsFeedback ? '⏳...' : rootsFeedbackSent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
-                      </button>
-                    </div>
+                {/* סיכום הפגישה ללקוחה — שורשים */}
+                <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #c4956a', overflow: 'hidden', marginBottom: 16 }}>
+                  <div style={{ background: 'linear-gradient(135deg,#c4956a,#e8c9a0)', padding: '14px 18px', color: '#fff' }}>
+                    <div style={{ fontWeight: 800, fontSize: 14 }}>📝 סיכום הפגישה — לשליחה ללקוחה</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>מלאי אחרי הפגישה → שמרי → שלחי</div>
                   </div>
-                )}
+                  <div style={{ padding: 16 }}>
+                    {[
+                      { key: 'home_discovery', icon: '🏠', label: 'מה עלה מהבית שגדלת בו', placeholder: 'דפוס או אמונה ספציפית שהגיעה משם' },
+                      { key: 'generational', icon: '🔄', label: 'מה מועבר הלאה', placeholder: 'הרגע הדורי — מה עברה עליה, מה היא מעבירה' },
+                      { key: 'aha_moment', icon: '💡', label: 'האסימון שנפל', placeholder: 'משהו שהתחבר — ציטוט או רגע ספציפי' },
+                      { key: 'practice', icon: '🌱', label: 'פרקטיקה — מה לוקחת', placeholder: 'מה לוקחת ועושה' },
+                      { key: 'forward', icon: '🚀', label: 'קדימה במסע', placeholder: 'מה ממשיך, מה לשים לב אליו' },
+                    ].map(({ key, icon, label, placeholder }) => (
+                      <div key={key} style={{ marginBottom: 14 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#7c5e42', marginBottom: 5 }}>{icon} {label}</div>
+                        <textarea
+                          value={rootsMeetingSummary[key] || ''}
+                          onChange={e => { const v = e.target.value; setRootsMeetingSummary(prev => { const n = { ...prev, [key]: v }; return n }) }}
+                          onBlur={() => saveSessionKey('roots_meeting_summary', rootsMeetingSummary)}
+                          placeholder={placeholder}
+                          rows={2}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                    <button onClick={() => { saveSessionKey('roots_meeting_summary', rootsMeetingSummary); setRootsFeedbackSaved(true); setTimeout(() => setRootsFeedbackSaved(false), 3000) }} style={{ flex: 1, padding: 12, borderRadius: 10, background: rootsFeedbackSaved ? '#16a34a' : '#f8f4ef', color: rootsFeedbackSaved ? '#fff' : '#0f4c2a', border: '1.5px solid #c4956a', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      {rootsFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
+                    </button>
+                    <button onClick={async () => {
+                      if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
+                      setSendingRootsSummary(true)
+                      const fields = [
+                        { key: 'home_discovery', icon: '🏠', label: 'מה עלה מהבית שגדלת בו' },
+                        { key: 'generational', icon: '🔄', label: 'מה מועבר הלאה' },
+                        { key: 'aha_moment', icon: '💡', label: 'האסימון שנפל' },
+                        { key: 'practice', icon: '🌱', label: 'מה את לוקחת' },
+                        { key: 'forward', icon: '🚀', label: 'קדימה במסע' },
+                      ]
+                      const compiled = fields.map(f => rootsMeetingSummary[f.key]?.trim() ? f.icon + ' ' + f.label + '\n' + rootsMeetingSummary[f.key].trim() : '').filter(Boolean).join('\n\n')
+                      if (!compiled) { setSendingRootsSummary(false); return alert('מלאי לפחות שדה אחד') }
+                      await supabase.from('client_profiles').update({ roots_feedback: compiled, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                      saveSessionKey('roots_meeting_summary', rootsMeetingSummary)
+                      const phone = selectedClient.phone.replace(/^0/, '972')
+                      const msg = 'היי ' + selectedClient.name + '! 🌱\n\nהסיכום האישי שלך מפגישת השורשים מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+                      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+                      setSendingRootsSummary(false); setRootsSummarySent(true); setTimeout(() => setRootsSummarySent(false), 4000)
+                    }} disabled={sendingRootsSummary} style={{ flex: 2, padding: 12, borderRadius: 10, background: rootsSummarySent ? '#16a34a' : '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      {sendingRootsSummary ? '⏳...' : rootsSummarySent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
+                    </button>
+                  </div>
+                </div>
 
               </div>
             )}
@@ -2423,61 +2448,67 @@ export default function AdminPage() {
                         const data = await res.json()
                         if (data.result) { setBodyAnalysis(data.result); setBodyViewMode('view'); saveSessionKey('body_analysis', data.result) }
                         setBodyLoading(false)
-                      }} disabled={bodyLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      }} disabled={bodyLoading} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {bodyLoading ? '⏳...' : '🔄 עבדי מחדש'}
-                      </button>
-                      <button onClick={async () => {
-                        setBodyFeedbackLoading(true)
-                        const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. צרי משוב חם, מעצים ואישי ל' + (selectedClient?.name||'') + ' לאחר פגישת הגוף מדבר.\n\n' +
-                          'על בסיס הניתוח:\n' + bodyAnalysis + '\n\n' +
-                          'כתבי מסמך משוב בעברית, גוף שני נקבה, חיובי ומעצים. מבנה:\n\n' +
-                          '🩺 מה הגוף שלך אמר לנו היום\n[2-3 משפטים — תובנות מרכזיות בשפתה, לא ז\u05e8גון רפואי]\n\n' +
-                          '✨ מה גילינו יחד\n[דפוסים ספציפיים שזוהו — מחוברים לה, לא כלליים]\n\n' +
-                          '💪 הכוחות שכבר יש לך\n[2 משפטים — מה היא כבר עושה טוב]\n\n' +
-                          '🌿 3 דברים שמתחילים מחר\n[קונקרטיים, ריאליסטיים, בחום]\n\n' +
-                          '💚 מילה אחרונה\n[משפט אחד — אישי, מעצים, בשפתה]\n\n' +
-                          'ללא מבוא. ללא כותרת ראשית. ישר לתוכן. שפה של אדם — לא של רופא.'
-                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
-                        const data = await res.json()
-                        if (data.result) { setBodyFeedback(data.result); saveSessionKey('body_feedback_draft', data.result) }
-                        setBodyFeedbackLoading(false)
-                      }} disabled={bodyFeedbackLoading} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {bodyFeedbackLoading ? '⏳ מפיק...' : '📝 הפקי טיוטת משוב ללקוחה'}
                       </button>
                     </div>
                   </div>
                 )}
 
-                {bodyFeedback && (
-                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #0d9488', overflow: 'hidden', marginBottom: 16 }}>
-                    <div style={{ background: 'linear-gradient(135deg,#0d9488,#14b8a6)', padding: '14px 18px', color: '#fff' }}>
-                      <div style={{ fontWeight: 800, fontSize: 14 }}>💚 משוב ללקוחה — אחרי הפגישה</div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>הוסיפי מה שעלה בפגישה → שמרי → שלחי</div>
-                    </div>
-                    <div style={{ padding: 16 }}>
-                      <textarea value={bodyFeedback} onChange={e => setBodyFeedback(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
-                      <button onClick={() => {
-                        saveSessionKey('body_feedback_draft', bodyFeedback)
-                        setBodyFeedbackSaved(true); setTimeout(() => setBodyFeedbackSaved(false), 3000)
-                      }} style={{ flex: 1, padding: 12, borderRadius: 10, background: bodyFeedbackSaved ? '#16a34a' : '#f0fdfa', color: bodyFeedbackSaved ? '#fff' : '#0d9488', border: '1.5px solid #0d9488', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {bodyFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
-                      </button>
-                      <button onClick={async () => {
-                        if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
-                        setSendingBodyFeedback(true)
-                        await supabase.from('client_profiles').update({ body_feedback: bodyFeedback, body_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
-                        const phone = selectedClient.phone.replace(/^0/, '972')
-                        const msg = 'היי ' + selectedClient.name + '! 🩺\n\nהמשוב האישי שלך מפגישת הגוף מדבר מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
-                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                        setSendingBodyFeedback(false); setBodyFeedbackSent(true); setTimeout(() => setBodyFeedbackSent(false), 4000)
-                      }} disabled={sendingBodyFeedback} style={{ flex: 2, padding: 12, borderRadius: 10, background: bodyFeedbackSent ? '#16a34a' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {sendingBodyFeedback ? '⏳...' : bodyFeedbackSent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
-                      </button>
-                    </div>
+                {/* סיכום הפגישה ללקוחה — גוף מדבר */}
+                <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #0d9488', overflow: 'hidden', marginBottom: 16 }}>
+                  <div style={{ background: 'linear-gradient(135deg,#0d9488,#14b8a6)', padding: '14px 18px', color: '#fff' }}>
+                    <div style={{ fontWeight: 800, fontSize: 14 }}>📝 סיכום הפגישה — לשליחה ללקוחה</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>מלאי אחרי הפגישה → שמרי → שלחי</div>
                   </div>
-                )}
+                  <div style={{ padding: 16 }}>
+                    {[
+                      { key: 'body_message', icon: '🩺', label: 'מה הגוף שלך אמר', placeholder: 'ההודעה הספציפית שזוהתה — בשפתה' },
+                      { key: 'emotion_link', icon: '💔', label: 'הקשר שגילינו', placeholder: 'רגש ← גוף — הקישור הספציפי' },
+                      { key: 'mechanism', icon: '🔬', label: 'מנגנון שמעכשיו מובן', placeholder: 'משהו שהסתבר לה (סוכר / קורטיזול / שינה...)' },
+                      { key: 'practice', icon: '🌿', label: 'פרקטיקה — מה לוקחת', placeholder: 'מה לוקחת ועושה' },
+                      { key: 'forward', icon: '🚀', label: 'קדימה במסע', placeholder: 'מה לשים לב אליו, מה לצפות' },
+                    ].map(({ key, icon, label, placeholder }) => (
+                      <div key={key} style={{ marginBottom: 14 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#0f766e', marginBottom: 5 }}>{icon} {label}</div>
+                        <textarea
+                          value={bodyMeetingSummary[key] || ''}
+                          onChange={e => { const v = e.target.value; setBodyMeetingSummary(prev => ({ ...prev, [key]: v })) }}
+                          onBlur={() => saveSessionKey('body_meeting_summary', bodyMeetingSummary)}
+                          placeholder={placeholder}
+                          rows={2}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                    <button onClick={() => { saveSessionKey('body_meeting_summary', bodyMeetingSummary); setBodyFeedbackSaved(true); setTimeout(() => setBodyFeedbackSaved(false), 3000) }} style={{ flex: 1, padding: 12, borderRadius: 10, background: bodyFeedbackSaved ? '#16a34a' : '#f0fdfa', color: bodyFeedbackSaved ? '#fff' : '#0d9488', border: '1.5px solid #0d9488', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      {bodyFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
+                    </button>
+                    <button onClick={async () => {
+                      if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
+                      setSendingBodySummary(true)
+                      const bFields = [
+                        { key: 'body_message', icon: '🩺', label: 'מה הגוף שלך אמר' },
+                        { key: 'emotion_link', icon: '💔', label: 'הקשר שגילינו' },
+                        { key: 'mechanism', icon: '🔬', label: 'מנגנון שמעכשיו מובן' },
+                        { key: 'practice', icon: '🌿', label: 'מה את לוקחת' },
+                        { key: 'forward', icon: '🚀', label: 'קדימה במסע' },
+                      ]
+                      const compiled = bFields.map(f => bodyMeetingSummary[f.key]?.trim() ? f.icon + ' ' + f.label + '\n' + bodyMeetingSummary[f.key].trim() : '').filter(Boolean).join('\n\n')
+                      if (!compiled) { setSendingBodySummary(false); return alert('מלאי לפחות שדה אחד') }
+                      await supabase.from('client_profiles').update({ body_feedback: compiled, body_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                      saveSessionKey('body_meeting_summary', bodyMeetingSummary)
+                      const phone = selectedClient.phone.replace(/^0/, '972')
+                      const msg = 'היי ' + selectedClient.name + '! 🩺\n\nהסיכום האישי שלך מפגישת הגוף מדבר מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+                      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+                      setSendingBodySummary(false); setBodySummarySent(true); setTimeout(() => setBodySummarySent(false), 4000)
+                    }} disabled={sendingBodySummary} style={{ flex: 2, padding: 12, borderRadius: 10, background: bodySummarySent ? '#16a34a' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      {sendingBodySummary ? '⏳...' : bodySummarySent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
+                    </button>
+                  </div>
+                </div>
 
               </div>
             )}
@@ -2564,7 +2595,7 @@ export default function AdminPage() {
                     <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div>
                         <div style={{ fontWeight: 800, fontSize: 14 }}>📋 מערך מפגש — לעיניך בלבד</div>
-                        <div style={{ fontSize: 11, color: '#e9d5ff' }}>ערכי והוסיפי — ואז עבדי מחדש או הפיקי מסמך להורה</div>
+                        <div style={{ fontSize: 11, color: '#e9d5ff' }}>ערכי והוסיפי הערות → שמרי מחדש</div>
                       </div>
                       <button onClick={() => { setChildEditing(false); setChildAnalysis('') }} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
                     </div>
@@ -2579,61 +2610,68 @@ export default function AdminPage() {
                         const data = await res.json()
                         if (data.result) setChildAnalysis(data.result)
                         setChildLoading(false)
-                      }} disabled={childLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#faf5ff', color: '#7c3aed', border: '1.5px solid #e9d5ff', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      }} disabled={childLoading} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#faf5ff', color: '#7c3aed', border: '1.5px solid #e9d5ff', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {childLoading ? '⏳...' : '🔄 עבדי מחדש'}
                       </button>
-                      <button onClick={async () => {
-                        setChildFeedbackLoading(true)
-                        const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. צרי מסמך סיכום חם ומעשי להורה ' + (selectedClient?.name||'') + ' לאחר פגישת הורה-ילד.\n\n' +
-                          'על בסיס הניתוח:\n' + childAnalysis + '\n\n' +
-                          'כתבי מסמך בעברית, גוף שני, חיובי ומעצים. מבנה:\n\n' +
-                          '🌟 מה ראינו יחד\n[2-3 משפטים — תובנות על הילד, בשפה חיובית]\n\n' +
-                          '💚 הכוחות של הילד שלך\n[2 משפטים — מה חיובי שראינו]\n\n' +
-                          '🏠 מה משתנה בבית — מהיום\n[4-5 צעדים יומיומיים קונקרטיים וריאליסטיים]\n\n' +
-                          '🌿 מה לשים לב אליו בשבוע הקרוב\n[2-3 נקודות תצפית — לא שיפוט]\n\n' +
-                          '💬 משפט לסיום\n[חם, מעצים, מחזק את ההורה]\n\n' +
-                          'ללא מבוא. ללא כותרת ראשית. שפה של אדם — לא של מטפל.'
-                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
-                        const data = await res.json()
-                        if (data.result) { setChildFeedback(data.result); saveSessionKey('child_feedback_draft', data.result) }
-                        setChildFeedbackLoading(false)
-                      }} disabled={childFeedbackLoading} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {childFeedbackLoading ? '⏳ מפיק...' : '📝 הפיקי מסמך להורה'}
-                      </button>
+
                     </div>
                   </div>
                 )}
 
-                {childFeedback && (
-                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
-                    <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff' }}>
-                      <div style={{ fontWeight: 800, fontSize: 14 }}>💚 מסמך סיכום להורה — אחרי הפגישה</div>
-                      <div style={{ fontSize: 11, color: '#e9d5ff' }}>הוסיפי מה שעלה בפגישה → שמרי → שלחי</div>
-                    </div>
-                    <div style={{ padding: 16 }}>
-                      <textarea value={childFeedback} onChange={e => setChildFeedback(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
-                    </div>
-                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
-                      <button onClick={() => {
-                        saveSessionKey('child_feedback_draft', childFeedback)
-                        setChildFeedbackSaved(true); setTimeout(() => setChildFeedbackSaved(false), 3000)
-                      }} style={{ flex: 1, padding: 12, borderRadius: 10, background: childFeedbackSaved ? '#16a34a' : '#faf5ff', color: childFeedbackSaved ? '#fff' : '#7c3aed', border: '1.5px solid #7c3aed', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {childFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
-                      </button>
-                      <button onClick={async () => {
-                        if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
-                        setSendingChildFeedback(true)
-                        await supabase.from('client_profiles').update({ child_feedback: childFeedback, child_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
-                        const phone = selectedClient.phone.replace(/^0/, '972')
-                        const msg = 'היי ' + selectedClient.name + '! 👨‍👩‍👧\n\nמסמך הסיכום מהפגישה שלנו מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
-                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                        setSendingChildFeedback(false); setChildFeedbackSent(true); setTimeout(() => setChildFeedbackSent(false), 4000)
-                      }} disabled={sendingChildFeedback} style={{ flex: 2, padding: 12, borderRadius: 10, background: childFeedbackSent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {sendingChildFeedback ? '⏳...' : childFeedbackSent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
-                      </button>
-                    </div>
+                {/* סיכום הפגישה ללקוחה — הורה-ילד */}
+                <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
+                  <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff' }}>
+                    <div style={{ fontWeight: 800, fontSize: 14 }}>📝 סיכום הפגישה — לשליחה להורה</div>
+                    <div style={{ fontSize: 11, color: '#e9d5ff' }}>מלאי אחרי הפגישה → שמרי → שלחי</div>
                   </div>
-                )}
+                  <div style={{ padding: 16 }}>
+                    {[
+                      { key: 'child_insight', icon: '🌟', label: 'מה ראינו על הילד שלך', placeholder: 'תובנה ספציפית על הילד — כוח / דפוס' },
+                      { key: 'dynamics', icon: '🏠', label: 'הדינמיקה שזוהתה', placeholder: 'מה בבית תורם לדפוס' },
+                      { key: 'parent_change', icon: '👁️', label: 'מה את יכולה לשנות', placeholder: 'מה ההורה עצמה עושה שונה — לא האשמה' },
+                      { key: 'home_practice', icon: '🌿', label: 'פרקטיקה ביתית', placeholder: '3-4 שינויים קונקרטיים' },
+                      { key: 'observation', icon: '🚀', label: 'לשבוע הקרוב', placeholder: 'מה לשים לב אליו, מה לצפות' },
+                    ].map(({ key, icon, label, placeholder }) => (
+                      <div key={key} style={{ marginBottom: 14 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#6d28d9', marginBottom: 5 }}>{icon} {label}</div>
+                        <textarea
+                          value={childMeetingSummary[key] || ''}
+                          onChange={e => { const v = e.target.value; setChildMeetingSummary(prev => ({ ...prev, [key]: v })) }}
+                          onBlur={() => saveSessionKey('child_meeting_summary', childMeetingSummary)}
+                          placeholder={placeholder}
+                          rows={2}
+                          style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                    <button onClick={() => { saveSessionKey('child_meeting_summary', childMeetingSummary); setChildFeedbackSaved(true); setTimeout(() => setChildFeedbackSaved(false), 3000) }} style={{ flex: 1, padding: 12, borderRadius: 10, background: childFeedbackSaved ? '#16a34a' : '#faf5ff', color: childFeedbackSaved ? '#fff' : '#7c3aed', border: '1.5px solid #7c3aed', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      {childFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
+                    </button>
+                    <button onClick={async () => {
+                      if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
+                      setSendingChildSummary(true)
+                      const cFields = [
+                        { key: 'child_insight', icon: '🌟', label: 'מה ראינו על הילד שלך' },
+                        { key: 'dynamics', icon: '🏠', label: 'הדינמיקה שזוהתה' },
+                        { key: 'parent_change', icon: '👁️', label: 'מה את יכולה לשנות' },
+                        { key: 'home_practice', icon: '🌿', label: 'פרקטיקה ביתית' },
+                        { key: 'observation', icon: '🚀', label: 'לשבוע הקרוב' },
+                      ]
+                      const compiled = cFields.map(f => childMeetingSummary[f.key]?.trim() ? f.icon + ' ' + f.label + '\n' + childMeetingSummary[f.key].trim() : '').filter(Boolean).join('\n\n')
+                      if (!compiled) { setSendingChildSummary(false); return alert('מלאי לפחות שדה אחד') }
+                      await supabase.from('client_profiles').update({ child_feedback: compiled, child_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                      saveSessionKey('child_meeting_summary', childMeetingSummary)
+                      const phone = selectedClient.phone.replace(/^0/, '972')
+                      const msg = 'היי ' + selectedClient.name + '! 👨\u200d👩\u200d👧\n\nהסיכום מהפגישה שלנו מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+                      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+                      setSendingChildSummary(false); setChildSummarySent(true); setTimeout(() => setChildSummarySent(false), 4000)
+                    }} disabled={sendingChildSummary} style={{ flex: 2, padding: 12, borderRadius: 10, background: childSummarySent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      {sendingChildSummary ? '⏳...' : childSummarySent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
+                    </button>
+                  </div>
+                </div>
 
               </div>
             )}
