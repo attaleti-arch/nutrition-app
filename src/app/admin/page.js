@@ -2181,6 +2181,7 @@ export default function AdminPage() {
                     '**7. צעדים פרקטיים לשינוי**\nלפחות 6-8 צעדים קונקרטיים שאפשר לעשות מהיום — מותאמים ספציפית לה.\n\n' +
                     '**8. שאלות המשך אם משהו חסר**\n2-3 שאלות שכדאי לשאול בפגישה אם הנושא לא כוסה מספיק.'
 
+                  try {
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
                   const data = await res.json()
                   if (data.result) {
@@ -2188,7 +2189,10 @@ export default function AdminPage() {
                     saveSessionKey('roots_notes', rootsNotes)
                     saveSessionKey('roots_analysis', data.result)
                     setRootsAnalysisSaved(true)
+                  } else {
+                    alert('שגיאה בהפקת הניתוח — נסי שוב')
                   }
+                  } catch(e) { alert('שגיאת רשת — נסי שוב') }
                   setRootsLoading(false)
                 }} disabled={rootsLoading || !Object.values(rootsNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: rootsLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {rootsLoading ? '⏳ מנתח...' : '🌱 הפק ניתוח AI לפגישה'}
@@ -2381,6 +2385,7 @@ export default function AdminPage() {
                     '**שאלות שכדאי לשאול בפגישה**\n' +
                     '2-3 שאלות אם נושא לא כוסה מספיק בזום.'
 
+                  try {
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
                   const data = await res.json()
                   if (data.result) {
@@ -2388,7 +2393,10 @@ export default function AdminPage() {
                     saveSessionKey('body_notes', bodyNotes)
                     saveSessionKey('body_analysis', data.result)
                     setBodyAnalysisSaved(true)
+                  } else {
+                    alert('שגיאה בהפקת הניתוח — נסי שוב')
                   }
+                  } catch(e) { alert('שגיאת רשת — נסי שוב') }
                   setBodyLoading(false)
                 }} disabled={bodyLoading || !Object.values(bodyNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: bodyLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {bodyLoading ? '⏳ מנתח...' : '🩺 הפק ניתוח AI לפגישה'}
@@ -2539,9 +2547,12 @@ export default function AdminPage() {
                     '**7. שאלות המשך לפגישה**\n' +
                     '2-3 שאלות אם נושא לא כוסה מספיק.'
 
+                  try {
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
                   const data = await res.json()
                   if (data.result) { setChildAnalysis(data.result); setChildEditing(true); saveSessionKey('child_analysis', data.result); setChildAnalysisSaved(true) }
+                  else { alert('שגיאה בהפקת הניתוח — נסי שוב') }
+                  } catch(e) { alert('שגיאת רשת — נסי שוב') }
                   setChildLoading(false)
                 }} disabled={childLoading || !Object.values(childNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: childLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {childLoading ? '⏳ מנתח...' : '👨‍👩‍👧 הפק מערך מפגש AI'}
