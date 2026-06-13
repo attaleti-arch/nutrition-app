@@ -40,7 +40,7 @@ function calcTargets(client) {
     ? 10 * client.weight + 6.25 * client.height - 5 * client.age + 5
     : 10 * client.weight + 6.25 * client.height - 5 * client.age - 161
   var tdee = bmr * (ACTIVITY_MULT[client.activity] || 1.55)
-  var adjust = client.goal === 'ירידה במשקל' ? -400 : client.goal === 'עלייה במסה' ? 300 : 0
+  var adjust = client.goal === 'ירידה במשקל' ? -660 : client.goal === 'עלייה במסה' ? 300 : 0
   var calories = Math.round(tdee + adjust)
   var split = GOALS_SPLIT[client.goal] || GOALS_SPLIT['ירידה במשקל']
   return {
