@@ -473,21 +473,21 @@ export default function AdminPage() {
   const [childAnalysisSaved, setChildAnalysisSaved] = useState(false)
   const [rootsViewMode, setRootsViewMode] = useState('view')
   const [bodyViewMode, setBodyViewMode] = useState('view')
-  const [rootsMeetingSummary, setRootsMeetingSummary] = useState({ home_discovery: '', generational: '', aha_moment: '', practice: '', forward: '' })
-  const [bodyMeetingSummary, setBodyMeetingSummary] = useState({ body_message: '', emotion_link: '', mechanism: '', practice: '', forward: '' })
-  const [childMeetingSummary, setChildMeetingSummary] = useState({ child_insight: '', dynamics: '', parent_change: '', home_practice: '', observation: '' })
-  const [sendingRootsSummary, setSendingRootsSummary] = useState(false)
-  const [rootsSummarySent, setRootsSummarySent] = useState(false)
-  const [sendingBodySummary, setSendingBodySummary] = useState(false)
-  const [bodySummarySent, setBodySummarySent] = useState(false)
-  const [sendingChildSummary, setSendingChildSummary] = useState(false)
-  const [childSummarySent, setChildSummarySent] = useState(false)
-  const [rootsMeetingPreview, setRootsMeetingPreview] = useState('')
-  const [bodyMeetingPreview, setBodyMeetingPreview] = useState('')
-  const [childMeetingPreview, setChildMeetingPreview] = useState('')
-  const [approvingRootsSummary, setApprovingRootsSummary] = useState(false)
-  const [approvingBodySummary, setApprovingBodySummary] = useState(false)
-  const [approvingChildSummary, setApprovingChildSummary] = useState(false)
+  const [rootsSessionNotes, setRootsSessionNotes] = useState('')
+  const [bodySessionNotes, setBodySessionNotes] = useState('')
+  const [childSessionNotes, setChildSessionNotes] = useState('')
+  const [rootsClientDocPreview, setRootsClientDocPreview] = useState('')
+  const [bodyClientDocPreview, setBodyClientDocPreview] = useState('')
+  const [childClientDocPreview, setChildClientDocPreview] = useState('')
+  const [rootsDocLoading, setRootsDocLoading] = useState(false)
+  const [bodyDocLoading, setBodyDocLoading] = useState(false)
+  const [childDocLoading, setChildDocLoading] = useState(false)
+  const [approvingRootsDoc, setApprovingRootsDoc] = useState(false)
+  const [approvingBodyDoc, setApprovingBodyDoc] = useState(false)
+  const [approvingChildDoc, setApprovingChildDoc] = useState(false)
+  const [rootsDocSent, setRootsDocSent] = useState(false)
+  const [bodyDocSent, setBodyDocSent] = useState(false)
+  const [childDocSent, setChildDocSent] = useState(false)
   const sessionDataRef = useRef({})
 
   // ── ✅ Plate Calculator state ──
@@ -581,9 +581,9 @@ export default function AdminPage() {
     const cFbD = sd.child_feedback_draft || lsLoad('child_feedback_draft', false); if (cFbD) { setChildFeedback(cFbD) } else if (data?.child_feedback) { setChildFeedback(data.child_feedback) }
     const cAn = sd.child_analysis || lsLoad('child_analysis', false); if (cAn) { setChildAnalysis(cAn); setChildEditing(true) }
     const jCDD = sd.journey_client_doc_draft || lsLoad('journey_client_doc_draft', false); if (jCDD) setJourneyClientDocPreview(jCDD)
-    const rMs = sd.roots_meeting_summary || lsLoad('roots_meeting_summary', true); if (rMs) setRootsMeetingSummary(prev => ({ ...prev, ...rMs }))
-    const bMs = sd.body_meeting_summary || lsLoad('body_meeting_summary', true); if (bMs) setBodyMeetingSummary(prev => ({ ...prev, ...bMs }))
-    const cMs = sd.child_meeting_summary || lsLoad('child_meeting_summary', true); if (cMs) setChildMeetingSummary(prev => ({ ...prev, ...cMs }))
+    const rSN = sd.roots_session_notes || lsLoad('roots_session_notes', false); if (rSN) setRootsSessionNotes(rSN)
+    const bSN = sd.body_session_notes || lsLoad('body_session_notes', false); if (bSN) setBodySessionNotes(bSN)
+    const cSN = sd.child_session_notes || lsLoad('child_session_notes', false); if (cSN) setChildSessionNotes(cSN)
     const { data: nd } = await supabase.from('nutrition_data').select('*').order('id')
     setNutritionItems(nd || [])
     const { data: logsData } = await supabase.from('daily_logs').select('*').eq('client_name', client.password).order('log_date', { ascending: false }).limit(30)
@@ -2258,76 +2258,74 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {/* סיכום הפגישה ללקוחה — שורשים */}
+                {/* מה גילינו במפגש — שורשים */}
                 <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #c4956a', overflow: 'hidden', marginBottom: 16 }}>
                   <div style={{ background: 'linear-gradient(135deg,#c4956a,#e8c9a0)', padding: '14px 18px', color: '#fff' }}>
-                    <div style={{ fontWeight: 800, fontSize: 14 }}>📝 סיכום הפגישה — לשליחה ללקוחה</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>מלאי אחרי הפגישה → שמרי → שלחי</div>
+                    <div style={{ fontWeight: 800, fontSize: 14 }}>📝 מה גילינו במפגש</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>מלאי אחרי הפגישה הפיזית → הפיקי סיכום ללקוחה</div>
                   </div>
                   <div style={{ padding: 16 }}>
-                    {[
-                      { key: 'home_discovery', icon: '🏠', label: 'מה עלה מהבית שגדלת בו', placeholder: 'דפוס או אמונה ספציפית שהגיעה משם' },
-                      { key: 'generational', icon: '🔄', label: 'מה מועבר הלאה', placeholder: 'הרגע הדורי — מה עברה עליה, מה היא מעבירה' },
-                      { key: 'aha_moment', icon: '💡', label: 'האסימון שנפל', placeholder: 'משהו שהתחבר — ציטוט או רגע ספציפי' },
-                      { key: 'practice', icon: '🌱', label: 'פרקטיקה — מה לוקחת', placeholder: 'מה לוקחת ועושה' },
-                      { key: 'forward', icon: '🚀', label: 'קדימה במסע', placeholder: 'מה ממשיך, מה לשים לב אליו' },
-                    ].map(({ key, icon, label, placeholder }) => (
-                      <div key={key} style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#7c5e42', marginBottom: 5 }}>{icon} {label}</div>
-                        <textarea
-                          value={rootsMeetingSummary[key] || ''}
-                          onChange={e => { const v = e.target.value; setRootsMeetingSummary(prev => { const n = { ...prev, [key]: v }; return n }) }}
-                          onBlur={() => saveSessionKey('roots_meeting_summary', rootsMeetingSummary)}
-                          placeholder={placeholder}
-                          rows={2}
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
-                        />
-                      </div>
-                    ))}
+                    <textarea
+                      value={rootsSessionNotes}
+                      onChange={e => setRootsSessionNotes(e.target.value)}
+                      onBlur={() => saveSessionKey('roots_session_notes', rootsSessionNotes)}
+                      placeholder="מה עלה בפגישה? אמונות שנגעתם, רגעים ספציפיים, מה הלקוחה גילתה..."
+                      rows={5}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                    />
                   </div>
                   <div style={{ padding: '0 16px 16px' }}>
-                    <button onClick={() => {
-                      saveSessionKey('roots_meeting_summary', rootsMeetingSummary)
-                      const rFields = [
-                        { key: 'home_discovery', icon: '🏠', label: 'מה עלה מהבית שגדלת בו' },
-                        { key: 'generational', icon: '🔄', label: 'מה מועבר הלאה' },
-                        { key: 'aha_moment', icon: '💡', label: 'האסימון שנפל' },
-                        { key: 'practice', icon: '🌱', label: 'מה את לוקחת' },
-                        { key: 'forward', icon: '🚀', label: 'קדימה במסע' },
-                      ]
-                      const compiled = rFields.map(f => rootsMeetingSummary[f.key]?.trim() ? f.icon + ' ' + f.label + '\n' + rootsMeetingSummary[f.key].trim() : '').filter(Boolean).join('\n\n')
-                      if (!compiled) return alert('מלאי לפחות שדה אחד')
-                      setRootsMeetingPreview(compiled)
-                    }} style={{ width: '100%', padding: 13, borderRadius: 12, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
-                      ← הפקי סיכום לעריכה לפני שליחה
+                    <button onClick={async () => {
+                      setRootsDocLoading(true); setRootsClientDocPreview('')
+                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית.\n' +
+                        'כתבי סיכום אישי חם ל-' + (selectedClient?.name||'') + ' לאחר פגישת השורשים.\n\n' +
+                        (rootsAnalysis ? 'ניתוח מקדים:\n' + rootsAnalysis.substring(0,2000) + '\n\n' : '') +
+                        (rootsSessionNotes.trim() ? 'מה עלה במפגש:\n' + rootsSessionNotes + '\n\n' : '') +
+                        'כתבי מסמך בעברית, גוף שני נקבה, ישיר, חם ואישי. מבנה קבוע — ללא הקדמה:\n\n' +
+                        '🏠 מה עלה מהבית שגדלת בו\n[2-3 משפטים ספציפיים]\n\n' +
+                        '🔄 מה מועבר הלאה\n[הדפוס הדורי שזוהה]\n\n' +
+                        '💡 האסימון שנפל\n[רגע ספציפי שהתחבר, בשפתה]\n\n' +
+                        '🌱 מה את לוקחת\n[2-3 דברים קונקרטיים]\n\n' +
+                        '🚀 קדימה במסע\n[מה להמשיך לשים לב אליו]'
+                      let result = ''
+                      try {
+                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                        if (!res.ok) throw new Error('API error')
+                        const reader = res.body.getReader(); const decoder = new TextDecoder()
+                        while (true) { const { done, value } = await reader.read(); if (done) break; result += decoder.decode(value, { stream: true }); setRootsClientDocPreview(result) }
+                      } catch(e) { if (!result) alert('שגיאת רשת — נסי שוב') }
+                      if (result) saveSessionKey('roots_session_notes', rootsSessionNotes)
+                      setRootsDocLoading(false)
+                    }} disabled={rootsDocLoading} style={{ width: '100%', padding: 13, borderRadius: 12, background: rootsDocLoading ? '#9ca3af' : '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+                      {rootsDocLoading ? '⏳ מפיקה...' : '← הפיקי סיכום ללקוחה'}
                     </button>
                   </div>
                 </div>
 
-                {rootsMeetingPreview && (
+                {rootsClientDocPreview && (
                   <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #c4956a', overflow: 'hidden', marginBottom: 16 }}>
                     <div style={{ background: 'linear-gradient(135deg,#c4956a,#e8c9a0)', padding: '14px 18px', color: '#fff' }}>
                       <div style={{ fontWeight: 800, fontSize: 14 }}>✏️ תצוגה מקדימה — ערכי לפני שליחה</div>
                       <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>ערכי את הטקסט ← אשרי ושלחי</div>
                     </div>
                     <div style={{ padding: 16 }}>
-                      <textarea value={rootsMeetingPreview} onChange={e => setRootsMeetingPreview(e.target.value)} rows={16} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }} />
+                      <textarea value={rootsClientDocPreview} onChange={e => setRootsClientDocPreview(e.target.value)} rows={18} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }} />
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
                       <button onClick={async () => {
                         if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
-                        setApprovingRootsSummary(true)
-                        await supabase.from('client_profiles').update({ roots_feedback: rootsMeetingPreview, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
-                        saveSessionKey('roots_meeting_summary', rootsMeetingSummary)
+                        setApprovingRootsDoc(true)
+                        await supabase.from('client_profiles').update({ roots_feedback: rootsClientDocPreview, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        saveSessionKey('roots_session_notes', rootsSessionNotes)
                         const phone = selectedClient.phone.replace(/^0/, '972')
                         const msg = 'היי ' + selectedClient.name + '! 🌱\n\nהסיכום האישי שלך מפגישת השורשים מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
                         window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                        setApprovingRootsSummary(false); setRootsSummarySent(true); setRootsMeetingPreview('')
-                        setTimeout(() => setRootsSummarySent(false), 4000)
-                      }} disabled={approvingRootsSummary} style={{ flex: 2, padding: 12, borderRadius: 10, background: rootsSummarySent ? '#16a34a' : '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {approvingRootsSummary ? '⏳...' : rootsSummarySent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
+                        setApprovingRootsDoc(false); setRootsDocSent(true); setRootsClientDocPreview('')
+                        setTimeout(() => setRootsDocSent(false), 4000)
+                      }} disabled={approvingRootsDoc} style={{ flex: 2, padding: 12, borderRadius: 10, background: rootsDocSent ? '#16a34a' : '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {approvingRootsDoc ? '⏳...' : rootsDocSent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
                       </button>
-                      <button onClick={() => setRootsMeetingPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      <button onClick={() => setRootsClientDocPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         ✕ בטלי
                       </button>
                     </div>
@@ -2492,76 +2490,74 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {/* סיכום הפגישה ללקוחה — גוף מדבר */}
+                {/* מה גילינו במפגש — גוף מדבר */}
                 <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #0d9488', overflow: 'hidden', marginBottom: 16 }}>
                   <div style={{ background: 'linear-gradient(135deg,#0d9488,#14b8a6)', padding: '14px 18px', color: '#fff' }}>
-                    <div style={{ fontWeight: 800, fontSize: 14 }}>📝 סיכום הפגישה — לשליחה ללקוחה</div>
-                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>מלאי אחרי הפגישה → שמרי → שלחי</div>
+                    <div style={{ fontWeight: 800, fontSize: 14 }}>📝 מה גילינו במפגש</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>מלאי אחרי הפגישה הפיזית → הפיקי סיכום ללקוחה</div>
                   </div>
                   <div style={{ padding: 16 }}>
-                    {[
-                      { key: 'body_message', icon: '🩺', label: 'מה הגוף שלך אמר', placeholder: 'ההודעה הספציפית שזוהתה — בשפתה' },
-                      { key: 'emotion_link', icon: '💔', label: 'הקשר שגילינו', placeholder: 'רגש ← גוף — הקישור הספציפי' },
-                      { key: 'mechanism', icon: '🔬', label: 'מנגנון שמעכשיו מובן', placeholder: 'משהו שהסתבר לה (סוכר / קורטיזול / שינה...)' },
-                      { key: 'practice', icon: '🌿', label: 'פרקטיקה — מה לוקחת', placeholder: 'מה לוקחת ועושה' },
-                      { key: 'forward', icon: '🚀', label: 'קדימה במסע', placeholder: 'מה לשים לב אליו, מה לצפות' },
-                    ].map(({ key, icon, label, placeholder }) => (
-                      <div key={key} style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#0f766e', marginBottom: 5 }}>{icon} {label}</div>
-                        <textarea
-                          value={bodyMeetingSummary[key] || ''}
-                          onChange={e => { const v = e.target.value; setBodyMeetingSummary(prev => ({ ...prev, [key]: v })) }}
-                          onBlur={() => saveSessionKey('body_meeting_summary', bodyMeetingSummary)}
-                          placeholder={placeholder}
-                          rows={2}
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
-                        />
-                      </div>
-                    ))}
+                    <textarea
+                      value={bodySessionNotes}
+                      onChange={e => setBodySessionNotes(e.target.value)}
+                      onBlur={() => saveSessionKey('body_session_notes', bodySessionNotes)}
+                      placeholder="מה עלה בפגישה? סימפטומים שזוהו, מנגנונים שהסתברו, מה הלקוחה חיברה..."
+                      rows={5}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                    />
                   </div>
                   <div style={{ padding: '0 16px 16px' }}>
-                    <button onClick={() => {
-                      saveSessionKey('body_meeting_summary', bodyMeetingSummary)
-                      const bfFields = [
-                        { key: 'body_message', icon: '🩺', label: 'מה הגוף שלך אמר' },
-                        { key: 'emotion_link', icon: '💔', label: 'הקשר שגילינו' },
-                        { key: 'mechanism', icon: '🔬', label: 'מנגנון שמעכשיו מובן' },
-                        { key: 'practice', icon: '🌿', label: 'מה את לוקחת' },
-                        { key: 'forward', icon: '🚀', label: 'קדימה במסע' },
-                      ]
-                      const compiled = bfFields.map(f => bodyMeetingSummary[f.key]?.trim() ? f.icon + ' ' + f.label + '\n' + bodyMeetingSummary[f.key].trim() : '').filter(Boolean).join('\n\n')
-                      if (!compiled) return alert('מלאי לפחות שדה אחד')
-                      setBodyMeetingPreview(compiled)
-                    }} style={{ width: '100%', padding: 13, borderRadius: 12, background: '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
-                      ← הפקי סיכום לעריכה לפני שליחה
+                    <button onClick={async () => {
+                      setBodyDocLoading(true); setBodyClientDocPreview('')
+                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית.\n' +
+                        'כתבי סיכום אישי חם ל-' + (selectedClient?.name||'') + ' לאחר פגישת הגוף מדבר.\n\n' +
+                        (bodyAnalysis ? 'ניתוח מקדים:\n' + bodyAnalysis.substring(0,2000) + '\n\n' : '') +
+                        (bodySessionNotes.trim() ? 'מה עלה במפגש:\n' + bodySessionNotes + '\n\n' : '') +
+                        'כתבי מסמך בעברית, גוף שני נקבה, ישיר, חם ואישי. מבנה קבוע — ללא הקדמה:\n\n' +
+                        '🩺 מה הגוף שלך אמר\n[ההודעה הספציפית שזוהתה, בשפתה]\n\n' +
+                        '💔 הקשר שגילינו\n[רגש ← גוף — הקישור הספציפי]\n\n' +
+                        '🔬 מנגנון שמעכשיו מובן\n[משהו שהסתבר לה: סוכר / קורטיזול / שינה...]\n\n' +
+                        '🌿 מה את לוקחת\n[2-3 דברים קונקרטיים]\n\n' +
+                        '🚀 קדימה במסע\n[מה לשים לב אליו, מה לצפות]'
+                      let result = ''
+                      try {
+                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                        if (!res.ok) throw new Error('API error')
+                        const reader = res.body.getReader(); const decoder = new TextDecoder()
+                        while (true) { const { done, value } = await reader.read(); if (done) break; result += decoder.decode(value, { stream: true }); setBodyClientDocPreview(result) }
+                      } catch(e) { if (!result) alert('שגיאת רשת — נסי שוב') }
+                      if (result) saveSessionKey('body_session_notes', bodySessionNotes)
+                      setBodyDocLoading(false)
+                    }} disabled={bodyDocLoading} style={{ width: '100%', padding: 13, borderRadius: 12, background: bodyDocLoading ? '#9ca3af' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+                      {bodyDocLoading ? '⏳ מפיקה...' : '← הפיקי סיכום ללקוחה'}
                     </button>
                   </div>
                 </div>
 
-                {bodyMeetingPreview && (
+                {bodyClientDocPreview && (
                   <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #0d9488', overflow: 'hidden', marginBottom: 16 }}>
                     <div style={{ background: 'linear-gradient(135deg,#0d9488,#14b8a6)', padding: '14px 18px', color: '#fff' }}>
                       <div style={{ fontWeight: 800, fontSize: 14 }}>✏️ תצוגה מקדימה — ערכי לפני שליחה</div>
                       <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>ערכי את הטקסט ← אשרי ושלחי</div>
                     </div>
                     <div style={{ padding: 16 }}>
-                      <textarea value={bodyMeetingPreview} onChange={e => setBodyMeetingPreview(e.target.value)} rows={16} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }} />
+                      <textarea value={bodyClientDocPreview} onChange={e => setBodyClientDocPreview(e.target.value)} rows={18} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }} />
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
                       <button onClick={async () => {
                         if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
-                        setApprovingBodySummary(true)
-                        await supabase.from('client_profiles').update({ body_feedback: bodyMeetingPreview, body_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
-                        saveSessionKey('body_meeting_summary', bodyMeetingSummary)
+                        setApprovingBodyDoc(true)
+                        await supabase.from('client_profiles').update({ body_feedback: bodyClientDocPreview, body_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        saveSessionKey('body_session_notes', bodySessionNotes)
                         const phone = selectedClient.phone.replace(/^0/, '972')
                         const msg = 'היי ' + selectedClient.name + '! 🩺\n\nהסיכום האישי שלך מפגישת הגוף מדבר מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
                         window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                        setApprovingBodySummary(false); setBodySummarySent(true); setBodyMeetingPreview('')
-                        setTimeout(() => setBodySummarySent(false), 4000)
-                      }} disabled={approvingBodySummary} style={{ flex: 2, padding: 12, borderRadius: 10, background: bodySummarySent ? '#16a34a' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {approvingBodySummary ? '⏳...' : bodySummarySent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
+                        setApprovingBodyDoc(false); setBodyDocSent(true); setBodyClientDocPreview('')
+                        setTimeout(() => setBodyDocSent(false), 4000)
+                      }} disabled={approvingBodyDoc} style={{ flex: 2, padding: 12, borderRadius: 10, background: bodyDocSent ? '#16a34a' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {approvingBodyDoc ? '⏳...' : bodyDocSent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
                       </button>
-                      <button onClick={() => setBodyMeetingPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      <button onClick={() => setBodyClientDocPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         ✕ בטלי
                       </button>
                     </div>
@@ -2681,76 +2677,74 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                {/* סיכום הפגישה ללקוחה — הורה-ילד */}
+                {/* מה גילינו במפגש — הורה-ילד */}
                 <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
                   <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff' }}>
-                    <div style={{ fontWeight: 800, fontSize: 14 }}>📝 סיכום הפגישה — לשליחה להורה</div>
-                    <div style={{ fontSize: 11, color: '#e9d5ff' }}>מלאי אחרי הפגישה → שמרי → שלחי</div>
+                    <div style={{ fontWeight: 800, fontSize: 14 }}>📝 מה גילינו במפגש</div>
+                    <div style={{ fontSize: 11, color: '#e9d5ff' }}>מלאי אחרי הפגישה הפיזית → הפיקי סיכום להורה</div>
                   </div>
                   <div style={{ padding: 16 }}>
-                    {[
-                      { key: 'child_insight', icon: '🌟', label: 'מה ראינו על הילד שלך', placeholder: 'תובנה ספציפית על הילד — כוח / דפוס' },
-                      { key: 'dynamics', icon: '🏠', label: 'הדינמיקה שזוהתה', placeholder: 'מה בבית תורם לדפוס' },
-                      { key: 'parent_change', icon: '👁️', label: 'מה את יכולה לשנות', placeholder: 'מה ההורה עצמה עושה שונה — לא האשמה' },
-                      { key: 'home_practice', icon: '🌿', label: 'פרקטיקה ביתית', placeholder: '3-4 שינויים קונקרטיים' },
-                      { key: 'observation', icon: '🚀', label: 'לשבוע הקרוב', placeholder: 'מה לשים לב אליו, מה לצפות' },
-                    ].map(({ key, icon, label, placeholder }) => (
-                      <div key={key} style={{ marginBottom: 14 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#6d28d9', marginBottom: 5 }}>{icon} {label}</div>
-                        <textarea
-                          value={childMeetingSummary[key] || ''}
-                          onChange={e => { const v = e.target.value; setChildMeetingSummary(prev => ({ ...prev, [key]: v })) }}
-                          onBlur={() => saveSessionKey('child_meeting_summary', childMeetingSummary)}
-                          placeholder={placeholder}
-                          rows={2}
-                          style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
-                        />
-                      </div>
-                    ))}
+                    <textarea
+                      value={childSessionNotes}
+                      onChange={e => setChildSessionNotes(e.target.value)}
+                      onBlur={() => saveSessionKey('child_session_notes', childSessionNotes)}
+                      placeholder="מה עלה בפגישה? תובנות על הילד, דינמיקה שזוהתה, מה ההורה גילה על עצמו..."
+                      rows={5}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                    />
                   </div>
                   <div style={{ padding: '0 16px 16px' }}>
-                    <button onClick={() => {
-                      saveSessionKey('child_meeting_summary', childMeetingSummary)
-                      const cfFields = [
-                        { key: 'child_insight', icon: '🌟', label: 'מה ראינו על הילד שלך' },
-                        { key: 'dynamics', icon: '🏠', label: 'הדינמיקה שזוהתה' },
-                        { key: 'parent_change', icon: '👁️', label: 'מה את יכולה לשנות' },
-                        { key: 'home_practice', icon: '🌿', label: 'פרקטיקה ביתית' },
-                        { key: 'observation', icon: '🚀', label: 'לשבוע הקרוב' },
-                      ]
-                      const compiled = cfFields.map(f => childMeetingSummary[f.key]?.trim() ? f.icon + ' ' + f.label + '\n' + childMeetingSummary[f.key].trim() : '').filter(Boolean).join('\n\n')
-                      if (!compiled) return alert('מלאי לפחות שדה אחד')
-                      setChildMeetingPreview(compiled)
-                    }} style={{ width: '100%', padding: 13, borderRadius: 12, background: '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
-                      ← הפקי סיכום לעריכה לפני שליחה
+                    <button onClick={async () => {
+                      setChildDocLoading(true); setChildClientDocPreview('')
+                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית.\n' +
+                        'כתבי סיכום אישי חם ל-' + (selectedClient?.name||'') + ' לאחר פגישת הורה-ילד.\n\n' +
+                        (childAnalysis ? 'ניתוח מקדים:\n' + childAnalysis.substring(0,2000) + '\n\n' : '') +
+                        (childSessionNotes.trim() ? 'מה עלה במפגש:\n' + childSessionNotes + '\n\n' : '') +
+                        'כתבי מסמך בעברית, גוף שני נקבה, ישיר, חם ואישי. מבנה קבוע — ללא הקדמה:\n\n' +
+                        '🌟 מה ראינו על הילד שלך\n[תובנה ספציפית על הילד — כוח / דפוס]\n\n' +
+                        '🏠 הדינמיקה שזוהתה\n[מה בבית תורם לדפוס]\n\n' +
+                        '👁️ מה את יכולה לשנות\n[מה ההורה עצמה עושה שונה — לא האשמה]\n\n' +
+                        '🌿 פרקטיקה ביתית\n[3-4 שינויים קונקרטיים]\n\n' +
+                        '🚀 לשבוע הקרוב\n[מה לשים לב אליו, מה לצפות]'
+                      let result = ''
+                      try {
+                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                        if (!res.ok) throw new Error('API error')
+                        const reader = res.body.getReader(); const decoder = new TextDecoder()
+                        while (true) { const { done, value } = await reader.read(); if (done) break; result += decoder.decode(value, { stream: true }); setChildClientDocPreview(result) }
+                      } catch(e) { if (!result) alert('שגיאת רשת — נסי שוב') }
+                      if (result) saveSessionKey('child_session_notes', childSessionNotes)
+                      setChildDocLoading(false)
+                    }} disabled={childDocLoading} style={{ width: '100%', padding: 13, borderRadius: 12, background: childDocLoading ? '#9ca3af' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+                      {childDocLoading ? '⏳ מפיקה...' : '← הפיקי סיכום להורה'}
                     </button>
                   </div>
                 </div>
 
-                {childMeetingPreview && (
+                {childClientDocPreview && (
                   <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
                     <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff' }}>
                       <div style={{ fontWeight: 800, fontSize: 14 }}>✏️ תצוגה מקדימה — ערכי לפני שליחה</div>
                       <div style={{ fontSize: 11, color: '#e9d5ff' }}>ערכי את הטקסט ← אשרי ושלחי</div>
                     </div>
                     <div style={{ padding: 16 }}>
-                      <textarea value={childMeetingPreview} onChange={e => setChildMeetingPreview(e.target.value)} rows={16} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }} />
+                      <textarea value={childClientDocPreview} onChange={e => setChildClientDocPreview(e.target.value)} rows={18} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }} />
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
                       <button onClick={async () => {
                         if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
-                        setApprovingChildSummary(true)
-                        await supabase.from('client_profiles').update({ child_feedback: childMeetingPreview, child_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
-                        saveSessionKey('child_meeting_summary', childMeetingSummary)
+                        setApprovingChildDoc(true)
+                        await supabase.from('client_profiles').update({ child_feedback: childClientDocPreview, child_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        saveSessionKey('child_session_notes', childSessionNotes)
                         const phone = selectedClient.phone.replace(/^0/, '972')
                         const msg = 'היי ' + selectedClient.name + '! \u{1F46A}\n\nהסיכום מהפגישה שלנו מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
                         window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                        setApprovingChildSummary(false); setChildSummarySent(true); setChildMeetingPreview('')
-                        setTimeout(() => setChildSummarySent(false), 4000)
-                      }} disabled={approvingChildSummary} style={{ flex: 2, padding: 12, borderRadius: 10, background: childSummarySent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {approvingChildSummary ? '⏳...' : childSummarySent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
+                        setApprovingChildDoc(false); setChildDocSent(true); setChildClientDocPreview('')
+                        setTimeout(() => setChildDocSent(false), 4000)
+                      }} disabled={approvingChildDoc} style={{ flex: 2, padding: 12, borderRadius: 10, background: childDocSent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {approvingChildDoc ? '⏳...' : childDocSent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
                       </button>
-                      <button onClick={() => setChildMeetingPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      <button onClick={() => setChildClientDocPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         ✕ בטלי
                       </button>
                     </div>
