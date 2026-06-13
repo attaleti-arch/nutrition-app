@@ -42,7 +42,7 @@ function calcTargets(client) {
   var tdee = bmr * (ACTIVITY_MULT[client.activity] || 1.55)
   var lossDeficit = client.weight > 80 ? -825 : client.weight >= 70 ? -660 : -550
   var adjust = client.goal === 'ירידה במשקל' ? lossDeficit : client.goal === 'עלייה במסה' ? 300 : 0
-  var calories = Math.round(tdee + adjust)
+  var calories = Math.max(1200, Math.round(tdee + adjust))
   var split = GOALS_SPLIT[client.goal] || GOALS_SPLIT['ירידה במשקל']
   return {
     calories,
