@@ -482,6 +482,12 @@ export default function AdminPage() {
   const [bodySummarySent, setBodySummarySent] = useState(false)
   const [sendingChildSummary, setSendingChildSummary] = useState(false)
   const [childSummarySent, setChildSummarySent] = useState(false)
+  const [rootsMeetingPreview, setRootsMeetingPreview] = useState('')
+  const [bodyMeetingPreview, setBodyMeetingPreview] = useState('')
+  const [childMeetingPreview, setChildMeetingPreview] = useState('')
+  const [approvingRootsSummary, setApprovingRootsSummary] = useState(false)
+  const [approvingBodySummary, setApprovingBodySummary] = useState(false)
+  const [approvingChildSummary, setApprovingChildSummary] = useState(false)
   const sessionDataRef = useRef({})
 
   // ── ✅ Plate Calculator state ──
@@ -2235,10 +2241,15 @@ export default function AdminPage() {
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
                       <button onClick={async () => {
                         setRootsLoading(true)
-                        const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה שניתנה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + rootsAnalysis
-                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
-                        const data = await res.json()
-                        if (data.result) { setRootsAnalysis(data.result); setRootsViewMode('view'); saveSessionKey('roots_analysis', data.result) }
+                        const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + rootsAnalysis
+                        let rr = ''
+                        try {
+                          const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
+                          if (!res.ok) throw new Error('API error')
+                          const reader = res.body.getReader(); const decoder = new TextDecoder()
+                          while (true) { const { done, value } = await reader.read(); if (done) break; rr += decoder.decode(value, { stream: true }); setRootsAnalysis(rr) }
+                        } catch(e) { if (!rr) alert('שגיאת רשת — נסי שוב') }
+                        if (rr) { setRootsViewMode('view'); saveSessionKey('roots_analysis', rr) }
                         setRootsLoading(false)
                       }} disabled={rootsLoading} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {rootsLoading ? '⏳...' : '🔄 עבדי מחדש'}
@@ -2274,33 +2285,54 @@ export default function AdminPage() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
-                    <button onClick={() => { saveSessionKey('roots_meeting_summary', rootsMeetingSummary); setRootsFeedbackSaved(true); setTimeout(() => setRootsFeedbackSaved(false), 3000) }} style={{ flex: 1, padding: 12, borderRadius: 10, background: rootsFeedbackSaved ? '#16a34a' : '#f8f4ef', color: rootsFeedbackSaved ? '#fff' : '#0f4c2a', border: '1.5px solid #c4956a', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                      {rootsFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
-                    </button>
-                    <button onClick={async () => {
-                      if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
-                      setSendingRootsSummary(true)
-                      const fields = [
+                  <div style={{ padding: '0 16px 16px' }}>
+                    <button onClick={() => {
+                      saveSessionKey('roots_meeting_summary', rootsMeetingSummary)
+                      const rFields = [
                         { key: 'home_discovery', icon: '🏠', label: 'מה עלה מהבית שגדלת בו' },
                         { key: 'generational', icon: '🔄', label: 'מה מועבר הלאה' },
                         { key: 'aha_moment', icon: '💡', label: 'האסימון שנפל' },
                         { key: 'practice', icon: '🌱', label: 'מה את לוקחת' },
                         { key: 'forward', icon: '🚀', label: 'קדימה במסע' },
                       ]
-                      const compiled = fields.map(f => rootsMeetingSummary[f.key]?.trim() ? f.icon + ' ' + f.label + '\n' + rootsMeetingSummary[f.key].trim() : '').filter(Boolean).join('\n\n')
-                      if (!compiled) { setSendingRootsSummary(false); return alert('מלאי לפחות שדה אחד') }
-                      await supabase.from('client_profiles').update({ roots_feedback: compiled, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
-                      saveSessionKey('roots_meeting_summary', rootsMeetingSummary)
-                      const phone = selectedClient.phone.replace(/^0/, '972')
-                      const msg = 'היי ' + selectedClient.name + '! 🌱\n\nהסיכום האישי שלך מפגישת השורשים מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
-                      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                      setSendingRootsSummary(false); setRootsSummarySent(true); setTimeout(() => setRootsSummarySent(false), 4000)
-                    }} disabled={sendingRootsSummary} style={{ flex: 2, padding: 12, borderRadius: 10, background: rootsSummarySent ? '#16a34a' : '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                      {sendingRootsSummary ? '⏳...' : rootsSummarySent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
+                      const compiled = rFields.map(f => rootsMeetingSummary[f.key]?.trim() ? f.icon + ' ' + f.label + '\n' + rootsMeetingSummary[f.key].trim() : '').filter(Boolean).join('\n\n')
+                      if (!compiled) return alert('מלאי לפחות שדה אחד')
+                      setRootsMeetingPreview(compiled)
+                    }} style={{ width: '100%', padding: 13, borderRadius: 12, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+                      ← הפקי סיכום לעריכה לפני שליחה
                     </button>
                   </div>
                 </div>
+
+                {rootsMeetingPreview && (
+                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #c4956a', overflow: 'hidden', marginBottom: 16 }}>
+                    <div style={{ background: 'linear-gradient(135deg,#c4956a,#e8c9a0)', padding: '14px 18px', color: '#fff' }}>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>✏️ תצוגה מקדימה — ערכי לפני שליחה</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>ערכי את הטקסט ← אשרי ושלחי</div>
+                    </div>
+                    <div style={{ padding: 16 }}>
+                      <textarea value={rootsMeetingPreview} onChange={e => setRootsMeetingPreview(e.target.value)} rows={16} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                      <button onClick={async () => {
+                        if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
+                        setApprovingRootsSummary(true)
+                        await supabase.from('client_profiles').update({ roots_feedback: rootsMeetingPreview, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        saveSessionKey('roots_meeting_summary', rootsMeetingSummary)
+                        const phone = selectedClient.phone.replace(/^0/, '972')
+                        const msg = 'היי ' + selectedClient.name + '! 🌱\n\nהסיכום האישי שלך מפגישת השורשים מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+                        setApprovingRootsSummary(false); setRootsSummarySent(true); setRootsMeetingPreview('')
+                        setTimeout(() => setRootsSummarySent(false), 4000)
+                      }} disabled={approvingRootsSummary} style={{ flex: 2, padding: 12, borderRadius: 10, background: rootsSummarySent ? '#16a34a' : '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {approvingRootsSummary ? '⏳...' : rootsSummarySent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
+                      </button>
+                      <button onClick={() => setRootsMeetingPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        ✕ בטלי
+                      </button>
+                    </div>
+                  </div>
+                )}
 
               </div>
             )}
@@ -2444,9 +2476,14 @@ export default function AdminPage() {
                       <button onClick={async () => {
                         setBodyLoading(true)
                         const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + bodyAnalysis
-                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
-                        const data = await res.json()
-                        if (data.result) { setBodyAnalysis(data.result); setBodyViewMode('view'); saveSessionKey('body_analysis', data.result) }
+                        let br = ''
+                        try {
+                          const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                          if (!res.ok) throw new Error('API error')
+                          const reader = res.body.getReader(); const decoder = new TextDecoder()
+                          while (true) { const { done, value } = await reader.read(); if (done) break; br += decoder.decode(value, { stream: true }); setBodyAnalysis(br) }
+                        } catch(e) { if (!br) alert('שגיאת רשת — נסי שוב') }
+                        if (br) { setBodyViewMode('view'); saveSessionKey('body_analysis', br) }
                         setBodyLoading(false)
                       }} disabled={bodyLoading} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {bodyLoading ? '⏳...' : '🔄 עבדי מחדש'}
@@ -2482,33 +2519,54 @@ export default function AdminPage() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
-                    <button onClick={() => { saveSessionKey('body_meeting_summary', bodyMeetingSummary); setBodyFeedbackSaved(true); setTimeout(() => setBodyFeedbackSaved(false), 3000) }} style={{ flex: 1, padding: 12, borderRadius: 10, background: bodyFeedbackSaved ? '#16a34a' : '#f0fdfa', color: bodyFeedbackSaved ? '#fff' : '#0d9488', border: '1.5px solid #0d9488', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                      {bodyFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
-                    </button>
-                    <button onClick={async () => {
-                      if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
-                      setSendingBodySummary(true)
-                      const bFields = [
+                  <div style={{ padding: '0 16px 16px' }}>
+                    <button onClick={() => {
+                      saveSessionKey('body_meeting_summary', bodyMeetingSummary)
+                      const bfFields = [
                         { key: 'body_message', icon: '🩺', label: 'מה הגוף שלך אמר' },
                         { key: 'emotion_link', icon: '💔', label: 'הקשר שגילינו' },
                         { key: 'mechanism', icon: '🔬', label: 'מנגנון שמעכשיו מובן' },
                         { key: 'practice', icon: '🌿', label: 'מה את לוקחת' },
                         { key: 'forward', icon: '🚀', label: 'קדימה במסע' },
                       ]
-                      const compiled = bFields.map(f => bodyMeetingSummary[f.key]?.trim() ? f.icon + ' ' + f.label + '\n' + bodyMeetingSummary[f.key].trim() : '').filter(Boolean).join('\n\n')
-                      if (!compiled) { setSendingBodySummary(false); return alert('מלאי לפחות שדה אחד') }
-                      await supabase.from('client_profiles').update({ body_feedback: compiled, body_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
-                      saveSessionKey('body_meeting_summary', bodyMeetingSummary)
-                      const phone = selectedClient.phone.replace(/^0/, '972')
-                      const msg = 'היי ' + selectedClient.name + '! 🩺\n\nהסיכום האישי שלך מפגישת הגוף מדבר מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
-                      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                      setSendingBodySummary(false); setBodySummarySent(true); setTimeout(() => setBodySummarySent(false), 4000)
-                    }} disabled={sendingBodySummary} style={{ flex: 2, padding: 12, borderRadius: 10, background: bodySummarySent ? '#16a34a' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                      {sendingBodySummary ? '⏳...' : bodySummarySent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
+                      const compiled = bfFields.map(f => bodyMeetingSummary[f.key]?.trim() ? f.icon + ' ' + f.label + '\n' + bodyMeetingSummary[f.key].trim() : '').filter(Boolean).join('\n\n')
+                      if (!compiled) return alert('מלאי לפחות שדה אחד')
+                      setBodyMeetingPreview(compiled)
+                    }} style={{ width: '100%', padding: 13, borderRadius: 12, background: '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+                      ← הפקי סיכום לעריכה לפני שליחה
                     </button>
                   </div>
                 </div>
+
+                {bodyMeetingPreview && (
+                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #0d9488', overflow: 'hidden', marginBottom: 16 }}>
+                    <div style={{ background: 'linear-gradient(135deg,#0d9488,#14b8a6)', padding: '14px 18px', color: '#fff' }}>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>✏️ תצוגה מקדימה — ערכי לפני שליחה</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>ערכי את הטקסט ← אשרי ושלחי</div>
+                    </div>
+                    <div style={{ padding: 16 }}>
+                      <textarea value={bodyMeetingPreview} onChange={e => setBodyMeetingPreview(e.target.value)} rows={16} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                      <button onClick={async () => {
+                        if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
+                        setApprovingBodySummary(true)
+                        await supabase.from('client_profiles').update({ body_feedback: bodyMeetingPreview, body_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        saveSessionKey('body_meeting_summary', bodyMeetingSummary)
+                        const phone = selectedClient.phone.replace(/^0/, '972')
+                        const msg = 'היי ' + selectedClient.name + '! 🩺\n\nהסיכום האישי שלך מפגישת הגוף מדבר מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+                        setApprovingBodySummary(false); setBodySummarySent(true); setBodyMeetingPreview('')
+                        setTimeout(() => setBodySummarySent(false), 4000)
+                      }} disabled={approvingBodySummary} style={{ flex: 2, padding: 12, borderRadius: 10, background: bodySummarySent ? '#16a34a' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {approvingBodySummary ? '⏳...' : bodySummarySent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
+                      </button>
+                      <button onClick={() => setBodyMeetingPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        ✕ בטלי
+                      </button>
+                    </div>
+                  </div>
+                )}
 
               </div>
             )}
@@ -2606,9 +2664,14 @@ export default function AdminPage() {
                       <button onClick={async () => {
                         setChildLoading(true)
                         const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + childAnalysis
-                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
-                        const data = await res.json()
-                        if (data.result) setChildAnalysis(data.result)
+                        let cr = ''
+                        try {
+                          const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                          if (!res.ok) throw new Error('API error')
+                          const reader = res.body.getReader(); const decoder = new TextDecoder()
+                          while (true) { const { done, value } = await reader.read(); if (done) break; cr += decoder.decode(value, { stream: true }); setChildAnalysis(cr) }
+                        } catch(e) { if (!cr) alert('שגיאת רשת — נסי שוב') }
+                        if (cr) { saveSessionKey('child_analysis', cr) }
                         setChildLoading(false)
                       }} disabled={childLoading} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#faf5ff', color: '#7c3aed', border: '1.5px solid #e9d5ff', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {childLoading ? '⏳...' : '🔄 עבדי מחדש'}
@@ -2645,33 +2708,54 @@ export default function AdminPage() {
                       </div>
                     ))}
                   </div>
-                  <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
-                    <button onClick={() => { saveSessionKey('child_meeting_summary', childMeetingSummary); setChildFeedbackSaved(true); setTimeout(() => setChildFeedbackSaved(false), 3000) }} style={{ flex: 1, padding: 12, borderRadius: 10, background: childFeedbackSaved ? '#16a34a' : '#faf5ff', color: childFeedbackSaved ? '#fff' : '#7c3aed', border: '1.5px solid #7c3aed', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                      {childFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
-                    </button>
-                    <button onClick={async () => {
-                      if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
-                      setSendingChildSummary(true)
-                      const cFields = [
+                  <div style={{ padding: '0 16px 16px' }}>
+                    <button onClick={() => {
+                      saveSessionKey('child_meeting_summary', childMeetingSummary)
+                      const cfFields = [
                         { key: 'child_insight', icon: '🌟', label: 'מה ראינו על הילד שלך' },
                         { key: 'dynamics', icon: '🏠', label: 'הדינמיקה שזוהתה' },
                         { key: 'parent_change', icon: '👁️', label: 'מה את יכולה לשנות' },
                         { key: 'home_practice', icon: '🌿', label: 'פרקטיקה ביתית' },
                         { key: 'observation', icon: '🚀', label: 'לשבוע הקרוב' },
                       ]
-                      const compiled = cFields.map(f => childMeetingSummary[f.key]?.trim() ? f.icon + ' ' + f.label + '\n' + childMeetingSummary[f.key].trim() : '').filter(Boolean).join('\n\n')
-                      if (!compiled) { setSendingChildSummary(false); return alert('מלאי לפחות שדה אחד') }
-                      await supabase.from('client_profiles').update({ child_feedback: compiled, child_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
-                      saveSessionKey('child_meeting_summary', childMeetingSummary)
-                      const phone = selectedClient.phone.replace(/^0/, '972')
-                      const msg = 'היי ' + selectedClient.name + '! 👨\u200d👩\u200d👧\n\nהסיכום מהפגישה שלנו מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
-                      window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                      setSendingChildSummary(false); setChildSummarySent(true); setTimeout(() => setChildSummarySent(false), 4000)
-                    }} disabled={sendingChildSummary} style={{ flex: 2, padding: 12, borderRadius: 10, background: childSummarySent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                      {sendingChildSummary ? '⏳...' : childSummarySent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
+                      const compiled = cfFields.map(f => childMeetingSummary[f.key]?.trim() ? f.icon + ' ' + f.label + '\n' + childMeetingSummary[f.key].trim() : '').filter(Boolean).join('\n\n')
+                      if (!compiled) return alert('מלאי לפחות שדה אחד')
+                      setChildMeetingPreview(compiled)
+                    }} style={{ width: '100%', padding: 13, borderRadius: 12, background: '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+                      ← הפקי סיכום לעריכה לפני שליחה
                     </button>
                   </div>
                 </div>
+
+                {childMeetingPreview && (
+                  <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
+                    <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff' }}>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>✏️ תצוגה מקדימה — ערכי לפני שליחה</div>
+                      <div style={{ fontSize: 11, color: '#e9d5ff' }}>ערכי את הטקסט ← אשרי ושלחי</div>
+                    </div>
+                    <div style={{ padding: 16 }}>
+                      <textarea value={childMeetingPreview} onChange={e => setChildMeetingPreview(e.target.value)} rows={16} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
+                      <button onClick={async () => {
+                        if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
+                        setApprovingChildSummary(true)
+                        await supabase.from('client_profiles').update({ child_feedback: childMeetingPreview, child_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        saveSessionKey('child_meeting_summary', childMeetingSummary)
+                        const phone = selectedClient.phone.replace(/^0/, '972')
+                        const msg = 'היי ' + selectedClient.name + '! \u{1F46A}\n\nהסיכום מהפגישה שלנו מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+                        setApprovingChildSummary(false); setChildSummarySent(true); setChildMeetingPreview('')
+                        setTimeout(() => setChildSummarySent(false), 4000)
+                      }} disabled={approvingChildSummary} style={{ flex: 2, padding: 12, borderRadius: 10, background: childSummarySent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {approvingChildSummary ? '⏳...' : childSummarySent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
+                      </button>
+                      <button onClick={() => setChildMeetingPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        ✕ בטלי
+                      </button>
+                    </div>
+                  </div>
+                )}
 
               </div>
             )}
