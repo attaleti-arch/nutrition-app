@@ -729,12 +729,25 @@ ${sessionNotes ? 'מה גילינו בפגישה (הערות אתי): ' + sessio
     }
 
     if (mode === 'rootsAnalysis' && body.prompt) {
-      const msg = await client.messages.create({
+      const stream = client.messages.stream({
         model: 'claude-sonnet-4-6',
         max_tokens: 5000,
         messages: [{ role: 'user', content: body.prompt }]
       })
-      return Response.json({ result: msg.content[0].text })
+      const readable = new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const event of stream) {
+              if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+                controller.enqueue(new TextEncoder().encode(event.delta.text))
+              }
+            }
+          } finally {
+            controller.close()
+          }
+        }
+      })
+      return new Response(readable, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
     }
 
     if (mode === 'logsReport') {

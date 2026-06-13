@@ -2183,15 +2183,15 @@ export default function AdminPage() {
 
                   try {
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
-                  const data = await res.json()
-                  if (data.result) {
-                    setRootsAnalysis(data.result); setRootsEditing(true); setRootsViewMode('view')
-                    saveSessionKey('roots_notes', rootsNotes)
-                    saveSessionKey('roots_analysis', data.result)
-                    setRootsAnalysisSaved(true)
-                  } else {
-                    alert('שגיאה בהפקת הניתוח — נסי שוב')
+                  if (!res.ok) throw new Error('API error')
+                  const reader = res.body.getReader(); const decoder = new TextDecoder(); let result = ''
+                  setRootsEditing(true); setRootsViewMode('view')
+                  while (true) {
+                    const { done, value } = await reader.read(); if (done) break
+                    result += decoder.decode(value, { stream: true }); setRootsAnalysis(result)
                   }
+                  if (result) { saveSessionKey('roots_notes', rootsNotes); saveSessionKey('roots_analysis', result); setRootsAnalysisSaved(true) }
+                  else { alert('לא התקבל ניתוח — נסי שוב') }
                   } catch(e) { alert('שגיאת רשת — נסי שוב') }
                   setRootsLoading(false)
                 }} disabled={rootsLoading || !Object.values(rootsNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: rootsLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
@@ -2387,15 +2387,15 @@ export default function AdminPage() {
 
                   try {
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
-                  const data = await res.json()
-                  if (data.result) {
-                    setBodyAnalysis(data.result); setBodyEditing(true); setBodyViewMode('view')
-                    saveSessionKey('body_notes', bodyNotes)
-                    saveSessionKey('body_analysis', data.result)
-                    setBodyAnalysisSaved(true)
-                  } else {
-                    alert('שגיאה בהפקת הניתוח — נסי שוב')
+                  if (!res.ok) throw new Error('API error')
+                  const reader = res.body.getReader(); const decoder = new TextDecoder(); let result = ''
+                  setBodyEditing(true); setBodyViewMode('view')
+                  while (true) {
+                    const { done, value } = await reader.read(); if (done) break
+                    result += decoder.decode(value, { stream: true }); setBodyAnalysis(result)
                   }
+                  if (result) { saveSessionKey('body_notes', bodyNotes); saveSessionKey('body_analysis', result); setBodyAnalysisSaved(true) }
+                  else { alert('לא התקבל ניתוח — נסי שוב') }
                   } catch(e) { alert('שגיאת רשת — נסי שוב') }
                   setBodyLoading(false)
                 }} disabled={bodyLoading || !Object.values(bodyNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: bodyLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
@@ -2549,9 +2549,15 @@ export default function AdminPage() {
 
                   try {
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
-                  const data = await res.json()
-                  if (data.result) { setChildAnalysis(data.result); setChildEditing(true); saveSessionKey('child_analysis', data.result); setChildAnalysisSaved(true) }
-                  else { alert('שגיאה בהפקת הניתוח — נסי שוב') }
+                  if (!res.ok) throw new Error('API error')
+                  const reader = res.body.getReader(); const decoder = new TextDecoder(); let result = ''
+                  setChildEditing(true)
+                  while (true) {
+                    const { done, value } = await reader.read(); if (done) break
+                    result += decoder.decode(value, { stream: true }); setChildAnalysis(result)
+                  }
+                  if (result) { saveSessionKey('child_analysis', result); setChildAnalysisSaved(true) }
+                  else { alert('לא התקבל ניתוח — נסי שוב') }
                   } catch(e) { alert('שגיאת רשת — נסי שוב') }
                   setChildLoading(false)
                 }} disabled={childLoading || !Object.values(childNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: childLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
