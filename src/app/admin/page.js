@@ -2232,22 +2232,14 @@ export default function AdminPage() {
                         {rootsLoading ? '⏳...' : '🔄 עבדי מחדש'}
                       </button>
                       <button onClick={async () => {
-                        setRootsFeedbackLoading(true)
-                        const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. צרי משוב חם, מעצים ואישי ל' + (selectedClient?.name||'') + ' לאחר פגישת השורשים.\n\n' +
-                          'על בסיס הניתוח הבא:\n' + rootsAnalysis + '\n\n' +
-                          'כתבי מסמך משוב ללקוחה בעברית, גוף שני נקבה, חיובי ומלא תקווה. מבנה:\n\n' +
-                          '🌱 מה גילינו יחד\n[2-3 משפטים — תובנות מרכזיות שעלו, בשפתה]\n\n' +
-                          '💫 הכוחות שלך\n[2 משפטים — מה את כבר עושה טוב שאולי לא ראית]\n\n' +
-                          '🔓 מה משתחרר\n[1-2 משפטים — אמונה שהתחילה להשתנות]\n\n' +
-                          '🌿 3 צעדים שמתחילים מהיום\n[3 צעדים קטנים וספציפיים — כתובים בחום ובאמונה בה]\n\n' +
-                          '💚 מילה אחרונה\n[משפט אחד — חם, אישי, מעצים]\n\n' +
-                          'ללא מבוא. ללא כותרת ראשית. ישר לתוכן.'
-                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
-                        const data = await res.json()
-                        if (data.result) { setRootsFeedback(data.result); saveSessionKey('roots_feedback_draft', data.result) }
-                        setRootsFeedbackLoading(false)
-                      }} disabled={rootsFeedbackLoading} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {rootsFeedbackLoading ? '⏳ מפיק...' : '📝 הפקי טיוטת משוב ללקוחה'}
+                        if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
+                        await supabase.from('client_profiles').update({ roots_feedback: rootsAnalysis, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        saveSessionKey('roots_feedback_draft', rootsAnalysis)
+                        const phone = selectedClient.phone.replace(/^0/, '972')
+                        const msg = 'היי ' + selectedClient.name + '! 🌱\n\nהמשוב האישי שלך מפגישת השורשים מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+                        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
+                      }} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        📤 שלחי ללקוחה
                       </button>
                     </div>
                   </div>
