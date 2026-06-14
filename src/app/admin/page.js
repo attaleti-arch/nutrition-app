@@ -1880,6 +1880,40 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
             {tab === 'pantry' && (
               <div>
 
+                {/* מדריכים כלליים — תמיד גלויים */}
+                <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 18px', background: '#f0fdfa', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 22 }}>🛒</span>
+                    <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: 15, color: '#0d9488' }}>מדריך קניות חכם</div><div style={{ fontSize: 12, color: '#9ca3af' }}>רשימה מלאה עם טיפים וצ׳קבוקסים</div></div>
+                  </div>
+                  <div style={{ padding: 14, display: 'flex', gap: 8 }}>
+                    <a href="/shopping_guide.html" target="_blank" rel="noreferrer" style={{ flex: 1, display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: '#0d9488', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את המדריך 🛒</a>
+                    <a href="/shopping_guide.html" download="מדריך-קניות.html" style={{ padding: '12px 16px', borderRadius: 10, background: '#f0fdfa', color: '#0d9488', border: '1.5px solid #99f6e4', fontWeight: 700, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap' }}>⬇️ HTML</a>
+                  </div>
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 18px', background: '#fff7ed', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 22 }}>🏡</span>
+                    <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: 15, color: '#f97316' }}>מדריך המזווה והמקרר</div><div style={{ fontSize: 12, color: '#9ca3af' }}>איך לארגן את המטבח לתמיכה בדרך שלך</div></div>
+                  </div>
+                  <div style={{ padding: 14, display: 'flex', gap: 8 }}>
+                    <a href="/pantry_guide.html" target="_blank" rel="noreferrer" style={{ flex: 1, display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: '#f97316', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את המדריך 🏡</a>
+                    <a href="/pantry_guide.html" download="מדריך-מזווה.html" style={{ padding: '12px 16px', borderRadius: 10, background: '#fff7ed', color: '#f97316', border: '1.5px solid #fed7aa', fontWeight: 700, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap' }}>⬇️ HTML</a>
+                  </div>
+                </div>
+
+                <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 18px', background: '#faf5ff', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 22 }}>📚</span>
+                    <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: 15, color: '#9333ea' }}>חוברת המתכונים של אתי</div><div style={{ fontSize: 12, color: '#9ca3af' }}>20 מתכונים · ללא קמח · ללא סוכר · חלבון גבוה</div></div>
+                  </div>
+                  <div style={{ padding: 14, display: 'flex', gap: 8 }}>
+                    <a href="/recipes_guide.html" target="_blank" rel="noreferrer" style={{ flex: 1, display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: '#9333ea', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את החוברת 📚</a>
+                    <a href="/recipes_guide.html" download="חוברת-מתכונים.html" style={{ padding: '12px 16px', borderRadius: 10, background: '#faf5ff', color: '#9333ea', border: '1.5px solid #e9d5ff', fontWeight: 700, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap' }}>⬇️ HTML</a>
+                  </div>
+                </div>
+
                 {/* ✅ צ׳קליסט ביקור בית */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '2px solid #bbf7d0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => setVisitOpen(v => !v)}>
