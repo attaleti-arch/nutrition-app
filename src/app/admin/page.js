@@ -3174,7 +3174,8 @@ export default function AdminPage() {
               {/* סגירה */}
               <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 20, padding: '28px 24px', color: '#fff', textAlign: 'center' }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>💚</div>
-                <div style={{ fontWeight: 900, fontSize: 22, marginBottom: 10, lineHeight: 1.4 }}>את לא מפסידה את הרביצה<br/>את מרוויחה את עצמך</div>
+                <div style={{ fontWeight: 900, fontSize: 20, marginBottom: 10, lineHeight: 1.5 }}>החיים קורים, אחרי ותוך כדי ההצלחה יש עליות וירידות, יש תקיעויות ויש מעידות</div>
+                <div style={{ fontWeight: 800, fontSize: 17, marginBottom: 14, lineHeight: 1.6, color: '#dcfce7' }}>מי שנעמדת יציב אחרי שאלו עומדים בדרכה, מי שלא מפחדת להישבר, היא זו שבסוף מצליחה לשמור 💪🏼</div>
                 <div style={{ fontSize: 15, color: '#86efac', lineHeight: 1.9, marginBottom: 14 }}>וגם הילדים שלך מרוויחים אמא קלילה יותר,<br/>נוכחת יותר וגאה בעצמה.</div>
                 <div style={{ fontSize: 14, color: '#dcfce7', lineHeight: 1.8, fontStyle: 'italic' }}>כולן רוצות להיות חזקות ולעמוד בהבטחות לעצמן.<br/>רוב האנשים נשברים בדרך.<br/><strong style={{ color: '#fff', fontStyle: 'normal', fontSize: 16 }}>את זו שחצתה את הקו.</strong></div>
               </div>
@@ -3339,7 +3340,7 @@ export default function AdminPage() {
             {/* סגירה */}
             <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 16, padding: '18px 20px', color: '#fff', textAlign: 'center' }}>
               <div style={{ fontSize: 22, marginBottom: 8 }}>💚</div>
-              <div style={{ fontWeight: 900, fontSize: 15, marginBottom: 8 }}>את לא מפסידה את הרביצה — את מרוויחה את עצמך</div>
+              <div style={{ fontWeight: 900, fontSize: 14, marginBottom: 8, lineHeight: 1.5 }}>החיים קורים — יש עליות, ירידות, מעידות. מי שלא מפחדת להישבר, היא זו שמצליחה לשמור 💪🏼</div>
               <div style={{ fontSize: 13, color: '#86efac', lineHeight: 1.8 }}>וגם הילדים שלך מרוויחים אמא קלילה יותר, נוכחת יותר וגאה בעצמה.</div>
             </div>
           </div>
