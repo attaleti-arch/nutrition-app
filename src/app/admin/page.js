@@ -1211,6 +1211,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
           </div>
         </div>
 
+        {/* ניהול — תמיד גלוי, ללא צורך בלקוחה נבחרת */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+          {[{ k: 'pantry', l: '🛒 מזווה' }, { k: 'newclient', l: '➕ לקוח/ה' }, { k: 'guide', l: '📚 מדריך' }].map(t => (
+            <button key={t.k} onClick={() => { setSelectedClient(null); setTab(t.k) }} style={{ flex: 1, padding: '11px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: tab === t.k ? '#0f4c2a' : '#555' }}>{t.l}</button>
+          ))}
+        </div>
+
         {selectedClient && (
           <>
             <div style={{ background: '#fff', borderRadius: 18, padding: '12px 16px', marginBottom: 8, border: '1.5px solid #e5e7eb' }}>
@@ -1344,11 +1351,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                 </div>
               </div>
 
-              {/* קבוצה 4 — ניהול */}
+              {/* קבוצה 4 — מזווה בלבד (ניהול ולקוח נמצאים למעלה תמיד) */}
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', marginBottom: 4, paddingRight: 4 }}>⚙️ ניהול</div>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  {[{ k: 'pantry', l: '🛒 מזווה' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'guide', l: '📚 מדריך' }].map(t => (
+                  {[{ k: 'pantry', l: '🛒 מזווה' }].map(t => (
                     <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
                   ))}
                 </div>
