@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>אתי אטל — יועצת בריאות ותזונה התנהגותית</title>
+  <title>אתי אטל — מעבר לצלחת, מתחילים בראש</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
   <style>
@@ -436,6 +436,36 @@
     .footer-name { font-size: 16px; font-weight: 700; color: var(--gold); margin-bottom: 4px; }
     .footer-title { font-size: 12px; color: rgba(255,255,255,0.35); }
 
+    /* ── DRAWN MEALS ── */
+    .drawn-meals { background: var(--beige); padding: 72px 0; }
+    .meals-intro {
+      font-size: 16px; color: #555; line-height: 1.85;
+      max-width: 640px; margin-bottom: 40px;
+    }
+    .meals-intro strong { color: var(--green); }
+    .meals-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+    }
+    .meal-card {
+      background: var(--white); border-radius: 18px; overflow: hidden;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07); transition: transform 0.2s;
+    }
+    .meal-card:hover { transform: translateY(-4px); }
+    .meal-img {
+      aspect-ratio: 1; width: 100%;
+      object-fit: cover; display: block;
+    }
+    .meal-img-placeholder {
+      aspect-ratio: 1; width: 100%;
+      background: linear-gradient(135deg, var(--beige) 0%, var(--beige-dark) 100%);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 52px;
+    }
+    .meal-label {
+      font-size: 13px; color: #888; font-weight: 600;
+      padding: 10px 14px; text-align: center;
+    }
+
     /* ── RESPONSIVE ── */
     @media (max-width: 820px) {
       .hero-inner { grid-template-columns: 1fr; }
@@ -452,6 +482,7 @@
       .t-grid { grid-template-columns: 1fr; }
       .t-card.wide { grid-column: auto; }
       .stats-row { gap: 28px; }
+      .meals-grid { grid-template-columns: repeat(2,1fr); }
     }
     @media (max-width: 520px) {
       .problem-cards { grid-template-columns: 1fr; }
@@ -482,12 +513,12 @@
       <div class="hero-content">
         <div class="hero-badge">✨ בין הראש לצלחת — תוכנית הדגל</div>
         <h1>
-          שינוי תזונתי<br>
-          <span class="gold">שאפשר לחיות איתו</span>
+          מעבר לצלחת,<br>
+          <span class="gold">מתחילים בראש</span>
         </h1>
         <p class="hero-sub">
-          ניסית כבר תפריטים, דיאטות ואפליקציות — ושום דבר לא החזיק?<br>
-          אני עובדת על <strong style="color:#fff;">הבית, הראש וההרגלים</strong> — לא רק על מה שאת אוכלת.
+          ברוכים הבאים למסע של בחירות מתוך שפע —<br>
+          המגובה בטכנולוגיה חכמה ובליווי אישי שלא משאיר אף רגע מאחור.
         </p>
         <div class="hero-btns">
           <!-- ⚠️ החלפי XXXXXXXXXXX במספר הוואטסאפ שלך -->
@@ -545,25 +576,25 @@
         <div class="sec-label">מי אני</div>
         <h2 class="sec-title">אתי אטל — יועצת שמכירה את החיים האמיתיים</h2>
         <div class="gold-line"></div>
-        <p>אני <strong>יועצת בריאות ותזונה התנהגותית</strong>, מאסטר NLP ומאמנת ריצה מוסמכת. אמא לשלושה, חמישה אימונים בשבוע — ויודעת מה זה לאזן בין הכל.</p>
-        <p>אחרי שנים בתחום הבנתי משהו חשוב: <strong>הבעיה היא לא מה שאת אוכלת — אלא הסביבה, ההרגלים והראש שמאחורי כל בחירה.</strong> לכן אני לא נותנת תפריטים בלבד. אני עובדת איתך על הבית שלך ממש.</p>
-        <p>השיטה שלי משלבת <strong>אפליקציה חכמה אישית</strong>, עבודת NLP מנטלית עמוקה, וסדנאות פרקטיות בבית — לשינוי שמחזיק לאורך זמן.</p>
+        <p>הדרך שלי למה שאני עושה היום התחילה <strong>במטבח שלי</strong>, כאמא לשלושה בנים. חיפשתי איך לחשוף אותם לעולם הטעמים — ומתוך זה נולדו <strong>"ארוחות מצוירות"</strong>: שילוב של שפע, משחק ואכילה מתוך סקרנות ושמחה.</p>
+        <p>במשך <strong>18 שנה</strong> ניהלתי רכש מורכב בתעשיית הפארמה, ובמקביל התנדבתי בעמותת "אתגרים" עם קבוצות ריצה עבור אנשים עם צרכים מיוחדים. ראיתי מקרוב עד כמה <strong>תנועה ואוכל בריא הם צורך קיומי</strong> — לא עול.</p>
+        <p>כמאסטרית NLP ויועצת לתזונה התנהגותית, <strong>אני לא מאמינה בדיאטות</strong>. אני מאמינה בבניית מערכת יחסים בריאה, מודעת ומשוחררת עם האוכל — <strong>בחירות מתוך שפע ומודעות, לכל החיים.</strong></p>
         <div class="creds">
           <div class="cred">
             <span class="cred-icon">🧠</span>
-            <span>מאסטר NLP — עבודה מנטלית על דפוסי אכילה</span>
+            <span>מאסטרית NLP — שינוי דפוסי חשיבה ואכילה לעומק</span>
           </div>
           <div class="cred">
             <span class="cred-icon">🥗</span>
             <span>יועצת תזונה התנהגותית מוסמכת</span>
           </div>
           <div class="cred">
-            <span class="cred-icon">🏃‍♀️</span>
-            <span>מאמנת ריצה מוסמכת</span>
+            <span class="cred-icon">💼</span>
+            <span>18 שנה ניהול מורכב בתעשיית הפארמה</span>
           </div>
           <div class="cred">
-            <span class="cred-icon">📱</span>
-            <span>אפליקציה חכמה אישית עם מדדים ורקע רפואי</span>
+            <span class="cred-icon">🎨</span>
+            <span>ממציאת "ארוחות מצוירות" — אכילה מתוך שמחה ושפע</span>
           </div>
         </div>
       </div>
@@ -587,27 +618,61 @@
   </div>
 </section>
 
+<!-- DRAWN MEALS -->
+<section class="drawn-meals" id="meals">
+  <div class="container">
+    <div class="sec-label">היצירתיות שבצלחת</div>
+    <h2 class="sec-title">ארוחות מצוירות — כשהאוכל הופך להנאה</h2>
+    <div class="gold-line"></div>
+    <p class="meals-intro">
+      הכל התחיל כשרציתי לחשוף את הבנים שלי לעולם הטעמים בלי כפייה. כך נולדה הגישה של <strong>"ארוחות מצוירות"</strong> — יצירת סביבת אכילה עשירה, צבעונית ומשחקית שהופכת את השולחן למקום של שפע ולא של לחץ.
+    </p>
+    <div class="meals-grid">
+      <!--
+        להחלפה: הסירי כל meal-img-placeholder והוסיפי:
+        <img src="meal1.jpg" alt="ארוחה מצוירת" class="meal-img">
+      -->
+      <div class="meal-card">
+        <div class="meal-img-placeholder">🥗</div>
+        <p class="meal-label">ארוחת שפע</p>
+      </div>
+      <div class="meal-card">
+        <div class="meal-img-placeholder">🥕</div>
+        <p class="meal-label">ירקות בצבע</p>
+      </div>
+      <div class="meal-card">
+        <div class="meal-img-placeholder">🍳</div>
+        <p class="meal-label">בוקר שלם</p>
+      </div>
+      <div class="meal-card">
+        <div class="meal-img-placeholder">🥙</div>
+        <p class="meal-label">ביניים חכם</p>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- PROBLEM -->
 <section class="problem" id="problem">
   <div class="container">
-    <div class="sec-label">האם זה נשמע מוכר?</div>
-    <h2 class="sec-title">ניסית הכל — ועדיין לא מצאת מה שעובד?</h2>
+    <div class="sec-label">מה עוצר את השינוי?</div>
+    <h2 class="sec-title">לא הרצון חסר — חסרים הכלים הנכונים</h2>
     <div class="gold-line"></div>
     <div class="problem-cards">
       <div class="pcard hi">
-        <span class="pcard-emoji">😩</span>
-        <h3>דיאטות שלא מחזיקות</h3>
-        <p>ניסית כבר תפריטים, קבוצות תמיכה ואפליקציות — ואחרי כמה שבועות חזרת לנקודת ההתחלה. זה לא כישלון שלך.</p>
+        <span class="pcard-emoji">🚫</span>
+        <h3>דיאטה = מחסור</h3>
+        <p>כל "דיאטה" מתחילה בהגבלה — ומסתיימת בתסכול. הגוף מרגיש מחסור ומגיב בהתנגדות. זו לא חולשה, זו פיזיולוגיה.</p>
       </div>
       <div class="pcard hi">
         <span class="pcard-emoji">🏠</span>
-        <h3>הבית לא עוזר</h3>
-        <p>הארון מלא בדברים הלא נכונים, אין תוכנית קניות, ובסוף היום הגוף מנצח — ולוקח את הקל.</p>
+        <h3>הסביבה לא תומכת</h3>
+        <p>כשהמזווה, המקרר ושולחן האוכל לא מאורגנים נכון — אפילו הרצון החזק ביותר מתמוסס בסוף יום עייף.</p>
       </div>
       <div class="pcard hi">
         <span class="pcard-emoji">🧠</span>
-        <h3>הראש חוזר לישן</h3>
-        <p>בלחץ ובעייפות — הגוף מחפש נחמה מוכרת. בלי כלים מנטליים, השינוי לא מחזיק.</p>
+        <h3>הראש עדיין בישן</h3>
+        <p>דפוסי חשיבה על אוכל — אשמה, פרס, נחמה — לא משתנים עם תפריט. הם משתנים עם עבודה מנטלית עמוקה.</p>
       </div>
     </div>
   </div>
