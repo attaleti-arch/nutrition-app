@@ -126,6 +126,20 @@
     }
     .gold-line { width: 52px; height: 4px; background: var(--gold); border-radius: 2px; margin-bottom: 28px; }
 
+    /* JOURNEYS */
+    .journeys { background: var(--white); padding: 80px 0; }
+    .journeys-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 40px; }
+    .journey-card {
+      background: var(--beige); border-radius: 22px; padding: 36px 30px;
+      border-right: 4px solid var(--green);
+    }
+    .journey-card.journey-family { border-right-color: var(--gold); }
+    .journey-icon { font-size: 42px; margin-bottom: 14px; display: block; }
+    .journey-title { font-size: 22px; font-weight: 900; color: var(--green); margin-bottom: 6px; }
+    .journey-card.journey-family .journey-title { color: var(--dark-green); }
+    .journey-sub { font-size: 13.5px; font-weight: 700; color: var(--gold); margin-bottom: 18px; letter-spacing: 0.2px; }
+    .journey-card > p { font-size: 15px; color: #444; line-height: 2; }
+
     /* FOR WHOM */
     .for-whom { background: var(--white); padding: 80px 0; }
     .whom-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 22px; margin-top: 40px; }
@@ -362,7 +376,7 @@
       .hero { text-align: center; }
       .about-grid { grid-template-columns: 1fr; gap: 36px; }
       .about-visual { display: none; }
-      .whom-grid, .inside-grid { grid-template-columns: 1fr; }
+      .whom-grid, .inside-grid, .journeys-grid { grid-template-columns: 1fr; }
       .meals-grid { grid-template-columns: repeat(2,1fr); }
       .pricing-grid { grid-template-columns: 1fr; max-width: 460px; margin-left: auto; margin-right: auto; }
       .t-grid { grid-template-columns: 1fr; }
@@ -450,30 +464,26 @@
   </div>
 </div>
 
-<!-- FOR WHOM -->
-<section class="for-whom" id="for-whom">
+<!-- JOURNEYS -->
+<section class="journeys" id="for-whom">
   <div class="container">
     <div class="sec-label">למי זה מיועד</div>
-    <h2 class="sec-title">שינוי שמתחיל בבית — ועובר לדורות הבאים</h2>
+    <h2 class="sec-title">שינוי שמתחיל בבית, נשמר בראש</h2>
     <div class="gold-line"></div>
-    <div class="whom-grid">
+    <div class="journeys-grid">
 
-      <div class="whom-card">
-        <span class="whom-ico">👩</span>
-        <h3>נשים שמחפשות שינוי אמיתי</h3>
-        <p>לא עוד "דיאטה" שנגמרת בתסכול. אלא שינוי עמוק בדרך שאת חושבת, מרגישה ובוחרת — מתוך שפע ולא מחסור.</p>
+      <div class="journey-card">
+        <span class="journey-icon">👩</span>
+        <div class="journey-title">המסע האישי</div>
+        <div class="journey-sub">לא עוד ניסיונות — מערכת חכמה שעובדת בשבילך</div>
+        <p>את יודעת שזה לא בגלל חוסר כוח רצון. את זקוקה למישהי שתהיה איתך ביומיום, שתבין את הרקע הרפואי שלך, תנתח את המדדים האישיים שלך ותבנה עבורך תוכנית אכילה שבאמת מתאימה לגוף שלך. כשאנחנו עובדות יחד, אני מלווה אותך צמוד: באמצעות אפליקציה נוחה להזנה יומית של יומן אכילה, אנחנו עוברות על הנתונים שלך, מדייקות אותם יום-יום ונותנות לך משוב מיידי שנשאר איתך על המסלול. זה לא עוד תפריט — זה תהליך שבו אנחנו מפרקות את המנגנונים שמנהלים אותך, משנות את הסביבה הביתית שלך, ובונות אדמה חדשה שתומכת במי שאת רוצה להיות.</p>
       </div>
 
-      <div class="whom-card">
-        <span class="whom-ico">💛</span>
-        <h3>הילד שלך מתמודד — ואת רוצה לפעול למענו?</h3>
-        <p>את רואה את הקושי שלו — חברתי, רגשי, מול המקרר. זה לא אומר להעביר אותו דיאטה או להטיל עליו גזרות; זה אומר להבין ששינוי אמיתי מתחיל בבית, באווירה, ובסביבה שבה אנחנו חיים. כאן תקבלי כלים מעשיים ורגשיים שיעזרו לכם לבנות יחד בית בריא יותר, בלי בושה ובלי מאבקים — שינוי שיישאר איתו לכל החיים.</p>
-      </div>
-
-      <div class="whom-card">
-        <span class="whom-ico">🏠</span>
-        <h3>משפחות שרוצות שינוי אמיתי</h3>
-        <p>כשהבית שלך הופך לסביבה שתומכת בבריאות — כולם נהנים. זה מסע משפחתי שמייצר מציאות חדשה לכל הבית.</p>
+      <div class="journey-card journey-family">
+        <span class="journey-icon">💛</span>
+        <div class="journey-title">המסע המשפחתי</div>
+        <div class="journey-sub">סדר בירושה הרגשית ובמרחב הבית</div>
+        <p>אוכל בבית הוא שפה וירושה רגשית. במסלול הזה אני צוללת איתך לעומק התא המשפחתי: נבין אילו דפוסים "ירשנו", איך הם משפיעים על הילדים ועל התנהלות הבית, ונשנה את הדינמיקה מהשורש. המטרה היא להפוך את הבית שלך למקום שבו חיים תומכי בריאות הם הדרך הטבעית, השקטה והמחברת ביותר עבורך ועבור הילדים.</p>
       </div>
 
     </div>
@@ -711,7 +721,7 @@
         <div class="prc-label">תחנת ההתחלה</div>
         <div class="prc-name">מיפוי ומצפן</div>
         <div class="prc-for">📋 הצעד הראשון — מתאים לכולן</div>
-        <p class="prc-desc">הצעד הראשון להבנה. בואי נבין מה עצר אותך עד היום, נגדיר את השורשים של ההרגלים שלך ונסמן מטרה ברורה להמשך.</p>
+        <p class="prc-desc">בואי נעצור רגע. נבין מה מפעיל אותך, נזהה את השורשים של ההרגלים שלך, נבחן מדדים ורקע רפואי, ונסמן יחד את הדרך לשינוי. הצעד הראשון הוא להבין מה באמת קורה שם.</p>
         <div class="prc-dur">60 דקות | היכרות ומיפוי</div>
         <div class="prc-price"><span class="prc-currency">₪</span>350</div>
         <div class="prc-divider"></div>
@@ -731,7 +741,7 @@
         <div class="prc-label">מסלול אישי</div>
         <div class="prc-name">השינוי האישי</div>
         <div class="prc-for">👩 לנשים שרוצות שינוי אמיתי</div>
-        <p class="prc-desc">תוכנית אישית שמשלבת רקע רפואי ומדדים, יחד עם עבודה על מנגנוני חשיבה. אנחנו לא "עושות דיאטה" — אנחנו מבינות את השורשים שגדלת עליהם, לומדות לקרוא את הסימנים שהגוף שלך שולח, ומפתחות "חיסונים" מנטליים לכל מה שלא עבד בעבר.</p>
+        <p class="prc-desc">זהו תהליך אישי שמשלב את הניסיון שלי כמאסטרית NLP ויועצת תזונה. תוכנית אכילה אישית המותאמת למדדים שלך, ליווי טכנולוגי יומיומי באפליקציה, ומשוב אישי שלי שמשאיר אותך ממוקדת. נלמד להקשיב לגוף שלך, נבנה מנגנוני הגנה ליום-יום, וניתן מענה לכל מה שאת צריכה כדי שזה באמת יחזיק הפעם.</p>
         <div class="prc-dur">3 חודשים | 4 מפגשים + אפליקציה</div>
         <div class="prc-price"><span class="prc-currency">₪</span>2,450</div>
         <div class="prc-divider"></div>
@@ -751,7 +761,7 @@
         <div class="prc-label">מסלול משפחתי</div>
         <div class="prc-name">בית של שפע</div>
         <div class="prc-for">💛 הורים לילדים ומשפחות</div>
-        <p class="prc-desc">ליווי הוליסטי לבית. כאן אנחנו לא מתמקדים ב"תוכניות אכילה" לילד, אלא בבניית אורח חיים בריא משותף — "מפגש השורשים", ליווי הורה-ילד, וכלים מעשיים שמשנים את הבית מבפנים.</p>
+        <p class="prc-desc">המסלול להורים שרוצים להעניק לילדים שלהם בסיס בריא לחיים. כאן אנחנו משלבות מפגש שורשים משפחתי, שינוי בסביבה הפיזית והרגשית של הבית, וכלים למעבר חלק לאורח חיים בריא שתומך בכל בני המשפחה.</p>
         <div class="prc-dur">3 חודשים | תוכנית מלאה + ליווי משפחתי</div>
         <div class="prc-price"><span class="prc-currency">₪</span>3,200</div>
         <div class="prc-divider"></div>
@@ -772,8 +782,8 @@
     <div class="pricing-included">
       <div class="pi-title">בכל מסלול איתי, אנחנו לא רק מדברות — אנחנו עושות:</div>
       <ul class="pi-list">
-        <li><strong>סידור המזווה והמקרר</strong> — מפגש פרקטי בביתך שבו נלמד איך לרתום את הסביבה הפיזית שלך לתהליך.</li>
-        <li><strong>סדנת חטיפי חלבון</strong> — נלמד איך להעשיר את המגוון בבית בצורה יצירתית, בריאה וטעימה לכולם.</li>
+        <li><strong>סידור פיזי של הבית</strong> — אני מגיעה למזווה ולמקרר שלך, ואנחנו בונות אותם כחברים הכי טובים בתהליך.</li>
+        <li><strong>סדנת יצירה במטבח</strong> — לומדות להכין חטיפי חלבון ופתרונות מזינים שפשוט כיף לאכול, כדי להעשיר את המגוון בקלות.</li>
       </ul>
     </div>
   </div>
