@@ -1987,6 +1987,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     </div>
                     <div style={{ padding: 14, display: 'flex', gap: 8 }}>
                       <a href="/pantry_guide.html" target="_blank" rel="noreferrer" style={{ flex: 1, display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: '#f97316', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את המדריך 🏡</a>
+                      <a href="/pantry_guide.html" download="מדריך-מזווה.html" style={{ padding: '12px 16px', borderRadius: 10, background: '#fff7ed', color: '#f97316', border: '1.5px solid #fed7aa', fontWeight: 700, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap' }}>⬇️ HTML</a>
                     </div>
                   </div>
                 )}
