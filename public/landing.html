@@ -73,20 +73,29 @@
     }
     .hero h1 {
       font-size: clamp(38px, 6vw, 68px);
-      font-weight: 900; color: #fff; line-height: 1.15; margin-bottom: 24px;
+      font-weight: 900; color: #fff; line-height: 1.15; margin-bottom: 20px;
       letter-spacing: -0.5px;
     }
     .hero h1 .gold { color: var(--gold); }
+    .pain-points {
+      list-style: none; padding: 0; margin: 0 0 22px;
+      display: flex; flex-direction: column; gap: 7px;
+    }
+    .pain-points li {
+      font-size: 16px; color: rgba(255,255,255,0.6);
+      padding-right: 22px; position: relative; line-height: 1.4;
+    }
+    .pain-points li::before { content: '—'; position: absolute; right: 0; color: var(--gold-light); font-weight: 700; }
     .hero-intro {
-      font-size: 20px; color: rgba(255,255,255,0.82);
-      line-height: 1.75; margin-bottom: 30px; max-width: 520px; font-weight: 500;
+      font-size: 20px; color: rgba(255,255,255,0.88);
+      line-height: 1.7; margin-bottom: 28px; max-width: 520px; font-weight: 700;
     }
     .hero-points {
       list-style: none; padding: 0; margin: 0 0 38px;
-      display: flex; flex-direction: column; gap: 16px;
+      display: flex; flex-direction: column; gap: 14px;
     }
     .hero-points li {
-      font-size: 18px; color: rgba(255,255,255,0.9);
+      font-size: 17px; color: rgba(255,255,255,0.9);
       padding-right: 46px; line-height: 1.55; position: relative; font-weight: 500;
     }
     .hero-points li::before {
@@ -127,7 +136,7 @@
     }
 
     /* STATS */
-    .stats-bar { background: var(--dark-green); padding: 22px 0; }
+    .stats-bar { background: var(--dark-green); padding: 22px 0; border-top: 1px solid rgba(255,255,255,0.07); }
     .stats-row { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; }
     .stat { text-align: center; }
     .stat-val { font-size: 24px; font-weight: 900; color: var(--gold); display: block; line-height: 1.1; }
@@ -145,21 +154,42 @@
     }
     .gold-line { width: 52px; height: 4px; background: var(--gold); border-radius: 2px; margin-bottom: 28px; }
 
+    /* WHY DIFFERENT */
+    .diff-section { background: var(--beige); padding: 80px 0; }
+    .diff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 40px; }
+    .diff-card {
+      background: var(--white); border-radius: 18px; padding: 26px 22px;
+      transition: transform 0.2s;
+    }
+    .diff-card:hover { transform: translateY(-4px); }
+    .diff-icon { font-size: 36px; margin-bottom: 12px; display: block; }
+    .diff-card h3 { font-size: 16px; font-weight: 900; color: var(--green); margin-bottom: 6px; }
+    .diff-card p { font-size: 13.5px; color: #555; line-height: 1.7; }
+    .diff-quote {
+      margin-top: 36px; padding: 28px 32px;
+      background: var(--white); border-right: 4px solid var(--green); border-radius: 16px;
+    }
+    .diff-quote blockquote {
+      font-size: 19px; font-style: italic; color: var(--green);
+      line-height: 1.65; font-weight: 500; margin-bottom: 10px;
+    }
+    .diff-quote cite { font-size: 13px; color: var(--gold); font-weight: 700; }
+
     /* JOURNEYS */
     .journeys { background: var(--white); padding: 80px 0; }
     .journeys-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 40px; }
     .journey-card {
-      background: var(--beige); border-radius: 22px; padding: 36px 30px;
+      background: var(--beige); border-radius: 22px; padding: 34px 28px;
       border-right: 4px solid var(--green);
     }
     .journey-card.journey-family { border-right-color: var(--gold); }
     .journey-icon { font-size: 46px; margin-bottom: 16px; display: block; }
-    .journey-title { font-size: 26px; font-weight: 900; color: var(--green); margin-bottom: 8px; line-height: 1.2; }
+    .journey-title { font-size: 26px; font-weight: 900; color: var(--green); margin-bottom: 6px; line-height: 1.2; }
     .journey-card.journey-family .journey-title { color: var(--dark-green); }
-    .journey-sub { font-size: 14px; font-weight: 700; color: var(--gold); margin-bottom: 20px; }
-    .journey-card > p { font-size: 16px; color: #3a3a3a; line-height: 1.95; font-weight: 500; }
+    .journey-sub { font-size: 13px; font-weight: 700; color: var(--gold); margin-bottom: 16px; }
+    .journey-card > p { font-size: 16px; color: #3a3a3a; line-height: 1.9; font-weight: 500; }
 
-    /* FOR WHOM */
+    /* FOR WHOM (kept for CSS compatibility) */
     .for-whom { background: var(--white); padding: 80px 0; }
     .whom-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 22px; margin-top: 40px; }
     .whom-card {
@@ -171,7 +201,7 @@
     .whom-card h3 { font-size: 17px; font-weight: 900; color: var(--green); margin-bottom: 10px; }
     .whom-card p { font-size: 14px; color: #555; line-height: 1.8; }
 
-    /* PROMISE */
+    /* PROMISE (kept for CSS compatibility) */
     .promise { background: var(--dark-green); padding: 80px 0; position: relative; overflow: hidden; }
     .promise::before {
       content: ''; position: absolute; top: 0; left: 0;
@@ -206,7 +236,6 @@
     .strategy-items li strong {
       display: block; color: #fff; font-size: 17px; font-weight: 900; margin-bottom: 6px;
     }
-
     .promise-highlight {
       padding: 32px 36px;
       background: rgba(200,168,60,0.14);
@@ -238,7 +267,7 @@
     .inside-card p { font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.8; }
     .inside-card p strong { color: rgba(255,255,255,0.95); }
 
-    /* ABOUT */
+    /* ABOUT (kept for CSS compatibility) */
     .about { background: var(--white); padding: 80px 0; }
     .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
     .about-text p { font-size: 16px; color: #444; line-height: 1.95; margin-bottom: 18px; }
@@ -271,7 +300,7 @@
     }
     .photo-badge .big { display: block; font-size: 24px; font-weight: 900; color: var(--gold); }
 
-    /* DRAWN MEALS */
+    /* DRAWN MEALS (kept for CSS compatibility) */
     .drawn-meals { background: var(--beige); padding: 72px 0; }
     .meals-intro { font-size: 16px; color: #555; line-height: 1.85; max-width: 640px; margin-bottom: 40px; }
     .meals-intro strong { color: var(--green); }
@@ -357,7 +386,7 @@
       background: var(--beige); color: var(--green);
     }
     .prc-btn:hover { background: var(--beige-dark); }
-    .prc-card.star .prc-btn { background: var(--gold); color: var(--dark-green); }
+    .prc-card.star .prc-btn { background: var(--gold); color: var(--dark-green); font-size: 16px; padding: 16px 24px; }
     .prc-card.star .prc-btn:hover { background: var(--gold-light); box-shadow: 0 4px 16px rgba(200,168,60,0.4); }
     .prc-for {
       display: inline-block; font-size: 12px; font-weight: 600;
@@ -365,33 +394,12 @@
       padding: 4px 12px; border-radius: 50px; margin-bottom: 14px;
     }
     .prc-card.star .prc-for { background: rgba(212,232,154,0.12); color: var(--light-green); border-color: rgba(212,232,154,0.25); }
-    .prc-desc {
-      font-size: 13.5px; color: #555; line-height: 1.8; margin-bottom: 18px;
-    }
-    .prc-card.star .prc-desc { color: rgba(255,255,255,0.78); }
-    .pricing-included {
-      margin-top: 40px; padding: 28px 32px;
-      background: var(--white); border-radius: 18px;
-      border-right: 4px solid var(--gold);
-    }
-    .pi-title {
-      font-size: 16px; font-weight: 700; color: var(--green); margin-bottom: 16px;
-    }
-    .pi-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
-    .pi-list li {
-      font-size: 15px; color: #484848; line-height: 1.7;
-      padding-right: 22px; position: relative;
-    }
-    .pi-list li::before {
-      content: '✦'; color: var(--gold); position: absolute; right: 0;
-      font-size: 11px; top: 4px;
-    }
 
     /* CTA */
     .cta-section { background: var(--green); padding: 88px 0; text-align: center; }
     .cta-section .sec-title { color: #fff; }
     .cta-section .sec-title .gold { color: var(--gold); }
-    .cta-body { font-size: 17px; color: rgba(255,255,255,0.75); max-width: 520px; margin: 0 auto 44px; line-height: 1.9; }
+    .cta-body { font-size: 18px; color: rgba(255,255,255,0.78); max-width: 480px; margin: 0 auto 44px; line-height: 1.85; }
     .btn-wa {
       display: inline-flex; align-items: center; gap: 12px;
       background: #25D366; color: #fff; font-weight: 900; font-size: 18px;
@@ -411,12 +419,15 @@
       .hero-inner { grid-template-columns: 1fr; }
       .hero-photo-wrap { display: none; }
       .hero-btns { justify-content: center; }
-      .hero h1, .hero-sub { text-align: center; }
+      .hero h1, .hero-intro { text-align: center; }
       .hero-badge { display: inline-block; }
       .hero { text-align: center; }
+      .hero-points li { text-align: right; }
+      .pain-points li { text-align: right; }
       .about-grid { grid-template-columns: 1fr; gap: 36px; }
       .about-visual { display: none; }
       .whom-grid, .inside-grid, .journeys-grid { grid-template-columns: 1fr; }
+      .diff-grid { grid-template-columns: repeat(2, 1fr); }
       .meals-grid { grid-template-columns: repeat(2,1fr); }
       .pricing-grid { grid-template-columns: 1fr; max-width: 460px; margin-left: auto; margin-right: auto; }
       .t-grid { grid-template-columns: 1fr; }
@@ -451,11 +462,16 @@
           שינוי לא קורה על הצלחת —<br>
           <span class="gold">הוא מתחיל בראש.</span>
         </h1>
-        <p class="hero-intro">בואי נבנה יחד מציאות בריאה ונינוחה. בלי "דיאטות" — פשוט בחירות טובות יותר מתוך <span class="gold">שפע</span>.</p>
+        <ul class="pain-points">
+          <li>נמאסת להתחיל מחדש — כל שני וחמישי.</li>
+          <li>נשברת בערב, הראש רוצה אבל ההרגלים מנצחים.</li>
+          <li>דואגת לכולם, ומזניחה את עצמך.</li>
+        </ul>
+        <p class="hero-intro">הפעם לא עוד ניסיון — שיטה שמשנה את הבית, הראש והגוף. יחד.</p>
         <ul class="hero-points">
-          <li><strong>הגישה שלי:</strong> אנחנו לא מתעסקות ב"מה בצלחת" — אנחנו מפרקות את המנגנונים שמנהלים את הבחירות שלך.</li>
-          <li><strong>התוצאה:</strong> חופש אמיתי מהצורך להתעסק באוכל, ונוכחות מלאה בחיים.</li>
-          <li><strong>הדרך:</strong> אני מלווה אותך בתוך היומיום, הופכת את הידע המקצועי לשינוי התנהגותי שקורה בפועל.</li>
+          <li><strong>הגישה:</strong> מפרקות את המנגנונים שמנהלים אותך — לא רק מה לאכול.</li>
+          <li><strong>התוצאה:</strong> חופש מהמלחמה עם האוכל ונוכחות מלאה בחיים.</li>
+          <li><strong>הדרך:</strong> ליווי יומיומי צמוד, בזמן אמת, עד שזה הופך לטבעי.</li>
         </ul>
         <div class="hero-btns">
           <!-- ⚠️ החלפי XXXXXXXXXXX במספר הוואטסאפ שלך -->
@@ -505,6 +521,51 @@
   </div>
 </div>
 
+<!-- WHY DIFFERENT -->
+<section class="diff-section" id="why">
+  <div class="container">
+    <div class="sec-label">מה הופך את השיטה שלי לשונה</div>
+    <h2 class="sec-title">לא עוד ליווי —<br>אסטרטגיית חיים שנבנית בבית שלך</h2>
+    <div class="gold-line"></div>
+    <div class="diff-grid">
+      <div class="diff-card">
+        <span class="diff-icon">🧠</span>
+        <h3>NLP מאסטרית</h3>
+        <p>עבודה על שורשי ההרגל — שבירת מנגנוני חשיבה אוטומטיים, לא ניהול תסמינים.</p>
+      </div>
+      <div class="diff-card">
+        <span class="diff-icon">🥗</span>
+        <h3>תזונה התנהגותית</h3>
+        <p>שינוי דפוסים סביב אוכל — לא עוד תפריט שנגמר בתסכול.</p>
+      </div>
+      <div class="diff-card">
+        <span class="diff-icon">🏠</span>
+        <h3>מגיעה אלייך הביתה</h3>
+        <p>סידור מזווה ומקרר, ארגון הסביבה — שינוי שמתחיל בפרקטיקה, לא בתיאוריה.</p>
+      </div>
+      <div class="diff-card">
+        <span class="diff-icon">👩‍👧‍👦</span>
+        <h3>אמא ל-3 בנים</h3>
+        <p>חיה ומאמינה בכל מה שאני מלמדת. זה לא תיאוריה — זה החיים שלי.</p>
+      </div>
+      <div class="diff-card">
+        <span class="diff-icon">📱</span>
+        <h3>אפליקציה חכמה</h3>
+        <p>מעקב יומי, תפריטים לפי המדדים שלך, ומשוב אישי ממני — בזמן אמת.</p>
+      </div>
+      <div class="diff-card">
+        <span class="diff-icon">🎨</span>
+        <h3>ארוחות מצוירות</h3>
+        <p>שיטה שפיתחתי לחשוף ילדים לעולם הטעמים — כי אוכל יכול להיות שפה של שמחה.</p>
+      </div>
+    </div>
+    <div class="diff-quote">
+      <blockquote>"אני לא מאמינה בקיצורי דרך. מאמינה בשינוי אמיתי, שמתחיל בראש ומשנה את הבית."</blockquote>
+      <cite>— אתי אטל, יועצת בריאות | מאסטרית NLP | אמא ל-3 בנים</cite>
+    </div>
+  </div>
+</section>
+
 <!-- JOURNEYS -->
 <section class="journeys" id="for-whom">
   <div class="container">
@@ -516,45 +577,17 @@
       <div class="journey-card">
         <span class="journey-icon">👩</span>
         <div class="journey-title">המסע האישי</div>
-        <div class="journey-sub">לא עוד ניסיונות — מערכת חכמה שעובדת בשבילך</div>
-        <p>את יודעת שזה לא בגלל חוסר כוח רצון. את זקוקה למישהי שתהיה איתך ביומיום, שתבין את הרקע הרפואי שלך, תנתח את המדדים האישיים שלך ותבנה עבורך תוכנית אכילה שבאמת מתאימה לגוף שלך. כשאנחנו עובדות יחד, אני מלווה אותך צמוד: באמצעות אפליקציה נוחה להזנה יומית של יומן אכילה, אנחנו עוברות על הנתונים שלך, מדייקות אותם יום-יום ונותנות לך משוב מיידי שנשאר איתך על המסלול. זה לא עוד תפריט — זה תהליך שבו אנחנו מפרקות את המנגנונים שמנהלים אותך, משנות את הסביבה הביתית שלך, ובונות אדמה חדשה שתומכת במי שאת רוצה להיות.</p>
+        <div class="journey-sub">לא עוד ניסיונות — מערכת שעובדת בשבילך</div>
+        <p>נמאסת להתחיל מחדש ולא להחזיק מעמד? אני מפרקת איתך את המנגנונים שמנהלים אותך, בונה תוכנית מדויקת לגוף שלך — ומלווה אותך ביום-יום, בזמן אמת, עד שזה הופך לחיים החדשים שלך.</p>
       </div>
 
       <div class="journey-card journey-family">
         <span class="journey-icon">💛</span>
         <div class="journey-title">המסע המשפחתי</div>
         <div class="journey-sub">סדר בירושה הרגשית ובמרחב הבית</div>
-        <p>אוכל בבית הוא שפה וירושה רגשית. במסלול הזה אני צוללת איתך לעומק התא המשפחתי: נבין אילו דפוסים "ירשנו", איך הם משפיעים על הילדים ועל התנהלות הבית, ונשנה את הדינמיקה מהשורש. המטרה היא להפוך את הבית שלך למקום שבו חיים תומכי בריאות הם הדרך הטבעית, השקטה והמחברת ביותר עבורך ועבור הילדים.</p>
+        <p>אוכל בבית הוא שפה וירושה רגשית. אנחנו צוללות לדפוסים שמועברים לילדים, ומשנות אותם מהשורש — כדי שחיים בריאים יהיו הדרך הטבעית לכל המשפחה.</p>
       </div>
 
-    </div>
-  </div>
-</section>
-
-<!-- STRATEGY -->
-<section class="promise" id="promise">
-  <div class="container">
-    <div class="sec-label">הגישה שלי</div>
-    <h2 class="sec-title">זה לא עוד "ליווי" —<br>זו אסטרטגיית חיים חדשה לבית שלך</h2>
-    <div class="gold-line"></div>
-    <p class="promise-body">אנחנו מפסיקות לדבר על אוכל ומתחילות לעבוד על הדינמיקה האמיתית. המערכת שאני בונה עבורך היא לא "עוד ניסיון" — היא <strong>פתרון טכנולוגי והתנהגותי מדויק</strong> שפועל בשטח, ביום-יום, בזמן אמת.</p>
-    <ul class="strategy-items">
-      <li>
-        <strong>✅ ניתוח מדדים רפואיים ופיזיולוגיים</strong>
-        תוכנית האכילה שלך לא מבוססת על תחושות — היא מבוססת על הנתונים האישיים של הגוף שלך.
-      </li>
-      <li>
-        <strong>✅ ניהול טכנולוגי מדויק</strong>
-        את לא צריכה לזכור כלום. המערכת מנטרת, מתעדת ומספקת לי את המידע כדי שאוכל לדייק אותך בכל יום מחדש.
-      </li>
-      <li>
-        <strong>✅ שבירת מנגנונים אוטומטיים</strong>
-        אני לא כאן כדי "לתמוך" בך — אני כאן כדי לזהות יחד איתך את רגעי הכשל ולהפוך אותם לניצחונות.
-      </li>
-    </ul>
-    <div class="promise-highlight">
-      אנחנו לא עושות <span class="gold">דיאטה</span> —<br>
-      אנחנו יוצרות <span class="gold">מציאות חדשה.</span>
     </div>
   </div>
 </section>
@@ -570,99 +603,27 @@
       <div class="inside-card">
         <span class="inside-num">01 — ביום-יום</span>
         <h3>מענה אישי בזמן אמת</h3>
-        <p>שאלה, התלבטות, רגע קשה — <strong>אני כאן בוואטסאפ</strong>, לאורך כל 3 החודשים. כי החיים לא קורים רק בשעות הפגישה, והתמיכה צריכה להיות שם בדיוק כשצריך אותה.</p>
+        <p>שאלה, רגע קשה, ספק — <strong>אני כאן בוואטסאפ</strong> לאורך כל 3 החודשים. כי השינוי קורה בין הפגישות.</p>
       </div>
 
       <div class="inside-card">
         <span class="inside-num">02 — טכנולוגיה</span>
         <h3>אפליקציה חכמה אישית</h3>
-        <p>ניהול <strong>מעקבים, מתכונים ותפריטים דינמיים</strong> — מותאמים לך, למדדים שלך ולרקע הרפואי שלך. רשימות קניות, מעקב תחושות יומי, הכל במקום אחד, קל לשימוש.</p>
+        <p><strong>מעקב, מתכונים ותפריטים</strong> מותאמים למדדים ולרקע הרפואי שלך. קלה לשימוש, עם משוב יומי ממני.</p>
       </div>
 
       <div class="inside-card">
         <span class="inside-num">03 — עומק מנטלי</span>
         <h3>2 מפגשי NLP אישיים</h3>
-        <p>עבודה ממוקדת על <strong>דפוסי החשיבה, הרגשות והטריגרים</strong> מאחורי הקשר שלך עם אוכל. לא "מה לאכול" — אלא לשנות מהשורש את הסיפור שאת מספרת לעצמך.</p>
+        <p>עבודה ממוקדת על <strong>הטריגרים שמנהלים אותך</strong> — לשנות את הסיפור מהשורש, לא רק מה לאכול.</p>
       </div>
 
       <div class="inside-card">
         <span class="inside-num">04 — פרקטיקה</span>
         <h3>2 מפגשי 1:1 בבית שלך</h3>
-        <p>אני מגיעה אלייך — <strong>לסידור פיזי של המזווה והמקרר</strong>, ארגון הסביבה, הכנה מראש, ויצירת בית שמדבר בריאות מעצמו. כי כשהסביבה משתנה, הכל משתנה.</p>
+        <p>אני מגיעה אלייך — <strong>סידור מזווה ומקרר</strong>, ארגון הסביבה כך שהבית מדבר בריאות מעצמו.</p>
       </div>
 
-    </div>
-  </div>
-</section>
-
-<!-- ABOUT -->
-<section class="about" id="about">
-  <div class="container">
-    <div class="about-grid">
-      <div class="about-text">
-        <div class="sec-label">מי אני</div>
-        <h2 class="sec-title">אתי אטל</h2>
-        <div class="gold-line"></div>
-        <p>"תקשיבי, <strong>אני לא מאמינה בקיצורי דרך</strong> או בתפריטים שאי אפשר לעמוד בהם לאורך זמן.</p>
-        <p>הכל התחיל אצלי כשרציתי להכניס שמחה ושפע לצלחת של הילדים שלי — וגיליתי שברגע שמשנים את דפוסי החשיבה, <strong>האוכל הופך להיות כלי לחיבור ולא למאבק.</strong></p>
-        <p>היום אני מביאה את השילוב הזה — של NLP, תזונה התנהגותית ופרקטיקה יומיומית — אל תוך הבית שלך, <strong>כדי שזה לא יהיה עוד ניסיון, אלא פשוט החיים החדשים שלכם."</strong></p>
-        <div class="creds">
-          <div class="cred"><span class="cred-icon">🧠</span><span>מאסטרית NLP מוסמכת</span></div>
-          <div class="cred"><span class="cred-icon">🥗</span><span>יועצת בריאות | תזונה התנהגותית</span></div>
-          <div class="cred"><span class="cred-icon">🏃‍♀️</span><span>מאמנת ריצה מוסמכת</span></div>
-          <div class="cred"><span class="cred-icon">🌿</span><span>חובבת טבע ואמא לשלושה בנים</span></div>
-        </div>
-      </div>
-      <div class="about-visual">
-        <!--
-          להחלפה: הסירי את about-photo-placeholder והוסיפי —
-          <img src="foto_eti_2.jpg" alt="אתי אטל" style="width:100%;height:100%;object-fit:cover;">
-        -->
-        <div class="about-photo-frame">
-          <div class="about-photo-placeholder">
-            <span style="font-size:60px;opacity:0.35;">🌿</span>
-            <span>תמונה של אתי</span>
-          </div>
-        </div>
-        <div class="photo-badge">
-          <span class="big">🌿</span>
-          לא עוד ניסיון —<br>החיים החדשים שלך
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- DRAWN MEALS -->
-<section class="drawn-meals" id="meals">
-  <div class="container">
-    <div class="sec-label">ארוחות מצוירות</div>
-    <h2 class="sec-title">כי השולחן יכול להיות מקום של שמחה</h2>
-    <div class="gold-line"></div>
-    <p class="meals-intro">
-      כשרציתי לחשוף את הבנים שלי לעולם הטעמים — נולדו <strong>"ארוחות מצוירות"</strong>. שולחן שמזמין, שמגוון, שמחקרן. גישה שהפכה לחלק מהדרך שלי ללמד אנשים שאוכל הוא כלי לחיבור ולשפע — לא למאבק.
-    </p>
-    <div class="meals-grid">
-      <!--
-        להחלפה: לכל meal-img-placeholder הוסיפי —
-        <img src="meal1.jpg" alt="ארוחה מצוירת" class="meal-img">
-      -->
-      <div class="meal-card">
-        <div class="meal-img-placeholder">🥗</div>
-        <p class="meal-label">ארוחת שפע</p>
-      </div>
-      <div class="meal-card">
-        <div class="meal-img-placeholder">🥕</div>
-        <p class="meal-label">ירקות בצבע</p>
-      </div>
-      <div class="meal-card">
-        <div class="meal-img-placeholder">🍳</div>
-        <p class="meal-label">בוקר שלם</p>
-      </div>
-      <div class="meal-card">
-        <div class="meal-img-placeholder">🥙</div>
-        <p class="meal-label">ביניים חכם</p>
-      </div>
     </div>
   </div>
 </section>
@@ -673,6 +634,7 @@
     <div class="sec-label">בדברים שלהן</div>
     <h2 class="sec-title">מה אומרות המלוות</h2>
     <div class="gold-line"></div>
+    <!-- 💡 ניתן להוסיף כאן צילומי מסך של הודעות ווטסאפ אמיתיות כ-<img> בתוך .t-card -->
     <div class="t-grid">
 
       <div class="t-card wide">
@@ -717,38 +679,12 @@
       <div class="t-card">
         <div class="wa-chip">💬 ווטסאפ אמיתי</div>
         <div class="quote">"</div>
-        <p class="t-text">כל הכבוד שאת מתמידה — הכנסת חלבון וירקות, הורדת סוכרים — זה ממש מעולה! הכל בזכותך אהובתי ❤️</p>
-        <div class="t-meta">
-          <div class="t-avatar">👩</div>
-          <div>
-            <div class="t-name">לקוחה של אתי</div>
-            <div class="t-note">תוצאות מוחשיות</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="t-card">
-        <div class="wa-chip">💬 ווטסאפ אמיתי</div>
-        <div class="quote">"</div>
         <p class="t-text">היה משבר — אבל עברתי אותו וממשיכה עכשיו בכל הכוח 💪 הפעם לא ויתרתי.</p>
         <div class="t-meta">
           <div class="t-avatar">👩</div>
           <div>
             <div class="t-name">לקוחה של אתי</div>
             <div class="t-note">אחרי רגע קשה</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="t-card">
-        <div class="wa-chip">💬 ווטסאפ אמיתי</div>
-        <div class="quote">"</div>
-        <p class="t-text">אני נכנסת לתהליך בכל הכוח. חייבת להתחיל לאכול בריא ומסודר 💪 תודה רבה לך באמת על הכל ❤️</p>
-        <div class="t-meta">
-          <div class="t-avatar">👩</div>
-          <div>
-            <div class="t-name">לקוחה חדשה</div>
-            <div class="t-note">בתחילת הדרך</div>
           </div>
         </div>
       </div>
@@ -764,7 +700,7 @@
       <div class="sec-label">מסלולים מותאמים אישית</div>
       <h2 class="sec-title">כל נתיב — בנוי בדיוק בשבילך</h2>
       <div class="gold-line"></div>
-      <p class="sec-sub">מי שצריכה לעשות שלום עם הגוף שלה, מי שדואגת לילד שלה, ומי שרוצה להזיז את כל הבית — יש מסלול שמדבר בדיוק אלייך.</p>
+      <p class="sec-sub">מי שרוצה שינוי אישי, מי שדואגת לילד שלה, מי שרוצה להזיז את כל הבית — יש מסלול שמדבר בדיוק אלייך.</p>
     </div>
     <div class="pricing-grid">
 
@@ -772,16 +708,14 @@
         <div class="prc-label">תחנת ההתחלה</div>
         <div class="prc-name">מיפוי ומצפן</div>
         <div class="prc-for">📋 הצעד הראשון — מתאים לכולן</div>
-        <p class="prc-desc">בואי נעצור רגע. נבין מה מפעיל אותך, נזהה את השורשים של ההרגלים שלך, נבחן מדדים ורקע רפואי, ונסמן יחד את הדרך לשינוי. הצעד הראשון הוא להבין מה באמת קורה שם.</p>
         <div class="prc-dur">60 דקות | היכרות ומיפוי</div>
         <div class="prc-price"><span class="prc-currency">₪</span>350</div>
         <div class="prc-divider"></div>
         <ul class="prc-features">
-          <li>60 דקות מיפוי מלא</li>
-          <li>שאלון 360 אישי</li>
-          <li>ניתוח מצב ומטרות</li>
+          <li>60 דקות מיפוי מלא + שאלון 360</li>
+          <li>ניתוח מצב, מדדים ומטרות</li>
           <li>המלצות ראשוניות</li>
-          <li>הצגת תוכנית הליווי</li>
+          <li>הצגת תוכנית הליווי המתאימה לך</li>
         </ul>
         <!-- ⚠️ החלפי XXXXXXXXXXX במספר הוואטסאפ שלך -->
         <a href="https://wa.me/972XXXXXXXXXXX" class="prc-btn" target="_blank">קביעת פגישה</a>
@@ -792,16 +726,14 @@
         <div class="prc-label">מסלול אישי</div>
         <div class="prc-name">השינוי האישי</div>
         <div class="prc-for">👩 לנשים שרוצות שינוי אמיתי</div>
-        <p class="prc-desc">זהו תהליך אישי שמשלב את הניסיון שלי כמאסטרית NLP ויועצת תזונה. תוכנית אכילה אישית המותאמת למדדים שלך, ליווי טכנולוגי יומיומי באפליקציה, ומשוב אישי שלי שמשאיר אותך ממוקדת. נלמד להקשיב לגוף שלך, נבנה מנגנוני הגנה ליום-יום, וניתן מענה לכל מה שאת צריכה כדי שזה באמת יחזיק הפעם.</p>
         <div class="prc-dur">3 חודשים | 4 מפגשים + אפליקציה</div>
         <div class="prc-price"><span class="prc-currency">₪</span>2,450</div>
         <div class="prc-divider"></div>
         <ul class="prc-features">
-          <li>אפליקציה חכמה אישית מלאה</li>
-          <li>תפריטים דינמיים + מתכונים + קניות</li>
-          <li>2 מפגשי NLP אישיים</li>
+          <li>אפליקציה חכמה + תפריטים למדדים שלך</li>
+          <li>2 מפגשי NLP — שבירת מנגנונים</li>
           <li>2 מפגשי 1:1 בבית (מזווה + מקרר)</li>
-          <li>מענה אישי בוואטסאפ לאורך 3 חודשים</li>
+          <li>מענה אישי בוואטסאפ 3 חודשים</li>
           <li>תוכנית "חיסון לחגים"</li>
         </ul>
         <!-- ⚠️ החלפי XXXXXXXXXXX במספר הוואטסאפ שלך -->
@@ -812,30 +744,20 @@
         <div class="prc-label">מסלול משפחתי</div>
         <div class="prc-name">בית של שפע</div>
         <div class="prc-for">💛 הורים לילדים ומשפחות</div>
-        <p class="prc-desc">המסלול להורים שרוצים להעניק לילדים שלהם בסיס בריא לחיים. כאן אנחנו משלבות מפגש שורשים משפחתי, שינוי בסביבה הפיזית והרגשית של הבית, וכלים למעבר חלק לאורח חיים בריא שתומך בכל בני המשפחה.</p>
-        <div class="prc-dur">3 חודשים | תוכנית מלאה + ליווי משפחתי</div>
+        <div class="prc-dur">3 חודשים | תוכנית מלאה + משפחה</div>
         <div class="prc-price"><span class="prc-currency">₪</span>3,200</div>
         <div class="prc-divider"></div>
         <ul class="prc-features">
           <li>כל מה שבתוכנית הדגל</li>
+          <li>מפגש שורשים משפחתי</li>
+          <li>כלים להורים — שיחה, גבולות, שינוי רגשי</li>
           <li>מפגש עם בן / בת הזוג</li>
-          <li>כלים להורים — לשיחה, לגבולות ולשינוי רגשי</li>
-          <li>גישה לקבוצת ליווי חודשית</li>
           <li>תוכנית חגים ואירועים משפחתיים</li>
-          <li>זמינות מורחבת בוואטסאפ</li>
         </ul>
         <!-- ⚠️ החלפי XXXXXXXXXXX במספר הוואטסאפ שלך -->
         <a href="https://wa.me/972XXXXXXXXXXX" class="prc-btn" target="_blank">קביעת פגישה</a>
       </div>
 
-    </div>
-
-    <div class="pricing-included">
-      <div class="pi-title">בכל מסלול איתי, אנחנו לא רק מדברות — אנחנו עושות:</div>
-      <ul class="pi-list">
-        <li><strong>סידור פיזי של הבית</strong> — אני מגיעה למזווה ולמקרר שלך, ואנחנו בונות אותם כחברים הכי טובים בתהליך.</li>
-        <li><strong>סדנת יצירה במטבח</strong> — לומדות להכין חטיפי חלבון ופתרונות מזינים שפשוט כיף לאכול, כדי להעשיר את המגוון בקלות.</li>
-      </ul>
     </div>
   </div>
 </section>
@@ -843,14 +765,14 @@
 <!-- CTA -->
 <section class="cta-section" id="contact">
   <div class="container">
-    <div class="sec-label" style="color:var(--light-green);">מוכנה להתחיל?</div>
+    <div class="sec-label" style="color:var(--light-green);">מוכנה לסיים עם המלחמה הזאת?</div>
     <h2 class="sec-title" style="text-align:center;margin-bottom:20px;">
       שלחי לי הודעה —<br>
-      <span class="gold">נבנה יחד את המציאות החדשה שלך</span>
+      <span class="gold">שיחת היכרות חינמית, בלי התחייבות</span>
     </h2>
     <p class="cta-body">
-      אסביר לך בדיוק איך התוכנית עובדת, מה מתאים לך ולמשפחה שלך,<br>
-      ומה הצעד הראשון. בלי לחץ, בלי התחייבות.
+      אסביר לך בדיוק מה מתאים לך ולמשפחה שלך,<br>
+      ומה הצעד הראשון לשינוי האמיתי.
     </p>
     <!-- ⚠️ החלפי XXXXXXXXXXX במספר הוואטסאפ שלך -->
     <a href="https://wa.me/972XXXXXXXXXXX?text=היי%20אתי%2C%20אשמח%20לשמוע%20עוד%20על%20תוכנית%20הליווי%20שלך%20🌿" class="btn-wa" target="_blank">
