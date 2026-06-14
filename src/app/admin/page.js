@@ -532,8 +532,7 @@ export default function AdminPage() {
     setClients(data || [])
   }
 
-  function downloadLesson() {
-    if (!lessonRef.current) return
+  function downloadLesson() {    if (!lessonRef.current) return
     const content = lessonRef.current.innerHTML
     const html = `<!DOCTYPE html>
 <html dir="rtl" lang="he">
@@ -560,6 +559,85 @@ export default function AdminPage() {
     const a = document.createElement('a')
     a.href = url
     a.download = 'שיעור-הגוף-שלך.html'
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function downloadAnalysisHTML(titleHe, analysisText) {
+    if (!analysisText || !selectedClient) return
+    const innerHtml = renderMd(analysisText).__html
+    const clientName = selectedClient.name + (selectedClient.last_name ? ' ' + selectedClient.last_name : '')
+    const html = `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>${titleHe} — ${clientName}</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #f8fafc; direction: rtl; padding: 32px 20px; }
+.wrap { max-width: 680px; margin: 0 auto; }
+.hdr { background: linear-gradient(135deg,#0f4c2a,#16a34a); border-radius: 16px; padding: 20px 24px; color: #fff; margin-bottom: 24px; }
+.hdr h1 { font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+.hdr .sub { font-size: 14px; color: #86efac; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <h1>${titleHe}</h1>
+    <div class="sub">${clientName}</div>
+  </div>
+  ${innerHtml}
+</div>
+</body>
+</html>`
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    const slug = titleHe.replace(/\s+/g, '-')
+    const nameSlug = selectedClient.name.replace(/\s+/g, '-')
+    a.download = `${slug}-${nameSlug}.html`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function downloadPantryHTML() {
+    if (!selectedClient?.pantry_notes) return
+    const clientName = selectedClient.name + (selectedClient.last_name ? ' ' + selectedClient.last_name : '')
+    const lines = selectedClient.pantry_notes.split('\n').map(l => `<div style="margin-bottom:6px;font-size:14px;color:#333;line-height:1.7;">${l.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>`).join('')
+    const html = `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>הנחיות מזווה — ${clientName}</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; background: #fff7ed; direction: rtl; padding: 32px 20px; }
+.wrap { max-width: 600px; margin: 0 auto; }
+.hdr { background: linear-gradient(135deg,#c2410c,#f97316); border-radius: 16px; padding: 20px 24px; color: #fff; margin-bottom: 20px; }
+.hdr h1 { font-size: 20px; font-weight: 900; margin-bottom: 4px; }
+.hdr .sub { font-size: 13px; color: #fed7aa; }
+.card { background: #fff; border-radius: 14px; border: 1.5px solid #fed7aa; padding: 20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hdr">
+    <h1>🛒 הנחיות מזווה אישיות</h1>
+    <div class="sub">${clientName}</div>
+  </div>
+  <div class="card">${lines}</div>
+</div>
+</body>
+</html>`
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `מזווה-${selectedClient.name}.html`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -1873,6 +1951,28 @@ export default function AdminPage() {
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8, color: '#0f4c2a' }}>📝 הנחיות מזווה</div>
                   <textarea value={selectedClient.pantry_notes || ''} onChange={e => setSelectedClient(prev => ({ ...prev, pantry_notes: e.target.value }))} onBlur={e => updateClientData('pantry_notes', e.target.value)} placeholder="כתבי הנחיות מזווה אישיות..." style={{ width: '100%', height: 200, padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7 }} />
+                  {selectedClient.pantry_notes && (
+                    <button onClick={downloadPantryHTML} style={{ marginTop: 10, padding: '9px 18px', borderRadius: 10, background: '#f0fdf4', color: '#15803d', border: '1.5px solid #86efac', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>⬇️ ייצוא הנחיות מזווה כ-HTML</button>
+                  )}
+                </div>
+                <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: '#0f4c2a', marginBottom: 12 }}>📚 מדריכים — ייצוא HTML</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f0fdf4', borderRadius: 12, padding: '12px 16px' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: '#0f4c2a' }}>🛒 מדריך קניות ומזווה</div>
+                        <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>הקובץ שמופיע ללקוח ב-PlanApp</div>
+                      </div>
+                      <a href="/shopping_guide.html" download="מדריך-קניות.html" style={{ padding: '8px 16px', borderRadius: 10, background: '#0f4c2a', color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>⬇️ HTML</a>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f5f3ff', borderRadius: 12, padding: '12px 16px' }}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: 14, color: '#6d28d9' }}>📖 חוברת מתכונים</div>
+                        <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>20 מתכונים ללא קמח וסוכר, עשירים בחלבון</div>
+                      </div>
+                      <a href="/recipes_guide.html" download="חוברת-מתכונים.html" style={{ padding: '8px 16px', borderRadius: 10, background: '#7c3aed', color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>⬇️ HTML</a>
+                    </div>
+                  </div>
                 </div>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 12, color: '#0f4c2a' }}>🛒 ניהול מלאי וקניות</div>
@@ -2097,7 +2197,10 @@ export default function AdminPage() {
                     {journeySaving ? '⏳ שומר...' : journeySaved ? '✅ נשמר!' : '💾 שמרי תשובות'}
                   </button>
                   <button onClick={exportJourneyHTML} style={{ flex: 1, padding: 13, borderRadius: 12, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>
-                    📄 ייצוא
+                    📄 הדפס
+                  </button>
+                  <button onClick={() => downloadAnalysisHTML('ניתוח מטרה', journeyAnalysis)} disabled={!journeyAnalysis} style={{ flex: 1, padding: 13, borderRadius: 12, background: journeyAnalysis ? '#f0fdf4' : '#f3f4f6', color: journeyAnalysis ? '#15803d' : '#9ca3af', border: journeyAnalysis ? '1.5px solid #86efac' : '1.5px solid #e5e7eb', cursor: journeyAnalysis ? 'pointer' : 'default', fontWeight: 700, fontSize: 15 }}>
+                    ⬇️ HTML
                   </button>
                 </div>
 
@@ -2209,7 +2312,10 @@ export default function AdminPage() {
                     {rootsNotesSaved ? '✅ נשמר!' : '💾 שמרי הערות'}
                   </button>
                   <button onClick={() => window.open('/print?client=' + encodeURIComponent(selectedClient.password) + '&type=roots', '_blank')} style={{ flex: 1, padding: 12, borderRadius: 12, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
-                    📄 ייצוא
+                    📄 הדפס
+                  </button>
+                  <button onClick={() => downloadAnalysisHTML('ניתוח שורשים', rootsAnalysis)} disabled={!rootsAnalysis} style={{ flex: 1, padding: 12, borderRadius: 12, background: rootsAnalysis ? '#f0fdf4' : '#f3f4f6', color: rootsAnalysis ? '#15803d' : '#9ca3af', border: rootsAnalysis ? '1.5px solid #86efac' : '1.5px solid #e5e7eb', cursor: rootsAnalysis ? 'pointer' : 'default', fontWeight: 700, fontSize: 14 }}>
+                    ⬇️ HTML
                   </button>
                 </div>
 
@@ -2410,7 +2516,10 @@ export default function AdminPage() {
                     {bodyNotesSaved ? '✅ נשמר!' : '💾 שמרי הערות'}
                   </button>
                   <button onClick={() => window.open('/print?client=' + encodeURIComponent(selectedClient.password) + '&type=body', '_blank')} style={{ flex: 1, padding: 12, borderRadius: 12, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
-                    📄 ייצוא
+                    📄 הדפס
+                  </button>
+                  <button onClick={() => downloadAnalysisHTML('ניתוח גוף מדבר', bodyAnalysis)} disabled={!bodyAnalysis} style={{ flex: 1, padding: 12, borderRadius: 12, background: bodyAnalysis ? '#f0fdf4' : '#f3f4f6', color: bodyAnalysis ? '#15803d' : '#9ca3af', border: bodyAnalysis ? '1.5px solid #86efac' : '1.5px solid #e5e7eb', cursor: bodyAnalysis ? 'pointer' : 'default', fontWeight: 700, fontSize: 14 }}>
+                    ⬇️ HTML
                   </button>
                 </div>
 
@@ -2645,7 +2754,10 @@ export default function AdminPage() {
                     {childNotesSaved ? '✅ נשמר!' : '💾 שמרי הערות'}
                   </button>
                   <button onClick={() => window.open('/print?client=' + encodeURIComponent(selectedClient.password) + '&type=child', '_blank')} style={{ flex: 1, padding: 12, borderRadius: 12, background: '#faf5ff', color: '#7c3aed', border: '1.5px solid #e9d5ff', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
-                    📄 ייצוא
+                    📄 הדפס
+                  </button>
+                  <button onClick={() => downloadAnalysisHTML('ניתוח הורה-ילד', childAnalysis)} disabled={!childAnalysis} style={{ flex: 1, padding: 12, borderRadius: 12, background: childAnalysis ? '#f0fdf4' : '#f3f4f6', color: childAnalysis ? '#15803d' : '#9ca3af', border: childAnalysis ? '1.5px solid #86efac' : '1.5px solid #e5e7eb', cursor: childAnalysis ? 'pointer' : 'default', fontWeight: 700, fontSize: 14 }}>
+                    ⬇️ HTML
                   </button>
                 </div>
 
