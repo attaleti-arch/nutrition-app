@@ -40,8 +40,9 @@ function calcTargets(client) {
     ? 10 * client.weight + 6.25 * client.height - 5 * client.age + 5
     : 10 * client.weight + 6.25 * client.height - 5 * client.age - 161
   var tdee = bmr * (ACTIVITY_MULT[client.activity] || 1.55)
-  var adjust = client.goal === 'ירידה במשקל' ? -400 : client.goal === 'עלייה במסה' ? 300 : 0
-  var calories = Math.round(tdee + adjust)
+  var lossDeficit = client.weight > 80 ? -825 : client.weight >= 70 ? -660 : -550
+  var adjust = client.goal === 'ירידה במשקל' ? lossDeficit : client.goal === 'עלייה במסה' ? 300 : 0
+  var calories = Math.max(1200, Math.round(tdee + adjust))
   var split = GOALS_SPLIT[client.goal] || GOALS_SPLIT['ירידה במשקל']
   return {
     calories,
@@ -397,6 +398,7 @@ export default function AdminPage() {
   const [newItemName, setNewItemName] = useState('')
   const [addingItem, setAddingItem] = useState(false)
   const [visitOpen, setVisitOpen] = useState(false)
+  const [showLessonMode, setShowLessonMode] = useState(false)
   const [visitFindings, setVisitFindings] = useState({})
   const [visitNotes, setVisitNotes] = useState('')
   const [previewDoc, setPreviewDoc] = useState(false)
@@ -429,6 +431,7 @@ export default function AdminPage() {
   const [childAnalysis, setChildAnalysis] = useState('')
   const [childLoading, setChildLoading] = useState(false)
   const [childEditing, setChildEditing] = useState(false)
+  const [childViewMode, setChildViewMode] = useState('view')
   const [childFeedback, setChildFeedback] = useState('')
   const [childFeedbackLoading, setChildFeedbackLoading] = useState(false)
   const [childFeedbackSaved, setChildFeedbackSaved] = useState(false)
@@ -473,6 +476,21 @@ export default function AdminPage() {
   const [childAnalysisSaved, setChildAnalysisSaved] = useState(false)
   const [rootsViewMode, setRootsViewMode] = useState('view')
   const [bodyViewMode, setBodyViewMode] = useState('view')
+  const [rootsSessionNotes, setRootsSessionNotes] = useState('')
+  const [bodySessionNotes, setBodySessionNotes] = useState('')
+  const [childSessionNotes, setChildSessionNotes] = useState('')
+  const [rootsClientDocPreview, setRootsClientDocPreview] = useState('')
+  const [bodyClientDocPreview, setBodyClientDocPreview] = useState('')
+  const [childClientDocPreview, setChildClientDocPreview] = useState('')
+  const [rootsDocLoading, setRootsDocLoading] = useState(false)
+  const [bodyDocLoading, setBodyDocLoading] = useState(false)
+  const [childDocLoading, setChildDocLoading] = useState(false)
+  const [approvingRootsDoc, setApprovingRootsDoc] = useState(false)
+  const [approvingBodyDoc, setApprovingBodyDoc] = useState(false)
+  const [approvingChildDoc, setApprovingChildDoc] = useState(false)
+  const [rootsDocSent, setRootsDocSent] = useState(false)
+  const [bodyDocSent, setBodyDocSent] = useState(false)
+  const [childDocSent, setChildDocSent] = useState(false)
   const sessionDataRef = useRef({})
 
   // ── ✅ Plate Calculator state ──
@@ -561,11 +579,14 @@ export default function AdminPage() {
     const rAn = sd.roots_analysis || lsLoad('roots_analysis', false); if (rAn) { setRootsAnalysis(rAn); setRootsEditing(true); setRootsViewMode('view') }
     const bN = sd.body_notes || lsLoad('body_notes', true); if (bN) setBodyNotes(n => ({ ...n, ...bN }))
     const bAn = sd.body_analysis || lsLoad('body_analysis', false); if (bAn) { setBodyAnalysis(bAn); setBodyEditing(true); setBodyViewMode('view') }
-    const rFbD = sd.roots_feedback_draft || lsLoad('roots_feedback_draft', false); if (rFbD) setRootsFeedback(rFbD) else if (data?.roots_feedback) setRootsFeedback(data.roots_feedback)
-    const bFbD = sd.body_feedback_draft || lsLoad('body_feedback_draft', false); if (bFbD) setBodyFeedback(bFbD) else if (data?.body_feedback) setBodyFeedback(data.body_feedback)
-    const cFbD = sd.child_feedback_draft || lsLoad('child_feedback_draft', false); if (cFbD) setChildFeedback(cFbD) else if (data?.child_feedback) setChildFeedback(data.child_feedback)
+    const rFbD = sd.roots_feedback_draft || lsLoad('roots_feedback_draft', false); if (rFbD) { setRootsFeedback(rFbD) } else if (data?.roots_feedback) { setRootsFeedback(data.roots_feedback) }
+    const bFbD = sd.body_feedback_draft || lsLoad('body_feedback_draft', false); if (bFbD) { setBodyFeedback(bFbD) } else if (data?.body_feedback) { setBodyFeedback(data.body_feedback) }
+    const cFbD = sd.child_feedback_draft || lsLoad('child_feedback_draft', false); if (cFbD) { setChildFeedback(cFbD) } else if (data?.child_feedback) { setChildFeedback(data.child_feedback) }
     const cAn = sd.child_analysis || lsLoad('child_analysis', false); if (cAn) { setChildAnalysis(cAn); setChildEditing(true) }
     const jCDD = sd.journey_client_doc_draft || lsLoad('journey_client_doc_draft', false); if (jCDD) setJourneyClientDocPreview(jCDD)
+    const rSN = sd.roots_session_notes || lsLoad('roots_session_notes', false); if (rSN) setRootsSessionNotes(rSN)
+    const bSN = sd.body_session_notes || lsLoad('body_session_notes', false); if (bSN) setBodySessionNotes(bSN)
+    const cSN = sd.child_session_notes || lsLoad('child_session_notes', false); if (cSN) setChildSessionNotes(cSN)
     const { data: nd } = await supabase.from('nutrition_data').select('*').order('id')
     setNutritionItems(nd || [])
     const { data: logsData } = await supabase.from('daily_logs').select('*').eq('client_name', client.password).order('log_date', { ascending: false }).limit(30)
@@ -1216,7 +1237,7 @@ export default function AdminPage() {
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', marginBottom: 4, paddingRight: 4 }}>⚙️ ניהול</div>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  {[{ k: 'pantry', l: '🛒 מזווה' }, { k: 'newclient', l: '➕ לקוח' }].map(t => (
+                  {[{ k: 'pantry', l: '🛒 מזווה' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'guide', l: '📚 מדריך' }].map(t => (
                     <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
                   ))}
                 </div>
@@ -2169,7 +2190,11 @@ export default function AdminPage() {
                   const prompt = 'אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להתכונן לפגישת שורשים עם לקוחה.\n\n' +
                     'הערות מהזום המקדים:\n' + notesText + '\n\n' +
                     'נתוני הלקוחה: ' + (selectedClient?.name||'') + ', גיל ' + (selectedClient?.age||'לא ידוע') + ', מטרה: ' + (selectedClient?.goal||'לא ידוע') + ', מסלול: ' + (selectedClient?.client_track === 'child' ? 'עבור ילד' : selectedClient?.client_track === 'both' ? 'שניהם' : 'עצמי') + '\n\n' +
-                    'הפק ניתוח מעמיק לאתי לקראת הפגישה הפיזית. כתוב בעברית, גוף שלישי נקבה. כלול:\n\n' +
+                    'הפק ניתוח מעמיק לאתי לקראת הפגישה הפיזית. כתוב בעברית, גוף שלישי נקבה.\n\n' +
+                    'דגשים חשובים לניתוח:\n' +
+                    '• כשמוזכרת דמות הורית שהזינה דרך אוכל — הצג זאת כאהבה שניתנה מהידע שהיה, לא כטעות. הלקוחה עשויה לרצות להגן על ההורה שלה.\n' +
+                    '• הדגש בניית זהות חדשה (אישה בוגרת ומודעת שבוחרת להזין את עצמה) — לא "לחזור" לעצמי ישנה, אלא לבנות גרסה חדשה.\n\n' +
+                    'כלול:\n\n' +
                     '**1. תמונת הבית שגדלה בו**\nמה עיצב את הקשר שלה עם אוכל ועם הגוף. ציטט ישירות מהדברים.\n\n' +
                     '**2. פצע הזהות הגופנית**\nאיך חוותה את עצמה בתוך המשפחה — שייכות / נבדלות / השוואה. מה זה עשה לדימוי העצמי.\n\n' +
                     '**3. אמונות מגבילות שזוהו**\nרשימה ממוקדת. לכל אמונה — מה היא, מאיפה היא מגיעה, ואיך היא מתבטאת היום.\n\n' +
@@ -2177,18 +2202,22 @@ export default function AdminPage() {
                     ((selectedClient?.client_track === 'child' || selectedClient?.client_track === 'both')
                       ? '**5. הגלגל הדורי — חובה לכלול**\nהלקוחה היא הורה. ציין בדיוק: מה הועבר אליה מהדור הקודם ← מה היא כרגע מעבירה לילד/ה שלה ← מה ניתן לעצור. זה לב הפגישה עבורה.\n\n'
                       : '**5. דפוסים בין-דוריים**\nכלול רק אם עלה בתשובות קשר לדינמיקות בין-דוריות. אם לא — השמט לחלוטין.\n\n') +
-                    '**6. מבנה מוצע לפגישה**\nסדר הנושאים + זמן משוער לכל נושא + על מה לשים דגש. כולל שאלת פתיחה מומלצת.\n\n' +
-                    '**7. צעדים פרקטיים לשינוי**\nלפחות 6-8 צעדים קונקרטיים שאפשר לעשות מהיום — מותאמים ספציפית לה.\n\n' +
+                    '**6. מבנה מוצע לפגישה**\nסדר הנושאים + זמן משוער לכל נושא + שאלת פתיחה מומלצת. חובה לסיים ב"טקס סגירה": שאלה אחת שמפרידה בין מה שהיא לוקחת ממה שהיא משאירה מאחור.\n\n' +
+                    '**7. צעדים פרקטיים לשינוי**\nלפחות 6-8 צעדים קונקרטיים שאפשר לעשות מהיום — מותאמים ספציפית לה. כלול לפחות שינוי סביבתי ביתי מיידי אחד.\n\n' +
                     '**8. שאלות המשך אם משהו חסר**\n2-3 שאלות שכדאי לשאול בפגישה אם הנושא לא כוסה מספיק.'
 
+                  let rootsResult = ''
+                  try {
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
-                  const data = await res.json()
-                  if (data.result) {
-                    setRootsAnalysis(data.result); setRootsEditing(true); setRootsViewMode('view')
-                    saveSessionKey('roots_notes', rootsNotes)
-                    saveSessionKey('roots_analysis', data.result)
-                    setRootsAnalysisSaved(true)
+                  if (!res.ok) throw new Error('API error')
+                  const reader = res.body.getReader(); const decoder = new TextDecoder()
+                  setRootsEditing(true); setRootsViewMode('view')
+                  while (true) {
+                    const { done, value } = await reader.read(); if (done) break
+                    rootsResult += decoder.decode(value, { stream: true }); setRootsAnalysis(rootsResult)
                   }
+                  } catch(e) { if (!rootsResult) alert('שגיאת רשת — נסי שוב') }
+                  if (rootsResult) { saveSessionKey('roots_notes', rootsNotes); saveSessionKey('roots_analysis', rootsResult); setRootsAnalysisSaved(true) }
                   setRootsLoading(false)
                 }} disabled={rootsLoading || !Object.values(rootsNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: rootsLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {rootsLoading ? '⏳ מנתח...' : '🌱 הפק ניתוח AI לפגישה'}
@@ -2219,63 +2248,98 @@ export default function AdminPage() {
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
                       <button onClick={async () => {
                         setRootsLoading(true)
-                        const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה שניתנה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + rootsAnalysis
-                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
-                        const data = await res.json()
-                        if (data.result) { setRootsAnalysis(data.result); setRootsViewMode('view'); saveSessionKey('roots_analysis', data.result) }
+                        const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + rootsAnalysis
+                        let rr = ''
+                        try {
+                          const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
+                          if (!res.ok) throw new Error('API error')
+                          const reader = res.body.getReader(); const decoder = new TextDecoder()
+                          while (true) { const { done, value } = await reader.read(); if (done) break; rr += decoder.decode(value, { stream: true }); setRootsAnalysis(rr) }
+                        } catch(e) { if (!rr) alert('שגיאת רשת — נסי שוב') }
+                        if (rr) { setRootsViewMode('view'); saveSessionKey('roots_analysis', rr) }
                         setRootsLoading(false)
-                      }} disabled={rootsLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      }} disabled={rootsLoading} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {rootsLoading ? '⏳...' : '🔄 עבדי מחדש'}
-                      </button>
-                      <button onClick={async () => {
-                        setRootsFeedbackLoading(true)
-                        const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. צרי משוב חם, מעצים ואישי ל' + (selectedClient?.name||'') + ' לאחר פגישת השורשים.\n\n' +
-                          'על בסיס הניתוח הבא:\n' + rootsAnalysis + '\n\n' +
-                          'כתבי מסמך משוב ללקוחה בעברית, גוף שני נקבה, חיובי ומלא תקווה. מבנה:\n\n' +
-                          '🌱 מה גילינו יחד\n[2-3 משפטים — תובנות מרכזיות שעלו, בשפתה]\n\n' +
-                          '💫 הכוחות שלך\n[2 משפטים — מה את כבר עושה טוב שאולי לא ראית]\n\n' +
-                          '🔓 מה משתחרר\n[1-2 משפטים — אמונה שהתחילה להשתנות]\n\n' +
-                          '🌿 3 צעדים שמתחילים מהיום\n[3 צעדים קטנים וספציפיים — כתובים בחום ובאמונה בה]\n\n' +
-                          '💚 מילה אחרונה\n[משפט אחד — חם, אישי, מעצים]\n\n' +
-                          'ללא מבוא. ללא כותרת ראשית. ישר לתוכן.'
-                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient.name }) })
-                        const data = await res.json()
-                        if (data.result) { setRootsFeedback(data.result); saveSessionKey('roots_feedback_draft', data.result) }
-                        setRootsFeedbackLoading(false)
-                      }} disabled={rootsFeedbackLoading} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {rootsFeedbackLoading ? '⏳ מפיק...' : '📝 הפקי טיוטת משוב ללקוחה'}
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* משוב ללקוחה */}
-                {rootsFeedback && (
+                {/* מה גילינו במפגש — שורשים */}
+                <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #c4956a', overflow: 'hidden', marginBottom: 16 }}>
+                  <div style={{ background: 'linear-gradient(135deg,#c4956a,#e8c9a0)', padding: '14px 18px', color: '#fff' }}>
+                    <div style={{ fontWeight: 800, fontSize: 14 }}>📝 מה גילינו במפגש</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>מלאי אחרי הפגישה הפיזית → הפיקי סיכום ללקוחה</div>
+                  </div>
+                  <div style={{ padding: 16 }}>
+                    <textarea
+                      value={rootsSessionNotes}
+                      onChange={e => setRootsSessionNotes(e.target.value)}
+                      onBlur={() => saveSessionKey('roots_session_notes', rootsSessionNotes)}
+                      placeholder="מה עלה בפגישה? אמונות שנגעתם, רגעים ספציפיים, מה הלקוחה גילתה..."
+                      rows={5}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                    />
+                  </div>
+                  <div style={{ padding: '0 16px 16px' }}>
+                    <button onClick={async () => {
+                      setRootsDocLoading(true); setRootsClientDocPreview('')
+                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. כתבי מסמך שיקוף אישי ל-' + (selectedClient?.name||'') + ' לאחר פגישת השורשים.\n\n' +
+                        (rootsAnalysis ? 'ניתוח שהכנת לפגישה:\n' + rootsAnalysis.substring(0,2000) + '\n\n' : '') +
+                        (rootsSessionNotes.trim() ? 'מה עלה בפגישה:\n' + rootsSessionNotes + '\n\n' : '') +
+                        'כתבי בעברית, גוף שני נקבה, חמה ואישית. מבנה קבוע — ללא הקדמה, ישר לתוכן:\n\n' +
+                        '---\n\n' +
+                        '🏠 **מה עלה מהבית שגדלת בו**\n[2-3 משפטים ספציפיים על מה שעלה]\n\n' +
+                        '---\n\n' +
+                        '🔄 **מה מועבר הלאה**\n[תארי את הדפוס הדורי הספציפי שזוהה]\n\n' +
+                        '---\n\n' +
+                        '💡 **האסימון שנפל**\n[רגע ספציפי שהתחבר, בשפתה]\n\n' +
+                        '---\n\n' +
+                        '🌱 **מה את לוקחת**\n[2-3 דברים קונקרטיים שלוקחת מהפגישה]\n\n' +
+                        '---\n\n' +
+                        '🚀 **קדימה במסע**\n[מה להמשיך לשים לב אליו]\n\n' +
+                        '---\n\n' +
+                        'ללא מבוא. ללא סיכום. ללא הסברים בסוגריים. רק התוכן עצמו — חם, ממוקד, שלה.'
+                      let result = ''
+                      try {
+                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                        if (!res.ok) throw new Error('API error')
+                        const reader = res.body.getReader(); const decoder = new TextDecoder()
+                        while (true) { const { done, value } = await reader.read(); if (done) break; result += decoder.decode(value, { stream: true }); setRootsClientDocPreview(result) }
+                      } catch(e) { if (!result) alert('שגיאת רשת — נסי שוב') }
+                      if (result) saveSessionKey('roots_session_notes', rootsSessionNotes)
+                      setRootsDocLoading(false)
+                    }} disabled={rootsDocLoading} style={{ width: '100%', padding: 13, borderRadius: 12, background: rootsDocLoading ? '#9ca3af' : '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+                      {rootsDocLoading ? '⏳ מפיקה...' : '← הפיקי סיכום ללקוחה'}
+                    </button>
+                  </div>
+                </div>
+
+                {rootsClientDocPreview && (
                   <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #c4956a', overflow: 'hidden', marginBottom: 16 }}>
                     <div style={{ background: 'linear-gradient(135deg,#c4956a,#e8c9a0)', padding: '14px 18px', color: '#fff' }}>
-                      <div style={{ fontWeight: 800, fontSize: 14 }}>💚 משוב ללקוחה — אחרי הפגישה</div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>הוסיפי מה שעלה בפגישה → שמרי → שלחי</div>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>✏️ תצוגה מקדימה — ערכי לפני שליחה</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>ערכי את הטקסט ← אשרי ושלחי</div>
                     </div>
                     <div style={{ padding: 16 }}>
-                      <textarea value={rootsFeedback} onChange={e => setRootsFeedback(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      <textarea value={rootsClientDocPreview} onChange={e => setRootsClientDocPreview(e.target.value)} rows={18} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }} />
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
-                      <button onClick={() => {
-                        saveSessionKey('roots_feedback_draft', rootsFeedback)
-                        setRootsFeedbackSaved(true); setTimeout(() => setRootsFeedbackSaved(false), 3000)
-                      }} style={{ flex: 1, padding: 12, borderRadius: 10, background: rootsFeedbackSaved ? '#16a34a' : '#f8f4ef', color: rootsFeedbackSaved ? '#fff' : '#0f4c2a', border: '1.5px solid #c4956a', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {rootsFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
-                      </button>
                       <button onClick={async () => {
                         if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
-                        setSendingRootsFeedback(true)
-                        await supabase.from('client_profiles').update({ roots_feedback: rootsFeedback, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        setApprovingRootsDoc(true)
+                        await supabase.from('client_profiles').update({ roots_feedback: rootsClientDocPreview, roots_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        saveSessionKey('roots_session_notes', rootsSessionNotes)
                         const phone = selectedClient.phone.replace(/^0/, '972')
-                        const msg = 'היי ' + selectedClient.name + '! 🌱\n\nהמשוב האישי שלך מפגישת השורשים מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+                        const msg = 'היי ' + selectedClient.name + '! 🌱\n\nהסיכום האישי שלך מפגישת השורשים מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
                         window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                        setSendingRootsFeedback(false); setRootsFeedbackSent(true); setTimeout(() => setRootsFeedbackSent(false), 4000)
-                      }} disabled={sendingRootsFeedback} style={{ flex: 2, padding: 12, borderRadius: 10, background: rootsFeedbackSent ? '#16a34a' : '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {sendingRootsFeedback ? '⏳...' : rootsFeedbackSent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
+                        setApprovingRootsDoc(false); setRootsDocSent(true); setRootsClientDocPreview('')
+                        setTimeout(() => setRootsDocSent(false), 4000)
+                      }} disabled={approvingRootsDoc} style={{ flex: 2, padding: 12, borderRadius: 10, background: rootsDocSent ? '#16a34a' : '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {approvingRootsDoc ? '⏳...' : rootsDocSent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
+                      </button>
+                      <button onClick={() => setRootsClientDocPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        ✕ בטלי
                       </button>
                     </div>
                   </div>
@@ -2381,14 +2445,18 @@ export default function AdminPage() {
                     '**שאלות שכדאי לשאול בפגישה**\n' +
                     '2-3 שאלות אם נושא לא כוסה מספיק בזום.'
 
+                  let bodyResult = ''
+                  try {
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
-                  const data = await res.json()
-                  if (data.result) {
-                    setBodyAnalysis(data.result); setBodyEditing(true); setBodyViewMode('view')
-                    saveSessionKey('body_notes', bodyNotes)
-                    saveSessionKey('body_analysis', data.result)
-                    setBodyAnalysisSaved(true)
+                  if (!res.ok) throw new Error('API error')
+                  const reader = res.body.getReader(); const decoder = new TextDecoder()
+                  setBodyEditing(true); setBodyViewMode('view')
+                  while (true) {
+                    const { done, value } = await reader.read(); if (done) break
+                    bodyResult += decoder.decode(value, { stream: true }); setBodyAnalysis(bodyResult)
                   }
+                  } catch(e) { if (!bodyResult) alert('שגיאת רשת — נסי שוב') }
+                  if (bodyResult) { saveSessionKey('body_notes', bodyNotes); saveSessionKey('body_analysis', bodyResult); setBodyAnalysisSaved(true) }
                   setBodyLoading(false)
                 }} disabled={bodyLoading || !Object.values(bodyNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: bodyLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {bodyLoading ? '⏳ מנתח...' : '🩺 הפק ניתוח AI לפגישה'}
@@ -2419,61 +2487,97 @@ export default function AdminPage() {
                       <button onClick={async () => {
                         setBodyLoading(true)
                         const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + bodyAnalysis
-                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
-                        const data = await res.json()
-                        if (data.result) { setBodyAnalysis(data.result); setBodyViewMode('view'); saveSessionKey('body_analysis', data.result) }
+                        let br = ''
+                        try {
+                          const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                          if (!res.ok) throw new Error('API error')
+                          const reader = res.body.getReader(); const decoder = new TextDecoder()
+                          while (true) { const { done, value } = await reader.read(); if (done) break; br += decoder.decode(value, { stream: true }); setBodyAnalysis(br) }
+                        } catch(e) { if (!br) alert('שגיאת רשת — נסי שוב') }
+                        if (br) { setBodyViewMode('view'); saveSessionKey('body_analysis', br) }
                         setBodyLoading(false)
-                      }} disabled={bodyLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      }} disabled={bodyLoading} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {bodyLoading ? '⏳...' : '🔄 עבדי מחדש'}
-                      </button>
-                      <button onClick={async () => {
-                        setBodyFeedbackLoading(true)
-                        const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. צרי משוב חם, מעצים ואישי ל' + (selectedClient?.name||'') + ' לאחר פגישת הגוף מדבר.\n\n' +
-                          'על בסיס הניתוח:\n' + bodyAnalysis + '\n\n' +
-                          'כתבי מסמך משוב בעברית, גוף שני נקבה, חיובי ומעצים. מבנה:\n\n' +
-                          '🩺 מה הגוף שלך אמר לנו היום\n[2-3 משפטים — תובנות מרכזיות בשפתה, לא ז\u05e8גון רפואי]\n\n' +
-                          '✨ מה גילינו יחד\n[דפוסים ספציפיים שזוהו — מחוברים לה, לא כלליים]\n\n' +
-                          '💪 הכוחות שכבר יש לך\n[2 משפטים — מה היא כבר עושה טוב]\n\n' +
-                          '🌿 3 דברים שמתחילים מחר\n[קונקרטיים, ריאליסטיים, בחום]\n\n' +
-                          '💚 מילה אחרונה\n[משפט אחד — אישי, מעצים, בשפתה]\n\n' +
-                          'ללא מבוא. ללא כותרת ראשית. ישר לתוכן. שפה של אדם — לא של רופא.'
-                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
-                        const data = await res.json()
-                        if (data.result) { setBodyFeedback(data.result); saveSessionKey('body_feedback_draft', data.result) }
-                        setBodyFeedbackLoading(false)
-                      }} disabled={bodyFeedbackLoading} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {bodyFeedbackLoading ? '⏳ מפיק...' : '📝 הפקי טיוטת משוב ללקוחה'}
                       </button>
                     </div>
                   </div>
                 )}
 
-                {bodyFeedback && (
+                {/* מה גילינו במפגש — גוף מדבר */}
+                <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #0d9488', overflow: 'hidden', marginBottom: 16 }}>
+                  <div style={{ background: 'linear-gradient(135deg,#0d9488,#14b8a6)', padding: '14px 18px', color: '#fff' }}>
+                    <div style={{ fontWeight: 800, fontSize: 14 }}>📝 מה גילינו במפגש</div>
+                    <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>מלאי אחרי הפגישה הפיזית → הפיקי סיכום ללקוחה</div>
+                  </div>
+                  <div style={{ padding: 16 }}>
+                    <textarea
+                      value={bodySessionNotes}
+                      onChange={e => setBodySessionNotes(e.target.value)}
+                      onBlur={() => saveSessionKey('body_session_notes', bodySessionNotes)}
+                      placeholder="מה עלה בפגישה? סימפטומים שזוהו, מנגנונים שהסתברו, מה הלקוחה חיברה..."
+                      rows={5}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                    />
+                  </div>
+                  <div style={{ padding: '0 16px 16px' }}>
+                    <button onClick={async () => {
+                      setBodyDocLoading(true); setBodyClientDocPreview('')
+                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. כתבי מסמך שיקוף אישי ל-' + (selectedClient?.name||'') + ' לאחר פגישת הגוף מדבר.\n\n' +
+                        (bodyAnalysis ? 'ניתוח שהכנת לפגישה:\n' + bodyAnalysis.substring(0,2000) + '\n\n' : '') +
+                        (bodySessionNotes.trim() ? 'מה עלה בפגישה:\n' + bodySessionNotes + '\n\n' : '') +
+                        'כתבי בעברית, גוף שני נקבה, חמה ואישית. מבנה קבוע — ללא הקדמה, ישר לתוכן:\n\n' +
+                        '---\n\n' +
+                        '🩺 **מה הגוף שלך אמר**\n[ההודעה הספציפית שזוהתה, בשפתה]\n\n' +
+                        '---\n\n' +
+                        '💔 **הקשר שגילינו**\n[רגש ← גוף — הקישור הספציפי]\n\n' +
+                        '---\n\n' +
+                        '🔬 **מנגנון שמעכשיו מובן**\n[משהו שהסתבר לה: סוכר / קורטיזול / שינה...]\n\n' +
+                        '---\n\n' +
+                        '🌿 **מה את לוקחת**\n[2-3 דברים קונקרטיים שלוקחת מהפגישה]\n\n' +
+                        '---\n\n' +
+                        '🚀 **קדימה במסע**\n[מה לשים לב אליו, מה לצפות]\n\n' +
+                        '---\n\n' +
+                        'ללא מבוא. ללא סיכום. ללא הסברים בסוגריים. רק התוכן עצמו — חם, ממוקד, שלה.'
+                      let result = ''
+                      try {
+                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                        if (!res.ok) throw new Error('API error')
+                        const reader = res.body.getReader(); const decoder = new TextDecoder()
+                        while (true) { const { done, value } = await reader.read(); if (done) break; result += decoder.decode(value, { stream: true }); setBodyClientDocPreview(result) }
+                      } catch(e) { if (!result) alert('שגיאת רשת — נסי שוב') }
+                      if (result) saveSessionKey('body_session_notes', bodySessionNotes)
+                      setBodyDocLoading(false)
+                    }} disabled={bodyDocLoading} style={{ width: '100%', padding: 13, borderRadius: 12, background: bodyDocLoading ? '#9ca3af' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+                      {bodyDocLoading ? '⏳ מפיקה...' : '← הפיקי סיכום ללקוחה'}
+                    </button>
+                  </div>
+                </div>
+
+                {bodyClientDocPreview && (
                   <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #0d9488', overflow: 'hidden', marginBottom: 16 }}>
                     <div style={{ background: 'linear-gradient(135deg,#0d9488,#14b8a6)', padding: '14px 18px', color: '#fff' }}>
-                      <div style={{ fontWeight: 800, fontSize: 14 }}>💚 משוב ללקוחה — אחרי הפגישה</div>
-                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>הוסיפי מה שעלה בפגישה → שמרי → שלחי</div>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>✏️ תצוגה מקדימה — ערכי לפני שליחה</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>ערכי את הטקסט ← אשרי ושלחי</div>
                     </div>
                     <div style={{ padding: 16 }}>
-                      <textarea value={bodyFeedback} onChange={e => setBodyFeedback(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      <textarea value={bodyClientDocPreview} onChange={e => setBodyClientDocPreview(e.target.value)} rows={18} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }} />
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
-                      <button onClick={() => {
-                        saveSessionKey('body_feedback_draft', bodyFeedback)
-                        setBodyFeedbackSaved(true); setTimeout(() => setBodyFeedbackSaved(false), 3000)
-                      }} style={{ flex: 1, padding: 12, borderRadius: 10, background: bodyFeedbackSaved ? '#16a34a' : '#f0fdfa', color: bodyFeedbackSaved ? '#fff' : '#0d9488', border: '1.5px solid #0d9488', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {bodyFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
-                      </button>
                       <button onClick={async () => {
                         if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
-                        setSendingBodyFeedback(true)
-                        await supabase.from('client_profiles').update({ body_feedback: bodyFeedback, body_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        setApprovingBodyDoc(true)
+                        await supabase.from('client_profiles').update({ body_feedback: bodyClientDocPreview, body_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        saveSessionKey('body_session_notes', bodySessionNotes)
                         const phone = selectedClient.phone.replace(/^0/, '972')
-                        const msg = 'היי ' + selectedClient.name + '! 🩺\n\nהמשוב האישי שלך מפגישת הגוף מדבר מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+                        const msg = 'היי ' + selectedClient.name + '! 🩺\n\nהסיכום האישי שלך מפגישת הגוף מדבר מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
                         window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                        setSendingBodyFeedback(false); setBodyFeedbackSent(true); setTimeout(() => setBodyFeedbackSent(false), 4000)
-                      }} disabled={sendingBodyFeedback} style={{ flex: 2, padding: 12, borderRadius: 10, background: bodyFeedbackSent ? '#16a34a' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {sendingBodyFeedback ? '⏳...' : bodyFeedbackSent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
+                        setApprovingBodyDoc(false); setBodyDocSent(true); setBodyClientDocPreview('')
+                        setTimeout(() => setBodyDocSent(false), 4000)
+                      }} disabled={approvingBodyDoc} style={{ flex: 2, padding: 12, borderRadius: 10, background: bodyDocSent ? '#16a34a' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {approvingBodyDoc ? '⏳...' : bodyDocSent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
+                      </button>
+                      <button onClick={() => setBodyClientDocPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        ✕ בטלי
                       </button>
                     </div>
                   </div>
@@ -2523,6 +2627,10 @@ export default function AdminPage() {
                     'שם ההורה: ' + (selectedClient?.name||'') + '\n\n' +
                     'הערות מהזום המקדים:\n' + notesText + '\n\n' +
                     'הפק ניתוח מעמיק ומערך מפגש לאתי. כתוב בעברית, מקצועי וישיר.\n\n' +
+                    'דגשים חשובים:\n' +
+                    '• אם מוזכר בן/בת זוג כמודל שלילי לילד — הצע לא לתקן אותו, אלא כלים לשיח שיתופי: ניסוח שמזמין שינוי משותף ("אנחנו רוצים לייצר אווירה שונה בבית"), לא שיח מאשים.\n' +
+                    '• זהה את ה-Value המרכזי של הילד — מה הוא מחפש דרך האוכל (שייכות / גירוי / ביטחון / ערך עצמי) — ותציע ערוצים חלופיים שיתנו לו את אותו צורך.\n\n' +
+                    'כלול:\n\n' +
                     '**1. תמונת הילד — מי הוא**\n' +
                     'סיכום מי הילד, מה מאפיין אותו, מה הכוחות שלו. ציטט ישירות מהדברים.\n\n' +
                     '**2. הדפוסים שזוהו**\n' +
@@ -2535,13 +2643,22 @@ export default function AdminPage() {
                     '**5. מבנה מוצע למפגש הפיזי**\n' +
                     'סדר נושאים + זמן משוער + שאלת פתיחה + רגעי חיבור אישי.\n\n' +
                     '**6. צעדים פרקטיים לשינוי ביתי**\n' +
-                    'לפחות 6-8 צעדים קונקרטיים שההורה יכול להתחיל מחר — מותאמים ספציפית למשפחה.\n\n' +
+                    'לפחות 6-8 צעדים קונקרטיים. חובה לכלול: (א) שינוי סביבתי מיידי אחד שניתן לבצע השבוע (ארגון המגירה/מדף, הזזת חטיפים, הפרדת מסך מאכילה), (ב) ניסוח לשיחה שמזמינה את בן/בת הזוג כשותף לשינוי.\n\n' +
                     '**7. שאלות המשך לפגישה**\n' +
                     '2-3 שאלות אם נושא לא כוסה מספיק.'
 
+                  let childResult = ''
+                  try {
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
-                  const data = await res.json()
-                  if (data.result) { setChildAnalysis(data.result); setChildEditing(true); saveSessionKey('child_analysis', data.result); setChildAnalysisSaved(true) }
+                  if (!res.ok) throw new Error('API error')
+                  const reader = res.body.getReader(); const decoder = new TextDecoder()
+                  setChildEditing(true); setChildViewMode('view')
+                  while (true) {
+                    const { done, value } = await reader.read(); if (done) break
+                    childResult += decoder.decode(value, { stream: true }); setChildAnalysis(childResult)
+                  }
+                  } catch(e) { if (!childResult) alert('שגיאת רשת — נסי שוב') }
+                  if (childResult) { saveSessionKey('child_analysis', childResult); setChildAnalysisSaved(true) }
                   setChildLoading(false)
                 }} disabled={childLoading || !Object.values(childNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: childLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#a855f7)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {childLoading ? '⏳ מנתח...' : '👨‍👩‍👧 הפק מערך מפגש AI'}
@@ -2555,72 +2672,114 @@ export default function AdminPage() {
                     <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div>
                         <div style={{ fontWeight: 800, fontSize: 14 }}>📋 מערך מפגש — לעיניך בלבד</div>
-                        <div style={{ fontSize: 11, color: '#e9d5ff' }}>ערכי והוסיפי — ואז עבדי מחדש או הפיקי מסמך להורה</div>
+                        <div style={{ fontSize: 11, color: '#e9d5ff' }}>{childViewMode === 'view' ? 'לחצי ✏️ לעריכה' : 'ערכי → onBlur שומר אוטומטית'}</div>
                       </div>
-                      <button onClick={() => { setChildEditing(false); setChildAnalysis('') }} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => setChildViewMode(m => m === 'view' ? 'edit' : 'view')} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{childViewMode === 'view' ? '✏️ ערכי' : '👁️ צפי'}</button>
+                        <button onClick={() => { setChildEditing(false); setChildAnalysis(''); saveSessionKey('child_analysis', '') }} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕</button>
+                      </div>
                     </div>
                     <div style={{ padding: 16 }}>
-                      <textarea value={childAnalysis} onChange={e => setChildAnalysis(e.target.value)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      {childViewMode === 'view'
+                        ? <div style={{ fontSize: 13, color: '#1a1a1a', lineHeight: 1.8, textAlign: 'right', direction: 'rtl' }} dangerouslySetInnerHTML={renderMd(childAnalysis)} />
+                        : <textarea value={childAnalysis} onChange={e => setChildAnalysis(e.target.value)} onBlur={() => saveSessionKey('child_analysis', childAnalysis)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      }
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
                       <button onClick={async () => {
                         setChildLoading(true)
                         const prompt = 'עדכני את הניתוח הבא לפי הגרסה הערוכה. שמרי על אותו מבנה אבל שלבי את התוספות בצורה טבעית:\n\n' + childAnalysis
-                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
-                        const data = await res.json()
-                        if (data.result) setChildAnalysis(data.result)
+                        let cr = ''
+                        try {
+                          const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                          if (!res.ok) throw new Error('API error')
+                          const reader = res.body.getReader(); const decoder = new TextDecoder()
+                          while (true) { const { done, value } = await reader.read(); if (done) break; cr += decoder.decode(value, { stream: true }); setChildAnalysis(cr) }
+                        } catch(e) { if (!cr) alert('שגיאת רשת — נסי שוב') }
+                        if (cr) { setChildViewMode('view'); saveSessionKey('child_analysis', cr) }
                         setChildLoading(false)
-                      }} disabled={childLoading} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#faf5ff', color: '#7c3aed', border: '1.5px solid #e9d5ff', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      }} disabled={childLoading} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {childLoading ? '⏳...' : '🔄 עבדי מחדש'}
-                      </button>
-                      <button onClick={async () => {
-                        setChildFeedbackLoading(true)
-                        const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. צרי מסמך סיכום חם ומעשי להורה ' + (selectedClient?.name||'') + ' לאחר פגישת הורה-ילד.\n\n' +
-                          'על בסיס הניתוח:\n' + childAnalysis + '\n\n' +
-                          'כתבי מסמך בעברית, גוף שני, חיובי ומעצים. מבנה:\n\n' +
-                          '🌟 מה ראינו יחד\n[2-3 משפטים — תובנות על הילד, בשפה חיובית]\n\n' +
-                          '💚 הכוחות של הילד שלך\n[2 משפטים — מה חיובי שראינו]\n\n' +
-                          '🏠 מה משתנה בבית — מהיום\n[4-5 צעדים יומיומיים קונקרטיים וריאליסטיים]\n\n' +
-                          '🌿 מה לשים לב אליו בשבוע הקרוב\n[2-3 נקודות תצפית — לא שיפוט]\n\n' +
-                          '💬 משפט לסיום\n[חם, מעצים, מחזק את ההורה]\n\n' +
-                          'ללא מבוא. ללא כותרת ראשית. שפה של אדם — לא של מטפל.'
-                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
-                        const data = await res.json()
-                        if (data.result) { setChildFeedback(data.result); saveSessionKey('child_feedback_draft', data.result) }
-                        setChildFeedbackLoading(false)
-                      }} disabled={childFeedbackLoading} style={{ flex: 2, padding: 12, borderRadius: 10, background: '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {childFeedbackLoading ? '⏳ מפיק...' : '📝 הפיקי מסמך להורה'}
                       </button>
                     </div>
                   </div>
                 )}
 
-                {childFeedback && (
+                {/* מה גילינו במפגש — הורה-ילד */}
+                <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
+                  <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff' }}>
+                    <div style={{ fontWeight: 800, fontSize: 14 }}>📝 מה גילינו במפגש</div>
+                    <div style={{ fontSize: 11, color: '#e9d5ff' }}>מלאי אחרי הפגישה הפיזית → הפיקי סיכום להורה</div>
+                  </div>
+                  <div style={{ padding: 16 }}>
+                    <textarea
+                      value={childSessionNotes}
+                      onChange={e => setChildSessionNotes(e.target.value)}
+                      onBlur={() => saveSessionKey('child_session_notes', childSessionNotes)}
+                      placeholder="מה עלה בפגישה? תובנות על הילד, דינמיקה שזוהתה, מה ההורה גילה על עצמו..."
+                      rows={5}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                    />
+                  </div>
+                  <div style={{ padding: '0 16px 16px' }}>
+                    <button onClick={async () => {
+                      setChildDocLoading(true); setChildClientDocPreview('')
+                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. כתבי מסמך שיקוף אישי ל-' + (selectedClient?.name||'') + ' לאחר פגישת הורה-ילד.\n\n' +
+                        (childAnalysis ? 'ניתוח שהכנת לפגישה:\n' + childAnalysis.substring(0,2000) + '\n\n' : '') +
+                        (childSessionNotes.trim() ? 'מה עלה בפגישה:\n' + childSessionNotes + '\n\n' : '') +
+                        'כתבי בעברית, גוף שני נקבה, חמה ואישית. מבנה קבוע — ללא הקדמה, ישר לתוכן:\n\n' +
+                        '---\n\n' +
+                        '🌟 **מה ראינו על הילד שלך**\n[תובנה ספציפית על הילד — כוח / דפוס]\n\n' +
+                        '---\n\n' +
+                        '🏠 **הדינמיקה שזוהתה**\n[מה בבית תורם לדפוס]\n\n' +
+                        '---\n\n' +
+                        '👁️ **מה את יכולה לשנות**\n[מה ההורה עצמה עושה שונה — לא האשמה]\n\n' +
+                        '---\n\n' +
+                        '🌿 **פרקטיקה ביתית**\n[3-4 שינויים קונקרטיים שאפשר להתחיל עכשיו]\n\n' +
+                        '---\n\n' +
+                        '🚀 **לשבוע הקרוב**\n[מה לשים לב אליו, מה לצפות]\n\n' +
+                        '---\n\n' +
+                        'ללא מבוא. ללא סיכום. ללא הסברים בסוגריים. רק התוכן עצמו — חם, ממוקד, שלה.'
+                      let result = ''
+                      try {
+                        const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
+                        if (!res.ok) throw new Error('API error')
+                        const reader = res.body.getReader(); const decoder = new TextDecoder()
+                        while (true) { const { done, value } = await reader.read(); if (done) break; result += decoder.decode(value, { stream: true }); setChildClientDocPreview(result) }
+                      } catch(e) { if (!result) alert('שגיאת רשת — נסי שוב') }
+                      if (result) saveSessionKey('child_session_notes', childSessionNotes)
+                      setChildDocLoading(false)
+                    }} disabled={childDocLoading} style={{ width: '100%', padding: 13, borderRadius: 12, background: childDocLoading ? '#9ca3af' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+                      {childDocLoading ? '⏳ מפיקה...' : '← הפיקי סיכום להורה'}
+                    </button>
+                  </div>
+                </div>
+
+                {childClientDocPreview && (
                   <div style={{ background: '#fff', borderRadius: 18, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
                     <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff' }}>
-                      <div style={{ fontWeight: 800, fontSize: 14 }}>💚 מסמך סיכום להורה — אחרי הפגישה</div>
-                      <div style={{ fontSize: 11, color: '#e9d5ff' }}>הוסיפי מה שעלה בפגישה → שמרי → שלחי</div>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>✏️ תצוגה מקדימה — ערכי לפני שליחה</div>
+                      <div style={{ fontSize: 11, color: '#e9d5ff' }}>ערכי את הטקסט ← אשרי ושלחי</div>
                     </div>
                     <div style={{ padding: 16 }}>
-                      <textarea value={childFeedback} onChange={e => setChildFeedback(e.target.value)} rows={14} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      <textarea value={childClientDocPreview} onChange={e => setChildClientDocPreview(e.target.value)} rows={18} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }} />
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
-                      <button onClick={() => {
-                        saveSessionKey('child_feedback_draft', childFeedback)
-                        setChildFeedbackSaved(true); setTimeout(() => setChildFeedbackSaved(false), 3000)
-                      }} style={{ flex: 1, padding: 12, borderRadius: 10, background: childFeedbackSaved ? '#16a34a' : '#faf5ff', color: childFeedbackSaved ? '#fff' : '#7c3aed', border: '1.5px solid #7c3aed', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {childFeedbackSaved ? '✅ נשמר!' : '💾 שמרי'}
-                      </button>
                       <button onClick={async () => {
                         if (!selectedClient.phone) return alert('אין מספר טלפון ללקוחה')
-                        setSendingChildFeedback(true)
-                        await supabase.from('client_profiles').update({ child_feedback: childFeedback, child_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        setApprovingChildDoc(true)
+                        await supabase.from('client_profiles').update({ child_feedback: childClientDocPreview, child_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
+                        saveSessionKey('child_session_notes', childSessionNotes)
                         const phone = selectedClient.phone.replace(/^0/, '972')
-                        const msg = 'היי ' + selectedClient.name + '! 👨‍👩‍👧\n\nמסמך הסיכום מהפגישה שלנו מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
+                        const msg = 'היי ' + selectedClient.name + '! \u{1F46A}\n\nהסיכום מהפגישה שלנו מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
                         window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                        setSendingChildFeedback(false); setChildFeedbackSent(true); setTimeout(() => setChildFeedbackSent(false), 4000)
-                      }} disabled={sendingChildFeedback} style={{ flex: 2, padding: 12, borderRadius: 10, background: childFeedbackSent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {sendingChildFeedback ? '⏳...' : childFeedbackSent ? '✅ נשלח!' : '📱 שמרי ושלחי בוואטסאפ'}
+                        setApprovingChildDoc(false); setChildDocSent(true); setChildClientDocPreview('')
+                        setTimeout(() => setChildDocSent(false), 4000)
+                      }} disabled={approvingChildDoc} style={{ flex: 2, padding: 12, borderRadius: 10, background: childDocSent ? '#16a34a' : '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        {approvingChildDoc ? '⏳...' : childDocSent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
+                      </button>
+                      <button onClick={() => setChildClientDocPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        ✕ בטלי
                       </button>
                     </div>
                   </div>

@@ -391,8 +391,9 @@ function calcTargets(weight, height, age, gender, activity, goal) {
   var bmr = calcBMR(weight, height, age, gender)
   if (!bmr) return null
   var tdee = bmr * (ACTIVITY_MULT[activity] || 1.55)
-  var adjust = goal === 'ירידה במשקל' ? -400 : goal === 'חיטוב' ? -200 : goal === 'עלייה במסה' ? 300 : 0
-  var calories = Math.round(tdee + adjust)
+  var lossDeficit = weight > 80 ? -825 : weight >= 70 ? -660 : -550
+  var adjust = goal === 'ירידה במשקל' ? lossDeficit : goal === 'חיטוב' ? -330 : goal === 'עלייה במסה' ? 300 : 0
+  var calories = Math.max(1200, Math.round(tdee + adjust))
   var split = GOALS_SPLIT[goal] || GOALS_SPLIT['ירידה במשקל']
   return {
     calories,
@@ -748,6 +749,8 @@ export default function PlanApp({ clientName, userPassword }) {
   const [showRootsFeedback, setShowRootsFeedback] = useState(false)
   const [bodyFeedback, setBodyFeedback] = useState(null)
   const [showBodyFeedback, setShowBodyFeedback] = useState(false)
+  const [childFeedback, setChildFeedback] = useState(null)
+  const [showChildFeedback, setShowChildFeedback] = useState(false)
   const [reportApproved, setReportApproved] = useState(false)
   const [activeTab, setActiveTab] = useState('diary')
   const [showDocsMenu, setShowDocsMenu] = useState(false)
@@ -801,7 +804,7 @@ export default function PlanApp({ clientName, userPassword }) {
         var d = client.data
         setClientData(d)
         // ✅ טוען אחוזי הצלחת מ-client_profiles
-        const profileRes = await supabase.from('client_profiles').select('welcome_doc_json, ai_report, roots_feedback, body_feedback').eq('client_password', dbKey).maybeSingle()
+        const profileRes = await supabase.from('client_profiles').select('welcome_doc_json, ai_report, roots_feedback, body_feedback, child_feedback').eq('client_password', dbKey).maybeSingle()
         if (profileRes.data?.welcome_doc_json?.plate) {
           setClientPlate(profileRes.data.welcome_doc_json.plate)
         }
@@ -813,6 +816,9 @@ export default function PlanApp({ clientName, userPassword }) {
         }
         if (profileRes.data?.body_feedback) {
           setBodyFeedback(profileRes.data.body_feedback)
+        }
+        if (profileRes.data?.child_feedback) {
+          setChildFeedback(profileRes.data.child_feedback)
         }
         if (d.weight) { setUserWeight(String(d.weight)); setProfileDone(true) }
         if (d.height) setUserHeight(String(d.height))
@@ -1334,6 +1340,52 @@ export default function PlanApp({ clientName, userPassword }) {
           </div>
         </div>
       )}
+      {showChildFeedback && childFeedback && (
+        <div style={{ position: 'fixed', inset: 0, background: '#faf5ff', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
+          <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
+            <button onClick={() => setShowChildFeedback(false)} style={{ padding: '10px 18px', borderRadius: 12, background: '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>✕ סגרי</button>
+          </div>
+          <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
+            <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ fontSize: 36 }}>👨‍👩‍👧</div>
+                <div>
+                  <div style={{ fontWeight: 900, fontSize: 15 }}>המשוב האישי שלך — הורה-ילד</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>{displayName.split(' ')[0]} · מאתי אטל</div>
+                </div>
+              </div>
+            </div>
+            {(() => {
+              const SECTION_COLORS = [
+                { bg: '#faf5ff', border: '#7c3aed', title: '#6d28d9' },
+                { bg: '#f5f3ff', border: '#8b5cf6', title: '#7c3aed' },
+                { bg: '#ede9fe', border: '#a78bfa', title: '#6d28d9' },
+                { bg: '#f0f9ff', border: '#0ea5e9', title: '#0369a1' },
+                { bg: '#f0fdf4', border: '#16a34a', title: '#15803d' },
+              ]
+              return childFeedback.split(/\n\s*---\s*\n/).map((section, i) => {
+                const trimmed = section.trim()
+                if (!trimmed) return null
+                const lines = trimmed.split('\n')
+                const firstLine = lines[0].trim()
+                const hasTitle = firstLine.includes('**')
+                const title = hasTitle ? firstLine.replace(/\*\*/g, '').trim() : ''
+                const body = hasTitle ? lines.slice(1).join('\n').trim() : trimmed
+                const c = SECTION_COLORS[i % SECTION_COLORS.length]
+                if (!body && !title) return null
+                return (
+                  <div key={i} style={{ background: c.bg, borderRadius: 16, padding: '14px 16px', marginBottom: 12, border: `1.5px solid ${c.border}`, boxShadow: `0 2px 8px rgba(124,58,237,0.12)` }}>
+                    {title && <div style={{ fontWeight: 900, fontSize: 15, color: c.title, marginBottom: 10, borderBottom: `2px solid ${c.border}60`, paddingBottom: 8 }}>{title}</div>}
+                    <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, textAlign: 'right' }}
+                      dangerouslySetInnerHTML={{ __html: body.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }}
+                    />
+                  </div>
+                )
+              }).filter(Boolean)
+            })()}
+          </div>
+        </div>
+      )}
       {showBodyFeedback && bodyFeedback && (
         <div style={{ position: 'fixed', inset: 0, background: '#f0fdfa', zIndex: 200, overflowY: 'auto', direction: 'rtl' }}>
           <div style={{ position: 'fixed', top: 12, right: 12, zIndex: 201 }}>
@@ -1349,11 +1401,37 @@ export default function PlanApp({ clientName, userPassword }) {
                 </div>
               </div>
             </div>
-            {bodyFeedback.split('\n\n').filter(Boolean).map((section, i) => (
-              <div key={i} style={{ background: '#fff', borderRadius: 16, padding: '18px 20px', marginBottom: 14, borderRight: '4px solid #0d9488', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
-                <div style={{ fontSize: 14, color: '#2a2420', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{section}</div>
-              </div>
-            ))}
+            {(() => {
+              const SECTION_COLORS = [
+                { bg: '#f0fdf4', border: '#16a34a', title: '#15803d' },
+                { bg: '#eff6ff', border: '#2563eb', title: '#1d4ed8' },
+                { bg: '#fffbeb', border: '#d97706', title: '#b45309' },
+                { bg: '#fef2f2', border: '#dc2626', title: '#b91c1c' },
+                { bg: '#faf5ff', border: '#7c3aed', title: '#6d28d9' },
+                { bg: '#f0fdfa', border: '#0d9488', title: '#0f766e' },
+                { bg: '#fff7ed', border: '#f97316', title: '#c2410c' },
+                { bg: '#fdf4ff', border: '#a21caf', title: '#86198f' },
+              ]
+              return bodyFeedback.split(/\n\s*---\s*\n/).map((section, i) => {
+                const trimmed = section.trim()
+                if (!trimmed) return null
+                const lines = trimmed.split('\n')
+                const firstLine = lines[0].trim()
+                const hasTitle = firstLine.includes('**')
+                const title = hasTitle ? firstLine.replace(/\*\*/g, '').trim() : ''
+                const body = hasTitle ? lines.slice(1).join('\n').trim() : trimmed
+                const c = SECTION_COLORS[i % SECTION_COLORS.length]
+                if (!body && !title) return null
+                return (
+                  <div key={i} style={{ background: c.bg, borderRadius: 16, padding: '14px 16px', marginBottom: 12, border: `1.5px solid ${c.border}60`, boxShadow: `0 2px 8px ${c.border}20` }}>
+                    {title && <div style={{ fontWeight: 900, fontSize: 15, color: c.title, marginBottom: 10, borderBottom: `2px solid ${c.border}40`, paddingBottom: 8 }}>{title}</div>}
+                    <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, textAlign: 'right' }}
+                      dangerouslySetInnerHTML={{ __html: body.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }}
+                    />
+                  </div>
+                )
+              }).filter(Boolean)
+            })()}
           </div>
         </div>
       )}
@@ -1372,11 +1450,34 @@ export default function PlanApp({ clientName, userPassword }) {
                 </div>
               </div>
             </div>
-            {rootsFeedback.split('\n\n').filter(Boolean).map((section, i) => (
-              <div key={i} style={{ background: '#fff', borderRadius: 16, padding: '18px 20px', marginBottom: 14, borderRight: '4px solid #c4956a', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' }}>
-                <div style={{ fontSize: 14, color: '#2a2420', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{section}</div>
-              </div>
-            ))}
+            {(() => {
+              const SECTION_COLORS = [
+                { bg: '#fff7ed', border: '#c4956a', title: '#92400e' },
+                { bg: '#fffbeb', border: '#d97706', title: '#b45309' },
+                { bg: '#fef9f0', border: '#e8a87c', title: '#9a4520' },
+                { bg: '#fef3c7', border: '#f59e0b', title: '#d97706' },
+                { bg: '#fff7ed', border: '#f97316', title: '#c2410c' },
+              ]
+              return rootsFeedback.split(/\n\s*---\s*\n/).map((section, i) => {
+                const trimmed = section.trim()
+                if (!trimmed) return null
+                const lines = trimmed.split('\n')
+                const firstLine = lines[0].trim()
+                const hasTitle = firstLine.includes('**')
+                const title = hasTitle ? firstLine.replace(/\*\*/g, '').trim() : ''
+                const body = hasTitle ? lines.slice(1).join('\n').trim() : trimmed
+                const c = SECTION_COLORS[i % SECTION_COLORS.length]
+                if (!body && !title) return null
+                return (
+                  <div key={i} style={{ background: c.bg, borderRadius: 16, padding: '14px 16px', marginBottom: 12, border: `1.5px solid ${c.border}`, boxShadow: `0 2px 8px rgba(196,149,106,0.15)` }}>
+                    {title && <div style={{ fontWeight: 900, fontSize: 15, color: c.title, marginBottom: 10, borderBottom: `2px solid ${c.border}60`, paddingBottom: 8 }}>{title}</div>}
+                    <div style={{ fontSize: 14, color: '#333', lineHeight: 1.9, textAlign: 'right' }}
+                      dangerouslySetInnerHTML={{ __html: body.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br/>') }}
+                    />
+                  </div>
+                )
+              }).filter(Boolean)
+            })()}
           </div>
         </div>
       )}
@@ -1615,6 +1716,18 @@ export default function PlanApp({ clientName, userPassword }) {
               <div style={{ fontSize: 36 }}>🩺</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 900, fontSize: 15 }}>המשוב מפגישת הגוף מדבר</div>
+                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 2 }}>מאתי · לחצי לצפייה מלאה</div>
+              </div>
+              <div style={{ fontSize: 22 }}>←</div>
+            </div>
+          </div>
+        )}
+        {childFeedback && (
+          <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', borderRadius: 18, padding: '18px 20px', marginBottom: 14, color: '#fff', cursor: 'pointer' }} onClick={() => setShowChildFeedback(true)}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ fontSize: 36 }}>👨‍👩‍👧</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 900, fontSize: 15 }}>המשוב מפגישת הורה-ילד</div>
                 <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.85)', marginTop: 2 }}>מאתי · לחצי לצפייה מלאה</div>
               </div>
               <div style={{ fontSize: 22 }}>←</div>

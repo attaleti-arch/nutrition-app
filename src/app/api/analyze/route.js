@@ -708,7 +708,7 @@ ${sessionNotes ? 'מה גילינו בפגישה (הערות אתי): ' + sessio
 ---
 
 🌱 **הצעד הראשון — השבוע**
-[הצעד שהתחייבה לו. פשוט, ספציפי, בידיה לגמרי. משפט אחד.]
+[הצעד שהתחייבה לו. פשוט, ספציפי, בידיה לגמרי. ואז — משפט אחד שמנרמל ומחזק: למשל "הבחירה שעשית כבר היום היא כבר 50% מהדרך."]
 
 ---
 
@@ -729,12 +729,25 @@ ${sessionNotes ? 'מה גילינו בפגישה (הערות אתי): ' + sessio
     }
 
     if (mode === 'rootsAnalysis' && body.prompt) {
-      const msg = await client.messages.create({
+      const stream = client.messages.stream({
         model: 'claude-sonnet-4-6',
-        max_tokens: 5000,
+        max_tokens: 8000,
         messages: [{ role: 'user', content: body.prompt }]
       })
-      return Response.json({ result: msg.content[0].text })
+      const readable = new ReadableStream({
+        async start(controller) {
+          try {
+            for await (const event of stream) {
+              if (event.type === 'content_block_delta' && event.delta?.type === 'text_delta') {
+                controller.enqueue(new TextEncoder().encode(event.delta.text))
+              }
+            }
+          } finally {
+            controller.close()
+          }
+        }
+      })
+      return new Response(readable, { headers: { 'Content-Type': 'text/plain; charset=utf-8' } })
     }
 
     if (mode === 'logsReport') {

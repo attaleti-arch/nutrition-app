@@ -28,14 +28,17 @@ export default function Home() {
 
   async function handleStart() {
     if (!password.trim()) return
-    const { data } = await supabase.from('clients').select('name').eq('password', password.trim()).single()
+    const pw = password.trim()
+    const { data } = await supabase.from('clients').select('name, terms_accepted_at').eq('password', pw).single()
     if (data) {
-      const accepted = localStorage.getItem('terms_accepted_' + password.trim())
-      if (accepted) {
+      const acceptedLS = localStorage.getItem('terms_accepted_' + pw)
+      const acceptedDB = data.terms_accepted_at
+      if (acceptedLS || acceptedDB) {
+        if (!acceptedLS) localStorage.setItem('terms_accepted_' + pw, '1')
         setClientName(data.name)
         setStarted(true)
       } else {
-        setPendingPassword(password.trim())
+        setPendingPassword(pw)
         setPendingName(data.name)
         setShowTerms(true)
       }
@@ -46,6 +49,7 @@ export default function Home() {
 
   function acceptTerms() {
     localStorage.setItem('terms_accepted_' + pendingPassword, '1')
+    supabase.from('clients').update({ terms_accepted_at: new Date().toISOString() }).eq('password', pendingPassword).then(() => {}).catch(() => {})
     setClientName(pendingName)
     setPassword(pendingPassword)
     setShowTerms(false)
@@ -95,3 +99,4 @@ export default function Home() {
     </div>
   )
 }
+
