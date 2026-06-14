@@ -1236,7 +1236,7 @@ export default function AdminPage() {
               <div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', marginBottom: 4, paddingRight: 4 }}>⚙️ ניהול</div>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  {[{ k: 'pantry', l: '🛒 מזווה' }, { k: 'newclient', l: '➕ לקוח' }].map(t => (
+                  {[{ k: 'pantry', l: '🛒 מזווה' }, { k: 'newclient', l: '➕ לקוח' }, { k: 'guide', l: '📚 מדריך' }].map(t => (
                     <button key={t.k} onClick={() => setTab(t.k)} style={{ flex: 1, padding: '10px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 11, color: tab === t.k ? '#0f4c2a' : '#555', minWidth: 50 }}>{t.l}</button>
                   ))}
                 </div>
@@ -2189,7 +2189,11 @@ export default function AdminPage() {
                   const prompt = 'אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להתכונן לפגישת שורשים עם לקוחה.\n\n' +
                     'הערות מהזום המקדים:\n' + notesText + '\n\n' +
                     'נתוני הלקוחה: ' + (selectedClient?.name||'') + ', גיל ' + (selectedClient?.age||'לא ידוע') + ', מטרה: ' + (selectedClient?.goal||'לא ידוע') + ', מסלול: ' + (selectedClient?.client_track === 'child' ? 'עבור ילד' : selectedClient?.client_track === 'both' ? 'שניהם' : 'עצמי') + '\n\n' +
-                    'הפק ניתוח מעמיק לאתי לקראת הפגישה הפיזית. כתוב בעברית, גוף שלישי נקבה. כלול:\n\n' +
+                    'הפק ניתוח מעמיק לאתי לקראת הפגישה הפיזית. כתוב בעברית, גוף שלישי נקבה.\n\n' +
+                    'דגשים חשובים לניתוח:\n' +
+                    '• כשמוזכרת דמות הורית שהזינה דרך אוכל — הצג זאת כאהבה שניתנה מהידע שהיה, לא כטעות. הלקוחה עשויה לרצות להגן על ההורה שלה.\n' +
+                    '• הדגש בניית זהות חדשה (אישה בוגרת ומודעת שבוחרת להזין את עצמה) — לא "לחזור" לעצמי ישנה, אלא לבנות גרסה חדשה.\n\n' +
+                    'כלול:\n\n' +
                     '**1. תמונת הבית שגדלה בו**\nמה עיצב את הקשר שלה עם אוכל ועם הגוף. ציטט ישירות מהדברים.\n\n' +
                     '**2. פצע הזהות הגופנית**\nאיך חוותה את עצמה בתוך המשפחה — שייכות / נבדלות / השוואה. מה זה עשה לדימוי העצמי.\n\n' +
                     '**3. אמונות מגבילות שזוהו**\nרשימה ממוקדת. לכל אמונה — מה היא, מאיפה היא מגיעה, ואיך היא מתבטאת היום.\n\n' +
@@ -2197,8 +2201,8 @@ export default function AdminPage() {
                     ((selectedClient?.client_track === 'child' || selectedClient?.client_track === 'both')
                       ? '**5. הגלגל הדורי — חובה לכלול**\nהלקוחה היא הורה. ציין בדיוק: מה הועבר אליה מהדור הקודם ← מה היא כרגע מעבירה לילד/ה שלה ← מה ניתן לעצור. זה לב הפגישה עבורה.\n\n'
                       : '**5. דפוסים בין-דוריים**\nכלול רק אם עלה בתשובות קשר לדינמיקות בין-דוריות. אם לא — השמט לחלוטין.\n\n') +
-                    '**6. מבנה מוצע לפגישה**\nסדר הנושאים + זמן משוער לכל נושא + על מה לשים דגש. כולל שאלת פתיחה מומלצת.\n\n' +
-                    '**7. צעדים פרקטיים לשינוי**\nלפחות 6-8 צעדים קונקרטיים שאפשר לעשות מהיום — מותאמים ספציפית לה.\n\n' +
+                    '**6. מבנה מוצע לפגישה**\nסדר הנושאים + זמן משוער לכל נושא + שאלת פתיחה מומלצת. חובה לסיים ב"טקס סגירה": שאלה אחת שמפרידה בין מה שהיא לוקחת ממה שהיא משאירה מאחור.\n\n' +
+                    '**7. צעדים פרקטיים לשינוי**\nלפחות 6-8 צעדים קונקרטיים שאפשר לעשות מהיום — מותאמים ספציפית לה. כלול לפחות שינוי סביבתי ביתי מיידי אחד.\n\n' +
                     '**8. שאלות המשך אם משהו חסר**\n2-3 שאלות שכדאי לשאול בפגישה אם הנושא לא כוסה מספיק.'
 
                   let rootsResult = ''
@@ -2622,6 +2626,10 @@ export default function AdminPage() {
                     'שם ההורה: ' + (selectedClient?.name||'') + '\n\n' +
                     'הערות מהזום המקדים:\n' + notesText + '\n\n' +
                     'הפק ניתוח מעמיק ומערך מפגש לאתי. כתוב בעברית, מקצועי וישיר.\n\n' +
+                    'דגשים חשובים:\n' +
+                    '• אם מוזכר בן/בת זוג כמודל שלילי לילד — הצע לא לתקן אותו, אלא כלים לשיח שיתופי: ניסוח שמזמין שינוי משותף ("אנחנו רוצים לייצר אווירה שונה בבית"), לא שיח מאשים.\n' +
+                    '• זהה את ה-Value המרכזי של הילד — מה הוא מחפש דרך האוכל (שייכות / גירוי / ביטחון / ערך עצמי) — ותציע ערוצים חלופיים שיתנו לו את אותו צורך.\n\n' +
+                    'כלול:\n\n' +
                     '**1. תמונת הילד — מי הוא**\n' +
                     'סיכום מי הילד, מה מאפיין אותו, מה הכוחות שלו. ציטט ישירות מהדברים.\n\n' +
                     '**2. הדפוסים שזוהו**\n' +
@@ -2634,7 +2642,7 @@ export default function AdminPage() {
                     '**5. מבנה מוצע למפגש הפיזי**\n' +
                     'סדר נושאים + זמן משוער + שאלת פתיחה + רגעי חיבור אישי.\n\n' +
                     '**6. צעדים פרקטיים לשינוי ביתי**\n' +
-                    'לפחות 6-8 צעדים קונקרטיים שההורה יכול להתחיל מחר — מותאמים ספציפית למשפחה.\n\n' +
+                    'לפחות 6-8 צעדים קונקרטיים. חובה לכלול: (א) שינוי סביבתי מיידי אחד שניתן לבצע השבוע (ארגון המגירה/מדף, הזזת חטיפים, הפרדת מסך מאכילה), (ב) ניסוח לשיחה שמזמינה את בן/בת הזוג כשותף לשינוי.\n\n' +
                     '**7. שאלות המשך לפגישה**\n' +
                     '2-3 שאלות אם נושא לא כוסה מספיק.'
 
@@ -2897,6 +2905,165 @@ export default function AdminPage() {
                 </button>
               </>
             )}
+          </div>
+        )}
+
+        {tab === 'guide' && (
+          <div style={{ direction: 'rtl' }}>
+            {/* כותרת */}
+            <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '22px 20px', marginBottom: 16, color: '#fff' }}>
+              <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 4 }}>📚 מדריך — כל מה שחשוב לדעת לפני שנתחיל</div>
+              <div style={{ fontSize: 12, color: '#86efac' }}>חומר רקע לכל מטופלת · לעיני אתי בלבד</div>
+            </div>
+
+            {/* מטרה */}
+            <div style={{ background: '#fff', borderRadius: 16, border: '1.5px solid #e5e7eb', padding: '14px 18px', marginBottom: 12 }}>
+              <div style={{ fontWeight: 800, fontSize: 14, color: '#0f4c2a', marginBottom: 6 }}>🎯 המטרה</div>
+              <div style={{ fontSize: 13, color: '#444', lineHeight: 1.8 }}>להבין את ה"למה" מאחורי הבחירות שלנו — כדי שהשינוי יגיע מהבנה, לא מכוח רצון.</div>
+            </div>
+
+            {/* פרק 1 */}
+            <div style={{ background: '#f0fdf4', borderRadius: 16, border: '1.5px solid #16a34a', overflow: 'hidden', marginBottom: 12 }}>
+              <div style={{ background: 'linear-gradient(135deg,#15803d,#16a34a)', padding: '12px 18px', color: '#fff' }}>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>חלק 1 — הגוף כחבר, לא כאויב</div>
+                <div style={{ fontSize: 11, color: '#86efac' }}>פתיחה: שינוי השפה</div>
+              </div>
+              <div style={{ padding: '14px 18px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ background: '#dcfce7', borderRadius: 10, padding: '10px 14px' }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#15803d', marginBottom: 4 }}>💚 הקונספט</div>
+                    <div style={{ fontSize: 13, color: '#166534', lineHeight: 1.7 }}>הגוף תמיד פועל כדי להגן עלינו. הוא לא מנסה להשמין — הוא מנסה לשרוד. כל "כשל" תזונתי הוא בעצם מנגנון הגנה שעשה את עבודתו.</div>
+                  </div>
+                  <div style={{ background: '#dcfce7', borderRadius: 10, padding: '10px 14px' }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#15803d', marginBottom: 4 }}>🗣️ השפה החדשה</div>
+                    <div style={{ fontSize: 13, color: '#166534', lineHeight: 1.7 }}>להפסיק לדבר על <strong>"זה טעים"</strong> (חוויה חולפת) ולעבור ל-<strong>"זה מחזק / זה לא משרת אותי כרגע"</strong>. שינוי השפה = שינוי הזהות.</div>
+                  </div>
+                  <div style={{ background: '#dcfce7', borderRadius: 10, padding: '10px 14px' }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#15803d', marginBottom: 4 }}>⛽ המסר המרכזי</div>
+                    <div style={{ fontSize: 13, color: '#166534', lineHeight: 1.7 }}>תזונה היא לא עונש — היא דלק. אנחנו צריכים לתת למנוע את הסוג הנכון כדי שיעבוד בשבילנו.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* פרק 2 */}
+            <div style={{ background: '#eff6ff', borderRadius: 16, border: '1.5px solid #2563eb', overflow: 'hidden', marginBottom: 12 }}>
+              <div style={{ background: 'linear-gradient(135deg,#1d4ed8,#2563eb)', padding: '12px 18px', color: '#fff' }}>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>חלק 2 — המנוע</div>
+                <div style={{ fontSize: 11, color: '#bfdbfe' }}>פיזיולוגיה של עיכול וסוכר</div>
+              </div>
+              <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ background: '#dbeafe', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#1d4ed8', marginBottom: 4 }}>⚡ זיקוקים לעומת דלק איטי</div>
+                  <div style={{ fontSize: 13, color: '#1e40af', lineHeight: 1.7 }}>סוכר מהיר (פחמימות פשוטות) = <strong>זיקוקים</strong>: מקפיץ אינסולין, גורם לאנרגיה מטאורית ואז לנפילה חדה. חלבון + סיבים = <strong>דלק איטי</strong>: אנרגיה יציבה לאורך שעות.</div>
+                </div>
+                <div style={{ background: '#dbeafe', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#1d4ed8', marginBottom: 4 }}>🔑 תנגודת אינסולין — המפתח השחוק</div>
+                  <div style={{ fontSize: 13, color: '#1e40af', lineHeight: 1.7 }}>כשאוכלים כל הזמן, המפתח של התא נשחק. הפתרון: <strong>חלון בין ארוחות</strong> (3-4 שעות) — לתת לאינסולין לרדת כדי שהגוף יוכל לשרוף שומן.</div>
+                </div>
+                <div style={{ background: '#dbeafe', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#1d4ed8', marginBottom: 4 }}>📉 הארוחה שדילגנו עליה</div>
+                  <div style={{ fontSize: 13, color: '#1e40af', lineHeight: 1.7 }}>כשלא אוכלים ב-11:30, הגוף נכנס למצוקה ומכריח אכילה פי 2 ב-13:00. <strong>הפיצוי הביולוגי</strong> הוא אמיתי — לא חוסר רצון.</div>
+                </div>
+              </div>
+            </div>
+
+            {/* פרק 3 */}
+            <div style={{ background: '#faf5ff', borderRadius: 16, border: '1.5px solid #7c3aed', overflow: 'hidden', marginBottom: 12 }}>
+              <div style={{ background: 'linear-gradient(135deg,#6d28d9,#7c3aed)', padding: '12px 18px', color: '#fff' }}>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>חלק 3 — המערכת ההורמונלית</div>
+                <div style={{ fontSize: 11, color: '#e9d5ff' }}>קורטיזול, גרלין, לפטין</div>
+              </div>
+              <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ background: '#ede9fe', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#6d28d9', marginBottom: 4 }}>😰 קורטיזול — הורמון הסטרס</div>
+                  <div style={{ fontSize: 13, color: '#5b21b6', lineHeight: 1.7 }}>לא רק בלחץ עבודה — גם בלחץ של "חסר לי אוכל". קורטיזול גורם לגוף <strong>לאגור שומן בבטן</strong> (מנגנון הישרדותי — אגירת אנרגיה לבריחה). ככל שנלחצים יותר, כך האגירה גדולה יותר.</div>
+                </div>
+                <div style={{ background: '#ede9fe', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#6d28d9', marginBottom: 4 }}>😴 שינה = תזונה</div>
+                  <div style={{ fontSize: 13, color: '#5b21b6', lineHeight: 1.7 }}>שינה לא טובה → <strong>גרלין עולה</strong> (רעב) + <strong>לפטין יורד</strong> (שובע). בוקר אחרי לילה רע = יום שלם של בחירות תזונתיות קשות. שינה היא חלק מהתוכנית.</div>
+                </div>
+              </div>
+            </div>
+
+            {/* פרק 4 */}
+            <div style={{ background: '#fff7ed', borderRadius: 16, border: '1.5px solid #f97316', overflow: 'hidden', marginBottom: 12 }}>
+              <div style={{ background: 'linear-gradient(135deg,#c2410c,#f97316)', padding: '12px 18px', color: '#fff' }}>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>חלק 4 — בניית צלחת חכמה</div>
+                <div style={{ fontSize: 11, color: '#fed7aa' }}>הפרקטיקה</div>
+              </div>
+              <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ background: '#ffedd5', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#c2410c', marginBottom: 4 }}>🥩 חלבון — העוגן</div>
+                  <div style={{ fontSize: 13, color: '#9a3412', lineHeight: 1.7 }}>בלי חלבון — אין שובע. הוא "לבני הבניין" של השריר ומה שמחזיק אותנו רגועים ומרוכזים לאורך היום.</div>
+                </div>
+                <div style={{ background: '#ffedd5', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#c2410c', marginBottom: 4 }}>🥦 סיבים — המטאטא</div>
+                  <div style={{ fontSize: 13, color: '#9a3412', lineHeight: 1.7 }}>ירקות = "מטאטא הגוף". עוזרים לחשיבה להיות צלולה (קשר מעי-מוח) ומאטים ספיגת סוכר. מתחילים כל ארוחה עם הירק.</div>
+                </div>
+                <div style={{ background: '#ffedd5', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#c2410c', marginBottom: 4 }}>👦 שפה לילדים</div>
+                  <div style={{ fontSize: 13, color: '#9a3412', lineHeight: 1.7 }}>
+                    <div style={{ marginBottom: 4 }}>✅ "הגוף שלך צריך אנרגיה למשחק בכדור — בוא נבחר משהו שייתן לך כוח."</div>
+                    <div>✅ "זה לא נותן לנו כוח, זה סתם מעמיס" — במקום "אסור".</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* פרק 5 */}
+            <div style={{ background: '#f0fdfa', borderRadius: 16, border: '1.5px solid #0d9488', overflow: 'hidden', marginBottom: 12 }}>
+              <div style={{ background: 'linear-gradient(135deg,#0f766e,#0d9488)', padding: '12px 18px', color: '#fff' }}>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>חלק 5 — ניהול סביבתי וסגירה</div>
+                <div style={{ fontSize: 11, color: '#99f6e4' }}>הכלים המעשיים</div>
+              </div>
+              <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ background: '#ccfbf1', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#0f766e', marginBottom: 4 }}>🌙 חוק 20 הדקות לפני שינה</div>
+                  <div style={{ fontSize: 13, color: '#134e4a', lineHeight: 1.7 }}>כיבוי מסכים + נשימות = הורדת קורטיזול לפני שינה. גוף רגוע = שינה עמוקה = בוקר שמתחיל נכון.</div>
+                </div>
+                <div style={{ background: '#ccfbf1', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#0f766e', marginBottom: 4 }}>🥗 סדר אכילה</div>
+                  <div style={{ fontSize: 13, color: '#134e4a', lineHeight: 1.7 }}>תמיד להתחיל עם חלבון/ירק — זה בונה הגנה הורמונלית להמשך הארוחה.</div>
+                </div>
+                <div style={{ background: '#ccfbf1', borderRadius: 10, padding: '10px 14px' }}>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#0f766e', marginBottom: 4 }}>💬 הזמנה לשינוי שפה</div>
+                  <div style={{ fontSize: 13, color: '#134e4a', lineHeight: 1.7 }}>
+                    ❌ "אני צריכה לרדת במשקל"<br/>
+                    ✅ "אני לומדת להזין את הגוף שלי כדי שיהיה לי יותר כוח למה שאני אוהבת"
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* טיפים */}
+            <div style={{ background: '#fefce8', borderRadius: 16, border: '1.5px solid #eab308', overflow: 'hidden', marginBottom: 12 }}>
+              <div style={{ background: 'linear-gradient(135deg,#a16207,#ca8a04)', padding: '12px 18px', color: '#fff' }}>
+                <div style={{ fontWeight: 800, fontSize: 14 }}>✨ טיפים לשדרוג ההרצאה</div>
+              </div>
+              <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {[
+                  { n: '1', t: 'עזרי ויזואליים', b: 'ציור של מנוע מכונית: חלבון = שמן מנוע איכותי, סוכר = דלק שגורם לפיצוצים. זה נחרט.' },
+                  { n: '2', t: 'דוגמאות מהמטבח', b: '"אז מה זה אומר כשהילד מבקש עוגייה ב-16:00? שהוא כנראה לא קיבל מספיק חלבון בצהריים."' },
+                  { n: '3', t: 'פתיחה וסגירה עם שאלה', b: '"איך זה פוגש אתכן במזווה?" — תתחילי ותסיימי איתה.' },
+                ].map(tip => (
+                  <div key={tip.n} style={{ background: '#fef9c3', borderRadius: 10, padding: '10px 14px', display: 'flex', gap: 10 }}>
+                    <div style={{ fontWeight: 900, fontSize: 16, color: '#ca8a04', flexShrink: 0 }}>{tip.n}.</div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: '#92400e', marginBottom: 2 }}>{tip.t}</div>
+                      <div style={{ fontSize: 13, color: '#78350f', lineHeight: 1.7 }}>{tip.b}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* סגירה */}
+            <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 16, padding: '18px 20px', color: '#fff', textAlign: 'center' }}>
+              <div style={{ fontSize: 22, marginBottom: 8 }}>💚</div>
+              <div style={{ fontWeight: 900, fontSize: 15, marginBottom: 8 }}>את לא מפסידה את הרביצה — את מרוויחה את עצמך</div>
+              <div style={{ fontSize: 13, color: '#86efac', lineHeight: 1.8 }}>וגם הילדים שלך מרוויחים אמא קלילה יותר, נוכחת יותר וגאה בעצמה.</div>
+            </div>
           </div>
         )}
       </div>
