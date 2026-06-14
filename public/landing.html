@@ -308,9 +308,30 @@
     .prc-for {
       display: inline-block; font-size: 12px; font-weight: 600;
       background: var(--beige); color: #666; border: 1px solid var(--beige-dark);
-      padding: 4px 12px; border-radius: 50px; margin-bottom: 18px;
+      padding: 4px 12px; border-radius: 50px; margin-bottom: 14px;
     }
     .prc-card.star .prc-for { background: rgba(212,232,154,0.12); color: var(--light-green); border-color: rgba(212,232,154,0.25); }
+    .prc-desc {
+      font-size: 13.5px; color: #555; line-height: 1.8; margin-bottom: 18px;
+    }
+    .prc-card.star .prc-desc { color: rgba(255,255,255,0.78); }
+    .pricing-included {
+      margin-top: 40px; padding: 28px 32px;
+      background: var(--white); border-radius: 18px;
+      border-right: 4px solid var(--gold);
+    }
+    .pi-title {
+      font-size: 16px; font-weight: 700; color: var(--green); margin-bottom: 16px;
+    }
+    .pi-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .pi-list li {
+      font-size: 15px; color: #484848; line-height: 1.7;
+      padding-right: 22px; position: relative;
+    }
+    .pi-list li::before {
+      content: '✦'; color: var(--gold); position: absolute; right: 0;
+      font-size: 11px; top: 4px;
+    }
 
     /* CTA */
     .cta-section { background: var(--green); padding: 88px 0; text-align: center; }
@@ -445,8 +466,8 @@
 
       <div class="whom-card">
         <span class="whom-ico">💛</span>
-        <h3>הורים שדואגים לילד שלהם</h3>
-        <p>את רואה את הילד שלך מתמודד — חברתית, רגשית, תזונתית — ואת רוצה לפעול למענו. כאן תקבלי כלים אמיתיים: לא גזרות ולא בושה, אלא שינוי סביבתי ורגשי שמתחיל בבית ומשפיע על כל חייו.</p>
+        <h3>הילד שלך מתמודד — ואת רוצה לפעול למענו?</h3>
+        <p>את רואה את הקושי שלו — חברתי, רגשי, מול המקרר. זה לא אומר להעביר אותו דיאטה או להטיל עליו גזרות; זה אומר להבין ששינוי אמיתי מתחיל בבית, באווירה, ובסביבה שבה אנחנו חיים. כאן תקבלי כלים מעשיים ורגשיים שיעזרו לכם לבנות יחד בית בריא יותר, בלי בושה ובלי מאבקים — שינוי שיישאר איתו לכל החיים.</p>
       </div>
 
       <div class="whom-card">
@@ -682,14 +703,15 @@
       <div class="sec-label">מסלולים מותאמים אישית</div>
       <h2 class="sec-title">כל נתיב — בנוי בדיוק בשבילך</h2>
       <div class="gold-line"></div>
-      <p class="sec-sub">מי שצריכה שינוי אישי, מי שדואגת לילד שלה, ומי שרוצה להזיז את כל הבית — יש מסלול שמדבר בדיוק אלייך. לא יודעת מה מתאים? שלחי לי הודעה ונבנה יחד.</p>
+      <p class="sec-sub">מי שצריכה לעשות שלום עם הגוף שלה, מי שדואגת לילד שלה, ומי שרוצה להזיז את כל הבית — יש מסלול שמדבר בדיוק אלייך.</p>
     </div>
     <div class="pricing-grid">
 
       <div class="prc-card">
         <div class="prc-label">תחנת ההתחלה</div>
-        <div class="prc-name">פגישת מיפוי אישי</div>
-        <div class="prc-for">👋 מתאים לכולן — בנות כל הגילאים</div>
+        <div class="prc-name">מיפוי ומצפן</div>
+        <div class="prc-for">📋 הצעד הראשון — מתאים לכולן</div>
+        <p class="prc-desc">הצעד הראשון להבנה. בואי נבין מה עצר אותך עד היום, נגדיר את השורשים של ההרגלים שלך ונסמן מטרה ברורה להמשך.</p>
         <div class="prc-dur">60 דקות | היכרות ומיפוי</div>
         <div class="prc-price"><span class="prc-currency">₪</span>350</div>
         <div class="prc-divider"></div>
@@ -707,8 +729,9 @@
       <div class="prc-card star">
         <div class="star-badge">⭐ תוכנית הדגל</div>
         <div class="prc-label">מסלול אישי</div>
-        <div class="prc-name">בין הראש לצלחת</div>
-        <div class="prc-for">👩 מותאם לנשים שרוצות שינוי אמיתי</div>
+        <div class="prc-name">השינוי האישי</div>
+        <div class="prc-for">👩 לנשים שרוצות שינוי אמיתי</div>
+        <p class="prc-desc">תוכנית אישית שמשלבת רקע רפואי ומדדים, יחד עם עבודה על מנגנוני חשיבה. אנחנו לא "עושות דיאטה" — אנחנו מבינות את השורשים שגדלת עליהם, לומדות לקרוא את הסימנים שהגוף שלך שולח, ומפתחות "חיסונים" מנטליים לכל מה שלא עבד בעבר.</p>
         <div class="prc-dur">3 חודשים | 4 מפגשים + אפליקציה</div>
         <div class="prc-price"><span class="prc-currency">₪</span>2,450</div>
         <div class="prc-divider"></div>
@@ -726,8 +749,9 @@
 
       <div class="prc-card">
         <div class="prc-label">מסלול משפחתי</div>
-        <div class="prc-name">כל הבית איתי</div>
-        <div class="prc-for">💛 הורים לילדים בעודף משקל ומשפחות</div>
+        <div class="prc-name">בית של שפע</div>
+        <div class="prc-for">💛 הורים לילדים ומשפחות</div>
+        <p class="prc-desc">ליווי הוליסטי לבית. כאן אנחנו לא מתמקדים ב"תוכניות אכילה" לילד, אלא בבניית אורח חיים בריא משותף — "מפגש השורשים", ליווי הורה-ילד, וכלים מעשיים שמשנים את הבית מבפנים.</p>
         <div class="prc-dur">3 חודשים | תוכנית מלאה + ליווי משפחתי</div>
         <div class="prc-price"><span class="prc-currency">₪</span>3,200</div>
         <div class="prc-divider"></div>
@@ -743,6 +767,14 @@
         <a href="https://wa.me/972XXXXXXXXXXX" class="prc-btn" target="_blank">קביעת פגישה</a>
       </div>
 
+    </div>
+
+    <div class="pricing-included">
+      <div class="pi-title">בכל מסלול איתי, אנחנו לא רק מדברות — אנחנו עושות:</div>
+      <ul class="pi-list">
+        <li><strong>סידור המזווה והמקרר</strong> — מפגש פרקטי בביתך שבו נלמד איך לרתום את הסביבה הפיזית שלך לתהליך.</li>
+        <li><strong>סדנת חטיפי חלבון</strong> — נלמד איך להעשיר את המגוון בבית בצורה יצירתית, בריאה וטעימה לכולם.</li>
+      </ul>
     </div>
   </div>
 </section>
