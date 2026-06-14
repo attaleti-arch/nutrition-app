@@ -34,8 +34,7 @@
 
     /* NAV */
     .site-nav {
-      background: var(--dark-green);
-      padding: 14px 0;
+      background: var(--dark-green); padding: 14px 0;
       position: sticky; top: 0; z-index: 200;
       box-shadow: 0 2px 20px rgba(0,0,0,0.35);
     }
@@ -55,30 +54,25 @@
 
     /* HERO */
     .hero {
-      background: var(--green);
-      padding: 80px 0 64px;
+      background: var(--green); padding: 80px 0 64px;
       overflow: hidden; position: relative;
     }
-    .hero-blob {
-      position: absolute; border-radius: 50%; pointer-events: none;
-    }
-    .hero-blob-1 { width: 420px; height: 420px; background: rgba(212,232,154,0.07); top: -140px; left: -120px; }
-    .hero-blob-2 { width: 300px; height: 300px; background: rgba(200,168,60,0.06); bottom: -80px; right: -60px; }
+    .blob { position: absolute; border-radius: 50%; pointer-events: none; }
+    .blob-1 { width: 420px; height: 420px; background: rgba(212,232,154,0.07); top: -140px; left: -120px; }
+    .blob-2 { width: 300px; height: 300px; background: rgba(200,168,60,0.06); bottom: -80px; right: -60px; }
     .hero-inner {
       display: grid; grid-template-columns: 1fr 260px;
       gap: 52px; align-items: center; position: relative; z-index: 1;
     }
     .hero-badge {
       display: inline-block;
-      background: rgba(200,168,60,0.18);
-      border: 1px solid rgba(200,168,60,0.45);
-      color: var(--gold-light);
-      font-size: 12px; font-weight: 700; letter-spacing: 1.5px;
-      padding: 6px 18px; border-radius: 50px; margin-bottom: 22px;
+      background: rgba(200,168,60,0.18); border: 1px solid rgba(200,168,60,0.45);
+      color: var(--gold-light); font-size: 12px; font-weight: 700;
+      letter-spacing: 1.5px; padding: 6px 18px; border-radius: 50px; margin-bottom: 22px;
     }
     .hero h1 {
-      font-size: clamp(30px, 4.5vw, 50px);
-      font-weight: 900; color: #fff; line-height: 1.25; margin-bottom: 20px;
+      font-size: clamp(28px, 4vw, 46px);
+      font-weight: 900; color: #fff; line-height: 1.3; margin-bottom: 22px;
     }
     .hero h1 .gold { color: var(--gold); }
     .hero-sub {
@@ -88,19 +82,18 @@
     .hero-btns { display: flex; gap: 14px; flex-wrap: wrap; }
     .btn-primary {
       background: var(--gold); color: var(--dark-green);
-      font-weight: 900; font-size: 16px;
-      padding: 15px 34px; border-radius: 50px;
+      font-weight: 900; font-size: 16px; padding: 15px 34px; border-radius: 50px;
       text-decoration: none; transition: all 0.2s;
       display: inline-flex; align-items: center; gap: 9px;
     }
     .btn-primary:hover { background: var(--gold-light); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(200,168,60,0.35); }
     .btn-ghost {
-      background: transparent; color: #fff;
-      font-weight: 600; font-size: 15px;
-      padding: 15px 26px; border-radius: 50px;
-      text-decoration: none; border: 2px solid rgba(255,255,255,0.28); transition: all 0.2s;
+      background: transparent; color: #fff; font-weight: 600; font-size: 15px;
+      padding: 15px 26px; border-radius: 50px; text-decoration: none;
+      border: 2px solid rgba(255,255,255,0.28); transition: all 0.2s;
     }
     .btn-ghost:hover { border-color: rgba(255,255,255,0.65); background: rgba(255,255,255,0.06); }
+
     .hero-photo-wrap { display: flex; justify-content: center; }
     .hero-photo-frame {
       width: 240px; height: 300px;
@@ -119,10 +112,10 @@
     .stats-bar { background: var(--dark-green); padding: 22px 0; }
     .stats-row { display: flex; justify-content: center; gap: 48px; flex-wrap: wrap; }
     .stat { text-align: center; }
-    .stat-val { font-size: 26px; font-weight: 900; color: var(--gold); display: block; line-height: 1.1; }
+    .stat-val { font-size: 24px; font-weight: 900; color: var(--gold); display: block; line-height: 1.1; }
     .stat-lbl { font-size: 12px; color: rgba(255,255,255,0.5); }
 
-    /* SECTIONS COMMON */
+    /* COMMON SECTION */
     .sec-label {
       font-size: 11px; font-weight: 700; letter-spacing: 2px;
       color: var(--gold); text-transform: uppercase; margin-bottom: 10px;
@@ -133,10 +126,68 @@
     }
     .gold-line { width: 52px; height: 4px; background: var(--gold); border-radius: 2px; margin-bottom: 28px; }
 
+    /* FOR WHOM */
+    .for-whom { background: var(--white); padding: 80px 0; }
+    .whom-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 22px; margin-top: 40px; }
+    .whom-card {
+      background: var(--beige); border-radius: 18px; padding: 28px 24px;
+      border-right: 4px solid var(--green); transition: transform 0.2s;
+    }
+    .whom-card:hover { transform: translateY(-4px); }
+    .whom-ico { font-size: 34px; margin-bottom: 14px; display: block; }
+    .whom-card h3 { font-size: 17px; font-weight: 900; color: var(--green); margin-bottom: 10px; }
+    .whom-card p { font-size: 14px; color: #555; line-height: 1.8; }
+
+    /* PROMISE */
+    .promise { background: var(--dark-green); padding: 80px 0; position: relative; overflow: hidden; }
+    .promise::before {
+      content: ''; position: absolute; top: 0; left: 0;
+      width: 500px; height: 500px; background: rgba(200,168,60,0.04);
+      border-radius: 50%; transform: translate(-40%, -40%);
+    }
+    .promise .sec-label { color: var(--light-green); }
+    .promise .sec-title { color: #fff; }
+    .promise .gold-line { background: var(--gold); }
+    .promise-body {
+      font-size: 18px; color: rgba(255,255,255,0.88); line-height: 2;
+      max-width: 720px; position: relative; z-index: 1;
+    }
+    .promise-body strong { color: var(--gold); }
+    .promise-highlight {
+      margin-top: 36px; padding: 28px 32px;
+      background: rgba(200,168,60,0.12);
+      border: 1px solid rgba(200,168,60,0.3);
+      border-radius: 16px;
+      font-size: 20px; font-weight: 900; color: #fff; line-height: 1.6;
+      position: relative; z-index: 1;
+    }
+    .promise-highlight .gold { color: var(--gold); }
+
+    /* INSIDE */
+    .inside { background: var(--green); padding: 80px 0; overflow: hidden; position: relative; }
+    .inside::before {
+      content: ''; position: absolute; top: 0; right: 0;
+      width: 500px; height: 500px; background: rgba(212,232,154,0.05);
+      border-radius: 50%; transform: translate(35%,-35%);
+    }
+    .inside .sec-label { color: var(--light-green); }
+    .inside .sec-title { color: #fff; }
+    .inside .gold-line { background: var(--gold); }
+    .inside-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 20px; position: relative; z-index: 1; }
+    .inside-card {
+      background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.13);
+      border-radius: 18px; padding: 28px 24px; transition: all 0.2s;
+    }
+    .inside-card:hover { background: rgba(255,255,255,0.12); border-color: rgba(200,168,60,0.4); transform: translateY(-3px); }
+    .inside-num { font-size: 11px; font-weight: 700; letter-spacing: 2px; color: var(--gold); margin-bottom: 10px; display: block; }
+    .inside-card h3 { font-size: 17px; font-weight: 900; color: #fff; margin-bottom: 10px; }
+    .inside-card p { font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.8; }
+    .inside-card p strong { color: rgba(255,255,255,0.95); }
+
     /* ABOUT */
     .about { background: var(--white); padding: 80px 0; }
     .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
-    .about-text p { font-size: 16px; color: #444; line-height: 1.9; margin-bottom: 16px; }
+    .about-text p { font-size: 16px; color: #444; line-height: 1.95; margin-bottom: 18px; }
     .about-text p:last-of-type { margin-bottom: 0; }
     .about-text strong { color: var(--green); }
     .creds { display: flex; flex-direction: column; gap: 10px; margin-top: 28px; }
@@ -159,62 +210,19 @@
     }
     .photo-badge {
       position: absolute; bottom: -18px; right: -18px;
-      background: var(--green); color: var(--white);
+      background: var(--green); color: #fff;
       padding: 16px 22px; border-radius: 16px;
       font-size: 13.5px; font-weight: 700; line-height: 1.5;
       text-align: center; box-shadow: 0 6px 24px rgba(58,92,58,0.35);
     }
     .photo-badge .big { display: block; font-size: 24px; font-weight: 900; color: var(--gold); }
 
-    /* THREE LAYERS */
-    .layers { background: var(--beige); padding: 80px 0; }
-    .layers-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; margin-top: 40px; }
-    .layer-card {
-      background: var(--white); border-radius: 20px; padding: 32px 26px;
-      border-top: 4px solid var(--green); position: relative;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .layer-card:hover { transform: translateY(-5px); box-shadow: 0 12px 36px rgba(0,0,0,0.1); }
-    .layer-ico { font-size: 36px; margin-bottom: 16px; display: block; }
-    .layer-card h3 { font-size: 18px; font-weight: 900; color: var(--green); margin-bottom: 12px; }
-    .layer-card p { font-size: 14.5px; color: #555; line-height: 1.8; }
-    .layer-card strong { color: var(--dark-green); }
-
-    /* WHAT'S INSIDE */
-    .inside { background: var(--green); padding: 80px 0; overflow: hidden; position: relative; }
-    .inside::before {
-      content: ''; position: absolute; top: 0; right: 0;
-      width: 500px; height: 500px;
-      background: rgba(212,232,154,0.05); border-radius: 50%;
-      transform: translate(35%,-35%);
-    }
-    .inside .sec-label { color: var(--light-green); }
-    .inside .sec-title { color: #fff; }
-    .inside .gold-line { background: var(--gold); }
-    .inside-intro { font-size: 17px; color: rgba(255,255,255,0.82); line-height: 1.85; max-width: 660px; margin-bottom: 48px; }
-    .inside-intro strong { color: var(--light-green); }
-    .inside-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 20px; position: relative; z-index: 1; }
-    .inside-card {
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.13);
-      border-radius: 18px; padding: 28px 24px;
-      transition: all 0.2s;
-    }
-    .inside-card:hover { background: rgba(255,255,255,0.12); border-color: rgba(200,168,60,0.4); }
-    .inside-num {
-      font-size: 11px; font-weight: 700; letter-spacing: 2px;
-      color: var(--gold); margin-bottom: 10px; display: block;
-    }
-    .inside-card h3 { font-size: 17px; font-weight: 900; color: #fff; margin-bottom: 10px; }
-    .inside-card p { font-size: 14px; color: rgba(255,255,255,0.75); line-height: 1.75; }
-    .inside-card p strong { color: rgba(255,255,255,0.95); }
-
     /* DRAWN MEALS */
-    .drawn-meals { background: var(--white); padding: 72px 0; }
+    .drawn-meals { background: var(--beige); padding: 72px 0; }
     .meals-intro { font-size: 16px; color: #555; line-height: 1.85; max-width: 640px; margin-bottom: 40px; }
     .meals-intro strong { color: var(--green); }
     .meals-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 20px; }
-    .meal-card { background: var(--beige); border-radius: 18px; overflow: hidden; transition: transform 0.2s; }
+    .meal-card { background: var(--white); border-radius: 18px; overflow: hidden; transition: transform 0.2s; }
     .meal-card:hover { transform: translateY(-4px); }
     .meal-img { aspect-ratio: 1; width: 100%; object-fit: cover; display: block; }
     .meal-img-placeholder {
@@ -225,13 +233,13 @@
     .meal-label { font-size: 13px; color: #888; font-weight: 600; padding: 10px 14px; text-align: center; }
 
     /* TESTIMONIALS */
-    .testimonials { background: var(--beige); padding: 80px 0; }
+    .testimonials { background: var(--white); padding: 80px 0; }
     .t-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 22px; margin-top: 48px; }
     .t-card {
-      background: var(--white); border-radius: 18px; padding: 28px 26px;
-      box-shadow: 0 2px 16px rgba(0,0,0,0.06); transition: transform 0.2s, box-shadow 0.2s;
+      background: var(--beige); border-radius: 18px; padding: 28px 26px;
+      transition: transform 0.2s, box-shadow 0.2s;
     }
-    .t-card:hover { transform: translateY(-4px); box-shadow: 0 10px 36px rgba(0,0,0,0.1); }
+    .t-card:hover { transform: translateY(-4px); box-shadow: 0 10px 36px rgba(0,0,0,0.08); }
     .t-card.wide { grid-column: span 2; background: var(--green); }
     .wa-chip {
       display: inline-flex; align-items: center; gap: 5px;
@@ -252,17 +260,17 @@
     .t-card.wide .t-avatar { background: rgba(212,232,154,0.18); }
     .t-name { font-size: 13px; font-weight: 700; color: var(--green); }
     .t-card.wide .t-name { color: var(--gold); }
-    .t-note { font-size: 12px; color: #bbb; }
+    .t-note { font-size: 12px; color: #999; }
     .t-card.wide .t-note { color: rgba(255,255,255,0.4); }
 
     /* PRICING */
-    .pricing { background: var(--white); padding: 80px 0; }
+    .pricing { background: var(--beige); padding: 80px 0; }
     .pricing-head { text-align: center; margin-bottom: 16px; }
     .pricing-head .gold-line { margin: 16px auto; }
-    .pricing-head .sec-sub { font-size: 16px; color: #888; max-width: 540px; margin: 0 auto; }
+    .pricing-head .sec-sub { font-size: 16px; color: #777; max-width: 540px; margin: 0 auto; }
     .pricing-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 24px; margin-top: 48px; }
     .prc-card {
-      border-radius: 22px; padding: 34px 28px;
+      background: var(--white); border-radius: 22px; padding: 34px 28px;
       border: 2px solid var(--beige-dark); position: relative; transition: all 0.25s;
     }
     .prc-card:hover { transform: translateY(-5px); box-shadow: 0 14px 44px rgba(0,0,0,0.1); }
@@ -285,35 +293,34 @@
     .prc-divider { width: 100%; height: 1px; background: var(--beige-dark); margin: 22px 0; }
     .prc-card.star .prc-divider { background: rgba(255,255,255,0.15); }
     .prc-features { list-style: none; display: flex; flex-direction: column; gap: 11px; margin-bottom: 30px; }
-    .prc-features li {
-      font-size: 14px; color: #484848;
-      display: flex; gap: 10px; align-items: flex-start; line-height: 1.5;
-    }
+    .prc-features li { font-size: 14px; color: #484848; display: flex; gap: 10px; align-items: flex-start; line-height: 1.5; }
     .prc-card.star .prc-features li { color: rgba(255,255,255,0.85); }
     .prc-features li::before { content: '✓'; color: var(--green); font-weight: 900; flex-shrink: 0; margin-top: 1px; }
     .prc-card.star .prc-features li::before { color: var(--gold); }
     .prc-btn {
-      display: block; text-align: center;
-      padding: 14px 24px; border-radius: 50px;
-      font-weight: 900; font-size: 15px;
-      text-decoration: none; transition: all 0.2s;
+      display: block; text-align: center; padding: 14px 24px; border-radius: 50px;
+      font-weight: 900; font-size: 15px; text-decoration: none; transition: all 0.2s;
       background: var(--beige); color: var(--green);
     }
     .prc-btn:hover { background: var(--beige-dark); }
     .prc-card.star .prc-btn { background: var(--gold); color: var(--dark-green); }
     .prc-card.star .prc-btn:hover { background: var(--gold-light); box-shadow: 0 4px 16px rgba(200,168,60,0.4); }
+    .prc-for {
+      display: inline-block; font-size: 12px; font-weight: 600;
+      background: var(--beige); color: #666; border: 1px solid var(--beige-dark);
+      padding: 4px 12px; border-radius: 50px; margin-bottom: 18px;
+    }
+    .prc-card.star .prc-for { background: rgba(212,232,154,0.12); color: var(--light-green); border-color: rgba(212,232,154,0.25); }
 
     /* CTA */
-    .cta-section { background: var(--dark-green); padding: 88px 0; text-align: center; }
+    .cta-section { background: var(--green); padding: 88px 0; text-align: center; }
     .cta-section .sec-title { color: #fff; }
     .cta-section .sec-title .gold { color: var(--gold); }
-    .cta-body { font-size: 17px; color: rgba(255,255,255,0.7); max-width: 520px; margin: 0 auto 44px; line-height: 1.85; }
+    .cta-body { font-size: 17px; color: rgba(255,255,255,0.75); max-width: 520px; margin: 0 auto 44px; line-height: 1.9; }
     .btn-wa {
       display: inline-flex; align-items: center; gap: 12px;
-      background: #25D366; color: #fff;
-      font-weight: 900; font-size: 18px;
-      padding: 18px 46px; border-radius: 50px;
-      text-decoration: none; transition: all 0.2s;
+      background: #25D366; color: #fff; font-weight: 900; font-size: 18px;
+      padding: 18px 46px; border-radius: 50px; text-decoration: none; transition: all 0.2s;
       box-shadow: 0 4px 24px rgba(37,211,102,0.28);
     }
     .btn-wa:hover { background: #1ebe5d; transform: translateY(-3px); box-shadow: 0 10px 32px rgba(37,211,102,0.38); }
@@ -334,13 +341,12 @@
       .hero { text-align: center; }
       .about-grid { grid-template-columns: 1fr; gap: 36px; }
       .about-visual { display: none; }
-      .layers-grid { grid-template-columns: 1fr; }
-      .inside-grid { grid-template-columns: 1fr; }
+      .whom-grid, .inside-grid { grid-template-columns: 1fr; }
       .meals-grid { grid-template-columns: repeat(2,1fr); }
       .pricing-grid { grid-template-columns: 1fr; max-width: 460px; margin-left: auto; margin-right: auto; }
       .t-grid { grid-template-columns: 1fr; }
       .t-card.wide { grid-column: auto; }
-      .stats-row { gap: 28px; }
+      .stats-row { gap: 24px; }
     }
   </style>
 </head>
@@ -360,19 +366,20 @@
 
 <!-- HERO -->
 <header class="hero">
-  <div class="hero-blob hero-blob-1"></div>
-  <div class="hero-blob hero-blob-2"></div>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
   <div class="container">
     <div class="hero-inner">
-      <div class="hero-content">
+      <div>
         <div class="hero-badge">✨ תוכנית "בין הראש לצלחת"</div>
         <h1>
-          מעטפת ליווי<br>
-          <span class="gold">שמכסה הכל</span>
+          כי שינוי אמיתי לא קורה על הצלחת —<br>
+          <span class="gold">הוא מתחיל בראש.</span>
         </h1>
         <p class="hero-sub">
-          טכנולוגיה חכמה. עבודה מנטלית עמוקה. שינוי סביבתי בבית. ומענה אישי יומיומי.<br><br>
-          כי כשכל השכבות מקבלות מענה בו זמנית — השינוי לא יכול שלא לקרות.
+          בואי נבנה יחד מציאות בריאה, נינוחה ומשפחתית.<br>
+          לראשונה, שיטה שעושה סדר במחשבות, במטבח ובגוף —
+          ביום-יום, בזמן אמת.
         </p>
         <div class="hero-btns">
           <!-- ⚠️ החלפי XXXXXXXXXXX במספר הוואטסאפ שלך -->
@@ -384,7 +391,7 @@
       </div>
       <div class="hero-photo-wrap">
         <!--
-          להחלפה — הסירי את div הבא והוסיפי:
+          להחלפה: הסירי את div הבא והוסיפי —
           <img src="foto_eti.jpg" alt="אתי אטל" style="width:240px;height:300px;border-radius:120px 120px 60px 60px;object-fit:cover;border:4px solid rgba(200,168,60,0.45);">
         -->
         <div class="hero-photo-frame">
@@ -411,43 +418,61 @@
         <span class="stat-lbl">מפגשים אישיים</span>
       </div>
       <div class="stat">
-        <span class="stat-val">NLP</span>
-        <span class="stat-lbl">מאסטרית מוסמכת</span>
+        <span class="stat-val">📱</span>
+        <span class="stat-lbl">אפליקציה חכמה</span>
       </div>
       <div class="stat">
-        <span class="stat-val">📱</span>
-        <span class="stat-lbl">אפליקציה חכמה אישית</span>
+        <span class="stat-val">24/7</span>
+        <span class="stat-lbl">מענה בוואטסאפ</span>
       </div>
     </div>
   </div>
 </div>
 
-<!-- THREE LAYERS -->
-<section class="layers" id="layers">
+<!-- FOR WHOM -->
+<section class="for-whom" id="for-whom">
   <div class="container">
-    <div class="sec-label">הגישה</div>
-    <h2 class="sec-title">שלוש שכבות שעובדות יחד</h2>
+    <div class="sec-label">למי זה מיועד</div>
+    <h2 class="sec-title">שינוי שמתחיל בבית — ועובר לדורות הבאים</h2>
     <div class="gold-line"></div>
-    <div class="layers-grid">
+    <div class="whom-grid">
 
-      <div class="layer-card">
-        <span class="layer-ico">📱</span>
-        <h3>דיוק טכנולוגי</h3>
-        <p>אפליקציה חכמה אישית שעוקבת אחר המדדים שלך, הרקע הרפואי, ההעדפות והתחושות — ומייצרת תפריטים דינמיים ורשימות קניות בהתאמה מלאה. <strong>הנתונים שלך, לא של מישהי אחרת.</strong></p>
+      <div class="whom-card">
+        <span class="whom-ico">👩</span>
+        <h3>נשים שמחפשות שינוי אמיתי</h3>
+        <p>לא עוד "דיאטה" שנגמרת בתסכול. אלא שינוי עמוק בדרך שאת חושבת, מרגישה ובוחרת — מתוך שפע ולא מחסור.</p>
       </div>
 
-      <div class="layer-card">
-        <span class="layer-ico">🧠</span>
-        <h3>ליווי מנטלי ורגשי</h3>
-        <p>מפגשי NLP שנוגעים בדפוסי החשיבה, הרגשות והטריגרים שמאחורי כל בחירת אוכל — לצד מענה אישי יומיומי בוואטסאפ. <strong>כי החיים לא קורים רק בשעות הפגישה.</strong></p>
+      <div class="whom-card">
+        <span class="whom-ico">💛</span>
+        <h3>הורים שדואגים לילד שלהם</h3>
+        <p>את רואה את הילד שלך מתמודד — חברתית, רגשית, תזונתית — ואת רוצה לפעול למענו. כאן תקבלי כלים אמיתיים: לא גזרות ולא בושה, אלא שינוי סביבתי ורגשי שמתחיל בבית ומשפיע על כל חייו.</p>
       </div>
 
-      <div class="layer-card">
-        <span class="layer-ico">🏠</span>
-        <h3>פרקטיקה ביתית</h3>
-        <p>סדנאות שמגיעות אלייך הביתה — ארגון המזווה, המקרר וסביבת האכילה. <strong>כי כשהסביבה הפיזית תומכת, הבחירות הנכונות הופכות לקלות יותר.</strong></p>
+      <div class="whom-card">
+        <span class="whom-ico">🏠</span>
+        <h3>משפחות שרוצות שינוי אמיתי</h3>
+        <p>כשהבית שלך הופך לסביבה שתומכת בבריאות — כולם נהנים. זה מסע משפחתי שמייצר מציאות חדשה לכל הבית.</p>
       </div>
 
+    </div>
+  </div>
+</section>
+
+<!-- PROMISE / CONFIDENCE -->
+<section class="promise" id="promise">
+  <div class="container">
+    <div class="sec-label">הגישה שמשנה הכל</div>
+    <h2 class="sec-title">הכלים שמכסים הכל — גוף, ראש וסביבה</h2>
+    <div class="gold-line"></div>
+    <p class="promise-body">
+      את לא לבד בתהליך הזה.<br><br>
+      עם <strong>המעטפת הטכנולוגית</strong>, הליווי הצמוד, והמפגשים האישיים שמביאים את השינוי עד אלייך למזווה — אנחנו יוצרות יחד את השינוי הבין-דורי שאת רוצה להנחיל לילדים שלך.<br><br>
+      כי מסע הבריאות שלנו מתחיל בילדות שלנו — ויכול לשנות את הילדות של ילדינו. <strong>כשכל השכבות מקבלות מענה בו זמנית, אי אפשר שלא להצליח.</strong>
+    </p>
+    <div class="promise-highlight">
+      אנחנו לא עושות <span class="gold">דיאטה</span> —<br>
+      אנחנו יוצרות <span class="gold">מציאות חדשה.</span>
     </div>
   </div>
 </section>
@@ -455,51 +480,33 @@
 <!-- WHAT'S INSIDE -->
 <section class="inside" id="inside">
   <div class="container">
-    <div class="sec-label">מה כלול בתוכנית</div>
-    <h2 class="sec-title">3 חודשים. כיסוי מלא. מכל כיוון.</h2>
+    <div class="sec-label">מה כלול</div>
+    <h2 class="sec-title">מעטפת שמכסה כל שכבה</h2>
     <div class="gold-line"></div>
-    <p class="inside-intro">
-      התוכנית "בין הראש לצלחת" בנויה כך שאף רגע לא תהיי לבד בדרך.
-      כל אחד מהמרכיבים תוכנן כדי לתמוך בשאר — ויחד הם יוצרים <strong>מעטפת שלמה שקשה להתחמק ממנה.</strong>
-    </p>
     <div class="inside-grid">
 
       <div class="inside-card">
-        <span class="inside-num">01 — אפליקציה</span>
+        <span class="inside-num">01 — ביום-יום</span>
+        <h3>מענה אישי בזמן אמת</h3>
+        <p>שאלה, התלבטות, רגע קשה — <strong>אני כאן בוואטסאפ</strong>, לאורך כל 3 החודשים. כי החיים לא קורים רק בשעות הפגישה, והתמיכה צריכה להיות שם בדיוק כשצריך אותה.</p>
+      </div>
+
+      <div class="inside-card">
+        <span class="inside-num">02 — טכנולוגיה</span>
         <h3>אפליקציה חכמה אישית</h3>
-        <p>
-          מדדי דם, לחץ דם, העדפות תזונתיות ורקע רפואי — הכל נשמר ומנוטר.
-          <strong>תפריטים דינמיים שמתעדכנים בהתאם לך</strong>, רשימות קניות, מעקב תחושות יומי.
-          הטכנולוגיה שעובדת בשבילך ברקע, כל יום.
-        </p>
+        <p>ניהול <strong>מעקבים, מתכונים ותפריטים דינמיים</strong> — מותאמים לך, למדדים שלך ולרקע הרפואי שלך. רשימות קניות, מעקב תחושות יומי, הכל במקום אחד, קל לשימוש.</p>
       </div>
 
       <div class="inside-card">
-        <span class="inside-num">02 — מפגשים</span>
+        <span class="inside-num">03 — עומק מנטלי</span>
         <h3>2 מפגשי NLP אישיים</h3>
-        <p>
-          עבודה מנטלית ממוקדת על <strong>הדפוסים, הטריגרים והרגשות</strong> שמאחורי הקשר שלך עם אוכל.
-          לא "מה לאכול" — אלא "למה את אוכלת מה שאת אוכלת" ואיך לשנות את זה מהשורש.
-        </p>
+        <p>עבודה ממוקדת על <strong>דפוסי החשיבה, הרגשות והטריגרים</strong> מאחורי הקשר שלך עם אוכל. לא "מה לאכול" — אלא לשנות מהשורש את הסיפור שאת מספרת לעצמך.</p>
       </div>
 
       <div class="inside-card">
-        <span class="inside-num">03 — סדנאות</span>
-        <h3>2 סדנאות פרקטיות בבית</h3>
-        <p>
-          אני מגיעה אלייך. ארגון המזווה, המקרר, הכנה מראש, קינוחי חלבון.
-          <strong>הסביבה הביתית שלך תשתנה</strong> כך שהבחירה הנכונה תהיה גם הבחירה הקלה.
-        </p>
-      </div>
-
-      <div class="inside-card">
-        <span class="inside-num">04 — ליווי יומיומי</span>
-        <h3>מענה אישי בוואטסאפ</h3>
-        <p>
-          שאלה, התלבטות, הצלחה קטנה שרצית לשתף — <strong>אני כאן.</strong>
-          לאורך כל 3 החודשים, בין הפגישות, בחגים, בסופי שבוע.
-          כי השינוי קורה בחיים האמיתיים, לא רק בפגישות.
-        </p>
+        <span class="inside-num">04 — פרקטיקה</span>
+        <h3>2 מפגשי 1:1 בבית שלך</h3>
+        <p>אני מגיעה אלייך — <strong>לסידור פיזי של המזווה והמקרר</strong>, ארגון הסביבה, הכנה מראש, ויצירת בית שמדבר בריאות מעצמו. כי כשהסביבה משתנה, הכל משתנה.</p>
       </div>
 
     </div>
@@ -514,20 +521,19 @@
         <div class="sec-label">מי אני</div>
         <h2 class="sec-title">אתי אטל</h2>
         <div class="gold-line"></div>
-        <p>מאסטרית NLP, יועצת בריאות במגמת תזונה התנהגותית, מאמנת ריצה מוסמכת וחובבת טבע. אמא לשלושה בנים.</p>
-        <p>הדרך שלי למה שאני עושה התחילה <strong>במטבח שלי</strong> — כשרציתי לחשוף את הבנים לעולם הטעמים בצורה שמחה. כך נולדו <strong>"ארוחות מצוירות"</strong>: שולחן שמזמין, שמחקרן, שמשמח — לא מלחיץ.</p>
-        <p>לאורך השנים עבדתי עם אוכלוסיות מגוונות, התנדבתי בעמותת "אתגרים" עם קבוצות ריצה לאנשים עם צרכים מיוחדים, ולמדתי מקרוב עד כמה <strong>הקשר בין גוף, נפש ואורח חיים</strong> הוא הלב של כל שינוי אמיתי.</p>
-        <p>אני לא מאמינה בהגבלות. אני מאמינה <strong>בבחירות מתוך שפע, מודעות ושמחה</strong> — לכל החיים.</p>
+        <p>"תקשיבי, <strong>אני לא מאמינה בקיצורי דרך</strong> או בתפריטים שאי אפשר לעמוד בהם לאורך זמן.</p>
+        <p>הכל התחיל אצלי כשרציתי להכניס שמחה ושפע לצלחת של הילדים שלי — וגיליתי שברגע שמשנים את דפוסי החשיבה, <strong>האוכל הופך להיות כלי לחיבור ולא למאבק.</strong></p>
+        <p>היום אני מביאה את השילוב הזה — של NLP, תזונה התנהגותית ופרקטיקה יומיומית — אל תוך הבית שלך, <strong>כדי שזה לא יהיה עוד ניסיון, אלא פשוט החיים החדשים שלכם."</strong></p>
         <div class="creds">
           <div class="cred"><span class="cred-icon">🧠</span><span>מאסטרית NLP מוסמכת</span></div>
           <div class="cred"><span class="cred-icon">🥗</span><span>יועצת בריאות | תזונה התנהגותית</span></div>
           <div class="cred"><span class="cred-icon">🏃‍♀️</span><span>מאמנת ריצה מוסמכת</span></div>
-          <div class="cred"><span class="cred-icon">🌿</span><span>חובבת טבע ואמא לשלושה</span></div>
+          <div class="cred"><span class="cred-icon">🌿</span><span>חובבת טבע ואמא לשלושה בנים</span></div>
         </div>
       </div>
       <div class="about-visual">
         <!--
-          להחלפה — הסירי את about-photo-placeholder והוסיפי:
+          להחלפה: הסירי את about-photo-placeholder והוסיפי —
           <img src="foto_eti_2.jpg" alt="אתי אטל" style="width:100%;height:100%;object-fit:cover;">
         -->
         <div class="about-photo-frame">
@@ -538,7 +544,7 @@
         </div>
         <div class="photo-badge">
           <span class="big">🌿</span>
-          שינוי מתמשך<br>שאפשר לחיות איתו
+          לא עוד ניסיון —<br>החיים החדשים שלך
         </div>
       </div>
     </div>
@@ -552,11 +558,11 @@
     <h2 class="sec-title">כי השולחן יכול להיות מקום של שמחה</h2>
     <div class="gold-line"></div>
     <p class="meals-intro">
-      אכילה בריאה לא חייבת להיות מלחיצה. <strong>ארוחות מצוירות</strong> הן הגישה שלי לשולחן שמזמין, שמגוון, שמחקרן — לילדים ולמבוגרים כאחד.
+      כשרציתי לחשוף את הבנים שלי לעולם הטעמים — נולדו <strong>"ארוחות מצוירות"</strong>. שולחן שמזמין, שמגוון, שמחקרן. גישה שהפכה לחלק מהדרך שלי ללמד אנשים שאוכל הוא כלי לחיבור ולשפע — לא למאבק.
     </p>
     <div class="meals-grid">
       <!--
-        להחלפה — לכל meal-img-placeholder הוסיפי:
+        להחלפה: לכל meal-img-placeholder הוסיפי —
         <img src="meal1.jpg" alt="ארוחה מצוירת" class="meal-img">
       -->
       <div class="meal-card">
@@ -582,8 +588,8 @@
 <!-- TESTIMONIALS -->
 <section class="testimonials" id="testimonials">
   <div class="container">
-    <div class="sec-label">מה אומרות המלוות</div>
-    <h2 class="sec-title">בדברים שלהן</h2>
+    <div class="sec-label">בדברים שלהן</div>
+    <h2 class="sec-title">מה אומרות המלוות</h2>
     <div class="gold-line"></div>
     <div class="t-grid">
 
@@ -673,16 +679,17 @@
 <section class="pricing" id="pricing">
   <div class="container">
     <div class="pricing-head">
-      <div class="sec-label">תוכניות ומחירים</div>
-      <h2 class="sec-title">בחרי את המסלול שמתאים לך</h2>
+      <div class="sec-label">מסלולים מותאמים אישית</div>
+      <h2 class="sec-title">כל נתיב — בנוי בדיוק בשבילך</h2>
       <div class="gold-line"></div>
-      <p class="sec-sub">כל התוכניות כוללות ליווי אישי מלא ומותאם לחייך</p>
+      <p class="sec-sub">מי שצריכה שינוי אישי, מי שדואגת לילד שלה, ומי שרוצה להזיז את כל הבית — יש מסלול שמדבר בדיוק אלייך. לא יודעת מה מתאים? שלחי לי הודעה ונבנה יחד.</p>
     </div>
     <div class="pricing-grid">
 
       <div class="prc-card">
-        <div class="prc-label">נקודת התחלה</div>
-        <div class="prc-name">פגישת אינטייק</div>
+        <div class="prc-label">תחנת ההתחלה</div>
+        <div class="prc-name">פגישת מיפוי אישי</div>
+        <div class="prc-for">👋 מתאים לכולן — בנות כל הגילאים</div>
         <div class="prc-dur">60 דקות | היכרות ומיפוי</div>
         <div class="prc-price"><span class="prc-currency">₪</span>350</div>
         <div class="prc-divider"></div>
@@ -699,16 +706,17 @@
 
       <div class="prc-card star">
         <div class="star-badge">⭐ תוכנית הדגל</div>
-        <div class="prc-label">הכי מלאה</div>
+        <div class="prc-label">מסלול אישי</div>
         <div class="prc-name">בין הראש לצלחת</div>
+        <div class="prc-for">👩 מותאם לנשים שרוצות שינוי אמיתי</div>
         <div class="prc-dur">3 חודשים | 4 מפגשים + אפליקציה</div>
         <div class="prc-price"><span class="prc-currency">₪</span>2,450</div>
         <div class="prc-divider"></div>
         <ul class="prc-features">
           <li>אפליקציה חכמה אישית מלאה</li>
-          <li>תפריטים דינמיים + רשימות קניות</li>
-          <li>2 מפגשי NLP ממוקדים</li>
-          <li>2 סדנאות ביתיות (מזווה + מקרר)</li>
+          <li>תפריטים דינמיים + מתכונים + קניות</li>
+          <li>2 מפגשי NLP אישיים</li>
+          <li>2 מפגשי 1:1 בבית (מזווה + מקרר)</li>
           <li>מענה אישי בוואטסאפ לאורך 3 חודשים</li>
           <li>תוכנית "חיסון לחגים"</li>
         </ul>
@@ -717,17 +725,18 @@
       </div>
 
       <div class="prc-card">
-        <div class="prc-label">ליווי מורחב</div>
-        <div class="prc-name">פרמיום</div>
-        <div class="prc-dur">3 חודשים | תוכנית מלאה + קבוצה</div>
+        <div class="prc-label">מסלול משפחתי</div>
+        <div class="prc-name">כל הבית איתי</div>
+        <div class="prc-for">💛 הורים לילדים בעודף משקל ומשפחות</div>
+        <div class="prc-dur">3 חודשים | תוכנית מלאה + ליווי משפחתי</div>
         <div class="prc-price"><span class="prc-currency">₪</span>3,200</div>
         <div class="prc-divider"></div>
         <ul class="prc-features">
           <li>כל מה שבתוכנית הדגל</li>
           <li>מפגש עם בן / בת הזוג</li>
+          <li>כלים להורים — לשיחה, לגבולות ולשינוי רגשי</li>
           <li>גישה לקבוצת ליווי חודשית</li>
-          <li>מעקב מדדי דם</li>
-          <li>תוכנית חגים ואירועים</li>
+          <li>תוכנית חגים ואירועים משפחתיים</li>
           <li>זמינות מורחבת בוואטסאפ</li>
         </ul>
         <!-- ⚠️ החלפי XXXXXXXXXXX במספר הוואטסאפ שלך -->
@@ -741,14 +750,14 @@
 <!-- CTA -->
 <section class="cta-section" id="contact">
   <div class="container">
-    <div class="sec-label" style="color:var(--light-green);">רוצה לדעת עוד?</div>
+    <div class="sec-label" style="color:var(--light-green);">מוכנה להתחיל?</div>
     <h2 class="sec-title" style="text-align:center;margin-bottom:20px;">
       שלחי לי הודעה —<br>
-      <span class="gold">נדבר בלי התחייבות</span>
+      <span class="gold">נבנה יחד את המציאות החדשה שלך</span>
     </h2>
     <p class="cta-body">
-      אסביר לך בדיוק איך התוכנית עובדת, מה מתאים לך ומה הצעד הראשון.<br>
-      ביחד נבין אם זה המקום הנכון עבורך.
+      אסביר לך בדיוק איך התוכנית עובדת, מה מתאים לך ולמשפחה שלך,<br>
+      ומה הצעד הראשון. בלי לחץ, בלי התחייבות.
     </p>
     <!-- ⚠️ החלפי XXXXXXXXXXX במספר הוואטסאפ שלך -->
     <a href="https://wa.me/972XXXXXXXXXXX?text=היי%20אתי%2C%20אשמח%20לשמוע%20עוד%20על%20תוכנית%20הליווי%20שלך%20🌿" class="btn-wa" target="_blank">
