@@ -492,6 +492,7 @@ export default function AdminPage() {
   const [bodyDocSent, setBodyDocSent] = useState(false)
   const [childDocSent, setChildDocSent] = useState(false)
   const sessionDataRef = useRef({})
+  const lessonRef = useRef(null)
 
   // ── ✅ Plate Calculator state ──
   const [calculatingPlate, setCalculatingPlate] = useState(false)
@@ -529,6 +530,38 @@ export default function AdminPage() {
   async function loadClients() {
     const { data } = await supabase.from('clients').select('*')
     setClients(data || [])
+  }
+
+  function downloadLesson() {
+    if (!lessonRef.current) return
+    const content = lessonRef.current.innerHTML
+    const html = `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>מה חשוב לדעת על הגוף לפני שמתחילים</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #fafaf8; direction: rtl; }
+  .lesson-wrap { max-width: 680px; margin: 0 auto; padding: 32px 20px 60px; }
+  @media print { body { background: #fff; } }
+</style>
+</head>
+<body>
+<div style="background:rgba(15,76,42,0.97);padding:14px 24px;margin-bottom:0;position:sticky;top:0;">
+  <div style="font-weight:900;font-size:16px;color:#fff;text-align:center;">מה חשוב לדעת על הגוף לפני שמתחילים</div>
+</div>
+<div class="lesson-wrap">${content}</div>
+</body>
+</html>`
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'שיעור-הגוף-שלך.html'
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   async function loadProfile(client) {
@@ -2913,10 +2946,13 @@ export default function AdminPage() {
           <div style={{ position: 'fixed', inset: 0, background: '#fafaf8', zIndex: 500, overflowY: 'auto', direction: 'rtl' }}>
             <div style={{ position: 'sticky', top: 0, background: 'rgba(250,250,248,0.95)', borderBottom: '1px solid #e5e7eb', padding: '12px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, backdropFilter: 'blur(8px)' }}>
               <div style={{ fontWeight: 900, fontSize: 15, color: '#0f4c2a' }}>מה חשוב לדעת על הגוף לפני שמתחילים</div>
-              <button onClick={() => setShowLessonMode(false)} style={{ padding: '8px 18px', borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={downloadLesson} style={{ padding: '8px 14px', borderRadius: 10, background: '#f0fdf4', color: '#0f4c2a', border: '1.5px solid #16a34a', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>⬇️ הורידי כ-HTML</button>
+                <button onClick={() => setShowLessonMode(false)} style={{ padding: '8px 18px', borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
+              </div>
             </div>
 
-            <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 20px 60px' }}>
+            <div ref={lessonRef} style={{ maxWidth: 680, margin: '0 auto', padding: '32px 20px 60px' }}>
 
               {/* פתיחה */}
               <div style={{ textAlign: 'center', marginBottom: 40 }}>
