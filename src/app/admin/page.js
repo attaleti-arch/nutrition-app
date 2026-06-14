@@ -1951,27 +1951,54 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 8, color: '#0f4c2a' }}>📝 הנחיות מזווה</div>
                   <textarea value={selectedClient.pantry_notes || ''} onChange={e => setSelectedClient(prev => ({ ...prev, pantry_notes: e.target.value }))} onBlur={e => updateClientData('pantry_notes', e.target.value)} placeholder="כתבי הנחיות מזווה אישיות..." style={{ width: '100%', height: 200, padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7 }} />
-                  {selectedClient.pantry_notes && (
-                    <button onClick={downloadPantryHTML} style={{ marginTop: 10, padding: '9px 18px', borderRadius: 10, background: '#f0fdf4', color: '#15803d', border: '1.5px solid #86efac', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>⬇️ ייצוא הנחיות מזווה כ-HTML</button>
-                  )}
                 </div>
-                <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
-                  <div style={{ fontWeight: 800, fontSize: 15, color: '#0f4c2a', marginBottom: 12 }}>📚 מדריכים — ייצוא HTML</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f0fdf4', borderRadius: 12, padding: '12px 16px' }}>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: '#0f4c2a' }}>🛒 מדריך קניות ומזווה</div>
-                        <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>הקובץ שמופיע ללקוח ב-PlanApp</div>
-                      </div>
-                      <a href="/shopping_guide.html" download="מדריך-קניות.html" style={{ padding: '8px 16px', borderRadius: 10, background: '#0f4c2a', color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>⬇️ HTML</a>
+
+                {/* קלפי מדריכים — עיצוב זהה ל-PlanApp + ייצוא HTML */}
+                <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 18px', background: '#f0fdfa', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 22 }}>🛒</span>
+                    <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: 15, color: '#0d9488' }}>מדריך קניות חכם</div><div style={{ fontSize: 12, color: '#9ca3af' }}>רשימה מלאה עם טיפים וצ׳קבוקסים</div></div>
+                  </div>
+                  <div style={{ padding: 14, display: 'flex', gap: 8 }}>
+                    <a href="/shopping_guide.html" target="_blank" rel="noreferrer" style={{ flex: 1, display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: '#0d9488', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את המדריך 🛒</a>
+                    <a href="/shopping_guide.html" download="מדריך-קניות.html" style={{ padding: '12px 16px', borderRadius: 10, background: '#f0fdfa', color: '#0d9488', border: '1.5px solid #99f6e4', fontWeight: 700, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap' }}>⬇️ HTML</a>
+                  </div>
+                </div>
+
+                {selectedClient.pantry_notes ? (
+                  <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
+                    <div style={{ padding: '14px 18px', background: '#fff7ed', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 22 }}>🏡</span>
+                      <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: 15, color: '#f97316' }}>מדריך המזווה שלי</div><div style={{ fontSize: 12, color: '#9ca3af' }}>הנחיות אישיות מהפגישה שלנו בבית</div></div>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f5f3ff', borderRadius: 12, padding: '12px 16px' }}>
-                      <div>
-                        <div style={{ fontWeight: 700, fontSize: 14, color: '#6d28d9' }}>📖 חוברת מתכונים</div>
-                        <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>20 מתכונים ללא קמח וסוכר, עשירים בחלבון</div>
+                    <div style={{ padding: 14 }}>
+                      <div style={{ fontSize: 14, color: '#444', lineHeight: 1.7, marginBottom: 12, whiteSpace: 'pre-wrap' }}>{selectedClient.pantry_notes}</div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <a href="/pantry_guide.html" target="_blank" rel="noreferrer" style={{ flex: 1, display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: '#f97316', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את המדריך המלא 🏡</a>
+                        <button onClick={downloadPantryHTML} style={{ padding: '12px 16px', borderRadius: 10, background: '#fff7ed', color: '#f97316', border: '1.5px solid #fed7aa', fontWeight: 700, fontSize: 14, cursor: 'pointer', whiteSpace: 'nowrap' }}>⬇️ HTML</button>
                       </div>
-                      <a href="/recipes_guide.html" download="חוברת-מתכונים.html" style={{ padding: '8px 16px', borderRadius: 10, background: '#7c3aed', color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>⬇️ HTML</a>
                     </div>
+                  </div>
+                ) : (
+                  <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
+                    <div style={{ padding: '14px 18px', background: '#fff7ed', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 22 }}>🏡</span>
+                      <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: 15, color: '#f97316' }}>מדריך המזווה והמקרר</div><div style={{ fontSize: 12, color: '#9ca3af' }}>איך לארגן את המטבח לתמיכה בדרך שלך</div></div>
+                    </div>
+                    <div style={{ padding: 14, display: 'flex', gap: 8 }}>
+                      <a href="/pantry_guide.html" target="_blank" rel="noreferrer" style={{ flex: 1, display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: '#f97316', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את המדריך 🏡</a>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 18px', background: '#faf5ff', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 22 }}>📚</span>
+                    <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: 15, color: '#9333ea' }}>חוברת המתכונים של אתי</div><div style={{ fontSize: 12, color: '#9ca3af' }}>20 מתכונים · ללא קמח · ללא סוכר · חלבון גבוה</div></div>
+                  </div>
+                  <div style={{ padding: 14, display: 'flex', gap: 8 }}>
+                    <a href="/recipes_guide.html" target="_blank" rel="noreferrer" style={{ flex: 1, display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: '#9333ea', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את החוברת 📚</a>
+                    <a href="/recipes_guide.html" download="חוברת-מתכונים.html" style={{ padding: '12px 16px', borderRadius: 10, background: '#faf5ff', color: '#9333ea', border: '1.5px solid #e9d5ff', fontWeight: 700, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap' }}>⬇️ HTML</a>
                   </div>
                 </div>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
