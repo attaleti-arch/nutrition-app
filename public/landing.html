@@ -71,14 +71,24 @@
       letter-spacing: 1.5px; padding: 6px 18px; border-radius: 50px; margin-bottom: 22px;
     }
     .hero h1 {
-      font-size: clamp(28px, 4vw, 46px);
-      font-weight: 900; color: #fff; line-height: 1.3; margin-bottom: 22px;
+      font-size: clamp(30px, 4.5vw, 52px);
+      font-weight: 900; color: #fff; line-height: 1.25; margin-bottom: 20px;
     }
     .hero h1 .gold { color: var(--gold); }
-    .hero-sub {
-      font-size: 17px; color: rgba(255,255,255,0.82);
-      line-height: 1.85; margin-bottom: 36px; max-width: 520px;
+    .hero-intro {
+      font-size: 19px; color: rgba(255,255,255,0.85);
+      line-height: 1.8; margin-bottom: 28px; max-width: 520px;
     }
+    .hero-points {
+      list-style: none; padding: 0; margin: 0 0 36px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .hero-points li {
+      font-size: 17px; color: rgba(255,255,255,0.88);
+      border-right: 3px solid var(--gold);
+      padding-right: 16px; line-height: 1.6;
+    }
+    .hero-points li strong { color: #fff; }
     .hero-btns { display: flex; gap: 14px; flex-wrap: wrap; }
     .btn-primary {
       background: var(--gold); color: var(--dark-green);
@@ -408,14 +418,15 @@
       <div>
         <div class="hero-badge">✨ תוכנית "בין הראש לצלחת"</div>
         <h1>
-          כי שינוי אמיתי לא קורה על הצלחת —<br>
+          שינוי לא קורה על הצלחת —<br>
           <span class="gold">הוא מתחיל בראש.</span>
         </h1>
-        <p class="hero-sub">
-          בואי נבנה יחד מציאות בריאה, נינוחה ומשפחתית.<br>
-          לראשונה, שיטה שעושה סדר במחשבות, במטבח ובגוף —
-          ביום-יום, בזמן אמת.
-        </p>
+        <p class="hero-intro">בואי נבנה יחד מציאות בריאה ונינוחה. בלי "דיאטות" — פשוט בחירות טובות יותר מתוך <span class="gold">שפע</span>.</p>
+        <ul class="hero-points">
+          <li><strong>השיטה שלי:</strong> שילוב בין NLP לניהול התנהגותי.</li>
+          <li><strong>התוצאה:</strong> סדר במחשבות ובמטבח, בזמן אמת.</li>
+          <li><strong>הדרך:</strong> אני איתך, צעד אחרי צעד, ביומיום שלך.</li>
+        </ul>
         <div class="hero-btns">
           <!-- ⚠️ החלפי XXXXXXXXXXX במספר הוואטסאפ שלך -->
           <a href="https://wa.me/972XXXXXXXXXXX?text=היי%20אתי%2C%20אשמח%20לשמוע%20עוד%20על%20תוכנית%20הליווי%20שלך%20🌿" class="btn-primary" target="_blank">
