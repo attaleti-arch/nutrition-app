@@ -430,6 +430,7 @@ export default function AdminPage() {
   const [childAnalysis, setChildAnalysis] = useState('')
   const [childLoading, setChildLoading] = useState(false)
   const [childEditing, setChildEditing] = useState(false)
+  const [childViewMode, setChildViewMode] = useState('view')
   const [childFeedback, setChildFeedback] = useState('')
   const [childFeedbackLoading, setChildFeedbackLoading] = useState(false)
   const [childFeedbackSaved, setChildFeedbackSaved] = useState(false)
@@ -2642,7 +2643,7 @@ export default function AdminPage() {
                   const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
                   if (!res.ok) throw new Error('API error')
                   const reader = res.body.getReader(); const decoder = new TextDecoder()
-                  setChildEditing(true)
+                  setChildEditing(true); setChildViewMode('view')
                   while (true) {
                     const { done, value } = await reader.read(); if (done) break
                     childResult += decoder.decode(value, { stream: true }); setChildAnalysis(childResult)
@@ -2662,12 +2663,18 @@ export default function AdminPage() {
                     <div style={{ background: 'linear-gradient(135deg,#7c3aed,#a855f7)', padding: '14px 18px', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                       <div>
                         <div style={{ fontWeight: 800, fontSize: 14 }}>📋 מערך מפגש — לעיניך בלבד</div>
-                        <div style={{ fontSize: 11, color: '#e9d5ff' }}>ערכי והוסיפי הערות → שמרי מחדש</div>
+                        <div style={{ fontSize: 11, color: '#e9d5ff' }}>{childViewMode === 'view' ? 'לחצי ✏️ לעריכה' : 'ערכי → onBlur שומר אוטומטית'}</div>
                       </div>
-                      <button onClick={() => { setChildEditing(false); setChildAnalysis('') }} style={{ padding: '6px 14px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕ סגרי</button>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => setChildViewMode(m => m === 'view' ? 'edit' : 'view')} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{childViewMode === 'view' ? '✏️ ערכי' : '👁️ צפי'}</button>
+                        <button onClick={() => { setChildEditing(false); setChildAnalysis(''); saveSessionKey('child_analysis', '') }} style={{ padding: '6px 12px', borderRadius: 8, background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>✕</button>
+                      </div>
                     </div>
                     <div style={{ padding: 16 }}>
-                      <textarea value={childAnalysis} onChange={e => setChildAnalysis(e.target.value)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      {childViewMode === 'view'
+                        ? <div style={{ fontSize: 13, color: '#1a1a1a', lineHeight: 1.8, textAlign: 'right', direction: 'rtl' }} dangerouslySetInnerHTML={renderMd(childAnalysis)} />
+                        : <textarea value={childAnalysis} onChange={e => setChildAnalysis(e.target.value)} onBlur={() => saveSessionKey('child_analysis', childAnalysis)} rows={22} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                      }
                     </div>
                     <div style={{ display: 'flex', gap: 8, padding: '0 16px 16px' }}>
                       <button onClick={async () => {
@@ -2680,12 +2687,11 @@ export default function AdminPage() {
                           const reader = res.body.getReader(); const decoder = new TextDecoder()
                           while (true) { const { done, value } = await reader.read(); if (done) break; cr += decoder.decode(value, { stream: true }); setChildAnalysis(cr) }
                         } catch(e) { if (!cr) alert('שגיאת רשת — נסי שוב') }
-                        if (cr) { saveSessionKey('child_analysis', cr) }
+                        if (cr) { setChildViewMode('view'); saveSessionKey('child_analysis', cr) }
                         setChildLoading(false)
-                      }} disabled={childLoading} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#faf5ff', color: '#7c3aed', border: '1.5px solid #e9d5ff', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      }} disabled={childLoading} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         {childLoading ? '⏳...' : '🔄 עבדי מחדש'}
                       </button>
-
                     </div>
                   </div>
                 )}
