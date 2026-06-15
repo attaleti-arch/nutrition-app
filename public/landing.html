@@ -234,15 +234,54 @@
     .journey-card > p { font-size: 15px; color: #3a3a3a; line-height: 1.85; font-weight: 500; }
 
     /* ── INSIDE ── */
-    .inside { background: var(--white); padding: 80px 0; }
-    .inside-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 18px; margin-top: 36px; }
-    .inside-card {
-      background: var(--beige); border-radius: 18px; padding: 26px 20px;
+    .inside { background: var(--dark-green); padding: 88px 0; }
+    .inside-promise {
+      display: grid; grid-template-columns: 1fr 1.3fr;
+      gap: 64px; align-items: center; margin-top: 40px;
     }
-    .inside-num { font-size: 11px; font-weight: 700; letter-spacing: 1.5px; color: var(--gold); display: block; margin-bottom: 10px; }
-    .inside-card h3 { font-size: 16px; font-weight: 900; color: var(--dark-green); margin-bottom: 8px; }
-    .inside-card p { font-size: 14px; color: #555; line-height: 1.75; }
-    .inside-card p strong { color: var(--green); }
+    .inside-tagline {
+      font-size: clamp(30px, 4vw, 48px); font-weight: 900;
+      color: #fff; line-height: 1.15;
+    }
+    .inside-tagline .gold { color: var(--gold); }
+    .inside-list { display: flex; flex-direction: column; gap: 0; }
+    .inside-row {
+      display: flex; gap: 20px; align-items: flex-start;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 24px 0;
+    }
+    .inside-row:first-child { padding-top: 0; }
+    .inside-row:last-child { border-bottom: none; }
+    .inside-idx { font-size: 12px; font-weight: 900; color: var(--gold); letter-spacing: 1px; min-width: 34px; padding-top: 4px; }
+    .inside-row h3 { font-size: 17px; font-weight: 900; color: #fff; margin-bottom: 5px; }
+    .inside-row p { font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.8; }
+
+    /* ── FOR WHO ── */
+    .forwho { background: var(--beige); padding: 88px 0; }
+    .forwho-inner { max-width: 660px; }
+    .forwho-list {
+      list-style: none; padding: 0;
+      display: flex; flex-direction: column; gap: 16px;
+      margin: 36px 0 52px;
+    }
+    .forwho-list li {
+      display: flex; align-items: flex-start; gap: 16px;
+      font-size: 18px; color: var(--dark-green); font-weight: 500; line-height: 1.5;
+    }
+    .forwho-list li::before {
+      content: '✓'; min-width: 30px; height: 30px; border-radius: 50%;
+      background: var(--dark-green); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 900; flex-shrink: 0; margin-top: 2px;
+    }
+    .btn-big {
+      display: inline-flex; align-items: center; gap: 12px;
+      background: var(--dark-green); color: #fff;
+      font-size: 20px; font-weight: 900; font-family: 'Heebo', sans-serif;
+      padding: 22px 52px; border-radius: 60px;
+      text-decoration: none; transition: background 0.2s;
+    }
+    .btn-big:hover { background: var(--green); }
 
     /* ── TESTIMONIALS ── */
     .testimonials { background: var(--beige); padding: 80px 0; }
@@ -341,7 +380,8 @@
       .about-grid { grid-template-columns: 1fr; }
       .about-photo-wrap img { max-height: 320px; object-fit: cover; }
       .journeys-grid { grid-template-columns: 1fr; }
-      .inside-grid { grid-template-columns: repeat(2,1fr); }
+      .inside-promise { grid-template-columns: 1fr; }
+      .inside-tagline { font-size: 32px; margin-bottom: 32px; }
       .pricing-grid { grid-template-columns: 1fr; max-width: 460px; margin: 0 auto; }
       .t-grid { grid-template-columns: 1fr; }
       .t-card.wide { grid-column: auto; }
@@ -350,7 +390,6 @@
       .pain-bottom { flex-direction: column; gap: 20px; }
     }
     @media (max-width: 480px) {
-      .inside-grid { grid-template-columns: 1fr; }
       .diff-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -566,35 +605,41 @@
 <!-- WHAT'S INSIDE -->
 <section class="inside" id="inside">
   <div class="container">
-    <div class="sec-label" style="color:rgba(255,255,255,0.5);">מה כלול</div>
-    <h2 class="sec-title" style="color:#fff;">מעטפת שמכסה כל שכבה</h2>
-    <div class="gold-line"></div>
-    <div class="inside-grid">
-
-      <div class="inside-card">
-        <span class="inside-num">01 — יומיומי</span>
-        <h3>מענה אישי בזמן אמת</h3>
-        <p>שאלה, רגע קשה, ספק — <strong>אני כאן בוואטסאפ</strong> לאורך כל התהליך.</p>
+    <div class="sec-label" style="color:var(--gold);">מה מחכה לך</div>
+    <div class="inside-promise">
+      <div>
+        <h2 class="inside-tagline">אני לא<br>נעלמת<br><span class="gold">כשהפגישה<br>נגמרת.</span></h2>
       </div>
-
-      <div class="inside-card">
-        <span class="inside-num">02 — טכנולוגיה</span>
-        <h3>אפליקציה חכמה אישית</h3>
-        <p><strong>מעקב ותפריטים</strong> מותאמים למדדים ולרקע הרפואי שלך.</p>
+      <div class="inside-list">
+        <div class="inside-row">
+          <span class="inside-idx">01</span>
+          <div>
+            <h3>מענה אישי בוואטסאפ</h3>
+            <p>שאלה, רגע קשה, ספק — אני כאן לאורך כל התהליך. לא רק בשעות הפגישה.</p>
+          </div>
+        </div>
+        <div class="inside-row">
+          <span class="inside-idx">02</span>
+          <div>
+            <h3>אפליקציה אישית חכמה</h3>
+            <p>תפריטים יומיים, מעקב מדדים, תזכורות — כולם מותאמים לך ולמצבך הבריאותי הספציפי.</p>
+          </div>
+        </div>
+        <div class="inside-row">
+          <span class="inside-idx">03</span>
+          <div>
+            <h3>2 מפגשי NLP אישיים</h3>
+            <p>נגיע לשורש ההרגל ולא לסימפטום. השינוי האמיתי מתחיל במקום שרואים אותו הכי פחות.</p>
+          </div>
+        </div>
+        <div class="inside-row">
+          <span class="inside-idx">04</span>
+          <div>
+            <h3>ביקור בבית שלך</h3>
+            <p>מזווה, מקרר, מטבח — אנחנו בונות ביחד סביבה שמדברת בריאות, ולא מפתה לאוטומט.</p>
+          </div>
+        </div>
       </div>
-
-      <div class="inside-card">
-        <span class="inside-num">03 — עומק מנטלי</span>
-        <h3>2 מפגשי NLP אישיים</h3>
-        <p>עבודה על <strong>הטריגרים שמנהלים אותך</strong> — שינוי מהשורש.</p>
-      </div>
-
-      <div class="inside-card">
-        <span class="inside-num">04 — פרקטיקה</span>
-        <h3>מפגשים 1:1 בבית שלך</h3>
-        <p>אני מגיעה — <strong>סידור מזווה ומקרר</strong>, כך שהבית מדבר בריאות.</p>
-      </div>
-
     </div>
   </div>
 </section>
@@ -646,6 +691,24 @@
         </div>
       </div>
 
+    </div>
+  </div>
+</section>
+
+<!-- FOR WHO -->
+<section class="forwho">
+  <div class="container">
+    <div class="forwho-inner">
+      <div class="sec-label">זה בשבילך</div>
+      <h2 class="sec-title">את במקום הנכון אם...</h2>
+      <div class="gold-line"></div>
+      <ul class="forwho-list">
+        <li>ניסית כל דיאטה, תפריט ושיטה — ועדיין מרגישה שזה לא מחזיק</li>
+        <li>את רוצה להוות דוגמה בריאה לילדים שלך, אבל מרגישה שגם את עדיין נאבקת</li>
+        <li>את עייפה מהמאבק עם עצמך בסוף כל יום ורוצה שיהיה מישהי לצידך</li>
+        <li>את חולמת שהבית שלך יתמוך בבריאות שלך — ולא ירגיש כמו שדה מוקשים</li>
+      </ul>
+      <a href="https://wa.me/972523336766?text=היי%20אתי%2C%20אשמח%20לשיחת%20היכרות%20חינמית%20🌿" class="btn-big" target="_blank">בואי נדבר ←</a>
     </div>
   </div>
 </section>
