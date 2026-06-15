@@ -175,20 +175,10 @@
     .gold-line { width: 52px; height: 4px; background: var(--gold); border-radius: 2px; margin-bottom: 32px; }
 
     /* ── WHY DIFFERENT ── */
-    .diff-section { background: var(--beige-dark); padding: 88px 0; }
-    .diff-section .sec-title { max-width: 720px; }
-    .diff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 40px; }
-    .diff-card { background: var(--green-pale); border-radius: 18px; padding: 26px 22px; transition: transform 0.2s; }
-    .diff-card:hover { transform: translateY(-4px); }
-    .diff-icon { font-size: 34px; margin-bottom: 12px; display: block; }
-    .diff-card h3 { font-size: 16px; font-weight: 900; color: var(--green); margin-bottom: 6px; }
-    .diff-card p { font-size: 13.5px; color: #444; line-height: 1.75; }
-    .diff-quote {
-      margin-top: 40px; padding: 28px 36px;
-      border-right: 3px solid var(--gold);
-    }
-    .diff-quote blockquote { font-size: 19px; font-style: italic; color: var(--dark-green); line-height: 1.7; font-weight: 500; margin-bottom: 10px; }
-    .diff-quote cite { font-size: 13px; color: var(--gold); font-weight: 700; }
+    .diff-section { background: var(--beige); padding: 88px 0; }
+    .diff-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 28px; }
+    .diff-item strong { font-size: 16px; font-weight: 900; color: var(--dark-green); display: block; margin-bottom: 8px; }
+    .diff-item p { font-size: 15px; color: #444; line-height: 1.75; }
 
     /* ── ABOUT ── */
     .about-section { background: var(--dark-green); padding: 80px 0; }
@@ -496,39 +486,36 @@
 <!-- WHY DIFFERENT -->
 <section class="diff-section" id="why">
   <div class="container">
-    <div class="sec-label">למה הפעם זה מחזיק</div>
-    <h2 class="sec-title">לא עוד ייעוץ תזונה או תפריטים שמתפספסים —<br>שיטה שמשנה את הבית מבפנים.</h2>
+    <div class="sec-label">הגישה שלי</div>
+    <h2 class="sec-title">למה הפעם זה מחזיק</h2>
     <div class="gold-line"></div>
+
+    <p style="font-size:18px;max-width:680px;margin-bottom:48px;line-height:1.7;color:var(--dark-green);">
+      לא עוד תפריטים שמתפספסים.<br>
+      <strong>אני משנה את ההרגלים, את הסביבה ואת החשיבה ששולטים באוכל שלך.</strong>
+    </p>
+
     <div class="diff-grid">
-      <div class="diff-card">
-        <span class="diff-icon">🧠</span>
-        <h3>NLP מאסטרית</h3>
-        <p>עובדת על שורש ההרגל, לא רק על ההתנהגות שאת רואה על פני השטח. שבירת מנגנוני חשיבה אוטומטיים.</p>
+      <div class="diff-item">
+        <strong>🧠 NLP מאסטרית</strong>
+        <p>עובדת על שורש ההרגל — לא רק על מה שאת רואה על פני השטח.</p>
       </div>
-      <div class="diff-card">
-        <span class="diff-icon">🥗</span>
-        <h3>תזונה התנהגותית</h3>
-        <p>לא עוד רשימת "מותר ואסור" — אלא שינוי דפוסים עמוקים שמחזיקים לאורך זמן.</p>
+      <div class="diff-item">
+        <strong>🥗 תזונה התנהגותית</strong>
+        <p>שינוי דפוסים עמוקים שמחזיקים לאורך זמן, בלי רשימות "מותר ואסור".</p>
       </div>
-      <div class="diff-card">
-        <span class="diff-icon">🏠</span>
-        <h3>מגיעה אלייך הביתה</h3>
-        <p>אני לא רק מסבירה מה לעשות — אני מגיעה פיזית, עוזרת לסדר את המזווה והמקרר, ובונה סביבה שתומכת בהצלחה שלך ביום-יום.</p>
+      <div class="diff-item">
+        <strong>🏠 מגיעה אלייך הביתה</strong>
+        <p>אני מגיעה פיזית — מסדרת מזווה ומקרר, ובונה סביבה שתומכת בהצלחה שלך.</p>
       </div>
-      <div class="diff-card">
-        <span class="diff-icon">👩‍👧‍👦</span>
-        <h3>אמא ל-3 בנים</h3>
-        <p>ההרגלים שאני מלמדת הם בדיוק אותם הרגלים שבניתי אצלי בבית. זה לא תיאוריה — זה מה שאני חיה.</p>
+      <div class="diff-item">
+        <strong>👩‍👧‍👦 אמא ל-3 בנים</strong>
+        <p>כל מה שאני מלמדת — בניתי קודם כל אצלי בבית.</p>
       </div>
-      <div class="diff-card">
-        <span class="diff-icon">📱</span>
-        <h3>ליווי יומיומי + אפליקציה</h3>
-        <p>מעקב יומי, תפריטים אישיים לפי המדדים שלך, ומשוב ממני בזמן אמת.</p>
+      <div class="diff-item">
+        <strong>📱 ליווי יומיומי + אפליקציה</strong>
+        <p>מעקב יומי ומשוב ממני בזמן אמת — כדי שהשינוי יקרה באמת.</p>
       </div>
-    </div>
-    <div class="diff-quote">
-      <blockquote>"אני לא מאמינה בקיצורי דרך. אני מאמינה בשינוי אמיתי, שמתחיל בראש ומשנה את הבית."</blockquote>
-      <cite>— אתי אטל</cite>
     </div>
   </div>
 </section>
