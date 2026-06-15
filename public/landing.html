@@ -174,22 +174,22 @@
     .gold-line { width: 52px; height: 4px; background: var(--gold); border-radius: 2px; margin-bottom: 32px; }
 
     /* ── WHY DIFFERENT ── */
-    .diff-section { background: var(--beige-dark); padding: 80px 0; }
-    .diff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 40px; }
-    .diff-card {
-      background: var(--white); border-radius: 18px; padding: 26px 22px;
-      transition: transform 0.2s;
+    .diff-section { background: var(--beige-dark); padding: 96px 0; }
+    .diff-section .sec-title { max-width: 720px; }
+    .diff-manifesto { margin-top: 60px; display: flex; flex-direction: column; gap: 52px; }
+    .diff-block { max-width: 700px; }
+    .diff-block-accent { width: 36px; height: 3px; background: var(--gold); margin-bottom: 16px; }
+    .diff-block h3 {
+      font-size: clamp(22px, 2.8vw, 30px); font-weight: 900;
+      color: var(--dark-green); margin-bottom: 14px; line-height: 1.2;
     }
-    .diff-card:hover { transform: translateY(-4px); }
-    .diff-icon { font-size: 36px; margin-bottom: 12px; display: block; }
-    .diff-card h3 { font-size: 16px; font-weight: 900; color: var(--green); margin-bottom: 6px; }
-    .diff-card p { font-size: 13.5px; color: #444; line-height: 1.7; }
+    .diff-block p { font-size: 17px; color: #444; line-height: 1.9; font-weight: 400; }
     .diff-story {
-      margin-top: 36px; padding: 30px 34px;
-      background: var(--white); border-right: 4px solid var(--gold); border-radius: 16px;
+      margin-top: 60px; padding: 32px 36px;
+      border-right: 3px solid var(--gold);
     }
-    .diff-story .story-emoji { font-size: 24px; margin-bottom: 10px; display: block; }
-    .diff-story p { font-size: 17px; color: var(--dark-green); line-height: 1.75; font-weight: 500; }
+    .diff-story .story-emoji { font-size: 22px; margin-bottom: 10px; display: block; }
+    .diff-story p { font-size: 17px; color: var(--dark-green); line-height: 1.8; font-weight: 500; }
 
     /* ── ABOUT ── */
     .about-section { background: var(--dark-green); padding: 80px 0; }
@@ -350,7 +350,6 @@
       .about-photo-wrap img { max-height: 320px; object-fit: cover; }
       .journeys-grid { grid-template-columns: 1fr; }
       .inside-grid { grid-template-columns: repeat(2,1fr); }
-      .diff-grid { grid-template-columns: repeat(2, 1fr); }
       .pricing-grid { grid-template-columns: 1fr; max-width: 460px; margin: 0 auto; }
       .t-grid { grid-template-columns: 1fr; }
       .t-card.wide { grid-column: auto; }
@@ -451,31 +450,16 @@
     <div class="sec-label">למה הפעם זה מחזיק</div>
     <h2 class="sec-title">לא עוד ייעוץ תזונה או תפריטים שמתפספסים —<br>שיטה שמשנה את הבית מבפנים.</h2>
     <div class="gold-line"></div>
-    <div class="diff-grid">
-      <div class="diff-card">
-        <span class="diff-icon">🧠</span>
-        <h3>NLP מאסטרית</h3>
-        <p>עובדת על שורש ההרגל, לא רק על ההתנהגות שאת רואה על פני השטח. שבירת מנגנוני חשיבה אוטומטיים.</p>
+    <div class="diff-manifesto">
+      <div class="diff-block">
+        <div class="diff-block-accent"></div>
+        <h3>חופש מהאוטומט</h3>
+        <p>אנחנו לא נלחמות בדחפים — אנחנו מפרקות את התשתית שלהם. בעזרת ניהול התנהגותי מדויק, אנחנו משחררות אותך מהצורך "להתאמץ" בכל פעם מחדש.</p>
       </div>
-      <div class="diff-card">
-        <span class="diff-icon">🥗</span>
-        <h3>תזונה התנהגותית</h3>
-        <p>לא עוד רשימת "מותר ואסור" — אלא שינוי דפוסים עמוקים שמחזיקים לאורך זמן.</p>
-      </div>
-      <div class="diff-card">
-        <span class="diff-icon">🏠</span>
-        <h3>מגיעה אלייך הביתה</h3>
-        <p>אני לא רק מסבירה מה לעשות — אני מגיעה פיזית אלייך, עוזרת לסדר את המזווה והמקרר, ובונה סביבה שתומכת בהצלחה שלך ביום-יום.</p>
-      </div>
-      <div class="diff-card">
-        <span class="diff-icon">👩‍👧‍👦</span>
-        <h3>אמא ל-3 בנים</h3>
-        <p>ההרגלים שאני מלמדת הם בדיוק אותם הרגלים שבניתי אצלי בבית. זה לא תיאוריה — זה מה שאני חיה.</p>
-      </div>
-      <div class="diff-card">
-        <span class="diff-icon">📱</span>
-        <h3>ליווי יומיומי + אפליקציה</h3>
-        <p>מעקב יומי, תפריטים אישיים לפי המדדים שלך, ומשוב ממני בזמן אמת — כדי שהשינוי יקרה באמת, לא רק בשעות הפגישה.</p>
+      <div class="diff-block">
+        <div class="diff-block-accent"></div>
+        <h3>הבית כעוגן, לא כמכשול</h3>
+        <p>הבית שלך צריך לתמוך בך ובמשפחה, לא להקשות. אנחנו בונות סביבה שמאפשרת שקט, חיבור ושגרה רגועה — בלי לוותר על מה שטעים ומה שנכון.</p>
       </div>
     </div>
     <div class="diff-story">
