@@ -43,7 +43,7 @@
       display: flex; align-items: center; justify-content: space-between;
       max-width: 980px; margin: 0 auto; padding: 0 24px;
     }
-    .nav-logo img { height: 52px; border-radius: 10px; display: block; }
+    .nav-logo img { height: 68px; border-radius: 12px; display: block; filter: drop-shadow(0 2px 8px rgba(0,0,0,0.25)); }
     .nav-cta {
       background: var(--gold); color: var(--dark-green);
       font-weight: 900; font-size: 14px;
@@ -175,10 +175,36 @@
     .gold-line { width: 52px; height: 4px; background: var(--gold); border-radius: 2px; margin-bottom: 32px; }
 
     /* ── WHY DIFFERENT ── */
-    .diff-section { background: var(--beige); padding: 88px 0; }
-    .diff-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 28px; }
-    .diff-item strong { font-size: 16px; font-weight: 900; color: var(--dark-green); display: block; margin-bottom: 8px; }
-    .diff-item p { font-size: 15px; color: #444; line-height: 1.75; }
+    .diff-section { background: var(--dark-green); padding: 0; overflow: hidden; }
+    .diff-split {
+      display: grid; grid-template-columns: 1fr 1fr; min-height: 480px;
+    }
+    .diff-left {
+      background: var(--dark-green); padding: 80px 52px;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .diff-left .sec-label { color: var(--gold); font-size: 13px; letter-spacing: 2.5px; }
+    .diff-left-title {
+      font-size: clamp(28px, 3.5vw, 46px); font-weight: 900;
+      color: #fff; line-height: 1.15; margin: 14px 0 20px;
+    }
+    .diff-left p { color: rgba(255,255,255,0.7); font-size: 16px; line-height: 1.75; }
+    .diff-left strong { color: var(--gold); }
+    .diff-right {
+      background: var(--beige-dark); padding: 60px 48px;
+      display: flex; flex-direction: column; justify-content: center;
+    }
+    .diff-item {
+      display: flex; gap: 18px; align-items: flex-start;
+      padding: 18px 0; border-bottom: 1px solid rgba(26,46,26,0.1);
+    }
+    .diff-item:last-child { border-bottom: none; }
+    .diff-num {
+      font-size: 22px; font-weight: 900; color: var(--gold);
+      min-width: 34px; line-height: 1.1; flex-shrink: 0;
+    }
+    .diff-item strong { font-size: 16px; font-weight: 900; color: var(--dark-green); display: block; margin-bottom: 4px; }
+    .diff-item p { font-size: 13.5px; color: #444; line-height: 1.7; margin: 0; }
 
     /* ── ABOUT ── */
     .about-section { background: var(--dark-green); padding: 80px 0; }
@@ -228,21 +254,19 @@
     .journey-card > p { font-size: 15px; color: #3a3a3a; line-height: 1.85; font-weight: 500; }
 
     /* ── DEEP STORY ── */
-    .deep-story { background: var(--beige); padding: 96px 0; }
-    .deep-story .sec-title { max-width: 760px; line-height: 1.2; }
-    .deep-blocks { margin-top: 64px; display: flex; flex-direction: column; gap: 60px; max-width: 720px; }
+    .deep-story { background: var(--dark-green); padding: 96px 0; }
+    .deep-story .sec-title { max-width: 760px; line-height: 1.2; color: #fff; }
+    .deep-blocks { margin-top: 64px; display: flex; flex-direction: column; gap: 52px; max-width: 720px; }
     .deep-block h3 {
-      font-size: clamp(18px, 2.2vw, 22px); font-weight: 900;
-      color: var(--dark-green); margin-bottom: 14px;
-      padding-bottom: 12px; border-bottom: 2px solid var(--gold);
-      display: inline-block;
+      font-size: clamp(19px, 2.3vw, 24px); font-weight: 900;
+      color: var(--gold); margin-bottom: 14px;
     }
-    .deep-block p { font-size: 17px; color: #3a3a3a; line-height: 2; font-weight: 400; }
+    .deep-block p { font-size: 17px; color: rgba(255,255,255,0.82); line-height: 2; font-weight: 400; }
     .deep-cta {
       margin-top: 64px; padding-top: 48px;
-      border-top: 1px solid var(--beige-dark);
+      border-top: 1px solid rgba(255,255,255,0.12);
     }
-    .deep-cta p { font-size: 20px; font-weight: 700; color: var(--dark-green); margin-bottom: 24px; line-height: 1.5; }
+    .deep-cta p { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 24px; line-height: 1.5; }
 
     /* ── INSIDE ── */
     .inside { background: var(--dark-green); padding: 88px 0; }
@@ -401,10 +425,9 @@
       .pain-bottom { flex-direction: column; gap: 20px; }
     }
     @media (max-width: 820px) {
-      .diff-grid { grid-template-columns: repeat(2, 1fr); }
-    }
-    @media (max-width: 480px) {
-      .diff-grid { grid-template-columns: 1fr; }
+      .diff-split { grid-template-columns: 1fr; }
+      .diff-left { padding: 60px 28px 40px; }
+      .diff-right { padding: 40px 28px 60px; }
     }
   </style>
 </head>
@@ -430,7 +453,7 @@
           מה נכון לאכול.<br>
           <span class="gold">הגיע הזמן שזה גם יחזיק.</span>
         </h1>
-        <p style="font-size:15px;color:var(--green);font-weight:500;margin-bottom:12px;letter-spacing:0.3px;">דיאטות מתחילות בצלחת. שינוי אמיתי מתחיל בראש.</p>
+        <p style="font-size:19px;color:var(--dark-green);font-weight:700;margin-bottom:16px;letter-spacing:0.2px;">דיאטות מתחילות בצלחת. שינוי אמיתי מתחיל בראש.</p>
         <p class="hero-sub">תזונה התנהגותית · NLP · ליווי אישי בבית שלך</p>
         <a href="https://wa.me/972523336766?text=היי%20אתי%2C%20אשמח%20לשמוע%20עוד%20על%20תוכנית%20הליווי%20שלך%20🌿" class="btn-gold" target="_blank">
           📱 שלחי לי הודעה
@@ -491,36 +514,47 @@
 
 <!-- WHY DIFFERENT -->
 <section class="diff-section" id="why">
-  <div class="container">
-    <div class="sec-label">הגישה שלי</div>
-    <h2 class="sec-title">למה הפעם זה מחזיק</h2>
-    <div class="gold-line"></div>
-
-    <p style="font-size:18px;max-width:680px;margin-bottom:48px;line-height:1.7;color:var(--dark-green);">
-      לא עוד תפריטים שמתפספסים.<br>
-      <strong>אני משנה את ההרגלים, את הסביבה ואת החשיבה ששולטים באוכל שלך.</strong>
-    </p>
-
-    <div class="diff-grid">
+  <div class="diff-split">
+    <div class="diff-left">
+      <div class="sec-label">הגישה שלי</div>
+      <h2 class="diff-left-title">למה הפעם<br>זה מחזיק</h2>
+      <p>לא עוד תפריטים שמתפספסים.<br><strong>אני משנה את ההרגלים, את הסביבה ואת החשיבה ששולטים באוכל שלך.</strong></p>
+    </div>
+    <div class="diff-right">
       <div class="diff-item">
-        <strong>🧠 NLP מאסטרית</strong>
-        <p>עובדת על שורש ההרגל — לא רק על מה שאת רואה על פני השטח.</p>
+        <span class="diff-num">01</span>
+        <div>
+          <strong>NLP מאסטרית</strong>
+          <p>עובדת על שורש ההרגל — לא רק על מה שאת רואה על פני השטח.</p>
+        </div>
       </div>
       <div class="diff-item">
-        <strong>🥗 תזונה התנהגותית</strong>
-        <p>שינוי דפוסים עמוקים שמחזיקים לאורך זמן, בלי רשימות "מותר ואסור".</p>
+        <span class="diff-num">02</span>
+        <div>
+          <strong>תזונה התנהגותית</strong>
+          <p>שינוי דפוסים עמוקים שמחזיקים לאורך זמן, בלי רשימות "מותר ואסור".</p>
+        </div>
       </div>
       <div class="diff-item">
-        <strong>🏠 מגיעה אלייך הביתה</strong>
-        <p>אני מגיעה פיזית — מסדרת מזווה ומקרר, ובונה סביבה שתומכת בהצלחה שלך.</p>
+        <span class="diff-num">03</span>
+        <div>
+          <strong>מגיעה אלייך הביתה</strong>
+          <p>אני מגיעה פיזית — מסדרת מזווה ומקרר, ובונה סביבה שתומכת בהצלחה שלך.</p>
+        </div>
       </div>
       <div class="diff-item">
-        <strong>👩‍👧‍👦 אמא ל-3 בנים</strong>
-        <p>כל מה שאני מלמדת — בניתי קודם כל אצלי בבית.</p>
+        <span class="diff-num">04</span>
+        <div>
+          <strong>אמא ל-3 בנים</strong>
+          <p>כל מה שאני מלמדת — בניתי קודם כל אצלי בבית.</p>
+        </div>
       </div>
       <div class="diff-item">
-        <strong>📱 ליווי יומיומי + אפליקציה</strong>
-        <p>מעקב יומי ומשוב ממני בזמן אמת — כדי שהשינוי יקרה באמת.</p>
+        <span class="diff-num">05</span>
+        <div>
+          <strong>ליווי יומיומי + אפליקציה</strong>
+          <p>מעקב יומי ומשוב ממני בזמן אמת — כדי שהשינוי יקרה באמת.</p>
+        </div>
       </div>
     </div>
   </div>
