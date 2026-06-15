@@ -174,22 +174,22 @@
     .gold-line { width: 52px; height: 4px; background: var(--gold); border-radius: 2px; margin-bottom: 32px; }
 
     /* ── WHY DIFFERENT ── */
-    .diff-section { background: var(--white); padding: 80px 0; }
+    .diff-section { background: var(--beige-dark); padding: 80px 0; }
     .diff-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 40px; }
     .diff-card {
-      background: var(--beige); border-radius: 18px; padding: 26px 22px;
+      background: var(--white); border-radius: 18px; padding: 26px 22px;
       transition: transform 0.2s;
     }
     .diff-card:hover { transform: translateY(-4px); }
     .diff-icon { font-size: 36px; margin-bottom: 12px; display: block; }
     .diff-card h3 { font-size: 16px; font-weight: 900; color: var(--green); margin-bottom: 6px; }
-    .diff-card p { font-size: 13.5px; color: #555; line-height: 1.7; }
-    .diff-quote {
-      margin-top: 36px; padding: 28px 32px;
-      background: var(--beige); border-right: 4px solid var(--green); border-radius: 16px;
+    .diff-card p { font-size: 13.5px; color: #444; line-height: 1.7; }
+    .diff-story {
+      margin-top: 36px; padding: 30px 34px;
+      background: var(--white); border-right: 4px solid var(--gold); border-radius: 16px;
     }
-    .diff-quote blockquote { font-size: 19px; font-style: italic; color: var(--green); line-height: 1.65; font-weight: 500; margin-bottom: 10px; }
-    .diff-quote cite { font-size: 13px; color: var(--gold); font-weight: 700; }
+    .diff-story .story-emoji { font-size: 24px; margin-bottom: 10px; display: block; }
+    .diff-story p { font-size: 17px; color: var(--dark-green); line-height: 1.75; font-weight: 500; }
 
     /* ── ABOUT ── */
     .about-section { background: var(--dark-green); padding: 80px 0; }
@@ -448,44 +448,40 @@
 <!-- WHY DIFFERENT -->
 <section class="diff-section" id="why">
   <div class="container">
-    <div class="sec-label">מה הופך את השיטה שלי לשונה</div>
-    <h2 class="sec-title">לא עוד ייעוץ תזונה —<br>שיטה שמשנה את הבית מבפנים</h2>
+    <div class="sec-label">למה הפעם זה מחזיק</div>
+    <h2 class="sec-title">לא עוד ייעוץ תזונה או תפריטים שמתפספסים —<br>שיטה שמשנה את הבית מבפנים.</h2>
     <div class="gold-line"></div>
     <div class="diff-grid">
       <div class="diff-card">
         <span class="diff-icon">🧠</span>
         <h3>NLP מאסטרית</h3>
-        <p>שבירת מנגנוני חשיבה אוטומטיים — עובדת על שורשי ההרגל, לא על תסמינים.</p>
+        <p>עובדת על שורש ההרגל, לא רק על ההתנהגות שאת רואה על פני השטח. שבירת מנגנוני חשיבה אוטומטיים.</p>
       </div>
       <div class="diff-card">
         <span class="diff-icon">🥗</span>
         <h3>תזונה התנהגותית</h3>
-        <p>שינוי דפוסים סביב אוכל — לא תפריט שמסתיים בתסכול.</p>
+        <p>לא עוד רשימת "מותר ואסור" — אלא שינוי דפוסים עמוקים שמחזיקים לאורך זמן.</p>
       </div>
       <div class="diff-card">
         <span class="diff-icon">🏠</span>
         <h3>מגיעה אלייך הביתה</h3>
-        <p>סידור מזווה ומקרר, ארגון הסביבה — שינוי שמתחיל בפרקטיקה.</p>
+        <p>אני לא רק מסבירה מה לעשות — אני מגיעה פיזית אלייך, עוזרת לסדר את המזווה והמקרר, ובונה סביבה שתומכת בהצלחה שלך ביום-יום.</p>
       </div>
       <div class="diff-card">
         <span class="diff-icon">👩‍👧‍👦</span>
         <h3>אמא ל-3 בנים</h3>
-        <p>חיה ומאמינה בכל מה שאני מלמדת. לא תיאוריה — החיים שלי.</p>
+        <p>ההרגלים שאני מלמדת הם בדיוק אותם הרגלים שבניתי אצלי בבית. זה לא תיאוריה — זה מה שאני חיה.</p>
       </div>
       <div class="diff-card">
         <span class="diff-icon">📱</span>
-        <h3>אפליקציה חכמה</h3>
-        <p>מעקב יומי, תפריטים אישיים לפי המדדים שלך, משוב ממני בזמן אמת.</p>
-      </div>
-      <div class="diff-card">
-        <span class="diff-icon">🎨</span>
-        <h3>ארוחות מצוירות</h3>
-        <p>שיטה שפיתחתי לחשוף ילדים לעולם הטעמים — אוכל כשפה של שמחה.</p>
+        <h3>ליווי יומיומי + אפליקציה</h3>
+        <p>מעקב יומי, תפריטים אישיים לפי המדדים שלך, ומשוב ממני בזמן אמת — כדי שהשינוי יקרה באמת, לא רק בשעות הפגישה.</p>
       </div>
     </div>
-    <div class="diff-quote">
-      <blockquote>"אני לא מאמינה בקיצורי דרך. מאמינה בשינוי אמיתי, שמתחיל בראש ומשנה את הבית."</blockquote>
-      <cite>— אתי אטל, יועצת בריאות | מאסטרית NLP | אמא ל-3 בנים</cite>
+    <div class="diff-story">
+      <span class="story-emoji">💛</span>
+      <p>הדרך הזאת התחילה אצלי בבית.<br>
+      כשחיפשתי דרך להכניס שפע ובריאות לשולחן המשפחתי בלי מאבק, גיליתי שהשינוי האמיתי קורה כשמשנים גם את הראש, גם את הסביבה וגם את הדפוסים. את הדרך הזו אני מביאה עכשיו גם אלייך.</p>
     </div>
   </div>
 </section>
@@ -513,7 +509,7 @@
           <div class="about-cred"><span class="about-cred-icon">🏠</span> ליווי בבית הלקוח</div>
           <div class="about-cred"><span class="about-cred-icon">👩‍👧‍👦</span> אמא ל-3 בנים</div>
         </div>
-        <p style="font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:10px;letter-spacing:1px;text-transform:uppercase;font-weight:700;">כי אוכל הוא שפה — וזו האמנות שלי</p>
+        <p style="font-size:13px;color:rgba(255,255,255,0.4);margin-bottom:10px;letter-spacing:1px;text-transform:uppercase;font-weight:700;">איך הכל התחיל — השראה שמניעה את השיטה שלי</p>
         <div class="foodart-mini">
           <img src="/food-art-1.jpeg" alt="ארוחה מצוירת">
           <img src="/food-art-2.jpeg" alt="ארוחה מצוירת">
