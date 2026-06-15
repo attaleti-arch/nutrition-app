@@ -19,6 +19,13 @@ const TERMS_TEXT = `ברוכה הבאה למסע — בין הראש לצלחת
 
 export default function Home() {
   const [password, setPassword] = useState('')
+
+  useEffect(() => {
+    const h = window.location.hostname
+    if (h === 'eti-attal.com' || h === 'www.eti-attal.com') {
+      window.location.replace('/landing.html')
+    }
+  }, [])
   const [clientName, setClientName] = useState('')
   const [started, setStarted] = useState(false)
   const [error, setError] = useState('')
