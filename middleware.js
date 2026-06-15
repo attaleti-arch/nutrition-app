@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server'
 
 export function middleware(request) {
-  const hostname = request.headers.get('host') || ''
-  const pathname = request.nextUrl.pathname
+  const hostname = request.nextUrl.hostname
 
-  if (pathname === '/' && hostname.includes('eti-attal.com')) {
+  if (hostname === 'eti-attal.com' || hostname === 'www.eti-attal.com') {
     return NextResponse.redirect(new URL('/landing.html', request.url))
   }
 }
