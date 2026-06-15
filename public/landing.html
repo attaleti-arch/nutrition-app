@@ -65,7 +65,7 @@
       display: grid;
       grid-template-columns: 1fr 400px;
       gap: 0;
-      align-items: flex-end;
+      align-items: flex-start;
       min-height: 88vh;
       position: relative;
       z-index: 2;
@@ -78,12 +78,12 @@
       letter-spacing: 1.5px; padding: 6px 18px; border-radius: 50px; margin-bottom: 24px;
     }
     .hero-mega {
-      font-size: clamp(42px, 6.5vw, 82px);
+      font-size: clamp(34px, 5vw, 62px);
       font-weight: 900;
       color: var(--dark-green);
       line-height: 1.1;
       letter-spacing: -1.5px;
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
     .hero-mega .gold { color: var(--gold); }
     .hero-sub {
@@ -198,6 +198,11 @@
       line-height: 2; margin-bottom: 24px;
     }
     .about-bio strong { color: var(--gold-light); font-weight: 700; }
+    .about-section-heading {
+      font-size: 13px; font-weight: 700; color: var(--gold);
+      letter-spacing: 1.5px; text-transform: uppercase;
+      margin-top: 28px; margin-bottom: 8px; display: block;
+    }
     .foodart-mini {
       display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
       margin-top: 24px;
@@ -425,6 +430,7 @@
           מה נכון לאכול.<br>
           <span class="gold">הגיע הזמן שזה גם יחזיק.</span>
         </h1>
+        <p style="font-size:15px;color:var(--green);font-weight:500;margin-bottom:12px;letter-spacing:0.3px;">דיאטות מתחילות בצלחת. שינוי אמיתי מתחיל בראש.</p>
         <p class="hero-sub">תזונה התנהגותית · NLP · ליווי אישי בבית שלך</p>
         <a href="https://wa.me/972523336766?text=היי%20אתי%2C%20אשמח%20לשמוע%20עוד%20על%20תוכנית%20הליווי%20שלך%20🌿" class="btn-gold" target="_blank">
           📱 שלחי לי הודעה
@@ -596,18 +602,17 @@
       <div class="about-text-wrap">
         <h2 class="sec-title">נעים להכיר. אני אתי אטל.</h2>
         <div class="gold-line"></div>
-        <p class="about-bio">
-          בת 42, אמא לשלושה בנים, ומי שחיה ונושמת את החיבור שבין הראש לצלחת כבר קרוב לעשור. לפני עשר שנים, אחרי ההיריון השלישי, מצאתי את עצמי במקום שרבות מכירות — הרגשתי שהגוף שלי לא מגיב לי, שהתסכול גובר, ושהחיפוש אחרי פתרונות מהירים רק מרחיק אותי מהשקט שאני מחפשת.
-        </p>
-        <p class="about-bio">
-          לא מצאתי את התשובה ב"צלחת" נוספת. מצאתי אותה במקום אחר לגמרי — בחיבור שבין עולם הכוח והריצה לבין הבנה עמוקה של איך המוח שלנו מנהל את האכילה שלנו.
-        </p>
-        <p class="about-bio">
-          התחלתי להכניס יצירתיות לצלחת, ובמקום להילחם על "מה בריא", הפכנו את האוכל למשחק. המטבח הפך למעבדה של יצירה — עם ארוחות מצוירות, משחקים ותפריטים שגרמו לילדים שלי, וגם לי, לבחור בטוב <strong>מתוך רצון וחיבור</strong>, ולא מתוך מאבק.
-        </p>
-        <p class="about-bio">
-          בהמשך רכשתי כלים מנטליים באמצעות ה-NLP להפוך שינוי מ"תיאוריה" בלבד — <strong>לשינוי אמיתי ונוכח.</strong>
-        </p>
+        <span class="about-section-heading">כשמשהו נתקע, הגוף מתחיל לדבר</span>
+        <p class="about-bio">לפני כעשור, אחרי לידת בני השלישי, הרגשתי לראשונה שמשהו תקוע. חיפשתי דרך לחזור לזוז, ומצאתי את עצמי צוללת לעולם התנועה, הריצה ואימוני הכוח. דרך ההתנדבות שלי בקבוצת "אתגרים" ואימון אנשים עם מוגבלויות, הבנתי משהו עמוק: תנועה היא הרבה מעבר לשריפת קלוריות. היא כלי לבניית ביטחון, מסוגלות ואיכות חיים.</p>
+
+        <span class="about-section-heading">היצירתיות במטבח — היא לא משחק, היא שפה</span>
+        <p class="about-bio">במקביל, האהבה שלי ליצירה מצאה את דרכה לצלחת. רציתי לחשוף את הילדים למזונות חדשים, אז התחלתי ליצור להם "ארוחות מצוירות". המטבח הפך למעבדה של סקרנות ומשחק, ולימד אותי שיעור חשוב: <strong>הסביבה שבה אנחנו אוכלים קובעת את הבחירות שלנו הרבה יותר מכל תפריט מודפס.</strong></p>
+
+        <span class="about-section-heading">השיעור הכי חשוב שלי</span>
+        <p class="about-bio">כשעבדתי עם נערות שמתמודדות עם עודף משקל, הבנתי את עומק הקשר בין אוכל, דימוי גוף וביטחון עצמי. שינוי תזונתי אמיתי לא מתחיל בצלחת — הוא מתחיל במחשבות, ברגשות ובהרגלים המושרשים שלנו. שם החלטתי להעמיק לתוך עולם ה-NLP והתזונה ההתנהגותית.</p>
+
+        <span class="about-section-heading">השיטה שלי — בין הראש לצלחת</span>
+        <p class="about-bio">היום אני משלבת את כל העולמות שלי — תנועה, יצירה, ניהול הרגלים וכלים מעולם ה-NLP — כדי לעזור לנשים ולמשפחות לבנות מערכת יחסים בריאה ומאוזנת עם אוכל.<br><strong>אנחנו לא עושות דיאטות. אנחנו מנהלות תהליך שמתחיל בראש, כדי שהצלחת תסתדר מאליה.</strong></p>
         <p style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:10px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">איך הכל התחיל</p>
         <div class="foodart-mini">
           <img src="/food-art-1.jpeg" alt="ארוחה מצוירת">
