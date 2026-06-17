@@ -211,6 +211,7 @@ imgInput.addEventListener('change', (e) => {
 
   if (file.type.startsWith('video/')) {
     frameField.style.display = 'block';
+    hiddenVideo.onerror = () => alert('לא הצלחתי לטעון את הסרטון הזה. נסי לשמור פריים כתמונה (צילום מסך מהסרטון) ולהעלות אותו במקום.');
     hiddenVideo.src = URL.createObjectURL(file);
     hiddenVideo.addEventListener('loadedmetadata', () => {
       frameSlider.max = hiddenVideo.duration;
@@ -225,6 +226,7 @@ imgInput.addEventListener('change', (e) => {
   } else {
     frameField.style.display = 'none';
     const img = new Image();
+    img.onerror = () => alert('לא הצלחתי לטעון את התמונה הזו. נסי תמונה אחרת (JPG או PNG).');
     img.onload = () => {
       userImg = img;
       downloadBtn.disabled = false;
