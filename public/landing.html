@@ -291,8 +291,6 @@
     .inside-idx { font-size: 12px; font-weight: 900; color: var(--gold); letter-spacing: 1px; min-width: 34px; padding-top: 4px; }
     .inside-row h3 { font-size: 17px; font-weight: 900; color: #fff; margin-bottom: 5px; }
     .inside-row p { font-size: 14px; color: rgba(255,255,255,0.65); line-height: 1.8; }
-    .inside-bonus-imgs { display: flex; gap: 8px; margin-top: 12px; }
-    .inside-bonus-imgs img { width: 52px; height: 52px; border-radius: 10px; object-fit: cover; border: 2px solid rgba(200,168,60,0.4); }
 
     /* ── FOR WHO ── */
     .forwho { background: var(--beige); padding: 88px 0; }
@@ -378,32 +376,6 @@
     }
     .prc-btn:hover { background: var(--gold-light); transform: translateY(-2px); }
     .prc-card.star .prc-btn { background: var(--gold); }
-
-    /* ── FAQ ── */
-    .faq-section { background: var(--beige); padding: 88px 0; }
-    .faq-head { text-align: center; margin-bottom: 44px; }
-    .faq-list { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
-    .faq-item {
-      background: var(--white); border: 1px solid var(--beige-dark);
-      border-radius: 16px; overflow: hidden;
-    }
-    .faq-q {
-      display: flex; align-items: center; justify-content: space-between; gap: 16px;
-      width: 100%; text-align: right; background: none; border: none; cursor: pointer;
-      padding: 22px 26px; font-family: 'Heebo', sans-serif;
-      font-size: 16px; font-weight: 900; color: var(--dark-green);
-    }
-    .faq-icon {
-      flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
-      background: var(--green-pale); color: var(--green);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px; font-weight: 900; transition: transform 0.25s;
-    }
-    .faq-item.open .faq-icon { transform: rotate(45deg); background: var(--gold); color: var(--dark-green); }
-    .faq-a {
-      max-height: 0; overflow: hidden; transition: max-height 0.3s ease;
-    }
-    .faq-a p { padding: 0 26px 22px; font-size: 15px; color: #444; line-height: 1.8; }
 
     /* ── CTA ── */
     .cta-section { background: var(--green); padding: 88px 0; text-align: center; }
@@ -610,7 +582,6 @@
           <li>שאלון 360 + מיפוי מלא</li>
           <li>2 מפגשי NLP למטרה ולמוטיבציה</li>
           <li>מפגשים 1:1 בבית לסביבה תומכת</li>
-          <li>סדנת ארוחות מצוירות לשיפור המגוון — ללמוד להגיש ארוחות באופן מזמין וצבעוני</li>
           <li>כלים להורים — שיחה ושינוי סביבתי</li>
           <li>מענה בוואטסאפ לאורך התהליך</li>
         </ul>
@@ -629,7 +600,6 @@
           <li>אפליקציה חכמה + תפריטים אישיים</li>
           <li>2 מפגשי NLP — שבירת מנגנונים</li>
           <li>2 מפגשי 1:1 בבית (מזווה + מקרר)</li>
-          <li>סדנת חטיפי חלבון מעשית</li>
           <li>מענה אישי בוואטסאפ 3 חודשים</li>
           <li>התאמת סביבה לתמיכה בתהליך</li>
         </ul>
@@ -668,13 +638,13 @@
         <h2 class="sec-title">נעים להכיר. אני אתי אטל.</h2>
         <div class="gold-line"></div>
         <p class="about-bio" style="font-size:15px;opacity:0.7;margin-bottom:20px;font-weight:500;letter-spacing:0.3px;">אמא לשלושה בנים, מאסטרית NLP, יועצת תזונה התנהגותית ומאמנת ריצה.</p>
-        <p class="about-bio">לפני כעשור, אחרי הלידה השלישית, הרגשתי שמשהו תקוע. חיפשתי דרך לחזור לעצמי — דרך תנועה, ריצה וכוח. ההתנדבות שלי בקבוצת "אתגרים", באימון אנשים עם מוגבלויות, לימדה אותי שתנועה היא הרבה יותר משריפת קלוריות — היא כלי לבניית ביטחון, מסוגלות ואיכות חיים.</p>
+        <p class="about-bio">לפני כעשור, אחרי הלידה השלישית, הרגשתי שמשהו תקוע. חיפשתי דרך לחזור לעצמי — והתחלתי לצלול לעולם התנועה, הריצה והכוח. במקביל, במטבח, התחלתי ליצור "ארוחות מצוירות" לילדים כדי לחשוף אותם לעולם הטעמים בצורה משחקית.</p>
 
-        <p class="about-bio">במקביל, במטבח, התחלתי ליצור "ארוחות מצוירות" לילדים, כדי לחשוף אותם לעולם הטעמים בצורה משחקית. המטבח הפך למעבדה של סקרנות — ולימד אותי שהסביבה שבה אנחנו אוכלות קובעת את הבחירות שלנו הרבה יותר מכל תפריט מודפס.</p>
+        <p class="about-bio">דרך העבודה עם נשים ונערות בעודף משקל הבנתי את מה שהכי חשוב:<br><strong>שינוי תזונתי אמיתי לא קורה על הצלחת — הוא מתחיל בראש, בסביבה ובדפוסים העמוקים המושרשים שלנו.</strong></p>
 
-        <p class="about-bio">מהעבודה עם נשים ונערות בעודף משקל הבנתי את העומק שבקשר בין אוכל, דימוי גוף וביטחון עצמי: <strong>שינוי תזונתי אמיתי לא קורה על הצלחת — הוא מתחיל בראש, בסביבה ובדפוסים שמושרשים בנו.</strong></p>
+        <p class="about-bio">היום אני משלבת את כל העולמות שלי — NLP, תזונה התנהגותית, עבודה מעשית בבית וליווי יומיומי — כדי לעזור לנשים כמוך ולמשפחות לבנות קשר בריא, נינוח ומשחרר עם אוכל.</p>
 
-        <p class="about-bio">היום אני משלבת תנועה, יצירה, ניהול הרגלים וכלים מעולם ה-NLP, כדי לעזור לנשים ולמשפחות לבנות קשר בריא ונינוח עם אוכל. <strong>אנחנו לא עושות דיאטות. אנחנו מנהלות תהליך שמתחיל בראש — כך שהצלחת מסתדרת מאליה, גם בבית וגם בראש.</strong></p>
+        <p class="about-bio"><strong>לא עוד מלחמה עם הצלחת. אלא חיים חדשים, גם בבית וגם בראש.</strong></p>
         <p style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:10px;letter-spacing:1.5px;text-transform:uppercase;font-weight:700;">איך הכל התחיל</p>
         <div class="foodart-mini">
           <img src="/food-art-1.jpeg" alt="ארוחה מצוירת">
@@ -757,18 +727,6 @@
           <div>
             <h3>ביקור בבית שלך</h3>
             <p>מזווה, מקרר, מטבח — אנחנו בונות ביחד סביבה שמדברת בריאות, ולא מפתה לאוטומט.</p>
-          </div>
-        </div>
-        <div class="inside-row">
-          <span class="inside-idx">05</span>
-          <div>
-            <h3>סדנאות ומתכונים — גם לעיניים, לא רק לבטן</h3>
-            <p>חטיפי חלבון, ארוחות מצוירות וסדנאות מעשיות שמלמדות איך להגיש אוכל בריא בצורה מזמינה — לך ולילדים.</p>
-            <div class="inside-bonus-imgs">
-              <img src="/food-art-1.jpeg" alt="ארוחה מצוירת">
-              <img src="/food-art-2.jpeg" alt="ארוחה מצוירת">
-              <img src="/food-art-3.jpeg" alt="ארוחה מצוירת">
-            </div>
           </div>
         </div>
       </div>
@@ -860,70 +818,6 @@
   </div>
 </section>
 
-<!-- FAQ -->
-<section class="faq-section" id="faq">
-  <div class="container">
-    <div class="faq-head">
-      <div class="sec-label">שאלות נפוצות</div>
-      <h2 class="sec-title">מה שאת בטח שואלת את עצמך</h2>
-      <div class="gold-line" style="margin:0 auto;"></div>
-    </div>
-    <div class="faq-list">
-
-      <div class="faq-item">
-        <button class="faq-q">
-          <span>ניסיתי כבר כל דיאטה ושיטה, ושום דבר לא מחזיק לאורך זמן. מה יעשה הפעם את ההבדל?</span>
-          <span class="faq-icon">+</span>
-        </button>
-        <div class="faq-a">
-          <p>כי הפעם לא מתחילים מהתפריט. אנחנו הולכות לשורש — לדפוסים, לאמונות ולסביבה שגרמו לכל השיטות הקודמות להתפרק. כשעובדים על הראש, הבית והצלחת ביחד — השינוי נשאר.</p>
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-q">
-          <span>כמה זה עולה, ואיך אני יודעת שזה שווה את ההשקעה?</span>
-          <span class="faq-icon">+</span>
-        </button>
-        <div class="faq-a">
-          <p>התהליך מותאם אישית למצב שלך, ולכן המחיר נקבע בשיחה קצרה שבה נבין מה את צריכה. את מקבלת בהירות מלאה על מה כלול לפני שאת מתחייבת לכלום.</p>
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-q">
-          <span>אני לא בטוחה שיש לי את המוטיבציה להחזיק מעמד. מה אם אני שוב אתייאש?</span>
-          <span class="faq-icon">+</span>
-        </button>
-        <div class="faq-a">
-          <p>המוטיבציה לא חייבת להיות שם כל הזמן — בשביל זה אני כאן. במפגשי ה-NLP אנחנו עובדות על מה שמחזיק אותך תקועה, לא רק על רצון טוב שדועך אחרי שבוע. ואני נמצאת בוואטסאפ ברגעים שאת מרגישה שאת מתפוררת.</p>
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-q">
-          <span>אני מעולה כשהשגרה מסודרת, אבל בחופשות, חגים, אירועים או שעות ערב מאוחרות אני נופלת. זה יקרה גם הפעם?</span>
-          <span class="faq-icon">+</span>
-        </button>
-        <div class="faq-a">
-          <p>בדיוק בשביל זה לא בונות תהליך שתלוי רק בשגרה מסודרת. עובדות גם על הרגעים החריגים — חג, אירוע, שעה מאוחרת בלילה — כדי שיהיו לך כלים אמיתיים גם כשהיום לא נראה כמו תוכנית.</p>
-        </div>
-      </div>
-
-      <div class="faq-item">
-        <button class="faq-q">
-          <span>במשפחה שלנו כולם ככה, זה פשוט גנטי. אז זה בכלל רלוונטי לי?</span>
-          <span class="faq-icon">+</span>
-        </button>
-        <div class="faq-a">
-          <p>תורשה משפיעה, אבל היא לא קובעת לבד. הרבה ממה ש"עובר במשפחה" הם לא רק גנים — אלו גם הרגלים, שפה ויחס לאוכל שלמדנו בבית, ואת היחס הזה אפשר לשנות. זה לא הופך את זה לקל, אבל זה אומר שיש לך הרבה יותר שליטה ממה שנראה.</p>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</section>
-
 <!-- CTA -->
 <section class="cta-section" id="contact">
   <div class="container">
@@ -963,24 +857,6 @@
     <div class="footer-bottom">© 2025 אתי אטל — כל הזכויות שמורות</div>
   </div>
 </footer>
-
-<script>
-document.querySelectorAll('.faq-item').forEach(item => {
-  const q = item.querySelector('.faq-q');
-  const a = item.querySelector('.faq-a');
-  q.addEventListener('click', () => {
-    const isOpen = item.classList.contains('open');
-    document.querySelectorAll('.faq-item.open').forEach(other => {
-      if (other !== item) {
-        other.classList.remove('open');
-        other.querySelector('.faq-a').style.maxHeight = null;
-      }
-    });
-    item.classList.toggle('open', !isOpen);
-    a.style.maxHeight = !isOpen ? a.scrollHeight + 'px' : null;
-  });
-});
-</script>
 
 </body>
 </html>
