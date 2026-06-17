@@ -172,7 +172,7 @@ function draw() {
 
   // text
   const size = parseInt(fontSize.value, 10);
-  const lines = textInput.value.split('\n').filter(l => l.trim().length);
+  const rawLines = textInput.value.split('\n').filter(l => l.trim().length);
   ctx.direction = 'rtl';
   ctx.textAlign = 'right';
   ctx.textBaseline = 'alphabetic';
@@ -180,8 +180,27 @@ function draw() {
   ctx.lineJoin = 'round';
   ctx.miterLimit = 2;
 
-  const lineHeight = size * 1.25;
   const marginRight = cw * 0.08;
+  const marginLeft = cw * 0.08;
+  const maxTextWidth = cw - marginRight - marginLeft;
+
+  const lines = [];
+  rawLines.forEach(rawLine => {
+    const words = rawLine.split(' ');
+    let current = '';
+    words.forEach(word => {
+      const test = current ? current + ' ' + word : word;
+      if (current && ctx.measureText(test).width > maxTextWidth) {
+        lines.push(current);
+        current = word;
+      } else {
+        current = test;
+      }
+    });
+    if (current) lines.push(current);
+  });
+
+  const lineHeight = size * 1.25;
   const marginBottom = ch * 0.09;
   const startY = ch - marginBottom - (lines.length - 1) * lineHeight;
 
