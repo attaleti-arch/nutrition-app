@@ -63,11 +63,16 @@
 
 <div class="wrap">
   <h1>יצירת קאבר לריל 🌿</h1>
-  <p class="sub">העלי תמונה, כתבי טקסט, הורידי PNG מוכן לפיד</p>
+  <p class="sub">העלי תמונה או סרטון, כתבי טקסט, הורידי PNG מוכן לפיד</p>
 
   <div class="field">
-    <label>1. תמונה (פריים מהסרטון / צילום מסך)</label>
-    <input type="file" id="imgInput" accept="image/*">
+    <label>1. תמונה או וידאו (נבחרת פריים מתוך הסרטון)</label>
+    <input type="file" id="imgInput" accept="image/*,video/*">
+  </div>
+
+  <div class="field" id="frameField" style="display:none">
+    <label>בחרי פריים מתוך הסרטון: <span class="range-val" id="frameTimeVal">0.0s</span></label>
+    <input type="range" id="frameSlider" min="0" max="1" step="0.05" value="0">
   </div>
 
   <div class="field">
@@ -101,6 +106,7 @@
   </div>
 
   <canvas id="canvas" width="1080" height="1080"></canvas>
+  <video id="hiddenVideo" muted playsinline preload="auto" style="display:none"></video>
 
   <button class="download-btn" id="downloadBtn" disabled>הורידי PNG 📥</button>
   <p class="hint">טיפ: כל 3 הקאברים — אותו מיקום טקסט, אותה עוצמת גרדיאנט, לקיר אחיד בפיד</p>
@@ -117,6 +123,10 @@ const gradColor = document.getElementById('gradColor');
 const gradStrength = document.getElementById('gradStrength');
 const gradStrengthVal = document.getElementById('gradStrengthVal');
 const downloadBtn = document.getElementById('downloadBtn');
+const frameField = document.getElementById('frameField');
+const frameSlider = document.getElementById('frameSlider');
+const frameTimeVal = document.getElementById('frameTimeVal');
+const hiddenVideo = document.getElementById('hiddenVideo');
 
 let userImg = null;
 let fontReady = false;
@@ -183,16 +193,50 @@ function draw() {
   });
 }
 
+function captureVideoFrame() {
+  const vw = hiddenVideo.videoWidth, vh = hiddenVideo.videoHeight;
+  if (!vw || !vh) return;
+  const frameCanvas = document.createElement('canvas');
+  frameCanvas.width = vw;
+  frameCanvas.height = vh;
+  frameCanvas.getContext('2d').drawImage(hiddenVideo, 0, 0, vw, vh);
+  userImg = frameCanvas;
+  downloadBtn.disabled = false;
+  draw();
+}
+
 imgInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
   if (!file) return;
-  const img = new Image();
-  img.onload = () => {
-    userImg = img;
-    downloadBtn.disabled = false;
-    draw();
-  };
-  img.src = URL.createObjectURL(file);
+
+  if (file.type.startsWith('video/')) {
+    frameField.style.display = 'block';
+    hiddenVideo.src = URL.createObjectURL(file);
+    hiddenVideo.addEventListener('loadedmetadata', () => {
+      frameSlider.max = hiddenVideo.duration;
+      frameSlider.step = Math.min(0.05, hiddenVideo.duration / 100);
+      const startAt = Math.min(0.3, hiddenVideo.duration / 2);
+      frameSlider.value = startAt;
+      frameTimeVal.textContent = startAt.toFixed(1) + 's';
+      hiddenVideo.currentTime = startAt;
+    }, { once: true });
+    hiddenVideo.addEventListener('seeked', captureVideoFrame);
+    hiddenVideo.load();
+  } else {
+    frameField.style.display = 'none';
+    const img = new Image();
+    img.onload = () => {
+      userImg = img;
+      downloadBtn.disabled = false;
+      draw();
+    };
+    img.src = URL.createObjectURL(file);
+  }
+});
+
+frameSlider.addEventListener('input', () => {
+  frameTimeVal.textContent = parseFloat(frameSlider.value).toFixed(1) + 's';
+  hiddenVideo.currentTime = frameSlider.value;
 });
 
 textInput.addEventListener('input', draw);
