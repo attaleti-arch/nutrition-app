@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>בדיקת בחירת קובץ</title>
+</head>
+<body style="font-family:sans-serif;padding:24px;direction:rtl;">
+<h2>בדיקה פשוטה — בחירת קובץ</h2>
+<p>תבחרי כאן תמונה או סרטון, ותראי מה כתוב למטה:</p>
+<input type="file" id="f" accept="image/*,video/*" style="margin:16px 0;display:block;">
+<p id="out" style="margin-top:16px;font-size:18px;font-weight:bold;color:#1a2e1a;">עדיין לא נבחר קובץ</p>
+<script>
+document.getElementById('f').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  var out = document.getElementById('out');
+  out.textContent = file
+    ? ('✅ נבחר: ' + file.name + ' | סוג: ' + file.type + ' | גודל: ' + Math.round(file.size/1024) + 'KB')
+    : '❌ לא התקבל קובץ';
+});
+</script>
+</body>
+</html>
