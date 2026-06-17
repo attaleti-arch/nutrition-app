@@ -244,6 +244,9 @@
     .arch img { width: 100%; display: block; }
     .arch-top { border-radius: 140px 140px 0 0; margin-bottom: -8px; }
     .arch-bottom { border-radius: 0 0 140px 140px; z-index: 0; }
+    .arch.reveal { opacity: 0; transform: translateY(36px); transition: opacity 0.8s ease, transform 0.8s ease; }
+    .arch.reveal.in-view { opacity: 1; transform: translateY(0); }
+    .arch-bottom.reveal { transition-delay: 0.15s; }
 
     /* ── JOURNEYS ── */
     .journeys { background: var(--beige); padding: 80px 0; }
@@ -706,8 +709,8 @@
   <div class="container">
     <p class="foodart-caption">ככה הכל התחיל — ארוחות מצוירות שיצרתי בשביל הבנים שלי</p>
     <div class="foodart-arches">
-      <div class="arch arch-top"><img src="/food-art-keep-running.jpg" alt="ארוחה מצוירת - תמשיכי לרוץ"></div>
-      <div class="arch arch-bottom"><img src="/food-art-stay-strong.jpg" alt="ארוחה מצוירת - תחזיקי חזק"></div>
+      <div class="arch arch-top reveal"><img src="/food-art-keep-running.jpg" alt="ארוחה מצוירת - תמשיכי לרוץ"></div>
+      <div class="arch arch-bottom reveal"><img src="/food-art-stay-strong.jpg" alt="ארוחה מצוירת - תחזיקי חזק"></div>
     </div>
   </div>
 </section>
@@ -827,6 +830,19 @@
     <div class="footer-bottom">© 2025 אתי אטל — כל הזכויות שמורות</div>
   </div>
 </footer>
+
+<script>
+  var revealEls = document.querySelectorAll('.reveal');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.2 });
+  revealEls.forEach(function(el) { observer.observe(el); });
+</script>
 
 </body>
 </html>
