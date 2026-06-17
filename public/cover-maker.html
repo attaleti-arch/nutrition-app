@@ -68,6 +68,7 @@
   <div class="field">
     <label>1. תמונה או וידאו (נבחרת פריים מתוך הסרטון)</label>
     <input type="file" id="imgInput" accept="image/*,video/*">
+    <p id="loadStatus" style="font-size:13px;color:#888;margin-top:6px;"></p>
   </div>
 
   <div class="field" id="frameField" style="display:none">
@@ -127,6 +128,7 @@ const frameField = document.getElementById('frameField');
 const frameSlider = document.getElementById('frameSlider');
 const frameTimeVal = document.getElementById('frameTimeVal');
 const hiddenVideo = document.getElementById('hiddenVideo');
+const loadStatus = document.getElementById('loadStatus');
 
 let userImg = null;
 let fontReady = false;
@@ -207,32 +209,48 @@ function captureVideoFrame() {
 
 imgInput.addEventListener('change', (e) => {
   const file = e.target.files[0];
-  if (!file) return;
+  if (!file) { loadStatus.textContent = ''; return; }
+
+  loadStatus.textContent = 'התקבל קובץ: ' + file.name + ' — טוען...';
+
+  const reader = new FileReader();
+  reader.onerror = () => { loadStatus.textContent = '❌ שגיאה בקריאת הקובץ מהמכשיר.'; };
 
   if (file.type.startsWith('video/')) {
     frameField.style.display = 'block';
-    hiddenVideo.onerror = () => alert('לא הצלחתי לטעון את הסרטון הזה. נסי לשמור פריים כתמונה (צילום מסך מהסרטון) ולהעלות אותו במקום.');
-    hiddenVideo.src = URL.createObjectURL(file);
-    hiddenVideo.addEventListener('loadedmetadata', () => {
-      frameSlider.max = hiddenVideo.duration;
-      frameSlider.step = Math.min(0.05, hiddenVideo.duration / 100);
-      const startAt = Math.min(0.3, hiddenVideo.duration / 2);
-      frameSlider.value = startAt;
-      frameTimeVal.textContent = startAt.toFixed(1) + 's';
-      hiddenVideo.currentTime = startAt;
-    }, { once: true });
-    hiddenVideo.addEventListener('seeked', captureVideoFrame);
-    hiddenVideo.load();
+    hiddenVideo.onerror = () => { loadStatus.textContent = '❌ לא הצלחתי לטעון את הסרטון הזה. נסי לשמור פריים כתמונה (צילום מסך) ולהעלות אותו במקום.'; };
+    reader.onload = () => {
+      loadStatus.textContent = 'קובץ נקרא, טוען פריים מהסרטון...';
+      hiddenVideo.src = reader.result;
+      hiddenVideo.addEventListener('loadedmetadata', () => {
+        frameSlider.max = hiddenVideo.duration;
+        frameSlider.step = Math.min(0.05, hiddenVideo.duration / 100);
+        const startAt = Math.min(0.3, hiddenVideo.duration / 2);
+        frameSlider.value = startAt;
+        frameTimeVal.textContent = startAt.toFixed(1) + 's';
+        hiddenVideo.currentTime = startAt;
+      }, { once: true });
+      hiddenVideo.addEventListener('seeked', () => {
+        captureVideoFrame();
+        loadStatus.textContent = '✅ הפריים נטען בהצלחה';
+      });
+      hiddenVideo.load();
+    };
+    reader.readAsDataURL(file);
   } else {
     frameField.style.display = 'none';
-    const img = new Image();
-    img.onerror = () => alert('לא הצלחתי לטעון את התמונה הזו. נסי תמונה אחרת (JPG או PNG).');
-    img.onload = () => {
-      userImg = img;
-      downloadBtn.disabled = false;
-      draw();
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => { loadStatus.textContent = '❌ לא הצלחתי לטעון את התמונה הזו. נסי תמונה אחרת (JPG או PNG).'; };
+      img.onload = () => {
+        userImg = img;
+        downloadBtn.disabled = false;
+        draw();
+        loadStatus.textContent = '✅ התמונה נטענה בהצלחה';
+      };
+      img.src = reader.result;
     };
-    img.src = URL.createObjectURL(file);
+    reader.readAsDataURL(file);
   }
 });
 
