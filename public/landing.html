@@ -228,7 +228,8 @@
     }
     .butterfly svg { display: block; width: 100%; height: 100%; }
     .hero-butterfly {
-      left: 92%; top: 48%;
+      left: 92%; top: 48%; width: 42px; height: 42px;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)) drop-shadow(0 0 5px rgba(255,255,255,0.55));
       animation: hero-butterfly-fly 3.8s ease-in-out 1s 1 forwards;
     }
     @keyframes hero-butterfly-fly {
@@ -494,13 +495,13 @@
       <div class="hero-photo-col">
         <img src="/eti-hero.jpeg" alt="אתי אטל – יועצת בריאות ותזונה התנהגותית">
         <div class="butterfly hero-butterfly" aria-hidden="true">
-          <svg viewBox="0 0 100 100" width="34" height="34">
+          <svg viewBox="0 0 100 100" width="42" height="42">
             <g class="wing wing-left">
-              <path d="M50,52 C32,24 12,26 11,46 C10,64 33,76 50,56 Z" fill="#d9ab43"></path>
+              <path d="M50,52 C32,24 12,26 11,46 C10,64 33,76 50,56 Z" fill="#d9ab43" stroke="#fffaf0" stroke-width="2"></path>
               <path d="M50,52 C36,34 22,34 22,46 C22,58 38,64 50,54 Z" fill="#2e3a26" opacity="0.35"></path>
             </g>
             <g class="wing wing-right">
-              <path d="M50,52 C68,24 88,26 89,46 C90,64 67,76 50,56 Z" fill="#d9ab43"></path>
+              <path d="M50,52 C68,24 88,26 89,46 C90,64 67,76 50,56 Z" fill="#d9ab43" stroke="#fffaf0" stroke-width="2"></path>
               <path d="M50,52 C64,34 78,34 78,46 C78,58 62,64 50,54 Z" fill="#2e3a26" opacity="0.35"></path>
             </g>
             <ellipse cx="50" cy="52" rx="2.6" ry="9" fill="#2e3a26"></ellipse>
