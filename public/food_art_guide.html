@@ -113,6 +113,44 @@ body { background: var(--cream); font-family: "Heebo", sans-serif; color: var(--
 
 <div class="recipes-grid" id="recipes-grid">
 
+<div class="section-label">🌟 מתחילים בכיף — רביעיות לדוגמה</div>
+
+<div class="recipe-card" data-cat="fruit" data-id="f16">
+  <div class="card-img-wrap"><img src="/foodart-frog-quartet.jpg" alt="רביעיית הצפרדעים המתאמנות"></div>
+  <div class="card-header"><div class="card-emoji">🐸</div><div class="card-title-wrap"><div class="card-title">רביעיית הצפרדעים המתאמנות</div><div class="card-subtitle">אותה צפרדע תפוח, בארבע תנוחות אימון שונות — מרימה משקולות, "STAY STRONG", "KEEP RUNNING" וזחילה עם לבבות</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
+  <div class="card-macros"><span class="macro-pill macro-mid">🟡 בינוני</span><span class="macro-pill macro-time">⏱️ 18 דק׳</span></div>
+  <div class="card-body" style="display:none">
+    <div class="card-section-title">מה צריך</div>
+    <div class="card-ingredients">תפוח ירוק לגוף ולגפיים בכל גרסה · עגבניות שרי וגזר/פלפל לפרחי קישוט · אותיות מפיתה לכיתוב ("STAY STRONG" / "KEEP RUNNING") · קיסם דק למשקולת עם פרי יבש כהה בכל קצה</div>
+    <div class="card-section-title">איך עושים</div>
+    <ol class="card-steps">
+      <li><div class="step-num">1</div>חותכים מהתפוח גוף עגול וגפיים דקות ומחברים בעזרת קיסמים קצרים — זו אותה טכניקת בסיס לכל הגרסאות</li>
+      <li><div class="step-num">2</div>בוחרים תנוחה אחת: ידיים מורמות עם משקולת קיסם, ריצה עם רגל קדימה, או זחילה שטוחה עם לבבות מסביב</li>
+      <li><div class="step-num">3</div>מוסיפים פרחי גזר/פלפל וירק ירוק לצד, ומשלימים בכיתוב מפיתה אם רוצים</li>
+    </ol>
+    <div class="card-tip"><strong>💡 טיפ של אתי:</strong> אפשר להחליף בין הגרסאות לפי מצב הרוח של הילד באותו יום — זו אותה צפרדע, רק בתנוחה אחרת.</div>
+  </div>
+  <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי בהוראות המלאות</button>
+</div>
+
+<div class="recipe-card" data-cat="egg" data-id="f10">
+  <div class="card-img-wrap"><img src="/foodart-clown-quartet.jpg" alt="רביעיית הליצנים"></div>
+  <div class="card-header"><div class="card-emoji">🤡</div><div class="card-title-wrap"><div class="card-title">רביעיית הליצנים</div><div class="card-subtitle">אותו פרצוף ליצן מביצה/חומוס, בארבעה סידורי שיער ירקות וקישוטים שונים — מסכה, דגלון ואחרים</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
+  <div class="card-macros"><span class="macro-pill macro-mid">🟡 בינוני</span><span class="macro-pill macro-time">⏱️ 15 דק׳</span></div>
+  <div class="card-body" style="display:none">
+    <div class="card-section-title">מה צריך</div>
+    <div class="card-ingredients">ביצת עין או תלולית חומוס/לבבן לפרצוף · רצועות גזר, מלפפון, פלפל וכרוב סגול לשיער קשת · עגבנייה לאף · 2 משולשי טורטיה לידיים · תוספות לפי גרסה: ענבים, מסכת טורטיה, דגלון פלפל</div>
+    <div class="card-section-title">איך עושים</div>
+    <ol class="card-steps">
+      <li><div class="step-num">1</div>מטגנים ביצת עין או מניחים תלולית חומוס במרכז הצלחת כפרצוף בסיסי</li>
+      <li><div class="step-num">2</div>חותכים רצועות דקות מכל הירקות הצבעוניים שיש במקרר ומסדרים מסביב כשיער — צפיפות וכיוון שונה בכל גרסה</li>
+      <li><div class="step-num">3</div>מוסיפים עגבנייה לאף, ידיים מטורטיה, ובוחרים תוספת אחת לגרסה (ענבים מתחת, מסכה, או דגלון קטן)</li>
+    </ol>
+    <div class="card-tip"><strong>💡 טיפ של אתי:</strong> כל ילד יכול לבחור את גרסת הליצן שהוא רוצה היום — זו דרך נחמדה לתת בחירה קטנה בלי לשנות את המתכון.</div>
+  </div>
+  <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי בהוראות המלאות</button>
+</div>
+
 <div class="section-label">🥪 כריכים וטורטיות</div>
 
 <div class="recipe-card" data-cat="sandwich" data-id="f1">
@@ -260,40 +298,76 @@ body { background: var(--cream); font-family: "Heebo", sans-serif; color: var(--
   <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי בהוראות המלאות</button>
 </div>
 
-<div class="section-label">🍳 חביתות וביצים</div>
-
-<div class="recipe-card" data-cat="egg" data-id="f9">
-  <div class="card-img-wrap"><img src="/foodart-robot.jpg" alt="רובוט חביתה"></div>
-  <div class="card-header"><div class="card-emoji">🤖</div><div class="card-title-wrap"><div class="card-title">רובוט חביתה</div><div class="card-subtitle">חביתה רגילה שהופכת לרובוט עם עגבנייה, מלפפון והודו</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
-  <div class="card-macros"><span class="macro-pill macro-mid">🟡 בינוני</span><span class="macro-pill macro-time">⏱️ 12 דק׳</span></div>
+<div class="recipe-card" data-cat="sandwich" data-id="f26">
+  <div class="card-img-wrap"><img src="/foodart-angrybird.jpg" alt="אנגרי בירד"></div>
+  <div class="card-header"><div class="card-emoji">😠</div><div class="card-title-wrap"><div class="card-title">אנגרי בירד</div><div class="card-subtitle">כריך מרובע בצורת אנגרי בירד מפסטרמת כתף בקר, עם גבות ומקור חתוכים בדיוק</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
+  <div class="card-macros"><span class="macro-pill macro-mid">🟡 בינוני</span><span class="macro-pill macro-time">⏱️ 15 דק׳</span></div>
   <div class="card-body" style="display:none">
     <div class="card-section-title">מה צריך</div>
-    <div class="card-ingredients">2 ביצים לחביתה · פרוסת הודו לחלקי גוף · מלפפון ועגבנייה לעיניים ולכפתורים</div>
+    <div class="card-ingredients">פרוסת לחם מרובעת לבסיס · פרוסת פסטרמה מכתף בקר לפרצוף · גזר למקור · מלפפון לגבות זועפות · קרקרים עגולים לקישוט בצד · אבוקדו ובננה לצד</div>
     <div class="card-section-title">איך עושים</div>
     <ol class="card-steps">
-      <li><div class="step-num">1</div>מטגנים חביתה דקה ומרובעת ככל האפשר</li>
-      <li><div class="step-num">2</div>חותכים את ההודו לרצועות לזרועות ולרגליים</li>
-      <li><div class="step-num">3</div>מרכיבים עיניים מעגולי מלפפון ועגבנייה, וכפתורים בקו אנכי במרכז הגוף</li>
+      <li><div class="step-num">1</div>מניחים פרוסת לחם מרובעת על הצלחת ומכסים בפרוסת פסטרמה גדולה כפרצוף העגול</li>
+      <li><div class="step-num">2</div>חותכים שתי רצועות מלפפון בזווית חדה לגבות זועפות, וגזר למקור משולש</li>
+      <li><div class="step-num">3</div>מסדרים קרקרים עגולים בשורה בצד, ופרוסות אבוקדו/בננה כ"כנף" למטה</li>
     </ol>
-    <div class="card-tip"><strong>💡 טיפ של אתי:</strong> חביתה רגילה שמקבלת זהות חדשה — אין צורך במצרכים נוספים, רק חיתוך וסידור.</div>
+    <div class="card-tip"><strong>💡 טיפ של אתי:</strong> הזווית של הגבות היא מה שיוצר את ה"כעס" המצחיק — אל תפחדי לחתוך זוויות חדות.</div>
   </div>
   <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי בהוראות המלאות</button>
 </div>
 
-<div class="recipe-card" data-cat="egg" data-id="f10">
-  <div class="card-img-wrap"><img src="/foodart-clown.jpg" alt="ליצן צבעוני"></div>
-  <div class="card-header"><div class="card-emoji">🤡</div><div class="card-title-wrap"><div class="card-title">ליצן צבעוני</div><div class="card-subtitle">ביצת עין כפרצוף, שיער מירקות בצבעי הקשת וידיים מטורטיה</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
-  <div class="card-macros"><span class="macro-pill macro-mid">🟡 בינוני</span><span class="macro-pill macro-time">⏱️ 15 דק׳</span></div>
+<div class="recipe-card" data-cat="sandwich" data-id="f28">
+  <div class="card-img-wrap"><img src="/foodart-diver.jpg" alt="צוללן בין הדגים"></div>
+  <div class="card-header"><div class="card-emoji">🤿</div><div class="card-title-wrap"><div class="card-title">צוללן בין הדגים</div><div class="card-subtitle">סצנה שלמה מטורטיה: צוללן עם משקפת, דגים מירקות וביצה, וסירה קטנה בתחתית</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
+  <div class="card-macros"><span class="macro-pill macro-hard">🔴 מאתגר</span><span class="macro-pill macro-time">⏱️ 25 דק׳</span></div>
   <div class="card-body" style="display:none">
     <div class="card-section-title">מה צריך</div>
-    <div class="card-ingredients">ביצת עין אחת לפרצוף · רצועות גזר, מלפפון, פלפל וכרוב סגול לשיער קשת · עגבנייה לאף · 2 משולשי טורטיה לידיים</div>
+    <div class="card-ingredients">טורטיה לגוף הצוללן ולסירה · פלפל אדום לחלק העליון ולסנפירים · מלפפון לרגליים · גזר לסנפירים ולדגיג · ביצה קשה לדג גדול · זיתים לעיניים</div>
     <div class="card-section-title">איך עושים</div>
     <ol class="card-steps">
-      <li><div class="step-num">1</div>מטגנים ביצת עין במרכז הצלחת כפרצוף</li>
-      <li><div class="step-num">2</div>חותכים רצועות דקות מכל הירקות הצבעוניים שיש במקרר ומסדרים מסביב כשיער</li>
-      <li><div class="step-num">3</div>מוסיפים עגבנייה לאף, וחותכים פיתה/טורטיה לצורת כפות ידיים משני הצדדים</li>
+      <li><div class="step-num">1</div>חותכים מהטורטיה דמות צוללן שוכבת באלכסון הצלחת, עם מסכה ומשקפת מקצה הטורטיה</li>
+      <li><div class="step-num">2</div>מוסיפים חלק עליון מפלפל אדום ורגליים ממלפפון עם סנפירי גזר בקצוות</li>
+      <li><div class="step-num">3</div>מפזרים סביב דגיגים קטנים מירקות וביצה קשה לדג גדול, וסירה קטנה מטורטיה בתחתית</li>
     </ol>
-    <div class="card-tip"><strong>💡 טיפ של אתי:</strong> זו דרך מצוינת "לסיים" שאריות ירק קטנות מהמקרר — כל ילד יכול לבחור צבע לשיער שלו.</div>
+    <div class="card-tip"><strong>💡 טיפ של אתי:</strong> ארוחת "סצנה" כיפית כשפשוט בא לכם להשתעשע — לא חייבת להיות עם מסר בריאותי, גם כיף זה מספיק.</div>
+  </div>
+  <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי בהוראות המלאות</button>
+</div>
+
+<div class="recipe-card" data-cat="sandwich" data-id="f29">
+  <div class="card-img-wrap"><img src="/foodart-space.jpg" alt="טיול בין כוכבים"></div>
+  <div class="card-header"><div class="card-emoji">🚀</div><div class="card-title-wrap"><div class="card-title">טיול בין כוכבים</div><div class="card-subtitle">סצנת חלל מטורטיה שחורה: אסטרונאוט, חייזר ירוק וטיל גזר על רקע כוכבים משומשום</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
+  <div class="card-macros"><span class="macro-pill macro-hard">🔴 מאתגר</span><span class="macro-pill macro-time">⏱️ 28 דק׳</span></div>
+  <div class="card-body" style="display:none">
+    <div class="card-section-title">מה צריך</div>
+    <div class="card-ingredients">טורטיה כהה/מוקרמלת לרקע החלל ולכוכב · גזר לאסטרונאוט ולטיל · פלפל אדום וצהוב לפרטי החליפה והטיל · אבוקדו לחייזר · גבינה צהובה לכוכב לכת · שומשום לכוכבים · זיתים/פטריות לפרטים</div>
+    <div class="card-section-title">איך עושים</div>
+    <ol class="card-steps">
+      <li><div class="step-num">1</div>חותכים טורטיה גדולה כהה לרקע החלל וכוכב לכת בתחתית, ומפזרים גרגרי שומשום כ"כוכבים"</li>
+      <li><div class="step-num">2</div>מעצבים אסטרונאוט מגזר וחליפה מפלפל בצד אחד, וטיל מגזר עם חוד פלפל אדום בצד השני</li>
+      <li><div class="step-num">3</div>מוסיפים חייזר קטן ירוק מאבוקדו במרכז, וכוכב לכת מגבינה צהובה עם טבעת פלפל</li>
+    </ol>
+    <div class="card-tip"><strong>💡 טיפ של אתי:</strong> סצנה גדולה כזו עובדת מצוין כפרויקט סוף שבוע משותף — תני לילד להחליט איפה כל דמות "עומדת".</div>
+  </div>
+  <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי בהוראות המלאות</button>
+</div>
+
+<div class="section-label">🍳 חביתות וביצים</div>
+
+<div class="recipe-card" data-cat="egg" data-id="f9">
+  <div class="card-img-wrap"><img src="/foodart-robot.jpg" alt="בוב ספוג חביתה"></div>
+  <div class="card-header"><div class="card-emoji">🧽</div><div class="card-title-wrap"><div class="card-title">בוב ספוג חביתה</div><div class="card-subtitle">חביתה מרובעת שהופכת לבוב ספוג עם עיניים מביצה קשה, חיוך מפלפל אדום ושיניים מגבינה</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
+  <div class="card-macros"><span class="macro-pill macro-mid">🟡 בינוני</span><span class="macro-pill macro-time">⏱️ 12 דק׳</span></div>
+  <div class="card-body" style="display:none">
+    <div class="card-section-title">מה צריך</div>
+    <div class="card-ingredients">2 ביצים לחביתה מרובעת · פרוסות ביצה קשה לעיניים · מלפפון לאישונים ולגבות · פלפל אדום לחיוך · קוביית גבינה לשיניים · פרוסת הודו לזרוע · עגבניות שרי ומלפפון לצד</div>
+    <div class="card-section-title">איך עושים</div>
+    <ol class="card-steps">
+      <li><div class="step-num">1</div>מטגנים חביתה דקה ומעצבים אותה לריבוע ככל האפשר, כולל "זרועות" ו"רגליים" קצרות מהקצוות</li>
+      <li><div class="step-num">2</div>מניחים שתי פרוסות ביצה קשה כעיניים גדולות, עם נקודת מלפפון באמצע כל אחת</li>
+      <li><div class="step-num">3</div>מוסיפים חיוך גדול מפלפל אדום עם קוביית גבינה לבנה כשיניים, ופרוסת הודו מגולגלת ביד אחת</li>
+    </ol>
+    <div class="card-tip"><strong>💡 טיפ של אתי:</strong> חביתה רגילה שמקבלת זהות חדשה — אין צורך במצרכים נוספים, רק חיתוך וסידור.</div>
   </div>
   <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי בהוראות המלאות</button>
 </div>
@@ -320,16 +394,16 @@ body { background: var(--cream); font-family: "Heebo", sans-serif; color: var(--
 
 <div class="recipe-card" data-cat="fruit" data-id="f12">
   <div class="card-img-wrap"><img src="/foodart-eagle.jpg" alt="נשר פורח"></div>
-  <div class="card-header"><div class="card-emoji">🦅</div><div class="card-title-wrap"><div class="card-title">נשר פורח</div><div class="card-subtitle">כנפיים מפרוסות תפוח ומנגו דקות — מרשים אבל פשוט מבחינת מצרכים</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
+  <div class="card-header"><div class="card-emoji">🦅</div><div class="card-title-wrap"><div class="card-title">נשר פורח</div><div class="card-subtitle">כנפיים מפרוסות תפוח ואפרסמון דקות, עם בננה לגוף — מרשים אבל פשוט מבחינת מצרכים</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
   <div class="card-macros"><span class="macro-pill macro-hard">🔴 מאתגר</span><span class="macro-pill macro-time">⏱️ 20 דק׳</span></div>
   <div class="card-body" style="display:none">
     <div class="card-section-title">מה צריך</div>
-    <div class="card-ingredients">2 תפוחים (ירוק ואדום) · חצי מנגו · גזר לציפורניים ולמקור · זית לעין</div>
+    <div class="card-ingredients">2 תפוחים (ירוק ואדום) · אפרסמון אחד · בננה לגוף ולראש · גזר לציפורניים ולמקור · זית לעין</div>
     <div class="card-section-title">איך עושים</div>
     <ol class="card-steps">
-      <li><div class="step-num">1</div>חותכים את התפוחים והמנגו לפרוסות דקות מאוד בעזרת סכין חדה</li>
+      <li><div class="step-num">1</div>חותכים את התפוחים והאפרסמון לפרוסות דקות מאוד בעזרת סכין חדה</li>
       <li><div class="step-num">2</div>מסדרים את הפרוסות בשורות חופפות בצורת כנפיים פתוחות, מהקטנה לגדולה</li>
-      <li><div class="step-num">3</div>מוסיפים ראש מגזר/תפוח עם מקור גזר ועין זית, וטפרים שחורים מקצה הכנף</li>
+      <li><div class="step-num">3</div>מעצבים ראש וגוף מבננה עם מקור גזר ועין זית, וטפרים שחורים מקצה הכנף</li>
     </ol>
     <div class="card-tip"><strong>💡 טיפ של אתי:</strong> טבילה קצרה במיץ לימון על פרוסות התפוח שומרת על הצבע הלבן ומונעת השחרה.</div>
   </div>
@@ -386,24 +460,6 @@ body { background: var(--cream); font-family: "Heebo", sans-serif; color: var(--
       <li><div class="step-num">3</div>מסדרים עלי נענע מסביב כדשא, ומוסיפים את הכיתוב "Stay Active" מפיתה חתוכה</li>
     </ol>
     <div class="card-tip"><strong>💡 טיפ של אתי:</strong> ארוחה שמספרת סיפור על תנועה היא הזדמנות נחמדה לשיח קצר על פעילות גופנית — בלי הטפה.</div>
-  </div>
-  <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי בהוראות המלאות</button>
-</div>
-
-<div class="recipe-card" data-cat="fruit" data-id="f16">
-  <div class="card-img-wrap"><img src="/foodart-frog.jpg" alt="צפרדע מתאמנת"></div>
-  <div class="card-header"><div class="card-emoji">🐸</div><div class="card-title-wrap"><div class="card-title">צפרדע מתאמנת</div><div class="card-subtitle">תפוח ירוק שמרים משקולת מענבים מיובשים — לצד עגבניות ונענע</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
-  <div class="card-macros"><span class="macro-pill macro-mid">🟡 בינוני</span><span class="macro-pill macro-time">⏱️ 18 דק׳</span></div>
-  <div class="card-body" style="display:none">
-    <div class="card-section-title">מה צריך</div>
-    <div class="card-ingredients">תפוח ירוק גדול לגוף וגפיים · פירות יבשים כהים לקצות המשקולת · קיסם ארוך לידית המשקולת · עגבניות שרי ועלי נענע לצד</div>
-    <div class="card-section-title">איך עושים</div>
-    <ol class="card-steps">
-      <li><div class="step-num">1</div>חותכים מהתפוח גוף עגול וגפיים דקות ומחברים בעזרת קיסמים קצרים</li>
-      <li><div class="step-num">2</div>מרכיבים "משקולת" מקיסם עם פרי יבש כהה בכל קצה, ומניחים בין הידיים המורמות</li>
-      <li><div class="step-num">3</div>מסדרים עגבניות שרי ועלי נענע לצד כתוספת רעננה וצבעונית</li>
-    </ol>
-    <div class="card-tip"><strong>💡 טיפ של אתי:</strong> שמרי על קיסמים בולטים מתחת לפיקוח — מתאים מגיל 6 ומעלה בעבודה משותפת עם מבוגר.</div>
   </div>
   <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי בהוראות המלאות</button>
 </div>
@@ -476,6 +532,42 @@ body { background: var(--cream); font-family: "Heebo", sans-serif; color: var(--
       <li><div class="step-num">3</div>מניחים פירות יבשים קטנים כעיניים ומעצבים פה בחיתוך עדין</li>
     </ol>
     <div class="card-tip"><strong>💡 טיפ של אתי:</strong> אורז דחוס בעזרת תבנית קטנה (כמו תבנית סושי) עוזר לשמור על הצורה בלי להתפרק.</div>
+  </div>
+  <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי בהוראות המלאות</button>
+</div>
+
+<div class="recipe-card" data-cat="fruit" data-id="f25">
+  <div class="card-img-wrap"><img src="/foodart-icecream-cone.jpg" alt="גביע גלידה מטורטיה"></div>
+  <div class="card-header"><div class="card-emoji">🍦</div><div class="card-title-wrap"><div class="card-title">גביע גלידה מטורטיה</div><div class="card-subtitle">טורטיה מקופלת לגביע גלידה, מלאה באוכמניות, תאנים ומנגו במקום כדורי גלידה</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
+  <div class="card-macros"><span class="macro-pill macro-easy">🟢 קל</span><span class="macro-pill macro-time">⏱️ 10 דק׳</span></div>
+  <div class="card-body" style="display:none">
+    <div class="card-section-title">מה צריך</div>
+    <div class="card-ingredients">טורטיה אחת גדולה ואחת קטנה לגביעים · אוכמניות · תאנים פרוסות · מנגו קוביות · גזר לקישוט בצד</div>
+    <div class="card-section-title">איך עושים</div>
+    <ol class="card-steps">
+      <li><div class="step-num">1</div>מקפלים טורטיה למשולש גביע גלידה (קיפול כפול), ומניחים גביע גדול במרכז וגביע קטן בצד</li>
+      <li><div class="step-num">2</div>ממלאים את החלק הפתוח באוכמניות מצד אחד ובקוביות מנגו מהצד השני</li>
+      <li><div class="step-num">3</div>מוסיפים תאנים פרוסות מעל כ"תוספת עליונה", וקישוט קטן מגזר בצד</li>
+    </ol>
+    <div class="card-tip"><strong>💡 טיפ של אתי:</strong> זה תבנית גמישה — אפשר למלא את הגביע בכל פרי או ירק שיש בבית, לא חייבים להיצמד לרשימה הזו.</div>
+  </div>
+  <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי בהוראות המלאות</button>
+</div>
+
+<div class="recipe-card" data-cat="fruit" data-id="f27">
+  <div class="card-img-wrap"><img src="/foodart-tubshvat.jpg" alt="עץ פירות יבשים לטו בשבט"></div>
+  <div class="card-header"><div class="card-emoji">🌳</div><div class="card-title-wrap"><div class="card-title">עץ פירות יבשים לטו בשבט</div><div class="card-subtitle">מגש חגיגי בצורת עץ: ענפים מקיווי ומשמש מיובש, ופירות יבשים וקטניות לעלווה ולשורשים</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
+  <div class="card-macros"><span class="macro-pill macro-hard">🔴 מאתגר</span><span class="macro-pill macro-time">⏱️ 25 דק׳</span></div>
+  <div class="card-body" style="display:none">
+    <div class="card-section-title">מה צריך</div>
+    <div class="card-ingredients">צימוקים שחורים למסגרת ולגזע · רצועות קיווי ומשמש מיובש לענפים · אפונה ירוקה לעלווה · בננה מיובשת, אגוזים ושקדים לשורשים · משמש שלם לפרי קטן · אותיות מפרי יבש לבן לכיתוב "טו בשבט"</div>
+    <div class="card-section-title">איך עושים</div>
+    <ol class="card-steps">
+      <li><div class="step-num">1</div>מפזרים צימוקים שחורים בכל היקף המגש כמסגרת כהה</li>
+      <li><div class="step-num">2</div>מסדרים רצועות קיווי ומשמש מיובש במרכז בצורת ענפי עץ מתפצלים, ומכסים את הקצוות באפונה ירוקה כעלווה</li>
+      <li><div class="step-num">3</div>ממלאים את החלק התחתון באגוזים, שקדים ובננה מיובשת כ"שורשים", ומניחים אותיות פרי יבש לבן לכיתוב החג</li>
+    </ol>
+    <div class="card-tip"><strong>💡 טיפ של אתי:</strong> מגש כזה מתאים גם כמארז מתנה לסבים וסבתות לכבוד החג — לא רק לאכילה מיידית.</div>
   </div>
   <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי בהוראות המלאות</button>
 </div>
