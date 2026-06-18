@@ -237,13 +237,13 @@
       font-size: 15px; color: var(--dark-green); font-weight: 700;
       margin-bottom: 32px; letter-spacing: 0.2px;
     }
-    .foodart-arches { display: flex; flex-direction: column; align-items: center; }
+    .foodart-arches { display: flex; flex-direction: column; align-items: center; gap: 30px; }
     .arch {
       width: 280px; overflow: hidden; box-shadow: 0 14px 32px rgba(46,58,38,0.16);
       position: relative; z-index: 1; will-change: transform;
     }
     .arch img { width: 100%; display: block; }
-    .arch-top { border-radius: 140px 140px 0 0; margin-bottom: -8px; }
+    .arch-top { border-radius: 140px 140px 0 0; }
     .arch-bottom { border-radius: 0 0 140px 140px; z-index: 0; }
     .arch.reveal { opacity: 0; transition: opacity 0.8s ease; }
     .arch.reveal.in-view { opacity: 1; }
@@ -856,7 +856,7 @@
   revealEls.forEach(function(el) { observer.observe(el); });
 
   var archGroups = document.querySelectorAll('.foodart-arches');
-  var maxOffset = 22;
+  var maxOffset = 15;
   var ticking = false;
   function updateArchParallax() {
     var vh = window.innerHeight;
