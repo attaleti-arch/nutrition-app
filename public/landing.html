@@ -228,16 +228,8 @@
     }
     .butterfly svg { display: block; width: 100%; height: 100%; }
     .hero-butterfly {
-      left: 92%; top: 48%; width: 42px; height: 42px;
+      left: 78%; top: 2%; width: 44px; height: 44px;
       filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)) drop-shadow(0 0 5px rgba(255,255,255,0.55));
-      animation: hero-butterfly-fly 3.8s ease-in-out 1s 1 forwards;
-    }
-    @keyframes hero-butterfly-fly {
-      0%   { left: 78%; top: 2%; }
-      25%  { left: 66%; top: 14%; }
-      50%  { left: 50%; top: 24%; }
-      75%  { left: 36%; top: 35%; }
-      100% { left: 28%; top: 43%; }
     }
     .wing-left, .wing-right { transform-origin: center; }
     .wing-left { animation: flap-left 0.4s ease-in-out infinite; }
@@ -495,16 +487,16 @@
       <div class="hero-photo-col">
         <img src="/eti-hero.jpeg" alt="אתי אטל – יועצת בריאות ותזונה התנהגותית">
         <div class="butterfly hero-butterfly" aria-hidden="true">
-          <svg viewBox="0 0 100 100" width="42" height="42">
+          <svg viewBox="0 0 100 100" width="44" height="44">
             <g class="wing wing-left">
-              <path d="M50,52 C32,24 12,26 11,46 C10,64 33,76 50,56 Z" fill="#d9ab43" stroke="#fffaf0" stroke-width="2"></path>
-              <path d="M50,52 C36,34 22,34 22,46 C22,58 38,64 50,54 Z" fill="#2e3a26" opacity="0.35"></path>
+              <path d="M50,48 C40,18 14,16 9,34 C5,48 16,58 50,50 Z" fill="#fdf8ee" stroke="#c9a23f" stroke-width="1.5"></path>
+              <path d="M50,52 C44,62 26,74 24,84 C23,90 34,88 50,62 Z" fill="#d9ab43" stroke="#c9a23f" stroke-width="1.2"></path>
             </g>
             <g class="wing wing-right">
-              <path d="M50,52 C68,24 88,26 89,46 C90,64 67,76 50,56 Z" fill="#d9ab43" stroke="#fffaf0" stroke-width="2"></path>
-              <path d="M50,52 C64,34 78,34 78,46 C78,58 62,64 50,54 Z" fill="#2e3a26" opacity="0.35"></path>
+              <path d="M50,48 C60,18 86,16 91,34 C95,48 84,58 50,50 Z" fill="#fdf8ee" stroke="#c9a23f" stroke-width="1.5"></path>
+              <path d="M50,52 C56,62 74,74 76,84 C77,90 66,88 50,62 Z" fill="#d9ab43" stroke="#c9a23f" stroke-width="1.2"></path>
             </g>
-            <ellipse cx="50" cy="52" rx="2.6" ry="9" fill="#2e3a26"></ellipse>
+            <ellipse cx="50" cy="55" rx="2.2" ry="11" fill="#2e3a26"></ellipse>
             <line x1="48" y1="44" x2="41" y2="34" stroke="#2e3a26" stroke-width="1.4" stroke-linecap="round"></line>
             <line x1="52" y1="44" x2="59" y2="34" stroke="#2e3a26" stroke-width="1.4" stroke-linecap="round"></line>
           </svg>
@@ -740,7 +732,7 @@
     <div class="about-grid">
       <div class="about-photo-wrap">
         <img src="/eti-about.jpeg" alt="אתי אטל">
-        <div class="butterfly reveal" aria-hidden="true">
+        <div class="butterfly about-butterfly reveal" aria-hidden="true">
           <svg viewBox="0 0 100 100" width="34" height="34">
             <g class="wing wing-left">
               <path d="M50,52 C32,24 12,26 11,46 C10,64 33,76 50,56 Z" fill="#d9ab43"></path>
@@ -942,28 +934,30 @@
     });
     ticking = false;
   }
-  var butterfly = document.querySelector('.butterfly');
-  var photoWrap = document.querySelector('.about-photo-wrap');
-  var butterflyStart = { x: 18, y: 10 };
-  var butterflyEnd = { x: 74, y: 79 };
-  function updateButterfly() {
-    if (!butterfly || !photoWrap) return;
+  var butterflies = [
+    { el: document.querySelector('.about-butterfly'), wrap: document.querySelector('.about-photo-wrap'), start: { x: 18, y: 10 }, end: { x: 74, y: 79 } },
+    { el: document.querySelector('.hero-butterfly'), wrap: document.querySelector('.hero-photo-col'), start: { x: 78, y: 2 }, end: { x: 28, y: 43 } }
+  ];
+  function updateButterflies() {
     var vh = window.innerHeight;
-    var rect = photoWrap.getBoundingClientRect();
-    var center = rect.top + rect.height / 2;
-    var t = (vh / 2 - center) / (vh / 2);
-    t = Math.max(-1, Math.min(1, t));
-    var closeness = 1 - Math.abs(t);
-    var x = butterflyStart.x + (butterflyEnd.x - butterflyStart.x) * closeness;
-    var y = butterflyStart.y + (butterflyEnd.y - butterflyStart.y) * closeness;
-    butterfly.style.left = x + '%';
-    butterfly.style.top = y + '%';
+    butterflies.forEach(function(b) {
+      if (!b.el || !b.wrap) return;
+      var rect = b.wrap.getBoundingClientRect();
+      var center = rect.top + rect.height / 2;
+      var t = (vh / 2 - center) / (vh / 2);
+      t = Math.max(-1, Math.min(1, t));
+      var closeness = 1 - Math.abs(t);
+      var x = b.start.x + (b.end.x - b.start.x) * closeness;
+      var y = b.start.y + (b.end.y - b.start.y) * closeness;
+      b.el.style.left = x + '%';
+      b.el.style.top = y + '%';
+    });
   }
   function onScroll() {
     if (!ticking) {
       requestAnimationFrame(function() {
         updateArchParallax();
-        updateButterfly();
+        updateButterflies();
       });
       ticking = true;
     }
@@ -971,7 +965,7 @@
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll);
   updateArchParallax();
-  updateButterfly();
+  updateButterflies();
 </script>
 
 </body>
