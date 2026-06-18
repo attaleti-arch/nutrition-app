@@ -79,7 +79,7 @@ body { background: var(--cream); font-family: "Heebo", sans-serif; color: var(--
 
 <div id="close-bar">
   <span>📚 חוברת המתכונים של אתי</span>
-  <button id="close-btn" onclick="window.parent.postMessage('closeGuide','*')">✕ סגרי</button>
+  <button id="close-btn" onclick="if (window.parent !== window) { window.parent.postMessage('closeGuide','*'); } else { window.close(); }">✕ סגרי</button>
 </div>
 <div class="top-spacer"></div>
 

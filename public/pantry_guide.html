@@ -77,7 +77,7 @@
 <!-- כפתור סגירה קבוע -->
 <div id="close-bar">
   <span>🏡 מדריך מזווה ומקרר</span>
-  <button id="close-btn" onclick="window.parent.postMessage('closeGuide','*')">✕ סגרי</button>
+  <button id="close-btn" onclick="if (window.parent !== window) { window.parent.postMessage('closeGuide','*'); } else { window.close(); }">✕ סגרי</button>
 </div>
 <div class="top-spacer"></div>
 
