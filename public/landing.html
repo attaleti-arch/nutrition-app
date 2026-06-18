@@ -249,7 +249,7 @@
       font-size: 15px; color: var(--dark-green); font-weight: 700;
       margin-bottom: 32px; letter-spacing: 0.2px;
     }
-    .foodart-arches { display: flex; flex-direction: row; direction: ltr; align-items: center; justify-content: center; gap: 60px; }
+    .foodart-arches { display: flex; flex-direction: row; direction: ltr; align-items: center; justify-content: center; gap: 22px; }
     .foodart-arches + .foodart-arches { margin-top: 28px; }
     .arch {
       width: 190px; overflow: hidden; box-shadow: 0 14px 32px rgba(46,58,38,0.16);
@@ -877,7 +877,7 @@
   revealEls.forEach(function(el) { observer.observe(el); });
 
   var archGroups = document.querySelectorAll('.foodart-arches');
-  var maxOffset = 35;
+  var maxOffset = 11;
   var ticking = false;
   function updateArchParallax() {
     var vh = window.innerHeight;
