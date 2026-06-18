@@ -217,6 +217,18 @@
       width: 100%; border-radius: 20px;
       border: 3px solid rgba(200,168,60,0.4);
     }
+    .butterfly {
+      position: absolute; left: 18%; top: 10%; width: 34px; height: 34px;
+      transform: translate(-50%, -50%) rotate(-12deg);
+      filter: drop-shadow(0 3px 4px rgba(0,0,0,0.28));
+      will-change: left, top; z-index: 4; pointer-events: none;
+    }
+    .butterfly svg { display: block; width: 100%; height: 100%; }
+    .wing-left, .wing-right { transform-origin: center; }
+    .wing-left { animation: flap-left 0.4s ease-in-out infinite; }
+    .wing-right { animation: flap-right 0.4s ease-in-out infinite; }
+    @keyframes flap-left { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(0.4); } }
+    @keyframes flap-right { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(0.4); } }
     .about-text-wrap .sec-title { color: var(--gold); }
     .about-text-wrap .sec-label { color: rgba(255,255,255,0.5); }
     .about-bio {
@@ -246,8 +258,8 @@
     .arch img { width: 100%; display: block; }
     .arch-left { border-radius: 95px 0 0 95px; }
     .arch-right { border-radius: 0 95px 95px 0; z-index: 0; }
-    .arch.reveal { opacity: 0; transition: opacity 0.8s ease; }
-    .arch.reveal.in-view { opacity: 1; }
+    .reveal { opacity: 0; transition: opacity 0.8s ease; }
+    .reveal.in-view { opacity: 1; }
     .arch-right.reveal { transition-delay: 0.15s; }
 
     /* ── JOURNEYS ── */
@@ -689,6 +701,21 @@
     <div class="about-grid">
       <div class="about-photo-wrap">
         <img src="/eti-about.jpeg" alt="אתי אטל">
+        <div class="butterfly reveal" aria-hidden="true">
+          <svg viewBox="0 0 100 100" width="34" height="34">
+            <g class="wing wing-left">
+              <path d="M50,52 C32,24 12,26 11,46 C10,64 33,76 50,56 Z" fill="#d9ab43"></path>
+              <path d="M50,52 C36,34 22,34 22,46 C22,58 38,64 50,54 Z" fill="#2e3a26" opacity="0.35"></path>
+            </g>
+            <g class="wing wing-right">
+              <path d="M50,52 C68,24 88,26 89,46 C90,64 67,76 50,56 Z" fill="#d9ab43"></path>
+              <path d="M50,52 C64,34 78,34 78,46 C78,58 62,64 50,54 Z" fill="#2e3a26" opacity="0.35"></path>
+            </g>
+            <ellipse cx="50" cy="52" rx="2.6" ry="9" fill="#2e3a26"></ellipse>
+            <line x1="48" y1="44" x2="41" y2="34" stroke="#2e3a26" stroke-width="1.4" stroke-linecap="round"></line>
+            <line x1="52" y1="44" x2="59" y2="34" stroke="#2e3a26" stroke-width="1.4" stroke-linecap="round"></line>
+          </svg>
+        </div>
       </div>
       <div class="about-text-wrap">
         <h2 class="sec-title">נעים להכיר. אני אתי אטל.</h2>
@@ -868,15 +895,36 @@
     });
     ticking = false;
   }
+  var butterfly = document.querySelector('.butterfly');
+  var photoWrap = document.querySelector('.about-photo-wrap');
+  var butterflyStart = { x: 18, y: 10 };
+  var butterflyEnd = { x: 74, y: 79 };
+  function updateButterfly() {
+    if (!butterfly || !photoWrap) return;
+    var vh = window.innerHeight;
+    var rect = photoWrap.getBoundingClientRect();
+    var center = rect.top + rect.height / 2;
+    var t = (vh / 2 - center) / (vh / 2);
+    t = Math.max(-1, Math.min(1, t));
+    var closeness = 1 - Math.abs(t);
+    var x = butterflyStart.x + (butterflyEnd.x - butterflyStart.x) * closeness;
+    var y = butterflyStart.y + (butterflyEnd.y - butterflyStart.y) * closeness;
+    butterfly.style.left = x + '%';
+    butterfly.style.top = y + '%';
+  }
   function onScroll() {
     if (!ticking) {
-      requestAnimationFrame(updateArchParallax);
+      requestAnimationFrame(function() {
+        updateArchParallax();
+        updateButterfly();
+      });
       ticking = true;
     }
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('resize', onScroll);
   updateArchParallax();
+  updateButterfly();
 </script>
 
 </body>
