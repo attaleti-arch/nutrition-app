@@ -1694,6 +1694,15 @@ export default function PlanApp({ clientName, userPassword }) {
               <div style={{ padding: 14 }}><button onClick={() => setGuideUrl('/recipes_guide.html')} style={{ display: 'block', width: '100%', textAlign: 'center', padding: 12, borderRadius: 10, background: C.purple, color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>פתחי את החוברת 📚</button></div>
             </div>
           )}
+          {currentStage >= 3 && (clientData?.client_track === 'child' || clientData?.client_track === 'both') && (
+            <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
+              <div style={{ padding: '14px 18px', background: '#fbeef2', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 22 }}>🎨</span>
+                <div><div style={{ fontWeight: 800, fontSize: 15, color: '#d9678a' }}>חוברת הארוחות המצוירות</div><div style={{ fontSize: 12, color: '#9ca3af' }}>רעיונות לארוחות מצוירות לילדים</div></div>
+              </div>
+              <div style={{ padding: 14 }}><button onClick={() => setGuideUrl('/food_art_guide.html')} style={{ display: 'block', width: '100%', textAlign: 'center', padding: 12, borderRadius: 10, background: '#d9678a', color: '#fff', fontWeight: 700, fontSize: 14, border: 'none', cursor: 'pointer' }}>פתחי את החוברת 🎨</button></div>
+            </div>
+          )}
         </div>
       )}
 
