@@ -240,13 +240,13 @@
     .foodart-arches { display: flex; flex-direction: column; align-items: center; }
     .arch {
       width: 280px; overflow: hidden; box-shadow: 0 14px 32px rgba(46,58,38,0.16);
-      position: relative; z-index: 1;
+      position: relative; z-index: 1; will-change: transform;
     }
     .arch img { width: 100%; display: block; }
     .arch-top { border-radius: 140px 140px 0 0; margin-bottom: -8px; }
     .arch-bottom { border-radius: 0 0 140px 140px; z-index: 0; }
-    .arch.reveal { opacity: 0; transform: translateY(36px); transition: opacity 0.8s ease, transform 0.8s ease; }
-    .arch.reveal.in-view { opacity: 1; transform: translateY(0); }
+    .arch.reveal { opacity: 0; transition: opacity 0.8s ease; }
+    .arch.reveal.in-view { opacity: 1; }
     .arch-bottom.reveal { transition-delay: 0.15s; }
 
     /* ── JOURNEYS ── */
@@ -486,8 +486,8 @@
   <div class="container">
     <p class="foodart-caption">קצת מהיצירתיות שמלווה אותי במטבח</p>
     <div class="foodart-arches">
-      <div class="arch arch-top reveal"><img src="/food-art-minion.jpg" alt="ארוחה מצוירת - מיניון"></div>
-      <div class="arch arch-bottom reveal"><img src="/food-art-anger.jpg" alt="ארוחה מצוירת - אנגר"></div>
+      <div class="arch arch-top reveal"><img src="/food-art-love.jpg" alt="ארוחה מצוירת - לב ואהבה"></div>
+      <div class="arch arch-bottom reveal"><img src="/food-art-unicorn.jpg" alt="ארוחה מצוירת - חד קרן"></div>
     </div>
   </div>
 </section>
@@ -721,8 +721,8 @@
   <div class="container">
     <p class="foodart-caption">ככה הכל התחיל — ארוחות מצוירות שיצרתי בשביל הבנים שלי</p>
     <div class="foodart-arches">
-      <div class="arch arch-top reveal"><img src="/food-art-love.jpg" alt="ארוחה מצוירת - לב ואהבה"></div>
-      <div class="arch arch-bottom reveal"><img src="/food-art-unicorn.jpg" alt="ארוחה מצוירת - חד קרן"></div>
+      <div class="arch arch-top reveal"><img src="/food-art-minion.jpg" alt="ארוחה מצוירת - מיניון"></div>
+      <div class="arch arch-bottom reveal"><img src="/food-art-anger.jpg" alt="ארוחה מצוירת - אנגר"></div>
     </div>
   </div>
 </section>
@@ -854,6 +854,35 @@
     });
   }, { threshold: 0.2 });
   revealEls.forEach(function(el) { observer.observe(el); });
+
+  var archGroups = document.querySelectorAll('.foodart-arches');
+  var maxOffset = 22;
+  var ticking = false;
+  function updateArchParallax() {
+    var vh = window.innerHeight;
+    archGroups.forEach(function(group) {
+      var rect = group.getBoundingClientRect();
+      var groupCenter = rect.top + rect.height / 2;
+      var t = (vh / 2 - groupCenter) / (vh / 2);
+      t = Math.max(-1, Math.min(1, t));
+      var closeness = 1 - Math.abs(t);
+      var offset = closeness * maxOffset;
+      var top = group.querySelector('.arch-top');
+      var bottom = group.querySelector('.arch-bottom');
+      if (top) top.style.transform = 'translateY(' + offset + 'px)';
+      if (bottom) bottom.style.transform = 'translateY(' + (-offset) + 'px)';
+    });
+    ticking = false;
+  }
+  function onScroll() {
+    if (!ticking) {
+      requestAnimationFrame(updateArchParallax);
+      ticking = true;
+    }
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll);
+  updateArchParallax();
 </script>
 
 </body>
