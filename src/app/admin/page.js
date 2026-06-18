@@ -1679,7 +1679,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <Field label="ילדים בבית? גילאים?" value={profile.home_children} onChange={v => updateProfile('home_children', v)} />
                   <Field label="ארוחות משותפות — כמה פעמים בשבוע?" value={profile.home_family_meals} onChange={v => updateProfile('home_family_meals', v)} />
                 </QSection>
-                <QSection title="הגוף מדבר" icon="🩺">
+                <QSection title="תסמינים גופניים" icon="🩺">
                   <Field label="כאבי בטן חוזרים? מתי מופיעים?" value={profile.body_stomach} onChange={v => updateProfile('body_stomach', v)} rows={2} />
                   <Field label="תחושות אחרי אכילה (נפיחות / עייפות / בחילה)?" value={profile.body_after_eating} onChange={v => updateProfile('body_after_eating', v)} rows={2} />
                   <Field label="קשר בין מזון מסוים לתחושה גרועה?" value={profile.body_food_link} onChange={v => updateProfile('body_food_link', v)} rows={2} />
