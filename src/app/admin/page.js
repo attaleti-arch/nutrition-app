@@ -1921,6 +1921,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   </div>
                 </div>
 
+                <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 18px', background: '#fbeef2', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 22 }}>🎨</span>
+                    <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: 15, color: '#d9678a' }}>חוברת הארוחות המצוירות</div><div style={{ fontSize: 12, color: '#9ca3af' }}>סדנת ארוחות מצוירות — מסלול הילד / המשפחה</div></div>
+                  </div>
+                  <div style={{ padding: 14, display: 'flex', gap: 8 }}>
+                    <a href="/food_art_guide.html" target="_blank" rel="noreferrer" style={{ flex: 1, display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: '#d9678a', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את החוברת 🎨</a>
+                    <a href="/food_art_guide.html" download="חוברת-ארוחות-מצוירות.html" style={{ padding: '12px 16px', borderRadius: 10, background: '#fbeef2', color: '#d9678a', border: '1.5px solid #f5c8d8', fontWeight: 700, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap' }}>⬇️ HTML</a>
+                  </div>
+                </div>
+
                 {/* ✅ צ׳קליסט ביקור בית */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '2px solid #bbf7d0' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => setVisitOpen(v => !v)}>
@@ -2043,6 +2054,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <a href="/recipes_guide.html" download="חוברת-מתכונים.html" style={{ padding: '12px 16px', borderRadius: 10, background: '#faf5ff', color: '#9333ea', border: '1.5px solid #e9d5ff', fontWeight: 700, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap' }}>⬇️ HTML</a>
                   </div>
                 </div>
+
+                <div style={{ background: '#fff', borderRadius: 18, border: '1.5px solid #f0f0f0', marginBottom: 12, overflow: 'hidden' }}>
+                  <div style={{ padding: '14px 18px', background: '#fbeef2', borderBottom: '1px solid #e5e7eb', display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ fontSize: 22 }}>🎨</span>
+                    <div style={{ flex: 1 }}><div style={{ fontWeight: 800, fontSize: 15, color: '#d9678a' }}>חוברת הארוחות המצוירות</div><div style={{ fontSize: 12, color: '#9ca3af' }}>סדנת ארוחות מצוירות — מסלול הילד / המשפחה</div></div>
+                  </div>
+                  <div style={{ padding: 14, display: 'flex', gap: 8 }}>
+                    <a href="/food_art_guide.html" target="_blank" rel="noreferrer" style={{ flex: 1, display: 'block', textAlign: 'center', padding: 12, borderRadius: 10, background: '#d9678a', color: '#fff', fontWeight: 700, fontSize: 14, textDecoration: 'none' }}>פתחי את החוברת 🎨</a>
+                    <a href="/food_art_guide.html" download="חוברת-ארוחות-מצוירות.html" style={{ padding: '12px 16px', borderRadius: 10, background: '#fbeef2', color: '#d9678a', border: '1.5px solid #f5c8d8', fontWeight: 700, fontSize: 14, textDecoration: 'none', whiteSpace: 'nowrap' }}>⬇️ HTML</a>
+                  </div>
+                </div>
+
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 12, color: '#0f4c2a' }}>🛒 ניהול מלאי וקניות</div>
                   <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
