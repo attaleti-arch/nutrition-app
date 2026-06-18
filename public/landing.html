@@ -238,6 +238,7 @@
       margin-bottom: 32px; letter-spacing: 0.2px;
     }
     .foodart-arches { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 22px; }
+    .foodart-arches + .foodart-arches { margin-top: 28px; }
     .arch {
       width: 190px; overflow: hidden; box-shadow: 0 14px 32px rgba(46,58,38,0.16);
       position: relative; z-index: 1; will-change: transform;
@@ -481,16 +482,6 @@
   </div>
 </section>
 
-<!-- FOOD ART INTERLUDE 2 -->
-<section class="foodart-interlude alt">
-  <div class="container">
-    <p class="foodart-caption">קצת מהיצירתיות שמלווה אותי במטבח</p>
-    <div class="foodart-arches">
-      <div class="arch arch-left reveal"><img src="/food-art-love.jpg" alt="ארוחה מצוירת - לב ואהבה"></div>
-      <div class="arch arch-right reveal"><img src="/food-art-unicorn.jpg" alt="ארוחה מצוירת - חד קרן"></div>
-    </div>
-  </div>
-</section>
 
 <!-- TESTIMONIALS -->
 <section class="testimonials" id="testimonials">
@@ -724,6 +715,10 @@
       <div class="arch arch-left reveal"><img src="/food-art-minion.jpg" alt="ארוחה מצוירת - מיניון"></div>
       <div class="arch arch-right reveal"><img src="/food-art-anger.jpg" alt="ארוחה מצוירת - אנגר"></div>
     </div>
+    <div class="foodart-arches">
+      <div class="arch arch-left reveal"><img src="/food-art-love.jpg" alt="ארוחה מצוירת - לב ואהבה"></div>
+      <div class="arch arch-right reveal"><img src="/food-art-unicorn.jpg" alt="ארוחה מצוירת - חד קרן"></div>
+    </div>
   </div>
 </section>
 
@@ -869,8 +864,8 @@
       var offset = closeness * maxOffset;
       var left = group.querySelector('.arch-left');
       var right = group.querySelector('.arch-right');
-      if (left) left.style.transform = 'translateX(' + offset + 'px)';
-      if (right) right.style.transform = 'translateX(' + (-offset) + 'px)';
+      if (left) left.style.transform = 'translateX(' + (-offset) + 'px)';
+      if (right) right.style.transform = 'translateX(' + offset + 'px)';
     });
     ticking = false;
   }
