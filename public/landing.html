@@ -237,17 +237,17 @@
       font-size: 15px; color: var(--dark-green); font-weight: 700;
       margin-bottom: 32px; letter-spacing: 0.2px;
     }
-    .foodart-arches { display: flex; flex-direction: column; align-items: center; gap: 30px; }
+    .foodart-arches { display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 22px; }
     .arch {
-      width: 280px; overflow: hidden; box-shadow: 0 14px 32px rgba(46,58,38,0.16);
+      width: 190px; overflow: hidden; box-shadow: 0 14px 32px rgba(46,58,38,0.16);
       position: relative; z-index: 1; will-change: transform;
     }
     .arch img { width: 100%; display: block; }
-    .arch-top { border-radius: 140px 140px 0 0; }
-    .arch-bottom { border-radius: 0 0 140px 140px; z-index: 0; }
+    .arch-left { border-radius: 95px 0 0 95px; }
+    .arch-right { border-radius: 0 95px 95px 0; z-index: 0; }
     .arch.reveal { opacity: 0; transition: opacity 0.8s ease; }
     .arch.reveal.in-view { opacity: 1; }
-    .arch-bottom.reveal { transition-delay: 0.15s; }
+    .arch-right.reveal { transition-delay: 0.15s; }
 
     /* ── JOURNEYS ── */
     .journeys { background: var(--beige); padding: 80px 0; }
@@ -486,8 +486,8 @@
   <div class="container">
     <p class="foodart-caption">קצת מהיצירתיות שמלווה אותי במטבח</p>
     <div class="foodart-arches">
-      <div class="arch arch-top reveal"><img src="/food-art-love.jpg" alt="ארוחה מצוירת - לב ואהבה"></div>
-      <div class="arch arch-bottom reveal"><img src="/food-art-unicorn.jpg" alt="ארוחה מצוירת - חד קרן"></div>
+      <div class="arch arch-left reveal"><img src="/food-art-love.jpg" alt="ארוחה מצוירת - לב ואהבה"></div>
+      <div class="arch arch-right reveal"><img src="/food-art-unicorn.jpg" alt="ארוחה מצוירת - חד קרן"></div>
     </div>
   </div>
 </section>
@@ -721,8 +721,8 @@
   <div class="container">
     <p class="foodart-caption">ככה הכל התחיל — ארוחות מצוירות שיצרתי בשביל הבנים שלי</p>
     <div class="foodart-arches">
-      <div class="arch arch-top reveal"><img src="/food-art-minion.jpg" alt="ארוחה מצוירת - מיניון"></div>
-      <div class="arch arch-bottom reveal"><img src="/food-art-anger.jpg" alt="ארוחה מצוירת - אנגר"></div>
+      <div class="arch arch-left reveal"><img src="/food-art-minion.jpg" alt="ארוחה מצוירת - מיניון"></div>
+      <div class="arch arch-right reveal"><img src="/food-art-anger.jpg" alt="ארוחה מצוירת - אנגר"></div>
     </div>
   </div>
 </section>
@@ -856,7 +856,7 @@
   revealEls.forEach(function(el) { observer.observe(el); });
 
   var archGroups = document.querySelectorAll('.foodart-arches');
-  var maxOffset = 15;
+  var maxOffset = 11;
   var ticking = false;
   function updateArchParallax() {
     var vh = window.innerHeight;
@@ -867,10 +867,10 @@
       t = Math.max(-1, Math.min(1, t));
       var closeness = 1 - Math.abs(t);
       var offset = closeness * maxOffset;
-      var top = group.querySelector('.arch-top');
-      var bottom = group.querySelector('.arch-bottom');
-      if (top) top.style.transform = 'translateY(' + offset + 'px)';
-      if (bottom) bottom.style.transform = 'translateY(' + (-offset) + 'px)';
+      var left = group.querySelector('.arch-left');
+      var right = group.querySelector('.arch-right');
+      if (left) left.style.transform = 'translateX(' + offset + 'px)';
+      if (right) right.style.transform = 'translateX(' + (-offset) + 'px)';
     });
     ticking = false;
   }
