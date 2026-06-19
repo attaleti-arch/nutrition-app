@@ -43,8 +43,15 @@ const SPORT_OPTIONS = [
 const ACTIVITY_LEVELS = ['יושבני', 'קל', 'בינוני', 'פעיל', 'מאוד פעיל']
 const ACTIVITY_MULT = { 'יושבני': 1.2, 'קל': 1.375, 'בינוני': 1.55, 'פעיל': 1.725, 'מאוד פעיל': 1.9 }
 const GOALS_LIST = ['ירידה במשקל', 'חיטוב', 'שמירה על משקל', 'עלייה במסה']
-// ✅ חלבון לפי גרם/ק"ג משקל גוף (לא % מהקלוריות) — ערך אחד קבוע לכולן, מתאים לאוכלוסייה שלא מתאמנת באינטנסיביות
-const PROTEIN_G_PER_KG = 1.5
+// ✅ חלבון לפי גרם/ק"ג משקל גוף (לא % מהקלוריות) — חיטוב מעט גבוה יותר (דגש שריר)
+const PROTEIN_G_PER_KG = {
+  'ירידה במשקל': 1.5,
+  'חיטוב': 1.8,
+  'שמירה על משקל': 1.5,
+  'עלייה במסה': 1.5,
+}
+// ✅ תקרה: לא יותר מ-30% מהקלוריות היומיות — מונע יעד חלבון קיצוני ללקוחות כבדות יותר בדיאטה אגרסיבית
+const PROTEIN_CAL_PCT_CAP = 30
 const GOALS_SPLIT = {
   'ירידה במשקל': { protein: 35, carbs: 35, fat: 30 },
   'חיטוב': { protein: 40, carbs: 30, fat: 30 },
@@ -407,7 +414,8 @@ function calcTargets(weight, height, age, gender, activity, goal) {
   var adjust = goal === 'ירידה במשקל' ? lossDeficit : goal === 'חיטוב' ? -330 : goal === 'עלייה במסה' ? 300 : 0
   var calories = Math.max(1200, Math.round(tdee + adjust))
   var split = GOALS_SPLIT[goal] || GOALS_SPLIT['ירידה במשקל']
-  var protein = Math.round(weight * PROTEIN_G_PER_KG)
+  var gPerKg = PROTEIN_G_PER_KG[goal] || PROTEIN_G_PER_KG['ירידה במשקל']
+  var protein = Math.min(Math.round(weight * gPerKg), Math.round(calories * PROTEIN_CAL_PCT_CAP / 100 / 4))
   var remainCal = Math.max(0, calories - protein * 4)
   var carbFatTotal = split.carbs + split.fat
   return {
