@@ -69,9 +69,9 @@ const PLAN = {
     { id: 'b_tuna_half', text: 'טונה — חצי חבילה (80g)', tags: [], hide: ['vegan', 'vegetarian'], prot: 18 },
   ],
   bokerCarbs: [
-    { id: 'b4', text: '5 פריכיות דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
+    { id: 'b4', text: 'פריכית דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'], calPerSlice: 30, recQty: 1, unit: 'פריכיות' },
     { id: 'b6', text: 'פיתה כוסמין', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
-    { id: 'b_bread1', text: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת', tags: ['vegan'], hide: ['keto', 'no_gluten'], calPerSlice: 80, recQty: 2 },
+    { id: 'b_bread1', text: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת', tags: ['vegan'], hide: ['keto', 'no_gluten'], calPerSlice: 80, recQty: 1 },
     { id: 'bc_gf1', text: 'פרוסת לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'], calPerSlice: 80, recQty: 1 },
   ],
   bokerExtra: [
@@ -82,7 +82,7 @@ const PLAN = {
     { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
     { id: 'b3', text: 'מעדן פרו', tags: ['vegan'] },
     { id: 'b_kotej', text: 'קוטג׳ 5% (200g)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b4', text: '5 פריכיות דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
+    { id: 'b4', text: 'פריכית דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b7', text: 'ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'] },
@@ -144,7 +144,7 @@ const PLAN = {
     { id: 'e7', text: '2 ביצים קשות', hide: ['vegan', 'no_eggs'] },
     { id: 'e8', text: '100 גרם עדשים מבושלות', tags: ['vegan'] },
     { id: 'enew1', text: 'שקשוקה 2 ביצים', tags: [], hide: ['vegan', 'no_eggs'] },
-    { id: 'e_bread1', text: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת', tags: [], hide: ['keto', 'no_gluten'], calPerSlice: 80, recQty: 2 },
+    { id: 'e_bread1', text: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת', tags: [], hide: ['keto', 'no_gluten'], calPerSlice: 80, recQty: 1 },
   ],
   benayimOptions: [
     { id: 'ben1', text: 'פרי עונתי (תפוח / אגס / קיווי)' },

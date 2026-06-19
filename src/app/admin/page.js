@@ -55,10 +55,11 @@ function calcTargets(client) {
 
 // פריטים לפי כמות (פרוסות/ביצים) — לא קיימים בטבלת nutrition_data, הערך מגיע מהתוכנית עצמה
 var SLICE_ITEMS = {
-  b_bread1: { calPerSlice: 80, recQty: 2 },
-  e_bread1: { calPerSlice: 80, recQty: 2 },
+  b_bread1: { calPerSlice: 80, recQty: 1 },
+  e_bread1: { calPerSlice: 80, recQty: 1 },
   bc_gf1: { calPerSlice: 80, recQty: 1 },
   b7: { calPerSlice: 70, recQty: 1, protPerUnit: 6.5 },
+  b4: { calPerSlice: 30, recQty: 1 },
 }
 
 // ✅ ירקות הערב נשמרים ב-checks עם סיומת '_erev' — להסיר לפני חיפוש בנתוני תזונה
