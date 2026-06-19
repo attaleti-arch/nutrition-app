@@ -53,17 +53,44 @@ function calcTargets(client) {
   }
 }
 
+// פריטי לחם לפרוסה — לא קיימים בטבלת nutrition_data, הערך מגיע מהתוכנית עצמה
+var SLICE_ITEMS = {
+  b_bread1: { calPerSlice: 80, recQty: 2 },
+  e_bread1: { calPerSlice: 80, recQty: 2 },
+}
+
+// ✅ ירקות הערב נשמרים ב-checks עם סיומת '_erev' — להסיר לפני חיפוש בנתוני תזונה
+function nutritionId(id) {
+  return id.endsWith('_erev') ? id.slice(0, -5) : id
+}
+
 function calcNutrition(log, nutritionData) {
   var total = { calories: 0, protein: 0, fat: 0, fiber: 0, carbs: 0 }
-  function add(id) {
+  var carbQty = log.carb_qty || {}
+  var protQty = log.prot_qty || {}
+  function add(id, qtyOverride) {
     var item = nutritionData[id]
-    if (item) { total.calories += item.calories || 0; total.protein += item.protein || 0; total.fat += item.fat || 0; total.fiber += item.fiber || 0; total.carbs += item.carbs || 0 }
+    if (!item) return
+    var ratio = (qtyOverride && item.base_qty && item.base_qty > 0) ? (qtyOverride / item.base_qty) : 1
+    total.calories += (item.calories || 0) * ratio
+    total.protein += (item.protein || 0) * ratio
+    total.fat += (item.fat || 0) * ratio
+    total.fiber += (item.fiber || 0) * ratio
+    total.carbs += (item.carbs || 0) * ratio
   }
   if (log.had_snack) add('snack')
-  if (log.checks) Object.keys(log.checks).forEach(function(id) { if (log.checks[id]) add(id) })
-  if (log.carb_sel) add(log.carb_sel)
-  if (log.prot_sel) add(log.prot_sel)
-  if (log.prot_checks) Object.keys(log.prot_checks).forEach(function(id) { if (log.prot_checks[id]) add(id) })
+  if (log.checks) Object.keys(log.checks).forEach(function(id) {
+    if (!log.checks[id]) return
+    if (SLICE_ITEMS[id]) {
+      var qty = carbQty[id] || SLICE_ITEMS[id].recQty
+      total.calories += Math.round(SLICE_ITEMS[id].calPerSlice * qty)
+      total.carbs += Math.round(SLICE_ITEMS[id].calPerSlice * qty / 4)
+    } else {
+      add(nutritionId(id))
+    }
+  })
+  if (log.carb_sel) add(log.carb_sel, carbQty[log.carb_sel])
+  if (log.prot_checks) Object.keys(log.prot_checks).forEach(function(id) { if (log.prot_checks[id]) add(id, protQty[id]) })
   if (log.fat_sel) add(log.fat_sel)
   if (log.veggie_sel) add(log.veggie_sel)
   if (log.benayim_sel) add(log.benayim_sel)
@@ -72,7 +99,7 @@ function calcNutrition(log, nutritionData) {
   total.protein += (log.boker_extra_prot || 0) + (log.lunch_extra_prot || 0) + (log.erev_extra_prot || 0)
   total.fat += (log.boker_extra_fat || 0) + (log.lunch_extra_fat || 0) + (log.erev_extra_fat || 0)
   total.carbs += (log.boker_extra_carbs || 0) + (log.lunch_extra_carbs || 0) + (log.erev_extra_carbs || 0)
-  if (log.scan_calories) { total.calories += log.scan_calories; total.protein += (log.scan_protein || 0); total.fat += (log.scan_fat || 0) }
+  if (log.scan_calories) { total.calories += log.scan_calories; total.protein += (log.scan_protein || 0); total.fat += (log.scan_fat || 0); total.carbs += (log.scan_carbs || 0) }
   var totalCal = total.protein * 4 + total.fat * 9 + total.carbs * 4
   total.proteinPct = totalCal > 0 ? Math.round((total.protein * 4 / totalCal) * 100) : 0
   total.fatPct = totalCal > 0 ? Math.round((total.fat * 9 / totalCal) * 100) : 0

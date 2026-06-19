@@ -165,6 +165,11 @@ const PLAN = {
 const SLICE_ITEMS = {}
 PLAN.bokerCarbs.concat(PLAN.erev).forEach(function(it) { if (it.calPerSlice) SLICE_ITEMS[it.id] = it })
 
+// ✅ ירקות הערב נשמרים ב-checks עם סיומת '_erev' (כדי לא להתנגש עם בחירת הצהריים) — להסיר לפני חיפוש בנתוני תזונה
+function nutritionId(id) {
+  return id.endsWith('_erev') ? id.slice(0, -5) : id
+}
+
 const AGENT_SYSTEM_PROMPT = `אתה "עוזר החירום" של תוכנית "בין הראש לצלחת" – מבוסס שיטת אתי אטל.
 
 ## זהותך
@@ -918,6 +923,7 @@ export default function PlanApp({ clientName, userPassword }) {
       if (todayLog.data) {
         var t = todayLog.data
         setChecks(t.checks || {}); setCarbSel(t.carb_sel); setProtChecks(t.prot_checks || {}); setFatSel(t.fat_sel)
+        setCarbQty(t.carb_qty || {}); setProtQty(t.prot_qty || {})
         setVeggieSel(t.veggie_sel); setLunchOpt(t.lunch_opt); setBenayimSel(t.benayim_sel)
         setWater(t.water || 0); setSteps(t.steps || ''); setNote(t.note || '')
         setBokerFree(t.boker_free || ''); setLunchFree(t.lunch_free || ''); setErevFree(t.erev_free || '')
@@ -928,6 +934,7 @@ export default function PlanApp({ clientName, userPassword }) {
         var dayOfWeek = new Date().getDay()
         setSportDaysThisWeek(dayOfWeek === 0 ? 0 : (t.sport_days_week || 0))
         setScanCalories(t.scan_calories || 0); setScanDesc(t.scan_desc || '')
+        setScanProtein(t.scan_protein || 0); setScanFat(t.scan_fat || 0); setScanCarbs(t.scan_carbs || 0)
         setFeedback(t.trainer_feedback || null); setReportApproved(t.report_approved || false)
         if (t.nlp_metrics) { var m = t.nlp_metrics; setStressLevel(m.stress || 0); setFatigueLevel(m.fatigue || 0); setHungerLevel(m.hunger || 0); setUserMood(m.mood || null) }
       }
@@ -996,6 +1003,7 @@ export default function PlanApp({ clientName, userPassword }) {
       var payload = {
         client_name: dbKey, log_date: todayKey, checks,
         carb_sel: carbSel, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
+        carb_qty: carbQty, prot_qty: protQty,
         water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
         boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
         boker_extra_prot: bokerExtraProt || 0, lunch_extra_prot: lunchExtraProt || 0, erev_extra_prot: erevExtraProt || 0,
@@ -1010,7 +1018,7 @@ export default function PlanApp({ clientName, userPassword }) {
       if (error) console.error('❌ autosave failed:', error.message, error)
     }, 3000)
     return () => clearTimeout(autoSaveRef.current)
-  }, [checks, carbSel, protChecks, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount])
+  }, [checks, carbSel, protChecks, carbQty, protQty, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount])
 
   useEffect(() => {
     function handleGuideClose(e) {
@@ -1036,7 +1044,7 @@ export default function PlanApp({ clientName, userPassword }) {
     if (checks) Object.keys(checks).forEach(id => {
       if (!checks[id]) return
       if (SLICE_ITEMS[id]) { total += Math.round(SLICE_ITEMS[id].calPerSlice * (carbQty[id] || SLICE_ITEMS[id].recQty)) }
-      else { add(id) }
+      else { add(nutritionId(id)) }
     })
     if (carbSel) add(carbSel, carbQty[carbSel])
     // ✅ מחשב כל החלבונות שנבחרו
@@ -1092,7 +1100,7 @@ export default function PlanApp({ clientName, userPassword }) {
         else total += item.fat || 0
       }
     }
-    if (checks) Object.keys(checks).forEach(id => { if (checks[id] && !SLICE_ITEMS[id]) add(id) })
+    if (checks) Object.keys(checks).forEach(id => { if (checks[id] && !SLICE_ITEMS[id]) add(nutritionId(id)) })
     if (carbSel) add(carbSel, carbQty[carbSel])
     Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
     if (fatSel) add(fatSel)
@@ -1115,7 +1123,7 @@ export default function PlanApp({ clientName, userPassword }) {
     if (checks) Object.keys(checks).forEach(id => {
       if (!checks[id]) return
       if (SLICE_ITEMS[id]) { total += Math.round(SLICE_ITEMS[id].calPerSlice * (carbQty[id] || SLICE_ITEMS[id].recQty) / 4) }
-      else { add(id) }
+      else { add(nutritionId(id)) }
     })
     if (carbSel) add(carbSel, carbQty[carbSel])
     Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
@@ -1156,7 +1164,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const resetDay = async function() {
     if (!window.confirm('לאפס את כל הנתונים של היום?')) return
     await supabase.from('daily_logs').delete().eq('client_name', dbKey).eq('log_date', todayKey)
-    setChecks({}); setCarbSel(null); setProtChecks({}); setFatSel(null); setVeggieSel(null); setBenayimSel(null); setLunchOpt(null)
+    setChecks({}); setCarbSel(null); setProtChecks({}); setCarbQty({}); setProtQty({}); setFatSel(null); setVeggieSel(null); setBenayimSel(null); setLunchOpt(null)
     setWater(0); setSteps(''); setNote(''); setBokerFree(''); setLunchFree(''); setErevFree('')
     setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
     setHadSnack(null); setHadBenayim(null); setSportDoneToday(false)
@@ -1170,6 +1178,7 @@ export default function PlanApp({ clientName, userPassword }) {
     var payload = {
       client_name: dbKey, log_date: todayKey, checks,
       carb_sel: carbSel, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
+      carb_qty: carbQty, prot_qty: protQty,
       water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
       boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
       had_snack: hadSnack, had_benayim: hadBenayim,
