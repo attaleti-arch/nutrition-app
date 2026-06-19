@@ -43,6 +43,13 @@ const SPORT_OPTIONS = [
 const ACTIVITY_LEVELS = ['יושבני', 'קל', 'בינוני', 'פעיל', 'מאוד פעיל']
 const ACTIVITY_MULT = { 'יושבני': 1.2, 'קל': 1.375, 'בינוני': 1.55, 'פעיל': 1.725, 'מאוד פעיל': 1.9 }
 const GOALS_LIST = ['ירידה במשקל', 'חיטוב', 'שמירה על משקל', 'עלייה במסה']
+// ✅ חלבון לפי גרם/ק"ג משקל גוף (לא % מהקלוריות) — מתאים לאוכלוסייה שלא מתאמנת באינטנסיביות
+const PROTEIN_G_PER_KG = {
+  'ירידה במשקל': 1.4,
+  'חיטוב': 1.6,
+  'שמירה על משקל': 1.2,
+  'עלייה במסה': 1.2,
+}
 const GOALS_SPLIT = {
   'ירידה במשקל': { protein: 35, carbs: 35, fat: 30 },
   'חיטוב': { protein: 40, carbs: 30, fat: 30 },
@@ -405,11 +412,14 @@ function calcTargets(weight, height, age, gender, activity, goal) {
   var adjust = goal === 'ירידה במשקל' ? lossDeficit : goal === 'חיטוב' ? -330 : goal === 'עלייה במסה' ? 300 : 0
   var calories = Math.max(1200, Math.round(tdee + adjust))
   var split = GOALS_SPLIT[goal] || GOALS_SPLIT['ירידה במשקל']
+  var protein = Math.round(weight * (PROTEIN_G_PER_KG[goal] || PROTEIN_G_PER_KG['ירידה במשקל']))
+  var remainCal = Math.max(0, calories - protein * 4)
+  var carbFatTotal = split.carbs + split.fat
   return {
     calories,
-    protein: Math.round((calories * split.protein / 100) / 4),
-    carbs: Math.round((calories * split.carbs / 100) / 4),
-    fat: Math.round((calories * split.fat / 100) / 9),
+    protein,
+    carbs: Math.round(remainCal * (split.carbs / carbFatTotal) / 4),
+    fat: Math.round(remainCal * (split.fat / carbFatTotal) / 9),
   }
 }
 
@@ -1257,11 +1267,11 @@ export default function PlanApp({ clientName, userPassword }) {
   const eatenCarbs = calcEatenCarbs()
   const veggieMealsCount = calcVeggieMealsCount()
   const goalSplit = GOALS_SPLIT[userGoal] || GOALS_SPLIT['ירידה במשקל']
-  const plateProteinPct = clientPlate?.protein || goalSplit.protein
   const plateCarbsPct = clientPlate?.carbs || goalSplit.carbs
   const plateFatPct = clientPlate?.fat || goalSplit.fat
   // ✅ כל פס = % מהיעד היומי האישי שנאכל בפועל (100% = הגעת ליעד, מעל 100% = חרגת)
-  const targetProteinG = targets ? Math.round(targets.calories * plateProteinPct / 100 / 4) : 0
+  // ✅ חלבון: אם יש הרכב צלחת מותאם אישית (clientPlate, מבוסס %) — נשתמש בו; אחרת ביעד גרם/ק"ג שב-targets.protein
+  const targetProteinG = targets ? (clientPlate?.protein ? Math.round(targets.calories * clientPlate.protein / 100 / 4) : targets.protein) : 0
   const targetCarbsG = targets ? Math.round(targets.calories * plateCarbsPct / 100 / 4) : 0
   const targetFatG = targets ? Math.round(targets.calories * plateFatPct / 100 / 9) : 0
   const proteinTargetPct = targetProteinG > 0 ? Math.round((eatenProtein / targetProteinG) * 100) : 0
@@ -2128,9 +2138,8 @@ export default function PlanApp({ clientName, userPassword }) {
             <div>
               {/* ── מד השלמה חי ── */}
               {(() => {
-                const protPct = clientPlate?.protein || (targets ? 40 : 40)
                 const carbPct = clientPlate?.carbs || (targets ? 30 : 30)
-                const protBudget = targets ? Math.round(targets.calories * protPct / 100 / 2) : 0
+                const protBudget = targets ? (clientPlate?.protein ? Math.round(targets.calories * clientPlate.protein / 100 / 2) : Math.round(targets.protein * 4 / 2)) : 0
                 const carbBudget = targets ? Math.round(targets.calories * carbPct / 100 / 2) : 0
 
                 // ✅ סכום כל החלבונות שנבחרו
@@ -2233,8 +2242,7 @@ export default function PlanApp({ clientName, userPassword }) {
                 const item = nutritionData[o.id]
                 const isEggs = o.id === 'p8'
                 const cal100 = item?.calories_per_100 || item?.calories || 0
-                const protPct = clientPlate?.protein || 40
-                const protBudget = targets ? Math.round(targets.calories * protPct / 100 / 2) : 0
+                const protBudget = targets ? (clientPlate?.protein ? Math.round(targets.calories * clientPlate.protein / 100 / 2) : Math.round(targets.protein * 4 / 2)) : 0
                 // ✅ ביצים — המלצה ביחידות, שאר — גרמים
                 const recQty = isEggs ? 2 : (cal100 > 0 && protBudget > 0
                   ? Math.min(300, Math.round((protBudget / cal100) * 100))

@@ -5,9 +5,17 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import WelcomeDocument from '../WelcomeDocument'
 
 const GOALS_SPLIT = {
-  'ירידה במשקל': { protein: 40, carbs: 30, fat: 30 },
+  'ירידה במשקל': { protein: 35, carbs: 35, fat: 30 },
+  'חיטוב': { protein: 40, carbs: 30, fat: 30 },
   'שמירה על משקל': { protein: 30, carbs: 40, fat: 30 },
   'עלייה במסה': { protein: 30, carbs: 50, fat: 20 },
+}
+// ✅ חלבון לפי גרם/ק"ג משקל גוף (לא % מהקלוריות) — תואם לחישוב בצד הלקוח
+const PROTEIN_G_PER_KG = {
+  'ירידה במשקל': 1.4,
+  'חיטוב': 1.6,
+  'שמירה על משקל': 1.2,
+  'עלייה במסה': 1.2,
 }
 const ACTIVITY_MULT = {
   'יושבני': 1.2, 'קל': 1.375, 'בינוני': 1.55, 'פעיל': 1.725, 'מאוד פעיל': 1.9
@@ -41,15 +49,19 @@ function calcTargets(client) {
     : 10 * client.weight + 6.25 * client.height - 5 * client.age - 161
   var tdee = bmr * (ACTIVITY_MULT[client.activity] || 1.55)
   var lossDeficit = client.weight > 80 ? -825 : client.weight >= 70 ? -660 : -550
-  var adjust = client.goal === 'ירידה במשקל' ? lossDeficit : client.goal === 'עלייה במסה' ? 300 : 0
+  var adjust = client.goal === 'ירידה במשקל' ? lossDeficit : client.goal === 'חיטוב' ? -330 : client.goal === 'עלייה במסה' ? 300 : 0
   var calories = Math.max(1200, Math.round(tdee + adjust))
   var split = GOALS_SPLIT[client.goal] || GOALS_SPLIT['ירידה במשקל']
+  var protein = Math.round(client.weight * (PROTEIN_G_PER_KG[client.goal] || PROTEIN_G_PER_KG['ירידה במשקל']))
+  var remainCal = Math.max(0, calories - protein * 4)
+  var carbFatTotal = split.carbs + split.fat
+  var carbs = Math.round(remainCal * (split.carbs / carbFatTotal) / 4)
+  var fat = Math.round(remainCal * (split.fat / carbFatTotal) / 9)
   return {
-    calories,
-    protein: Math.round((calories * split.protein / 100) / 4),
-    carbs: Math.round((calories * split.carbs / 100) / 4),
-    fat: Math.round((calories * split.fat / 100) / 9),
-    proteinPct: split.protein, carbsPct: split.carbs, fatPct: split.fat,
+    calories, protein, carbs, fat,
+    proteinPct: calories > 0 ? Math.round((protein * 4 / calories) * 100) : 0,
+    carbsPct: calories > 0 ? Math.round((carbs * 4 / calories) * 100) : 0,
+    fatPct: calories > 0 ? Math.round((fat * 9 / calories) * 100) : 0,
   }
 }
 
