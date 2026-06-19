@@ -70,11 +70,11 @@ function calcTargets(client) {
 
 // פריטים לפי כמות (פרוסות/ביצים) — לא קיימים בטבלת nutrition_data, הערך מגיע מהתוכנית עצמה
 var SLICE_ITEMS = {
-  b_bread1: { calPerSlice: 80, recQty: 1 },
-  e_bread1: { calPerSlice: 80, recQty: 1 },
-  bc_gf1: { calPerSlice: 80, recQty: 1 },
-  b7: { calPerSlice: 70, recQty: 1, protPerUnit: 6.5 },
-  b4: { calPerSlice: 30, recQty: 1 },
+  b_bread1: { calPerSlice: 80, recQty: 1, name: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת' },
+  e_bread1: { calPerSlice: 80, recQty: 1, name: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת' },
+  bc_gf1: { calPerSlice: 80, recQty: 1, name: 'פרוסת לחם ללא גלוטן' },
+  b7: { calPerSlice: 70, recQty: 1, protPerUnit: 6.5, name: 'ביצים קשות / חביתה' },
+  b4: { calPerSlice: 30, recQty: 1, name: 'פריכית דגנים מלאים' },
 }
 
 // ✅ ירקות הערב נשמרים ב-checks עם סיומת '_erev' — להסיר לפני חיפוש בנתוני תזונה
@@ -1441,15 +1441,32 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     if (logDetails.veggie_sel) allIds.push(logDetails.veggie_sel)
                     if (logDetails.benayim_sel) allIds.push(logDetails.benayim_sel)
                     if (!allIds.length) return null
+                    const carbQty = logDetails.carb_qty || {}
                     return (
                       <div style={{ background: '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 12 }}>
                         <div style={{ fontWeight: 700, fontSize: 13, color: '#555', marginBottom: 8 }}>✅ פריטים שסומנו</div>
                         {allIds.map((id, i) => {
+                          const slice = SLICE_ITEMS[id]
                           const item = nutritionData[id]
+                          let label, macros
+                          if (slice) {
+                            const qty = carbQty[id] || slice.recQty
+                            const cal = Math.round(slice.calPerSlice * qty)
+                            const prot = slice.protPerUnit ? Math.round(qty * slice.protPerUnit) : 0
+                            const carbs = slice.protPerUnit ? 0 : Math.round(slice.calPerSlice * qty / 4)
+                            label = slice.name + ' (כמות: ' + qty + ')'
+                            macros = cal + ' קל | ' + prot + 'g חלבון | 0g שומן | ' + carbs + 'g פחמימה'
+                          } else if (item) {
+                            label = item.name
+                            macros = Math.round(item.calories) + ' קל | ' + Math.round(item.protein||0) + 'g חלבון | ' + Math.round(item.fat||0) + 'g שומן | ' + Math.round(item.carbs||0) + 'g פחמימה'
+                          } else {
+                            label = id
+                            macros = 'אין נתונים'
+                          }
                           return (
                             <div key={id + i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, padding: '4px 0', borderBottom: '1px solid #f0f0f0' }}>
-                              <span style={{ color: '#9ca3af', fontSize: 11 }}>{item ? Math.round(item.calories) + ' קל | ' + Math.round(item.protein||0) + 'g חלבון | ' + Math.round(item.fat||0) + 'g שומן | ' + Math.round(item.carbs||0) + 'g פחמימה' : 'אין נתונים'}</span>
-                              <span style={{ fontWeight: 600 }}>{item ? item.name : id}</span>
+                              <span style={{ color: '#9ca3af', fontSize: 11 }}>{macros}</span>
+                              <span style={{ fontWeight: 600 }}>{label}</span>
                             </div>
                           )
                         })}
