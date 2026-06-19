@@ -1905,6 +1905,8 @@ export default function PlanApp({ clientName, userPassword }) {
               {filteredBokerExtra.map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
             </>
           )}
+          <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות לבוקר:</div>
+          <CheckRow id="b_veggie1" text="סלט או ירקות חתוכים (סלט עם כף שמן זית או ללא)" accent={C.teal} checked={!!checks['b_veggie1']} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />
           <FreeText value={bokerFree} onChange={setBokerFree} placeholder="אכלתי גם / פרטים נוספים..." />
           <ExtraCal value={bokerExtraCal} onChange={setBokerExtraCal} valueProt={bokerExtraProt} onChangeProt={setBokerExtraProt} />
           <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setBokerExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
