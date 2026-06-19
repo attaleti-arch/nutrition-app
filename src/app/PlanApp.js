@@ -162,6 +162,9 @@ const PLAN = {
   ],
 }
 
+const SLICE_ITEMS = {}
+PLAN.bokerCarbs.concat(PLAN.erev).forEach(function(it) { if (it.calPerSlice) SLICE_ITEMS[it.id] = it })
+
 const AGENT_SYSTEM_PROMPT = `אתה "עוזר החירום" של תוכנית "בין הראש לצלחת" – מבוסס שיטת אתי אטל.
 
 ## זהותך
@@ -411,6 +414,29 @@ function shouldHide(item, dietType, restrictions) {
     if (restrictions && restrictions[h]) return true
   }
   return false
+}
+
+function plateBarColor(actualPct, targetPct) {
+  if (actualPct === 0) return '#d1d5db'
+  var diff = Math.abs(actualPct - targetPct)
+  if (diff <= 6) return '#16a34a'
+  if (diff <= 14) return '#ca8a04'
+  return '#ef4444'
+}
+
+function FloatingPlateBars({ bars }) {
+  return (
+    <div style={{ position: 'fixed', left: 6, top: '50%', transform: 'translateY(-50%)', zIndex: 60, background: 'rgba(255,255,255,0.94)', borderRadius: 16, padding: '10px 8px', boxShadow: '0 2px 12px rgba(0,0,0,0.14)', display: 'flex', gap: 8 }}>
+      {bars.map(b => (
+        <div key={b.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
+          <div style={{ width: 11, height: 76, borderRadius: 7, background: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: Math.min(100, b.pct) + '%', background: b.color, borderRadius: 7, transition: 'height 0.3s' }} />
+          </div>
+          <div style={{ fontSize: 14 }}>{b.emoji}</div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 function Confetti() {
@@ -1005,7 +1031,11 @@ export default function PlanApp({ clientName, userPassword }) {
       }
     }
     if (hadSnack) add('snack')
-    if (checks) Object.keys(checks).forEach(id => { if (checks[id]) add(id) })
+    if (checks) Object.keys(checks).forEach(id => {
+      if (!checks[id]) return
+      if (SLICE_ITEMS[id]) { total += Math.round(SLICE_ITEMS[id].calPerSlice * (carbQty[id] || SLICE_ITEMS[id].recQty)) }
+      else { add(id) }
+    })
     if (carbSel) add(carbSel, carbQty[carbSel])
     // ✅ מחשב כל החלבונות שנבחרו
     Object.keys(protChecks).forEach(id => {
@@ -1049,6 +1079,45 @@ export default function PlanApp({ clientName, userPassword }) {
     total += calcExtraProt()
     total += (scanProtein || 0)
     return total
+  }
+
+  function calcEatenFat() {
+    var total = 0
+    function add(id) { var item = nutritionData[id]; if (item) total += item.fat || 0 }
+    if (checks) Object.keys(checks).forEach(id => { if (checks[id] && !SLICE_ITEMS[id]) add(id) })
+    if (carbSel) add(carbSel)
+    Object.keys(protChecks).forEach(id => { if (protChecks[id]) add(id) })
+    if (fatSel) add(fatSel)
+    if (veggieSel) add(veggieSel)
+    if (benayimSel) add(benayimSel)
+    if (hadBenayim) add('benayim')
+    total += (scanFat || 0)
+    return total
+  }
+
+  function calcEatenCarbs() {
+    var total = 0
+    function add(id) { var item = nutritionData[id]; if (item) total += item.carbs || 0 }
+    if (checks) Object.keys(checks).forEach(id => {
+      if (!checks[id]) return
+      if (SLICE_ITEMS[id]) { total += Math.round(SLICE_ITEMS[id].calPerSlice * (carbQty[id] || SLICE_ITEMS[id].recQty) / 4) }
+      else { add(id) }
+    })
+    if (carbSel) add(carbSel)
+    if (fatSel) add(fatSel)
+    if (veggieSel) add(veggieSel)
+    if (benayimSel) add(benayimSel)
+    if (hadBenayim) add('benayim')
+    total += (scanCarbs || 0)
+    return total
+  }
+
+  function calcVeggieMealsCount() {
+    var count = 0
+    if (checks['b_veggie1']) count++
+    if (veggieSel) count++
+    if (PLAN.veggieOptions.some(o => checks[o.id + '_erev'])) count++
+    return count
   }
 
   const saveProfile = async function() {
@@ -1111,6 +1180,24 @@ export default function PlanApp({ clientName, userPassword }) {
   const targets = calcTargets(parseFloat(userWeight), parseFloat(userHeight), parseInt(userAge), userGender, userActivity, userGoal)
   const eatenCalories = calcEatenCalories()
   const eatenProtein = calcEatenProtein()
+  const eatenFat = calcEatenFat()
+  const eatenCarbs = calcEatenCarbs()
+  const veggieMealsCount = calcVeggieMealsCount()
+  const macroCalTotal = eatenProtein * 4 + eatenFat * 9 + eatenCarbs * 4
+  const actualProteinPct = macroCalTotal > 0 ? Math.round((eatenProtein * 4 / macroCalTotal) * 100) : 0
+  const actualFatPct = macroCalTotal > 0 ? Math.round((eatenFat * 9 / macroCalTotal) * 100) : 0
+  const actualCarbsPct = macroCalTotal > 0 ? Math.round((eatenCarbs * 4 / macroCalTotal) * 100) : 0
+  const actualVeggiesPct = Math.round((veggieMealsCount / 3) * 100)
+  const plateProteinPct = clientPlate?.protein || 35
+  const plateCarbsPct = clientPlate?.carbs || 25
+  const plateFatPct = clientPlate?.fat || 15
+  const plateVeggiesPct = clientPlate?.veggies || 25
+  const plateBars = [
+    { label: 'protein', emoji: '💪', pct: actualProteinPct, color: plateBarColor(actualProteinPct, plateProteinPct) },
+    { label: 'carbs', emoji: '🍞', pct: actualCarbsPct, color: plateBarColor(actualCarbsPct, plateCarbsPct) },
+    { label: 'fat', emoji: '🫒', pct: actualFatPct, color: plateBarColor(actualFatPct, plateFatPct) },
+    { label: 'veggies', emoji: '🥦', pct: actualVeggiesPct, color: plateBarColor(actualVeggiesPct, plateVeggiesPct) },
+  ]
   const filteredBoker = PLAN.boker.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerProtein = PLAN.bokerProtein.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerCarbs = PLAN.bokerCarbs.filter(i => !shouldHide(i, dietType, restrictions))
@@ -1201,6 +1288,10 @@ export default function PlanApp({ clientName, userPassword }) {
   return (
     <div style={{ minHeight: '100vh', background: '#f8fafc', direction: 'rtl' }}>
       {showConfetti && <Confetti />}
+
+      {activeTab === 'diary' && profileDone && targets && (
+        <FloatingPlateBars bars={plateBars} />
+      )}
 
       {/* ✅ בר קלוריות וחלבון צף */}
       {activeTab === 'diary' && profileDone && (
