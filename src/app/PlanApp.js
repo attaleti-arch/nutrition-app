@@ -1098,7 +1098,12 @@ export default function PlanApp({ clientName, userPassword }) {
 
   function calcEatenProtein() {
     var total = 0
-    function addNP(id) { var item = nutritionData[id]; if (item) total += item.protein || 0 }
+    function addNP(id, qtyOverride) {
+      var item = nutritionData[id]
+      if (!item) return
+      if (qtyOverride && item.base_qty && item.base_qty > 0) total += (item.protein || 0) * (qtyOverride / item.base_qty)
+      else total += item.protein || 0
+    }
     var bokerProtMap = {}
     PLAN.bokerProtein.forEach(function(item) { if (item.prot) bokerProtMap[item.id] = item })
     // ✅ פריטי checks שאין להם prot מוגדר (פחמימות בוקר, ארוחת ערב, ירקות) — מקבלים חלבון מ-nutritionData, כמו קלוריות/שומן/פחמימה
@@ -1118,7 +1123,7 @@ export default function PlanApp({ clientName, userPassword }) {
         else { total += item.prot }
       }
     })
-    Object.keys(carbChecks).forEach(function(id) { if (carbChecks[id]) addNP(id) })
+    Object.keys(carbChecks).forEach(function(id) { if (carbChecks[id]) addNP(id, carbQty[id]) })
     if (fatSel) addNP(fatSel)
     if (veggieSel) addNP(veggieSel)
     if (hadBenayim && benayimSel) addNP(benayimSel)
