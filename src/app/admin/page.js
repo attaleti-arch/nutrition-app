@@ -53,10 +53,12 @@ function calcTargets(client) {
   }
 }
 
-// פריטי לחם לפרוסה — לא קיימים בטבלת nutrition_data, הערך מגיע מהתוכנית עצמה
+// פריטים לפי כמות (פרוסות/ביצים) — לא קיימים בטבלת nutrition_data, הערך מגיע מהתוכנית עצמה
 var SLICE_ITEMS = {
   b_bread1: { calPerSlice: 80, recQty: 2 },
   e_bread1: { calPerSlice: 80, recQty: 2 },
+  bc_gf1: { calPerSlice: 80, recQty: 1 },
+  b7: { calPerSlice: 70, recQty: 1, protPerUnit: 6.5 },
 }
 
 // ✅ ירקות הערב נשמרים ב-checks עם סיומת '_erev' — להסיר לפני חיפוש בנתוני תזונה
@@ -84,7 +86,8 @@ function calcNutrition(log, nutritionData) {
     if (SLICE_ITEMS[id]) {
       var qty = carbQty[id] || SLICE_ITEMS[id].recQty
       total.calories += Math.round(SLICE_ITEMS[id].calPerSlice * qty)
-      total.carbs += Math.round(SLICE_ITEMS[id].calPerSlice * qty / 4)
+      if (SLICE_ITEMS[id].protPerUnit) total.protein += Math.round(qty * SLICE_ITEMS[id].protPerUnit)
+      else total.carbs += Math.round(SLICE_ITEMS[id].calPerSlice * qty / 4)
     } else {
       add(nutritionId(id))
     }

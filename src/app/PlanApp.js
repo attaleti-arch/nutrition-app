@@ -60,11 +60,11 @@ const PLAN = {
   bokerSnack: 'לפני: נס קפה + חטיף בריאות עד 99 קל',
   bokerProtein: [
     { id: 'b1', text: 'משקה / חטיף חלבון', tags: [], prot: 25 },
-    { id: 'b3', text: 'מעדן פרו + פרי', tags: ['vegan'], prot: 15 },
+    { id: 'b3', text: 'מעדן פרו', tags: ['vegan'], prot: 20 },
     { id: 'b_kotej', text: 'קוטג׳ 5% (200g)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 22 },
     { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 14 },
     { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 7 },
-    { id: 'b7', text: '2 ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'], prot: 13 },
+    { id: 'b7', text: 'ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'], calPerSlice: 70, recQty: 1, unit: 'ביצים', protPerUnit: 6.5 },
     { id: 'b_tuna_full', text: 'טונה — חבילה שלמה (160g)', tags: [], hide: ['vegan', 'vegetarian'], prot: 35 },
     { id: 'b_tuna_half', text: 'טונה — חצי חבילה (80g)', tags: [], hide: ['vegan', 'vegetarian'], prot: 18 },
   ],
@@ -72,7 +72,7 @@ const PLAN = {
     { id: 'b4', text: '5 פריכיות דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'b6', text: 'פיתה כוסמין', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'b_bread1', text: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת', tags: ['vegan'], hide: ['keto', 'no_gluten'], calPerSlice: 80, recQty: 2 },
-    { id: 'bc_gf1', text: 'פרוסת לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'], calPerSlice: 80, recQty: 2 },
+    { id: 'bc_gf1', text: 'פרוסת לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'], calPerSlice: 80, recQty: 1 },
   ],
   bokerExtra: [
     { id: 'b8', text: '½ אבוקדו (100g)', tags: ['vegan', 'keto'] },
@@ -80,12 +80,12 @@ const PLAN = {
   ],
   boker: [
     { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
-    { id: 'b3', text: 'מעדן פרו + פרי', tags: ['vegan'] },
+    { id: 'b3', text: 'מעדן פרו', tags: ['vegan'] },
     { id: 'b_kotej', text: 'קוטג׳ 5% (200g)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b4', text: '5 פריכיות דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b7', text: '2 ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'] },
+    { id: 'b7', text: 'ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'] },
     { id: 'b6', text: 'פיתה כוסמין / 4 פריכיות / 2 פרוסות לחם שיפון', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'bnew1', text: '2 פרוסות לחם כוסמין', tags: [], hide: ['keto', 'no_gluten'] },
     { id: 'bc_gf1', text: 'פרוסת לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'] },
@@ -164,7 +164,7 @@ const PLAN = {
 }
 
 const SLICE_ITEMS = {}
-PLAN.bokerCarbs.concat(PLAN.erev).forEach(function(it) { if (it.calPerSlice) SLICE_ITEMS[it.id] = it })
+PLAN.bokerCarbs.concat(PLAN.erev).concat(PLAN.bokerProtein).forEach(function(it) { if (it.calPerSlice) SLICE_ITEMS[it.id] = it })
 
 // ✅ ירקות הערב נשמרים ב-checks עם סיומת '_erev' (כדי לא להתנגש עם בחירת הצהריים) — להסיר לפני חיפוש בנתוני תזונה
 function nutritionId(id) {
@@ -668,6 +668,7 @@ function CheckRow({ id, text, accent, checked, onToggle }) {
 }
 
 function SliceQtyRow({ item, accent, checked, qty, onToggle, onQtyChange }) {
+  const unitLabel = item.unit || 'פרוסות'
   const displayQty = qty || item.recQty
   const calDisplay = Math.round(item.calPerSlice * displayQty)
   return (
@@ -690,13 +691,13 @@ function SliceQtyRow({ item, accent, checked, qty, onToggle, onQtyChange }) {
               placeholder={String(item.recQty)}
               style={{ width: 55, padding: '4px 6px', borderRadius: 8, border: '1.5px solid ' + accent, fontSize: 12, textAlign: 'center', outline: 'none' }}
             />
-            <span style={{ fontSize: 11, color: '#9ca3af' }}>פרוסות</span>
+            <span style={{ fontSize: 11, color: '#9ca3af' }}>{unitLabel}</span>
           </div>
         )}
       </div>
       {checked && (
         <div style={{ fontSize: 11, color: accent, textAlign: 'left', paddingBottom: 4 }}>
-          ≈ {calDisplay} קל {!qty && <span style={{ color: '#9ca3af' }}>(מומלץ: {item.recQty} פרוסות)</span>}
+          ≈ {calDisplay} קל {!qty && <span style={{ color: '#9ca3af' }}>(מומלץ: {item.recQty} {unitLabel})</span>}
         </div>
       )}
     </div>
@@ -1110,7 +1111,10 @@ export default function PlanApp({ clientName, userPassword }) {
     if (checks) Object.keys(checks).forEach(function(id) {
       if (!checks[id]) return
       if (bokerProtMap[id]) { total += bokerProtMap[id].prot; return }
-      if (SLICE_ITEMS[id]) return
+      if (SLICE_ITEMS[id]) {
+        if (SLICE_ITEMS[id].protPerUnit) total += Math.round((carbQty[id] || SLICE_ITEMS[id].recQty) * SLICE_ITEMS[id].protPerUnit)
+        return
+      }
       addNP(nutritionId(id))
     })
     var protOptMap = {}
@@ -1165,7 +1169,7 @@ export default function PlanApp({ clientName, userPassword }) {
     if (hadSnack) add('snack')
     if (checks) Object.keys(checks).forEach(id => {
       if (!checks[id]) return
-      if (SLICE_ITEMS[id]) { total += Math.round(SLICE_ITEMS[id].calPerSlice * (carbQty[id] || SLICE_ITEMS[id].recQty) / 4) }
+      if (SLICE_ITEMS[id]) { if (!SLICE_ITEMS[id].protPerUnit) total += Math.round(SLICE_ITEMS[id].calPerSlice * (carbQty[id] || SLICE_ITEMS[id].recQty) / 4) }
       else { add(nutritionId(id)) }
     })
     Object.keys(carbChecks).forEach(id => { if (carbChecks[id]) add(id, carbQty[id]) })
@@ -2088,7 +2092,9 @@ export default function PlanApp({ clientName, userPassword }) {
           {filteredBokerProtein.length > 0 && (
             <>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.orange, marginBottom: 4, marginTop: 4, textAlign: 'right' }}>🥛 חלבון</div>
-              {filteredBokerProtein.map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
+              {filteredBokerProtein.map(item => item.calPerSlice
+                ? <SliceQtyRow key={item.id} item={item} accent={C.orange} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
+                : <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
             </>
           )}
           {filteredBokerCarbs.length > 0 && (
