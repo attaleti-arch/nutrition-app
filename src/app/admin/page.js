@@ -89,6 +89,7 @@ function calcNutrition(log, nutritionData) {
       add(nutritionId(id))
     }
   })
+  if (log.carb_checks) Object.keys(log.carb_checks).forEach(function(id) { if (log.carb_checks[id]) add(id, carbQty[id]) })
   if (log.carb_sel) add(log.carb_sel, carbQty[log.carb_sel])
   if (log.prot_checks) Object.keys(log.prot_checks).forEach(function(id) {
     if (!log.prot_checks[id]) return
@@ -1415,6 +1416,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     const allIds = []
                     if (logDetails.checks) Object.keys(logDetails.checks).filter(id => logDetails.checks[id]).forEach(id => allIds.push(id))
                     if (logDetails.prot_checks) Object.keys(logDetails.prot_checks).filter(id => logDetails.prot_checks[id]).forEach(id => allIds.push(id))
+                    if (logDetails.carb_checks) Object.keys(logDetails.carb_checks).filter(id => logDetails.carb_checks[id]).forEach(id => allIds.push(id))
                     if (logDetails.carb_sel) allIds.push(logDetails.carb_sel)
                     if (logDetails.fat_sel) allIds.push(logDetails.fat_sel)
                     if (logDetails.veggie_sel) allIds.push(logDetails.veggie_sel)

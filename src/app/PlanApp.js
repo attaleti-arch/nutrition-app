@@ -96,7 +96,7 @@ const PLAN = {
     { id: 'c1', text: '150 גרם אורז מלא / קינואה', hide: ['keto'] },
     { id: 'c2', text: '200 גרם בורגול / כוסמין', hide: ['keto', 'no_gluten'] },
     { id: 'c4', text: '170 גרם תפוחי אדמה / בטטה', hide: ['keto'] },
-    { id: 'c5', text: '150 גרם כרובית / ברוקולי (קיטו)', tags: ['keto'] },
+    { id: 'c5', text: '150 גרם ירקות אנטיפסטי קלויים (קישוא, חציל, בטטה)', tags: ['vegan'] },
     { id: 'c6', text: '150 גרם עדשים / חומוס מבושל', tags: ['vegan'] },
     { id: 'c7', text: '100 גרם שעועית לבנה / אדומה', tags: ['vegan'] },
     { id: 'c_gf1', text: '150 גרם כוסמת מבושלת', tags: ['vegan'], hide: ['keto'] },
@@ -781,7 +781,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const [setupDone, setSetupDone] = useState(false)
   const [profileDone, setProfileDone] = useState(false)
   const [checks, setChecks] = useState({})
-  const [carbSel, setCarbSel] = useState(null)
+  const [carbChecks, setCarbChecks] = useState({}) // ✅ אפשר כמה פחמימות בו-זמנית, לא בחירה בלעדית
   const [protChecks, setProtChecks] = useState({}) // ✅ כמה חלבונות
   const [carbQty, setCarbQty] = useState({})
   const [protQty, setProtQty] = useState({})
@@ -923,7 +923,7 @@ export default function PlanApp({ clientName, userPassword }) {
       var todayLog = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
       if (todayLog.data) {
         var t = todayLog.data
-        setChecks(t.checks || {}); setCarbSel(t.carb_sel); setProtChecks(t.prot_checks || {}); setFatSel(t.fat_sel)
+        setChecks(t.checks || {}); setCarbChecks(t.carb_checks || (t.carb_sel ? { [t.carb_sel]: true } : {})); setProtChecks(t.prot_checks || {}); setFatSel(t.fat_sel)
         setCarbQty(t.carb_qty || {}); setProtQty(t.prot_qty || {})
         setVeggieSel(t.veggie_sel); setLunchOpt(t.lunch_opt); setBenayimSel(t.benayim_sel)
         setWater(t.water || 0); setSteps(t.steps || ''); setNote(t.note || '')
@@ -940,7 +940,7 @@ export default function PlanApp({ clientName, userPassword }) {
         if (t.nlp_metrics) { var m = t.nlp_metrics; setStressLevel(m.stress || 0); setFatigueLevel(m.fatigue || 0); setHungerLevel(m.hunger || 0); setUserMood(m.mood || null) }
       } else {
         // ✅ אין רשומה ליום הזה (כניסה ראשונה, או שהיום התגלגל לתאריך חדש באמצע הפעלה) — לוודא שלא נשאר מידע מהיום הקודם בזיכרון
-        setChecks({}); setCarbSel(null); setProtChecks({}); setFatSel(null)
+        setChecks({}); setCarbChecks({}); setProtChecks({}); setFatSel(null)
         setCarbQty({}); setProtQty({})
         setVeggieSel(null); setLunchOpt(null); setBenayimSel(null)
         setWater(0); setSteps(''); setNote('')
@@ -1017,7 +1017,7 @@ export default function PlanApp({ clientName, userPassword }) {
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current)
     var payload = {
       client_name: dbKey, log_date: todayKey, checks,
-      carb_sel: carbSel, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
+      carb_checks: carbChecks, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
       carb_qty: carbQty, prot_qty: protQty,
       water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
       boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
@@ -1036,7 +1036,7 @@ export default function PlanApp({ clientName, userPassword }) {
       pendingSaveRef.current = null
     }, 3000)
     return () => clearTimeout(autoSaveRef.current)
-  }, [checks, carbSel, protChecks, carbQty, protQty, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount])
+  }, [checks, carbChecks, protChecks, carbQty, protQty, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount])
 
   // ✅ אם המשתמשת עוזבת את הדף בתוך חלון ה-debounce, לשמור מיד את מה שהיה ממתין כדי לא לאבד עדכון
   useEffect(() => {
@@ -1071,7 +1071,7 @@ export default function PlanApp({ clientName, userPassword }) {
       if (SLICE_ITEMS[id]) { total += Math.round(SLICE_ITEMS[id].calPerSlice * (carbQty[id] || SLICE_ITEMS[id].recQty)) }
       else { add(nutritionId(id)) }
     })
-    if (carbSel) add(carbSel, carbQty[carbSel])
+    Object.keys(carbChecks).forEach(id => { if (carbChecks[id]) add(id, carbQty[id]) })
     // ✅ מחשב כל החלבונות שנבחרו
     Object.keys(protChecks).forEach(id => {
       if (protChecks[id]) {
@@ -1098,9 +1098,16 @@ export default function PlanApp({ clientName, userPassword }) {
 
   function calcEatenProtein() {
     var total = 0
+    function addNP(id) { var item = nutritionData[id]; if (item) total += item.protein || 0 }
     var bokerProtMap = {}
     PLAN.bokerProtein.forEach(function(item) { if (item.prot) bokerProtMap[item.id] = item })
-    if (checks) Object.keys(checks).forEach(function(id) { if (checks[id] && bokerProtMap[id]) total += bokerProtMap[id].prot })
+    // ✅ פריטי checks שאין להם prot מוגדר (פחמימות בוקר, ארוחת ערב, ירקות) — מקבלים חלבון מ-nutritionData, כמו קלוריות/שומן/פחמימה
+    if (checks) Object.keys(checks).forEach(function(id) {
+      if (!checks[id]) return
+      if (bokerProtMap[id]) { total += bokerProtMap[id].prot; return }
+      if (SLICE_ITEMS[id]) return
+      addNP(nutritionId(id))
+    })
     var protOptMap = {}
     PLAN.protOptions.forEach(function(item) { if (item.prot) protOptMap[item.id] = item })
     Object.keys(protChecks).forEach(function(id) {
@@ -1111,10 +1118,13 @@ export default function PlanApp({ clientName, userPassword }) {
         else { total += item.prot }
       }
     })
+    Object.keys(carbChecks).forEach(function(id) { if (carbChecks[id]) addNP(id) })
+    if (fatSel) addNP(fatSel)
+    if (veggieSel) addNP(veggieSel)
+    if (hadBenayim && benayimSel) addNP(benayimSel)
     total += calcExtraProt()
     total += (scanProtein || 0)
-    if (hadSnack) { var snackItem = nutritionData['snack']; if (snackItem) total += snackItem.protein || 0 }
-    if (hadBenayim && benayimSel) { var bItem = nutritionData[benayimSel]; if (bItem) total += bItem.protein || 0 }
+    if (hadSnack) addNP('snack')
     return total
   }
 
@@ -1129,7 +1139,7 @@ export default function PlanApp({ clientName, userPassword }) {
     }
     if (hadSnack) add('snack')
     if (checks) Object.keys(checks).forEach(id => { if (checks[id] && !SLICE_ITEMS[id]) add(nutritionId(id)) })
-    if (carbSel) add(carbSel, carbQty[carbSel])
+    Object.keys(carbChecks).forEach(id => { if (carbChecks[id]) add(id, carbQty[id]) })
     Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
     if (fatSel) add(fatSel)
     if (veggieSel) add(veggieSel)
@@ -1153,7 +1163,7 @@ export default function PlanApp({ clientName, userPassword }) {
       if (SLICE_ITEMS[id]) { total += Math.round(SLICE_ITEMS[id].calPerSlice * (carbQty[id] || SLICE_ITEMS[id].recQty) / 4) }
       else { add(nutritionId(id)) }
     })
-    if (carbSel) add(carbSel, carbQty[carbSel])
+    Object.keys(carbChecks).forEach(id => { if (carbChecks[id]) add(id, carbQty[id]) })
     Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
     if (fatSel) add(fatSel)
     if (veggieSel) add(veggieSel)
@@ -1191,7 +1201,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const resetDay = async function() {
     if (!window.confirm('לאפס את כל הנתונים של היום?')) return
     await supabase.from('daily_logs').delete().eq('client_name', dbKey).eq('log_date', todayKey)
-    setChecks({}); setCarbSel(null); setProtChecks({}); setCarbQty({}); setProtQty({}); setFatSel(null); setVeggieSel(null); setBenayimSel(null); setLunchOpt(null)
+    setChecks({}); setCarbChecks({}); setProtChecks({}); setCarbQty({}); setProtQty({}); setFatSel(null); setVeggieSel(null); setBenayimSel(null); setLunchOpt(null)
     setWater(0); setSteps(''); setNote(''); setBokerFree(''); setLunchFree(''); setErevFree('')
     setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
     setBokerExtraProt(0); setLunchExtraProt(0); setErevExtraProt(0)
@@ -1205,7 +1215,7 @@ export default function PlanApp({ clientName, userPassword }) {
     setSaving(true)
     var payload = {
       client_name: dbKey, log_date: todayKey, checks,
-      carb_sel: carbSel, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
+      carb_checks: carbChecks, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
       carb_qty: carbQty, prot_qty: protQty,
       water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
       boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
@@ -2091,7 +2101,8 @@ export default function PlanApp({ clientName, userPassword }) {
             </>
           )}
           <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות לבוקר:</div>
-          <CheckRow id="b_veggie1" text="סלט או ירקות חתוכים (סלט עם כף שמן זית או ללא)" accent={C.teal} checked={!!checks['b_veggie1']} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />
+          <CheckRow id="b_veggie1" text="סלט או ירקות חתוכים" accent={C.teal} checked={!!checks['b_veggie1']} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />
+          <CheckRow id="b_veggie1_oil" text="+ כף שמן זית על הסלט" accent={C.teal} checked={!!checks['b_veggie1_oil']} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />
           <FreeText value={bokerFree} onChange={setBokerFree} placeholder="אכלתי גם / פרטים נוספים..." />
           <ExtraCal value={bokerExtraCal} onChange={setBokerExtraCal} valueProt={bokerExtraProt} onChangeProt={setBokerExtraProt} />
           <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setBokerExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
@@ -2122,13 +2133,17 @@ export default function PlanApp({ clientName, userPassword }) {
                   const qty = protQty[id] || (cal100 > 0 && protBudget > 0 ? Math.min(300, Math.round((protBudget / cal100) * 100)) : 150)
                   return sum + (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
                 }, 0) + calcExtraProt() * 4
-                const selCarbItem = nutritionData[carbSel]
-                const cal100Carb = selCarbItem?.calories_per_100 || selCarbItem?.calories || 0
-                const carbQtyVal = carbQty[carbSel] || (cal100Carb > 0 && carbBudget > 0 ? Math.min(300, Math.round((carbBudget / cal100Carb) * 100)) : 150)
-                const carbCalActual = cal100Carb > 0 ? Math.round(cal100Carb * carbQtyVal / 100) : 0
+                // ✅ סכום כל הפחמימות שנבחרו (אפשר כמה בו-זמנית)
+                const carbCalActual = Object.keys(carbChecks).filter(id => carbChecks[id]).reduce((sum, id) => {
+                  const item = nutritionData[id]
+                  const cal100 = item?.calories_per_100 || item?.calories || 0
+                  const qty = carbQty[id] || (cal100 > 0 && carbBudget > 0 ? Math.min(300, Math.round((carbBudget / cal100) * 100)) : 150)
+                  return sum + (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
+                }, 0)
                 const hasProtein = Object.values(protChecks).some(Boolean)
+                const hasCarbs = Object.values(carbChecks).some(Boolean)
                 const protRemain = hasProtein ? Math.max(0, protBudget - protCalActual) : protBudget
-                const carbRemain = carbSel ? Math.max(0, carbBudget - carbCalActual) : carbBudget
+                const carbRemain = hasCarbs ? Math.max(0, carbBudget - carbCalActual) : carbBudget
 
                 if (!targets) return null
                 return (
@@ -2148,8 +2163,8 @@ export default function PlanApp({ clientName, userPassword }) {
                         <div style={{ height: 6, background: '#dcfce7', borderRadius: 99 }}>
                           <div style={{ width: Math.min(100, carbBudget > 0 ? (carbCalActual/carbBudget)*100 : 0) + '%', height: '100%', background: '#f97316', borderRadius: 99, transition: 'width 0.3s' }} />
                         </div>
-                        {carbRemain > 0 && carbSel && <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>נשאר {carbRemain} קל</div>}
-                        {carbRemain === 0 && carbSel && <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>✅ הגעת ליעד!</div>}
+                        {carbRemain > 0 && hasCarbs && <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>נשאר {carbRemain} קל</div>}
+                        {carbRemain === 0 && hasCarbs && <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>✅ הגעת ליעד!</div>}
                       </div>
                     </div>
                   </div>
@@ -2165,15 +2180,21 @@ export default function PlanApp({ clientName, userPassword }) {
                 const recQty = cal100 > 0 && carbBudget > 0
                   ? Math.min(300, Math.round((carbBudget / cal100) * 100))
                   : 150
+                const isChecked = !!carbChecks[o.id]
                 const qty = carbQty[o.id] || recQty
                 const calDisplay = cal100 > 0 ? Math.round(cal100 * qty / 100) : 0
                 return (
                   <div key={o.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1 }}>
-                        <RadioRow id={o.id} text={o.text} accent={C.greenMid} selected={carbSel} onSelect={setCarbSel} />
+                      <div style={{ flex: 1 }} onClick={() => setCarbChecks(c => ({ ...c, [o.id]: !c[o.id] }))}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', opacity: isChecked ? 1 : 0.85 }}>
+                          <div style={{ width: 20, height: 20, borderRadius: 6, border: '2px solid ' + (isChecked ? C.greenMid : '#d1d5db'), background: isChecked ? C.greenMid : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {isChecked && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
+                          </div>
+                          <span style={{ fontSize: 14, color: isChecked ? C.greenDark : '#222', fontWeight: isChecked ? 700 : 400, flex: 1, textAlign: 'right' }}>{o.text}</span>
+                        </div>
                       </div>
-                      {carbSel === o.id && (
+                      {isChecked && (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                           <input
                             type="number"
@@ -2186,7 +2207,7 @@ export default function PlanApp({ clientName, userPassword }) {
                         </div>
                       )}
                     </div>
-                    {carbSel === o.id && (
+                    {isChecked && (
                       <div style={{ fontSize: 11, color: C.greenMid, textAlign: 'left', paddingBottom: 4 }}>
                         ≈ {calDisplay} קל {!carbQty[o.id] && <span style={{ color: '#9ca3af' }}>(מומלץ: {recQty} גר')</span>}
                       </div>
@@ -2246,7 +2267,7 @@ export default function PlanApp({ clientName, userPassword }) {
               })}
 
               {/* תזכורת חלבון */}
-              {carbSel && !Object.values(protChecks).some(Boolean) && (
+              {Object.values(carbChecks).some(Boolean) && !Object.values(protChecks).some(Boolean) && (
                 <div style={{ marginTop: 10, background: '#fff7ed', borderRadius: 10, padding: '10px 14px', border: '1.5px solid #fed7aa', fontSize: 13, color: '#92400e' }}>
                   💪 זכרי להוסיף חלבון — זה מה ששומר אותך שבעה עד הערב
                 </div>
