@@ -1083,10 +1083,16 @@ export default function PlanApp({ clientName, userPassword }) {
 
   function calcEatenFat() {
     var total = 0
-    function add(id) { var item = nutritionData[id]; if (item) total += item.fat || 0 }
+    function add(id, qtyOverride) {
+      var item = nutritionData[id]
+      if (item) {
+        if (qtyOverride && item.base_qty && item.base_qty > 0) total += (item.fat || 0) * (qtyOverride / item.base_qty)
+        else total += item.fat || 0
+      }
+    }
     if (checks) Object.keys(checks).forEach(id => { if (checks[id] && !SLICE_ITEMS[id]) add(id) })
-    if (carbSel) add(carbSel)
-    Object.keys(protChecks).forEach(id => { if (protChecks[id]) add(id) })
+    if (carbSel) add(carbSel, carbQty[carbSel])
+    Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
     if (fatSel) add(fatSel)
     if (veggieSel) add(veggieSel)
     if (benayimSel) add(benayimSel)
@@ -1097,13 +1103,20 @@ export default function PlanApp({ clientName, userPassword }) {
 
   function calcEatenCarbs() {
     var total = 0
-    function add(id) { var item = nutritionData[id]; if (item) total += item.carbs || 0 }
+    function add(id, qtyOverride) {
+      var item = nutritionData[id]
+      if (item) {
+        if (qtyOverride && item.base_qty && item.base_qty > 0) total += (item.carbs || 0) * (qtyOverride / item.base_qty)
+        else total += item.carbs || 0
+      }
+    }
     if (checks) Object.keys(checks).forEach(id => {
       if (!checks[id]) return
       if (SLICE_ITEMS[id]) { total += Math.round(SLICE_ITEMS[id].calPerSlice * (carbQty[id] || SLICE_ITEMS[id].recQty) / 4) }
       else { add(id) }
     })
-    if (carbSel) add(carbSel)
+    if (carbSel) add(carbSel, carbQty[carbSel])
+    Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
     if (fatSel) add(fatSel)
     if (veggieSel) add(veggieSel)
     if (benayimSel) add(benayimSel)
