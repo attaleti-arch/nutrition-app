@@ -416,20 +416,22 @@ function shouldHide(item, dietType, restrictions) {
   return false
 }
 
-function plateBarColor(actualPct, targetPct) {
-  if (actualPct === 0) return '#d1d5db'
-  var diff = Math.abs(actualPct - targetPct)
-  if (diff <= 6) return '#16a34a'
-  if (diff <= 14) return '#ca8a04'
+// ✅ 100% = הגעת ליעד היומי. מתחת — עדיין בונים; מעל — חרגת
+function plateBarColor(pct) {
+  if (pct === 0) return '#d1d5db'
+  if (pct < 70) return '#94a3b8'
+  if (pct <= 110) return '#16a34a'
+  if (pct <= 130) return '#ca8a04'
   return '#ef4444'
 }
 
 function FloatingPlateBars({ bars }) {
   return (
-    <div style={{ position: 'fixed', left: 6, top: '50%', transform: 'translateY(-50%)', zIndex: 60, background: 'rgba(255,255,255,0.94)', borderRadius: 16, padding: '10px 8px', boxShadow: '0 2px 12px rgba(0,0,0,0.14)', display: 'flex', gap: 8 }}>
+    <div style={{ position: 'fixed', left: 6, top: '50%', transform: 'translateY(-50%)', zIndex: 60, background: 'rgba(255,255,255,0.94)', borderRadius: 16, padding: '10px 6px', boxShadow: '0 2px 12px rgba(0,0,0,0.14)', display: 'flex', gap: 8 }}>
       {bars.map(b => (
-        <div key={b.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-          <div style={{ width: 11, height: 76, borderRadius: 7, background: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
+        <div key={b.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, color: b.color }}>{b.pct >= 95 && b.pct <= 110 ? '✓' : b.pct + '%'}</div>
+          <div style={{ width: 11, height: 70, borderRadius: 7, background: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: Math.min(100, b.pct) + '%', background: b.color, borderRadius: 7, transition: 'height 0.3s' }} />
           </div>
           <div style={{ fontSize: 14 }}>{b.emoji}</div>
@@ -1196,20 +1198,22 @@ export default function PlanApp({ clientName, userPassword }) {
   const eatenFat = calcEatenFat()
   const eatenCarbs = calcEatenCarbs()
   const veggieMealsCount = calcVeggieMealsCount()
-  const macroCalTotal = eatenProtein * 4 + eatenFat * 9 + eatenCarbs * 4
-  const actualProteinPct = macroCalTotal > 0 ? Math.round((eatenProtein * 4 / macroCalTotal) * 100) : 0
-  const actualFatPct = macroCalTotal > 0 ? Math.round((eatenFat * 9 / macroCalTotal) * 100) : 0
-  const actualCarbsPct = macroCalTotal > 0 ? Math.round((eatenCarbs * 4 / macroCalTotal) * 100) : 0
-  const actualVeggiesPct = Math.round((veggieMealsCount / 3) * 100)
   const plateProteinPct = clientPlate?.protein || 35
   const plateCarbsPct = clientPlate?.carbs || 25
   const plateFatPct = clientPlate?.fat || 15
-  const plateVeggiesPct = clientPlate?.veggies || 25
+  // ✅ כל פס = % מהיעד היומי האישי שנאכל בפועל (100% = הגעת ליעד, מעל 100% = חרגת)
+  const targetProteinG = targets ? Math.round(targets.calories * plateProteinPct / 100 / 4) : 0
+  const targetCarbsG = targets ? Math.round(targets.calories * plateCarbsPct / 100 / 4) : 0
+  const targetFatG = targets ? Math.round(targets.calories * plateFatPct / 100 / 9) : 0
+  const proteinTargetPct = targetProteinG > 0 ? Math.round((eatenProtein / targetProteinG) * 100) : 0
+  const carbsTargetPct = targetCarbsG > 0 ? Math.round((eatenCarbs / targetCarbsG) * 100) : 0
+  const fatTargetPct = targetFatG > 0 ? Math.round((eatenFat / targetFatG) * 100) : 0
+  const veggiesTargetPct = Math.round((veggieMealsCount / 3) * 100)
   const plateBars = [
-    { label: 'protein', emoji: '💪', pct: actualProteinPct, color: plateBarColor(actualProteinPct, plateProteinPct) },
-    { label: 'carbs', emoji: '🍞', pct: actualCarbsPct, color: plateBarColor(actualCarbsPct, plateCarbsPct) },
-    { label: 'fat', emoji: '🫒', pct: actualFatPct, color: plateBarColor(actualFatPct, plateFatPct) },
-    { label: 'veggies', emoji: '🥦', pct: actualVeggiesPct, color: plateBarColor(actualVeggiesPct, plateVeggiesPct) },
+    { label: 'protein', emoji: '💪', pct: proteinTargetPct, color: plateBarColor(proteinTargetPct) },
+    { label: 'carbs', emoji: '🍞', pct: carbsTargetPct, color: plateBarColor(carbsTargetPct) },
+    { label: 'fat', emoji: '🫒', pct: fatTargetPct, color: plateBarColor(fatTargetPct) },
+    { label: 'veggies', emoji: '🥦', pct: veggiesTargetPct, color: plateBarColor(veggiesTargetPct) },
   ]
   const filteredBoker = PLAN.boker.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerProtein = PLAN.bokerProtein.filter(i => !shouldHide(i, dietType, restrictions))
