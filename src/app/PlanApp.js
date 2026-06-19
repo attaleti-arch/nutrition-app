@@ -937,6 +937,20 @@ export default function PlanApp({ clientName, userPassword }) {
         setScanProtein(t.scan_protein || 0); setScanFat(t.scan_fat || 0); setScanCarbs(t.scan_carbs || 0)
         setFeedback(t.trainer_feedback || null); setReportApproved(t.report_approved || false)
         if (t.nlp_metrics) { var m = t.nlp_metrics; setStressLevel(m.stress || 0); setFatigueLevel(m.fatigue || 0); setHungerLevel(m.hunger || 0); setUserMood(m.mood || null) }
+      } else {
+        // ✅ אין רשומה ליום הזה (כניסה ראשונה, או שהיום התגלגל לתאריך חדש באמצע הפעלה) — לוודא שלא נשאר מידע מהיום הקודם בזיכרון
+        setChecks({}); setCarbSel(null); setProtChecks({}); setFatSel(null)
+        setCarbQty({}); setProtQty({})
+        setVeggieSel(null); setLunchOpt(null); setBenayimSel(null)
+        setWater(0); setSteps(''); setNote('')
+        setBokerFree(''); setLunchFree(''); setErevFree('')
+        setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
+        setBokerExtraProt(0); setLunchExtraProt(0); setErevExtraProt(0)
+        setHadSnack(null); setHadBenayim(null); setDrinkType(null); setDrinkCount(0)
+        setSportDoneToday(false)
+        setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0)
+        setFeedback(null); setReportApproved(false)
+        setStressLevel(0); setFatigueLevel(0); setHungerLevel(0); setUserMood(null)
       }
 
       // חישוב רצף, שבוע, וממוצע צעדים
@@ -996,29 +1010,39 @@ export default function PlanApp({ clientName, userPassword }) {
   }, [dbKey])
 
   const autoSaveRef = useRef(null)
+  const pendingSaveRef = useRef(null)
   useEffect(() => {
     if (!dbKey || !todayKey || !profileDone) return
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current)
+    var payload = {
+      client_name: dbKey, log_date: todayKey, checks,
+      carb_sel: carbSel, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
+      carb_qty: carbQty, prot_qty: protQty,
+      water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
+      boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
+      boker_extra_prot: bokerExtraProt || 0, lunch_extra_prot: lunchExtraProt || 0, erev_extra_prot: erevExtraProt || 0,
+      had_snack: hadSnack, had_benayim: hadBenayim, drink_type: drinkType, drink_count: drinkCount || 0,
+      sport_done_today: sportDoneToday, sport_days_week: sportDaysThisWeek,
+      scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
+      diet_type: dietType, restrictions,
+      nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood },
+      updated_at: new Date().toISOString(),
+    }
+    pendingSaveRef.current = payload
     autoSaveRef.current = setTimeout(async () => {
-      var payload = {
-        client_name: dbKey, log_date: todayKey, checks,
-        carb_sel: carbSel, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
-        carb_qty: carbQty, prot_qty: protQty,
-        water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
-        boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
-        boker_extra_prot: bokerExtraProt || 0, lunch_extra_prot: lunchExtraProt || 0, erev_extra_prot: erevExtraProt || 0,
-        had_snack: hadSnack, had_benayim: hadBenayim, drink_type: drinkType, drink_count: drinkCount || 0,
-        sport_done_today: sportDoneToday, sport_days_week: sportDaysThisWeek,
-        scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
-        diet_type: dietType, restrictions,
-        nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood },
-        updated_at: new Date().toISOString(),
-      }
       const { error } = await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
       if (error) console.error('❌ autosave failed:', error.message, error)
+      pendingSaveRef.current = null
     }, 3000)
     return () => clearTimeout(autoSaveRef.current)
   }, [checks, carbSel, protChecks, carbQty, protQty, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount])
+
+  // ✅ אם המשתמשת עוזבת את הדף בתוך חלון ה-debounce, לשמור מיד את מה שהיה ממתין כדי לא לאבד עדכון
+  useEffect(() => {
+    return () => {
+      if (pendingSaveRef.current) supabase.from('daily_logs').upsert(pendingSaveRef.current, { onConflict: 'client_name,log_date' })
+    }
+  }, [])
 
   useEffect(() => {
     function handleGuideClose(e) {
@@ -1060,7 +1084,7 @@ export default function PlanApp({ clientName, userPassword }) {
       }
     })
     if (fatSel) add(fatSel); if (veggieSel) add(veggieSel)
-    if (benayimSel) add(benayimSel); if (hadBenayim) add('benayim')
+    if (hadBenayim && benayimSel) add(benayimSel)
     total += (bokerExtraCal || 0) + (lunchExtraCal || 0) + (erevExtraCal || 0) + (scanCalories || 0)
     const DRINK_CALS = { wine: 120, beer: 150, cocktail: 200 }
     if (drinkType && drinkCount > 0) total += (DRINK_CALS[drinkType] || 0) * drinkCount
@@ -1088,6 +1112,8 @@ export default function PlanApp({ clientName, userPassword }) {
     })
     total += calcExtraProt()
     total += (scanProtein || 0)
+    if (hadSnack) { var snackItem = nutritionData['snack']; if (snackItem) total += snackItem.protein || 0 }
+    if (hadBenayim && benayimSel) { var bItem = nutritionData[benayimSel]; if (bItem) total += bItem.protein || 0 }
     return total
   }
 
@@ -1100,13 +1126,13 @@ export default function PlanApp({ clientName, userPassword }) {
         else total += item.fat || 0
       }
     }
+    if (hadSnack) add('snack')
     if (checks) Object.keys(checks).forEach(id => { if (checks[id] && !SLICE_ITEMS[id]) add(nutritionId(id)) })
     if (carbSel) add(carbSel, carbQty[carbSel])
     Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
     if (fatSel) add(fatSel)
     if (veggieSel) add(veggieSel)
-    if (benayimSel) add(benayimSel)
-    if (hadBenayim) add('benayim')
+    if (hadBenayim && benayimSel) add(benayimSel)
     total += (scanFat || 0)
     return total
   }
@@ -1120,6 +1146,7 @@ export default function PlanApp({ clientName, userPassword }) {
         else total += item.carbs || 0
       }
     }
+    if (hadSnack) add('snack')
     if (checks) Object.keys(checks).forEach(id => {
       if (!checks[id]) return
       if (SLICE_ITEMS[id]) { total += Math.round(SLICE_ITEMS[id].calPerSlice * (carbQty[id] || SLICE_ITEMS[id].recQty) / 4) }
@@ -1129,8 +1156,7 @@ export default function PlanApp({ clientName, userPassword }) {
     Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
     if (fatSel) add(fatSel)
     if (veggieSel) add(veggieSel)
-    if (benayimSel) add(benayimSel)
-    if (hadBenayim) add('benayim')
+    if (hadBenayim && benayimSel) add(benayimSel)
     total += (scanCarbs || 0)
     return total
   }
@@ -1167,7 +1193,8 @@ export default function PlanApp({ clientName, userPassword }) {
     setChecks({}); setCarbSel(null); setProtChecks({}); setCarbQty({}); setProtQty({}); setFatSel(null); setVeggieSel(null); setBenayimSel(null); setLunchOpt(null)
     setWater(0); setSteps(''); setNote(''); setBokerFree(''); setLunchFree(''); setErevFree('')
     setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
-    setHadSnack(null); setHadBenayim(null); setSportDoneToday(false)
+    setBokerExtraProt(0); setLunchExtraProt(0); setErevExtraProt(0)
+    setHadSnack(null); setHadBenayim(null); setDrinkType(null); setDrinkCount(0); setSportDoneToday(false)
     setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0)
     setStressLevel(0); setFatigueLevel(0); setHungerLevel(0); setUserMood(null)
     setFeedback(null); setReportApproved(false)
@@ -1208,9 +1235,10 @@ export default function PlanApp({ clientName, userPassword }) {
   const eatenFat = calcEatenFat()
   const eatenCarbs = calcEatenCarbs()
   const veggieMealsCount = calcVeggieMealsCount()
-  const plateProteinPct = clientPlate?.protein || 35
-  const plateCarbsPct = clientPlate?.carbs || 25
-  const plateFatPct = clientPlate?.fat || 15
+  const goalSplit = GOALS_SPLIT[userGoal] || GOALS_SPLIT['ירידה במשקל']
+  const plateProteinPct = clientPlate?.protein || goalSplit.protein
+  const plateCarbsPct = clientPlate?.carbs || goalSplit.carbs
+  const plateFatPct = clientPlate?.fat || goalSplit.fat
   // ✅ כל פס = % מהיעד היומי האישי שנאכל בפועל (100% = הגעת ליעד, מעל 100% = חרגת)
   const targetProteinG = targets ? Math.round(targets.calories * plateProteinPct / 100 / 4) : 0
   const targetCarbsG = targets ? Math.round(targets.calories * plateCarbsPct / 100 / 4) : 0
@@ -2030,7 +2058,7 @@ export default function PlanApp({ clientName, userPassword }) {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: sportDoneToday ? '#faf5ff' : '#fafafa', borderRadius: 12, padding: '12px 14px' }}>
                   <div><div style={{ fontSize: 13, fontWeight: 700, color: '#333' }}>אימון היום</div><div style={{ fontSize: 11, color: '#9ca3af' }}>השבוע: {sportDaysThisWeek}/{sportCommitDays} אימונים</div></div>
-                  <button onClick={() => { var done = !sportDoneToday; setSportDoneToday(done); if (done) setSportDaysThisWeek(w => Math.min(w + 1, sportCommitDays)) }} style={{ padding: '8px 16px', borderRadius: 10, background: sportDoneToday ? C.purple : '#fff', color: sportDoneToday ? '#fff' : C.purple, border: '2px solid ' + C.purple, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{sportDoneToday ? '✅ בוצע!' : '+ סמן אימון'}</button>
+                  <button onClick={() => { var done = !sportDoneToday; setSportDoneToday(done); setSportDaysThisWeek(w => Math.max(0, Math.min(w + (done ? 1 : -1), sportCommitDays))) }} style={{ padding: '8px 16px', borderRadius: 10, background: sportDoneToday ? C.purple : '#fff', color: sportDoneToday ? '#fff' : C.purple, border: '2px solid ' + C.purple, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{sportDoneToday ? '✅ בוצע!' : '+ סמן אימון'}</button>
                 </div>
                 {sportDaysThisWeek >= sportCommitDays && (<div style={{ marginTop: 8, background: C.purpleLight, borderRadius: 10, padding: '8px 12px', textAlign: 'center', fontSize: 13, color: C.purple, fontWeight: 700 }}>🏆 {gf('השלמת', 'השלמת')} את המחויבות השבועית! מדהים!</div>)}
               </>
