@@ -72,7 +72,7 @@ const PLAN = {
     { id: 'b4', text: '5 פריכיות דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'b6', text: 'פיתה כוסמין', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'b_bread1', text: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת', tags: ['vegan'], hide: ['keto', 'no_gluten'], calPerSlice: 80, recQty: 2 },
-    { id: 'bc_gf1', text: '2 פרוסות לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'] },
+    { id: 'bc_gf1', text: 'פרוסת לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'], calPerSlice: 80, recQty: 2 },
   ],
   bokerExtra: [
     { id: 'b8', text: '½ אבוקדו (100g)', tags: ['vegan', 'keto'] },
@@ -88,7 +88,7 @@ const PLAN = {
     { id: 'b7', text: '2 ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'] },
     { id: 'b6', text: 'פיתה כוסמין / 4 פריכיות / 2 פרוסות לחם שיפון', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'bnew1', text: '2 פרוסות לחם כוסמין', tags: [], hide: ['keto', 'no_gluten'] },
-    { id: 'bc_gf1', text: '2 פרוסות לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'] },
+    { id: 'bc_gf1', text: 'פרוסת לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'] },
     { id: 'b8', text: '½ אבוקדו (100g)', tags: ['vegan', 'keto'] },
     { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto', 'no_gluten'], tags: ['vegetarian'] },
   ],
