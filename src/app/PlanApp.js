@@ -101,6 +101,7 @@ const PLAN = {
     { id: 'c7', text: '100 גרם שעועית לבנה / אדומה', tags: ['vegan'] },
     { id: 'c_gf1', text: '150 גרם כוסמת מבושלת', tags: ['vegan'], hide: ['keto'] },
     { id: 'c_gf2', text: '150 גרם פסטה מאורז / תירס', tags: ['vegan'], hide: ['keto'] },
+    { id: 'c8', text: '150 גרם אפונה מבושלת / קפואה', tags: ['vegan'] },
   ],
   protOptions: [
     { id: 'p1', text: '200 גרם דג לבן (אמנון / בקלה)', hide: ['vegan', 'no_fish'], prot: 40, protDefaultQty: 200 },
