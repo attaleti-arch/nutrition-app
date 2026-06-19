@@ -117,7 +117,7 @@ const PLAN = {
     { id: 'p2', text: '100 גרם סלמון', hide: ['vegan', 'no_fish'], prot: 20, protDefaultQty: 100 },
     { id: 'p9', text: '100 גרם טונה / סרדינים', hide: ['vegan', 'no_fish'], prot: 25, protDefaultQty: 100 },
     { id: 'p10', text: '150 גרם חזה עוף', hide: ['vegan', 'vegetarian'], prot: 38, protDefaultQty: 150 },
-    { id: 'p5', text: '140 גרם ירך עוף / פרגית ללא עור / 100 גרם הודו טחון', hide: ['vegan', 'vegetarian'], prot: 28, protDefaultQty: 140 },
+    { id: 'p5', text: '140 גרם ירך עוף או פרגית ללא עור / 100 גרם הודו טחון', hide: ['vegan', 'vegetarian'], prot: 28, protDefaultQty: 140 },
     { id: 'p3', text: '150 גרם טופו', tags: ['vegan'], prot: 16, protDefaultQty: 150 },
     { id: 'p8', text: '2 ביצים / חביתה', hide: ['vegan', 'no_eggs'], prot: 13 },
     { id: 'p11', text: '150 גרם מג׳דרה (עדשים + אורז)', tags: ['vegan'], prot: 12, protDefaultQty: 150 },
