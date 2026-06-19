@@ -137,6 +137,7 @@ const PLAN = {
     { id: 'f5', text: '30 גרם גבינה צהובה 5%', hide: ['vegan', 'no_lactose'] },
     { id: 'f6', text: '2 כפות חמאת שקדים / בוטנים טבעית', tags: ['vegan'], hide: ['no_nuts'] },
     { id: 'f7', text: '2 כפות לאבנה', hide: ['vegan', 'no_lactose'] },
+    { id: 'f8', text: 'כף סילאן טבעי', tags: ['vegan'], hide: ['keto'] },
   ],
   veggieOptions: [
     { id: 'v1', text: 'סלט טרי — מלפפון, עגבנייה, לימון + מלח' },
