@@ -90,7 +90,17 @@ function calcNutrition(log, nutritionData) {
     }
   })
   if (log.carb_sel) add(log.carb_sel, carbQty[log.carb_sel])
-  if (log.prot_checks) Object.keys(log.prot_checks).forEach(function(id) { if (log.prot_checks[id]) add(id, protQty[id]) })
+  if (log.prot_checks) Object.keys(log.prot_checks).forEach(function(id) {
+    if (!log.prot_checks[id]) return
+    if (id === 'p8') {
+      // ביצים — לפי יחידות, כמו בחישוב בצד הלקוח
+      var eggQty = protQty[id] || 2
+      total.calories += Math.round(eggQty * 70)
+      total.protein += Math.round(eggQty * 6.5)
+    } else {
+      add(id, protQty[id])
+    }
+  })
   if (log.fat_sel) add(log.fat_sel)
   if (log.veggie_sel) add(log.veggie_sel)
   if (log.benayim_sel) add(log.benayim_sel)
@@ -100,6 +110,8 @@ function calcNutrition(log, nutritionData) {
   total.fat += (log.boker_extra_fat || 0) + (log.lunch_extra_fat || 0) + (log.erev_extra_fat || 0)
   total.carbs += (log.boker_extra_carbs || 0) + (log.lunch_extra_carbs || 0) + (log.erev_extra_carbs || 0)
   if (log.scan_calories) { total.calories += log.scan_calories; total.protein += (log.scan_protein || 0); total.fat += (log.scan_fat || 0); total.carbs += (log.scan_carbs || 0) }
+  var DRINK_CALS = { wine: 120, beer: 150, cocktail: 200 }
+  if (log.drink_type && log.drink_count > 0) total.calories += (DRINK_CALS[log.drink_type] || 0) * log.drink_count
   var totalCal = total.protein * 4 + total.fat * 9 + total.carbs * 4
   total.proteinPct = totalCal > 0 ? Math.round((total.protein * 4 / totalCal) * 100) : 0
   total.fatPct = totalCal > 0 ? Math.round((total.fat * 9 / totalCal) * 100) : 0
