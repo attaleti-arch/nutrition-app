@@ -70,6 +70,8 @@ function calcNutrition(log, nutritionData) {
   if (log.had_benayim) add('benayim')
   total.calories += (log.boker_extra_cal || 0) + (log.lunch_extra_cal || 0) + (log.erev_extra_cal || 0)
   total.protein += (log.boker_extra_prot || 0) + (log.lunch_extra_prot || 0) + (log.erev_extra_prot || 0)
+  total.fat += (log.boker_extra_fat || 0) + (log.lunch_extra_fat || 0) + (log.erev_extra_fat || 0)
+  total.carbs += (log.boker_extra_carbs || 0) + (log.lunch_extra_carbs || 0) + (log.erev_extra_carbs || 0)
   if (log.scan_calories) { total.calories += log.scan_calories; total.protein += (log.scan_protein || 0); total.fat += (log.scan_fat || 0) }
   var totalCal = total.protein * 4 + total.fat * 9 + total.carbs * 4
   total.proteinPct = totalCal > 0 ? Math.round((total.protein * 4 / totalCal) * 100) : 0
@@ -1407,15 +1409,36 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                         <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>🚶 צעדים</div>
                         <input type="number" value={logDetails.steps || ''} onChange={e => setLogDetails(d => ({...d, steps: parseInt(e.target.value)||0}))} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
                       </div>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>⚡ קלוריות נוספות (אחר)</div>
-                        <input type="number" value={logDetails.boker_extra_cal || ''} onChange={e => setLogDetails(d => ({...d, boker_extra_cal: parseInt(e.target.value)||0}))} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
-                      </div>
-                      <div>
-                        <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>💪 חלבון נוסף (g)</div>
-                        <input type="number" value={logDetails.boker_extra_prot || ''} onChange={e => setLogDetails(d => ({...d, boker_extra_prot: parseInt(e.target.value)||0}))} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
-                      </div>
                     </div>
+
+                    {[
+                      { key: 'boker', label: '🌅 בוקר — אחר' },
+                      { key: 'lunch', label: '☀️ צהריים — אחר' },
+                      { key: 'erev', label: '🌙 ערב — אחר' },
+                    ].map(function(meal) {
+                      return (
+                        <div key={meal.key} style={{ marginBottom: 10, paddingBottom: 8, borderBottom: '1px solid #e5e7eb' }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#0f4c2a', marginBottom: 6 }}>{meal.label}</div>
+                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6 }}>
+                            {[
+                              { f: 'extra_cal', l: '⚡ קל' },
+                              { f: 'extra_prot', l: '💪 חלבון' },
+                              { f: 'extra_carbs', l: '🍞 פחמ׳' },
+                              { f: 'extra_fat', l: '🫒 שומן' },
+                            ].map(function(field) {
+                              var key = meal.key + '_' + field.f
+                              return (
+                                <div key={key}>
+                                  <div style={{ fontSize: 10, color: '#9ca3af', marginBottom: 3, textAlign: 'center' }}>{field.l}</div>
+                                  <input type="number" value={logDetails[key] || ''} onChange={e => setLogDetails(d => ({...d, [key]: parseInt(e.target.value)||0}))} style={{ width: '100%', padding: '7px 6px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center', boxSizing: 'border-box' }} />
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )
+                    })}
+
                     <div style={{ marginBottom: 8 }}>
                       <div style={{ fontSize: 11, color: '#9ca3af', marginBottom: 3 }}>📝 פרטים נוספים (אחר)</div>
                       <textarea value={logDetails.boker_free || ''} onChange={e => setLogDetails(d => ({...d, boker_free: e.target.value}))} rows={2} style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box', resize: 'none' }} />
@@ -1433,6 +1456,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       steps: logDetails.steps,
                       boker_extra_cal: logDetails.boker_extra_cal || 0,
                       boker_extra_prot: logDetails.boker_extra_prot || 0,
+                      boker_extra_carbs: logDetails.boker_extra_carbs || 0,
+                      boker_extra_fat: logDetails.boker_extra_fat || 0,
+                      lunch_extra_cal: logDetails.lunch_extra_cal || 0,
+                      lunch_extra_prot: logDetails.lunch_extra_prot || 0,
+                      lunch_extra_carbs: logDetails.lunch_extra_carbs || 0,
+                      lunch_extra_fat: logDetails.lunch_extra_fat || 0,
+                      erev_extra_cal: logDetails.erev_extra_cal || 0,
+                      erev_extra_prot: logDetails.erev_extra_prot || 0,
+                      erev_extra_carbs: logDetails.erev_extra_carbs || 0,
+                      erev_extra_fat: logDetails.erev_extra_fat || 0,
                       boker_free: logDetails.boker_free || '',
                       note: logDetails.note || ''
                     }).eq('id', logDetails.id)
