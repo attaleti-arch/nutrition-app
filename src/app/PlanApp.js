@@ -70,8 +70,8 @@ const PLAN = {
   ],
   bokerCarbs: [
     { id: 'b4', text: '5 פריכיות דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
-    { id: 'b6', text: 'פיתה כוסמין / 2 פרוסות לחם שיפון', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
-    { id: 'bnew1', text: '2 פרוסות לחם כוסמין', tags: [], hide: ['keto', 'no_gluten'] },
+    { id: 'b6', text: 'פיתה כוסמין', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
+    { id: 'b_bread1', text: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת', tags: ['vegan'], hide: ['keto', 'no_gluten'], calPerSlice: 80, recQty: 2 },
     { id: 'bc_gf1', text: '2 פרוסות לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'] },
   ],
   bokerExtra: [
@@ -137,13 +137,13 @@ const PLAN = {
   erev: [
     { id: 'e1', text: 'קוטג׳ / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'] },
     { id: 'e2', text: '50 גרם ברנפלקס + חלב / משקה צמחי', hide: ['keto', 'no_gluten'] },
-    { id: 'e4', text: 'פיתה / 4 פריכיות / 2 פרוסות לחם שיפון', hide: ['keto', 'no_gluten'] },
+    { id: 'e4', text: 'פיתה / 4 פריכיות', hide: ['keto', 'no_gluten'] },
     { id: 'e5', text: 'סלט ירקות + טחינה / שמן זית', tags: ['vegan', 'keto'] },
     { id: 'e6', text: 'יוגורט יווני 0% + פירות יער', hide: ['vegan', 'no_lactose', 'keto'] },
     { id: 'e7', text: '2 ביצים קשות', hide: ['vegan', 'no_eggs'] },
     { id: 'e8', text: '100 גרם עדשים מבושלות', tags: ['vegan'] },
     { id: 'enew1', text: 'שקשוקה 2 ביצים', tags: [], hide: ['vegan', 'no_eggs'] },
-    { id: 'enew2', text: '2 פרוסות לחם כוסמין', tags: [], hide: ['keto', 'no_gluten'] },
+    { id: 'e_bread1', text: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת', tags: [], hide: ['keto', 'no_gluten'], calPerSlice: 80, recQty: 2 },
   ],
   benayimOptions: [
     { id: 'ben1', text: 'פרי עונתי (תפוח / אגס / קיווי)' },
@@ -629,6 +629,42 @@ function CheckRow({ id, text, accent, checked, onToggle }) {
         {checked && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
       </div>
       <span style={{ fontSize: 14, color: '#222', textDecoration: checked ? 'line-through' : 'none', flex: 1, textAlign: 'right' }}>{text}</span>
+    </div>
+  )
+}
+
+function SliceQtyRow({ item, accent, checked, qty, onToggle, onQtyChange }) {
+  const displayQty = qty || item.recQty
+  const calDisplay = Math.round(item.calPerSlice * displayQty)
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ flex: 1 }} onClick={() => onToggle(item.id)}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', opacity: checked ? 1 : 0.85 }}>
+            <div style={{ width: 20, height: 20, borderRadius: 6, border: '2px solid ' + (checked ? accent : '#d1d5db'), background: checked ? accent : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {checked && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
+            </div>
+            <span style={{ fontSize: 14, color: checked ? '#222' : '#222', fontWeight: checked ? 700 : 400, flex: 1, textAlign: 'right' }}>{item.text}</span>
+          </div>
+        </div>
+        {checked && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            <input
+              type="number"
+              value={qty || ''}
+              onChange={e => onQtyChange(Number(e.target.value) || 0)}
+              placeholder={String(item.recQty)}
+              style={{ width: 55, padding: '4px 6px', borderRadius: 8, border: '1.5px solid ' + accent, fontSize: 12, textAlign: 'center', outline: 'none' }}
+            />
+            <span style={{ fontSize: 11, color: '#9ca3af' }}>פרוסות</span>
+          </div>
+        )}
+      </div>
+      {checked && (
+        <div style={{ fontSize: 11, color: accent, textAlign: 'left', paddingBottom: 4 }}>
+          ≈ {calDisplay} קל {!qty && <span style={{ color: '#9ca3af' }}>(מומלץ: {item.recQty} פרוסות)</span>}
+        </div>
+      )}
     </div>
   )
 }
@@ -1896,7 +1932,9 @@ export default function PlanApp({ clientName, userPassword }) {
           {filteredBokerCarbs.length > 0 && (
             <>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#d97706', marginBottom: 4, marginTop: 8, textAlign: 'right' }}>🍞 פחמימה</div>
-              {filteredBokerCarbs.map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
+              {filteredBokerCarbs.map(item => item.calPerSlice
+                ? <SliceQtyRow key={item.id} item={item} accent={C.orange} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
+                : <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
             </>
           )}
           {filteredBokerExtra.length > 0 && (
@@ -2121,7 +2159,9 @@ export default function PlanApp({ clientName, userPassword }) {
         </Section>
 
         <Section title="ארוחת ערב" icon="🌙" accent={C.purple} light={C.purpleLight}>
-          {filteredErev.map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.purple} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
+          {filteredErev.map(item => item.calPerSlice
+            ? <SliceQtyRow key={item.id} item={item} accent={C.purple} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
+            : <CheckRow key={item.id} id={item.id} text={item.text} accent={C.purple} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
           <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות לערב:</div>
           {PLAN.veggieOptions.map(o => (<div key={o.id + '_e'} onClick={() => setChecks(c => { var n = {...c}; n[o.id + '_erev'] = !n[o.id + '_erev']; return n })} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', opacity: checks[o.id + '_erev'] ? 0.45 : 1 }}><div style={{ width: 20, height: 20, borderRadius: 6, border: '2px solid ' + (checks[o.id + '_erev'] ? C.teal : '#d1d5db'), background: checks[o.id + '_erev'] ? C.teal : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{checks[o.id + '_erev'] && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}</div><span style={{ fontSize: 14, color: '#222', textDecoration: checks[o.id + '_erev'] ? 'line-through' : 'none', flex: 1, textAlign: 'right' }}>{o.text}</span></div>))}
           <FreeText value={erevFree} onChange={setErevFree} placeholder="פרטים נוספים על הערב..." />
