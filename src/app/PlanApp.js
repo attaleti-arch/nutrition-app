@@ -114,7 +114,7 @@ const PLAN = {
     { id: 'p6', text: '2 המבורגר צמחוני', tags: ['vegan'], prot: 16 },
     { id: 'p13', text: '200 גרם גרגירי חומוס מבושל', tags: ['vegan'], prot: 14, protDefaultQty: 200 },
     { id: 'p14', text: '200 גרם עדשים מבושלות', tags: ['vegan'], prot: 18, protDefaultQty: 200 },
-    { id: 'p15', text: '150 גרם שעועית / פול מבושל', tags: ['vegan'], prot: 11, protDefaultQty: 150 },
+    { id: 'p15', text: '150 גרם שעועית לבנה / פול מבושל', tags: ['vegan'], prot: 11, protDefaultQty: 150 },
     { id: 'p16', text: '150 גרם אדממה', tags: ['vegan'], prot: 18, protDefaultQty: 150 },
     { id: 'p17', text: '200 גרם קוטג׳ 3% / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'], prot: 22, protDefaultQty: 200 },
     { id: 'p18', text: '200 גרם יוגורט יווני 0%', hide: ['vegan', 'no_lactose'], prot: 20, protDefaultQty: 200 },
@@ -133,6 +133,7 @@ const PLAN = {
     { id: 'v2', text: 'ירקות קלויים בתנור (זוקיני, פלפל, חציל, ברוקולי)' },
     { id: 'v3', text: 'ירקות מאודים (ברוקולי, כרובית, גזר)' },
     { id: 'v4', text: 'סלט עלים ירוקים (תרד, רוקט, חסה)' },
+    { id: 'v5', text: 'שעועית ירוקה מאודה / מוקפצת' },
   ],
   erev: [
     { id: 'e1', text: 'קוטג׳ / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'] },
