@@ -122,7 +122,8 @@ function calcNutrition(log, nutritionData) {
     }
   })
   if (log.fat_sel) add(log.fat_sel)
-  if (log.veggie_sel) add(log.veggie_sel)
+  if (log.veggie_checks) Object.keys(log.veggie_checks).forEach(function(id) { if (log.veggie_checks[id]) add(id) })
+  else if (log.veggie_sel) add(log.veggie_sel)
   if (log.had_benayim && log.benayim_sel) add(log.benayim_sel)
   total.calories += (log.boker_extra_cal || 0) + (log.lunch_extra_cal || 0) + (log.erev_extra_cal || 0)
   total.protein += (log.boker_extra_prot || 0) + (log.lunch_extra_prot || 0) + (log.erev_extra_prot || 0)
@@ -1438,7 +1439,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     if (logDetails.carb_checks) Object.keys(logDetails.carb_checks).filter(id => logDetails.carb_checks[id]).forEach(id => allIds.push(id))
                     if (logDetails.carb_sel) allIds.push(logDetails.carb_sel)
                     if (logDetails.fat_sel) allIds.push(logDetails.fat_sel)
-                    if (logDetails.veggie_sel) allIds.push(logDetails.veggie_sel)
+                    if (logDetails.veggie_checks) Object.keys(logDetails.veggie_checks).filter(id => logDetails.veggie_checks[id]).forEach(id => allIds.push(id))
+                    else if (logDetails.veggie_sel) allIds.push(logDetails.veggie_sel)
                     if (logDetails.benayim_sel) allIds.push(logDetails.benayim_sel)
                     if (!allIds.length) return null
                     const carbQty = logDetails.carb_qty || {}

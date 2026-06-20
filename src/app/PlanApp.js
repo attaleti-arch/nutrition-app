@@ -103,7 +103,7 @@ const PLAN = {
   ],
   carbOptions: [
     { id: 'c1', text: '150 גרם אורז מלא / קינואה', hide: ['keto'] },
-    { id: 'c2', text: '200 גרם בורגול / כוסמין', hide: ['keto', 'no_gluten'] },
+    { id: 'c2', text: '200 גרם בורגול / כוסמין / קוסקוס', hide: ['keto', 'no_gluten'] },
     { id: 'c4', text: '170 גרם תפוחי אדמה / בטטה', hide: ['keto'] },
     { id: 'c5', text: '150 גרם ירקות אנטיפסטי קלויים (קישוא, חציל, בטטה)', tags: ['vegan'] },
     { id: 'c6', text: '150 גרם עדשים / חומוס מבושל', tags: ['vegan'] },
@@ -802,7 +802,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const [carbQty, setCarbQty] = useState({})
   const [protQty, setProtQty] = useState({})
   const [fatSel, setFatSel] = useState(null)
-  const [veggieSel, setVeggieSel] = useState(null)
+  const [veggieChecks, setVeggieChecks] = useState({}) // ✅ אפשר כמה ירקות בו-זמנית, לא בחירה בלעדית
   const [lunchOpt, setLunchOpt] = useState(null)
   const [benayimSel, setBenayimSel] = useState(null)
   const [hadSnack, setHadSnack] = useState(null)
@@ -941,7 +941,7 @@ export default function PlanApp({ clientName, userPassword }) {
         var t = todayLog.data
         setChecks(t.checks || {}); setCarbChecks(t.carb_checks || (t.carb_sel ? { [t.carb_sel]: true } : {})); setProtChecks(t.prot_checks || {}); setFatSel(t.fat_sel)
         setCarbQty(t.carb_qty || {}); setProtQty(t.prot_qty || {})
-        setVeggieSel(t.veggie_sel); setLunchOpt(t.lunch_opt); setBenayimSel(t.benayim_sel)
+        setVeggieChecks(t.veggie_checks || (t.veggie_sel ? { [t.veggie_sel]: true } : {})); setLunchOpt(t.lunch_opt); setBenayimSel(t.benayim_sel)
         setWater(t.water || 0); setSteps(t.steps || ''); setNote(t.note || '')
         setBokerFree(t.boker_free || ''); setLunchFree(t.lunch_free || ''); setErevFree(t.erev_free || '')
         setBokerExtraCal(t.boker_extra_cal || 0); setLunchExtraCal(t.lunch_extra_cal || 0); setErevExtraCal(t.erev_extra_cal || 0)
@@ -958,7 +958,7 @@ export default function PlanApp({ clientName, userPassword }) {
         // ✅ אין רשומה ליום הזה (כניסה ראשונה, או שהיום התגלגל לתאריך חדש באמצע הפעלה) — לוודא שלא נשאר מידע מהיום הקודם בזיכרון
         setChecks({}); setCarbChecks({}); setProtChecks({}); setFatSel(null)
         setCarbQty({}); setProtQty({})
-        setVeggieSel(null); setLunchOpt(null); setBenayimSel(null)
+        setVeggieChecks({}); setLunchOpt(null); setBenayimSel(null)
         setWater(0); setSteps(''); setNote('')
         setBokerFree(''); setLunchFree(''); setErevFree('')
         setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
@@ -1033,7 +1033,7 @@ export default function PlanApp({ clientName, userPassword }) {
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current)
     var payload = {
       client_name: dbKey, log_date: todayKey, checks,
-      carb_checks: carbChecks, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
+      carb_checks: carbChecks, prot_checks: protChecks, fat_sel: fatSel, veggie_checks: veggieChecks, lunch_opt: lunchOpt, benayim_sel: benayimSel,
       carb_qty: carbQty, prot_qty: protQty,
       water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
       boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
@@ -1052,7 +1052,7 @@ export default function PlanApp({ clientName, userPassword }) {
       pendingSaveRef.current = null
     }, 3000)
     return () => clearTimeout(autoSaveRef.current)
-  }, [checks, carbChecks, protChecks, carbQty, protQty, fatSel, veggieSel, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount])
+  }, [checks, carbChecks, protChecks, carbQty, protQty, fatSel, veggieChecks, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount])
 
   // ✅ אם המשתמשת עוזבת את הדף בתוך חלון ה-debounce, לשמור מיד את מה שהיה ממתין כדי לא לאבד עדכון
   useEffect(() => {
@@ -1100,7 +1100,8 @@ export default function PlanApp({ clientName, userPassword }) {
         }
       }
     })
-    if (fatSel) add(fatSel); if (veggieSel) add(veggieSel)
+    if (fatSel) add(fatSel)
+    Object.keys(veggieChecks).forEach(id => { if (veggieChecks[id]) add(id) })
     if (hadBenayim && benayimSel) add(benayimSel)
     total += (bokerExtraCal || 0) + (lunchExtraCal || 0) + (erevExtraCal || 0) + (scanCalories || 0)
     const DRINK_CALS = { wine: 120, beer: 150, cocktail: 200 }
@@ -1144,7 +1145,7 @@ export default function PlanApp({ clientName, userPassword }) {
     })
     Object.keys(carbChecks).forEach(function(id) { if (carbChecks[id]) addNP(id, carbQty[id]) })
     if (fatSel) addNP(fatSel)
-    if (veggieSel) addNP(veggieSel)
+    Object.keys(veggieChecks).forEach(function(id) { if (veggieChecks[id]) addNP(id) })
     if (hadBenayim && benayimSel) addNP(benayimSel)
     total += calcExtraProt()
     total += (scanProtein || 0)
@@ -1166,7 +1167,7 @@ export default function PlanApp({ clientName, userPassword }) {
     Object.keys(carbChecks).forEach(id => { if (carbChecks[id]) add(id, carbQty[id]) })
     Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
     if (fatSel) add(fatSel)
-    if (veggieSel) add(veggieSel)
+    Object.keys(veggieChecks).forEach(id => { if (veggieChecks[id]) add(id) })
     if (hadBenayim && benayimSel) add(benayimSel)
     total += (scanFat || 0)
     return total
@@ -1190,7 +1191,7 @@ export default function PlanApp({ clientName, userPassword }) {
     Object.keys(carbChecks).forEach(id => { if (carbChecks[id]) add(id, carbQty[id]) })
     Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
     if (fatSel) add(fatSel)
-    if (veggieSel) add(veggieSel)
+    Object.keys(veggieChecks).forEach(id => { if (veggieChecks[id]) add(id) })
     if (hadBenayim && benayimSel) add(benayimSel)
     total += (scanCarbs || 0)
     return total
@@ -1199,7 +1200,7 @@ export default function PlanApp({ clientName, userPassword }) {
   function calcVeggieMealsCount() {
     var count = 0
     if (checks['b_veggie1']) count++
-    if (veggieSel) count++
+    if (Object.values(veggieChecks).some(Boolean)) count++
     if (PLAN.veggieOptions.some(o => checks[o.id + '_erev'])) count++
     return count
   }
@@ -1225,7 +1226,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const resetDay = async function() {
     if (!window.confirm('לאפס את כל הנתונים של היום?')) return
     await supabase.from('daily_logs').delete().eq('client_name', dbKey).eq('log_date', todayKey)
-    setChecks({}); setCarbChecks({}); setProtChecks({}); setCarbQty({}); setProtQty({}); setFatSel(null); setVeggieSel(null); setBenayimSel(null); setLunchOpt(null)
+    setChecks({}); setCarbChecks({}); setProtChecks({}); setCarbQty({}); setProtQty({}); setFatSel(null); setVeggieChecks({}); setBenayimSel(null); setLunchOpt(null)
     setWater(0); setSteps(''); setNote(''); setBokerFree(''); setLunchFree(''); setErevFree('')
     setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
     setBokerExtraProt(0); setLunchExtraProt(0); setErevExtraProt(0)
@@ -1239,7 +1240,7 @@ export default function PlanApp({ clientName, userPassword }) {
     setSaving(true)
     var payload = {
       client_name: dbKey, log_date: todayKey, checks,
-      carb_checks: carbChecks, prot_checks: protChecks, fat_sel: fatSel, veggie_sel: veggieSel, lunch_opt: lunchOpt, benayim_sel: benayimSel,
+      carb_checks: carbChecks, prot_checks: protChecks, fat_sel: fatSel, veggie_checks: veggieChecks, lunch_opt: lunchOpt, benayim_sel: benayimSel,
       carb_qty: carbQty, prot_qty: protQty,
       water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
       boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
@@ -2299,8 +2300,14 @@ export default function PlanApp({ clientName, userPassword }) {
             </div>
           )}
           {lunchOpt === 'B' && (<div><div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>רטבים ותוספות:</div>{filteredFat.map(o => <CheckRow key={o.id} id={o.id} text={o.text} accent={C.greenMid} checked={!!checks[o.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}</div>)}
+          {/* תזכורת ירקות — מופיע ברגע שנבחרה פחמימה או שומן/רטב, לפני שסומן ירק */}
+          {(Object.values(carbChecks).some(Boolean) || filteredFat.some(o => checks[o.id])) && !Object.values(veggieChecks).some(Boolean) && (
+            <div style={{ marginTop: 6, marginBottom: 6, background: '#f0fdfa', borderRadius: 10, padding: '10px 14px', border: '1.5px solid ' + C.teal, fontSize: 13, color: '#115e59' }}>
+              🥦 אל תשכחי להוסיף ירקות לצלחת — זה מוסיף שובע וויטמינים בלי הרבה קלוריות
+            </div>
+          )}
           <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות (חובה!):</div>
-          {PLAN.veggieOptions.map(o => <RadioRow key={o.id} id={o.id} text={o.text} accent={C.teal} selected={veggieSel} onSelect={setVeggieSel} />)}
+          {PLAN.veggieOptions.map(o => <CheckRow key={o.id} id={o.id} text={o.text} accent={C.teal} checked={!!veggieChecks[o.id]} onToggle={id => setVeggieChecks(v => ({ ...v, [id]: !v[id] }))} />)}
           <FreeText value={lunchFree} onChange={setLunchFree} placeholder="פרטים נוספים על הצהריים..." />
           <ExtraCal value={lunchExtraCal} onChange={setLunchExtraCal} valueProt={lunchExtraProt} onChangeProt={setLunchExtraProt} />
           <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setLunchExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
