@@ -846,6 +846,9 @@ export default function PlanApp({ clientName, userPassword }) {
   const [guideUrl, setGuideUrl] = useState(null)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [saveWarnings, setSaveWarnings] = useState([]) // ✅ הודעות "הבנתי" שחייבות אישור — קופצות אוטומטית כשהצריכה נמוכה מ-50% מהיעד
+  const [veggieWarned, setVeggieWarned] = useState(false) // ✅ מוצג פעם אחת ביום
+  const [proteinWarned, setProteinWarned] = useState(false) // ✅ מוצג פעם אחת ביום
   const [nutritionData, setNutritionData] = useState({})
   const [sportType, setSportType] = useState('')
   const [sportCommitDays, setSportCommitDays] = useState(2)
@@ -942,6 +945,7 @@ export default function PlanApp({ clientName, userPassword }) {
         setChecks(t.checks || {}); setCarbChecks(t.carb_checks || (t.carb_sel ? { [t.carb_sel]: true } : {})); setProtChecks(t.prot_checks || {}); setFatSel(t.fat_sel)
         setCarbQty(t.carb_qty || {}); setProtQty(t.prot_qty || {})
         setVeggieChecks(t.veggie_checks || (t.veggie_sel ? { [t.veggie_sel]: true } : {})); setLunchOpt(t.lunch_opt); setBenayimSel(t.benayim_sel)
+        setVeggieWarned(false); setProteinWarned(false); setSaveWarnings([])
         setWater(t.water || 0); setSteps(t.steps || ''); setNote(t.note || '')
         setBokerFree(t.boker_free || ''); setLunchFree(t.lunch_free || ''); setErevFree(t.erev_free || '')
         setBokerExtraCal(t.boker_extra_cal || 0); setLunchExtraCal(t.lunch_extra_cal || 0); setErevExtraCal(t.erev_extra_cal || 0)
@@ -959,6 +963,7 @@ export default function PlanApp({ clientName, userPassword }) {
         setChecks({}); setCarbChecks({}); setProtChecks({}); setFatSel(null)
         setCarbQty({}); setProtQty({})
         setVeggieChecks({}); setLunchOpt(null); setBenayimSel(null)
+        setVeggieWarned(false); setProteinWarned(false); setSaveWarnings([])
         setWater(0); setSteps(''); setNote('')
         setBokerFree(''); setLunchFree(''); setErevFree('')
         setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
@@ -1289,6 +1294,18 @@ export default function PlanApp({ clientName, userPassword }) {
     { label: 'fat', emoji: '🫒', pct: fatTargetPct, color: plateBarColor(fatTargetPct) },
     { label: 'veggies', emoji: '🥦', pct: veggiesTargetPct, color: plateBarColor(veggiesTargetPct) },
   ]
+  // ✅ קופץ אוטומטית (פעם ביום לכל מדד) כשהצריכה נמוכה מ-50% מהיעד — לא בחירה מודעת מתוך הלשונית, אלא מודעות כוללת
+  useEffect(() => {
+    if (!profileDone || !targets || eatenCalories <= 0) return
+    var newWarnings = []
+    if (!veggieWarned && veggiesTargetPct < 50) newWarnings.push('🥦 שים לב, התזונה היומית שלך מכילה כמות ירקות נמוכה (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
+    if (!proteinWarned && proteinTargetPct < 50) newWarnings.push('💪 שים לב, התזונה היומית שלך לא מכילה כמות מספקת של חלבון (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
+    if (newWarnings.length) {
+      setSaveWarnings(w => [...w, ...newWarnings])
+      if (veggiesTargetPct < 50) setVeggieWarned(true)
+      if (proteinTargetPct < 50) setProteinWarned(true)
+    }
+  }, [profileDone, targets, eatenCalories, veggiesTargetPct, proteinTargetPct, veggieWarned, proteinWarned])
   const filteredBoker = PLAN.boker.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerProtein = PLAN.bokerProtein.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerCarbs = PLAN.bokerCarbs.filter(i => !shouldHide(i, dietType, restrictions))
@@ -1380,6 +1397,18 @@ export default function PlanApp({ clientName, userPassword }) {
     <div style={{ minHeight: '100vh', background: '#f8fafc', direction: 'rtl' }}>
       {showConfetti && <Confetti />}
 
+      {saveWarnings.length > 0 && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.55)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: 24, maxWidth: 360, width: '100%', textAlign: 'center', boxShadow: '0 10px 40px rgba(0,0,0,0.25)' }}>
+            <div style={{ fontSize: 36, marginBottom: 10 }}>⚠️</div>
+            {saveWarnings.map((w, i) => (
+              <div key={i} style={{ fontSize: 15, color: '#222', fontWeight: 600, lineHeight: 1.6, marginBottom: i < saveWarnings.length - 1 ? 14 : 20 }}>{w}</div>
+            ))}
+            <button onClick={() => setSaveWarnings([])} style={{ width: '100%', padding: '14px', borderRadius: 14, background: C.greenMid, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 16 }}>הבנתי</button>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'diary' && profileDone && targets && (
         <FloatingPlateBars bars={plateBars} />
       )}
@@ -1447,11 +1476,6 @@ export default function PlanApp({ clientName, userPassword }) {
                 </div>
               </div>
               <div style={{ fontSize: 11, color: '#bbf7d0', marginTop: 4 }}>{eatenCalories >= targets.calories ? '✅ הגעת ליעד!' : 'נשאר ' + (targets.calories - Math.round(eatenCalories)) + ' קל'}</div>
-            </div>
-          )}
-          {eatenCalories > 0 && veggieMealsCount === 0 && (
-            <div style={{ marginTop: 10, background: '#ffffff20', borderRadius: 12, padding: '10px 14px', fontSize: 12, color: '#fff', textAlign: 'right' }}>
-              🥦 שמת לב שעדיין לא סימנת ירקות היום? הם עוזרים לשובע ולוויטמינים — כדאי להוסיף בארוחה הקרובה
             </div>
           )}
           <div style={{ marginTop: 8, background: '#ffffff15', borderRadius: 10, height: 6, overflow: 'hidden' }}>
@@ -2305,12 +2329,6 @@ export default function PlanApp({ clientName, userPassword }) {
             </div>
           )}
           {lunchOpt === 'B' && (<div><div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>רטבים ותוספות:</div>{filteredFat.map(o => <CheckRow key={o.id} id={o.id} text={o.text} accent={C.greenMid} checked={!!checks[o.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}</div>)}
-          {/* תזכורת ירקות — מופיע ברגע שנבחרה פחמימה או שומן/רטב, לפני שסומן ירק */}
-          {(Object.values(carbChecks).some(Boolean) || filteredFat.some(o => checks[o.id])) && !Object.values(veggieChecks).some(Boolean) && (
-            <div style={{ marginTop: 6, marginBottom: 6, background: '#f0fdfa', borderRadius: 10, padding: '10px 14px', border: '1.5px solid ' + C.teal, fontSize: 13, color: '#115e59' }}>
-              🥦 אל תשכחי להוסיף ירקות לצלחת — זה מוסיף שובע וויטמינים בלי הרבה קלוריות
-            </div>
-          )}
           <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות (חובה!):</div>
           {PLAN.veggieOptions.map(o => <CheckRow key={o.id} id={o.id} text={o.text} accent={C.teal} checked={!!veggieChecks[o.id]} onToggle={id => setVeggieChecks(v => ({ ...v, [id]: !v[id] }))} />)}
           <FreeText value={lunchFree} onChange={setLunchFree} placeholder="פרטים נוספים על הצהריים..." />
