@@ -1304,8 +1304,8 @@ export default function PlanApp({ clientName, userPassword }) {
   useEffect(() => {
     if (!profileDone || !targets || !warnCheckpoint) return
     var newWarnings = []
-    if (!veggieWarnedAt.includes(warnCheckpoint) && veggiesTargetPct < warnThreshold) newWarnings.push('🥦 שים לב, התזונה היומית שלך מכילה כמות ירקות נמוכה (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
-    if (!proteinWarnedAt.includes(warnCheckpoint) && proteinTargetPct < warnThreshold) newWarnings.push('💪 שים לב, התזונה היומית שלך לא מכילה כמות מספקת של חלבון (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
+    if (!veggieWarnedAt.includes(warnCheckpoint) && veggiesTargetPct < warnThreshold) newWarnings.push(warnCheckpoint === 33 ? '🥦 שמתי לב שלא צרכת ירקות עדיין. חשוב מאוד לגוף לצרוך את כל המרכיבים התזונתיים, יש להקפיד לאזן.' : '🥦 שים לב, התזונה היומית שלך מכילה כמות ירקות נמוכה (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
+    if (!proteinWarnedAt.includes(warnCheckpoint) && proteinTargetPct < warnThreshold) newWarnings.push(warnCheckpoint === 33 ? '💪 שמתי לב שלא צרכת חלבון עדיין. חשוב מאוד לגוף לצרוך את כל המרכיבים התזונתיים, יש להקפיד לאזן.' : '💪 שים לב, התזונה היומית שלך לא מכילה כמות מספקת של חלבון (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
     if (newWarnings.length) {
       setSaveWarnings(w => [...w, ...newWarnings])
       if (veggiesTargetPct < warnThreshold) setVeggieWarnedAt(c => [...c, warnCheckpoint])
