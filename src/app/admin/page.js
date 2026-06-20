@@ -1107,7 +1107,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
       var nut = calcNutrition(l, nutritionData)
       var scanExtra = ''
       if (l.scan_calories > 0) { scanExtra = ' | 📸 צילום: ' + l.scan_calories + ' קל'; if (l.scan_desc) scanExtra += ' (' + l.scan_desc + ')' }
-      return 'תאריך: ' + l.log_date + ' | קלוריות: ' + Math.round(nut.calories) + (targets ? ' (יעד: ' + targets.calories + ')' : '') + ' | חלבון: ' + Math.round(nut.protein) + 'g' + (targets ? ' (יעד: ' + targets.protein + 'g)' : '') + ' | שומן: ' + Math.round(nut.fat) + 'g | פחמימות: ' + Math.round(nut.carbs) + 'g | מים: ' + (l.water || 0) + ' ליטר | צעדים: ' + (l.steps || 0) + scanExtra + (l.note ? ' | הערה: ' + l.note : '')
+      return 'תאריך: ' + l.log_date + ' | קלוריות: ' + Math.round(nut.calories) + (targets ? ' (יעד: ' + targets.calories + ')' : '') + ' | חלבון: ' + Math.round(nut.protein) + 'g' + (targets ? ' (יעד: ' + targets.protein + 'g)' : '') + ' | שומן: ' + Math.round(nut.fat) + 'g | פחמימות: ' + Math.round(nut.carbs) + 'g | סיבים: ' + Math.round(nut.fiber) + 'g | ירקות: ' + calcVeggieMealsCount(l) + '/3 ארוחות | מים: ' + (l.water || 0) + ' ליטר | צעדים: ' + (l.steps || 0) + scanExtra + (l.note ? ' | הערה: ' + l.note : '')
     }).join('\n')
 
     const res = await fetch('/api/analyze', {
