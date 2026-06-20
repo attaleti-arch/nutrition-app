@@ -82,6 +82,17 @@ function nutritionId(id) {
   return id.endsWith('_erev') ? id.slice(0, -5) : id
 }
 
+// ✅ אותם מזהי ירקות כמו ב-PLAN.veggieOptions בצד הלקוח (PlanApp.js)
+var VEGGIE_IDS = ['v1', 'v2', 'v3', 'v4', 'v5']
+function calcVeggieMealsCount(log) {
+  var count = 0
+  if (log.checks && log.checks['b_veggie1']) count++
+  var lunchVeggies = log.veggie_checks ? Object.values(log.veggie_checks).some(Boolean) : !!log.veggie_sel
+  if (lunchVeggies) count++
+  if (log.checks && VEGGIE_IDS.some(function(id) { return log.checks[id + '_erev'] })) count++
+  return count
+}
+
 function calcNutrition(log, nutritionData) {
   var total = { calories: 0, protein: 0, fat: 0, fiber: 0, carbs: 0 }
   var carbQty = log.carb_qty || {}
@@ -1594,6 +1605,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                         <NutritionBar label="קלוריות" value={nut.calories} max={targets ? targets.calories : 2000} color="#f97316" />
                         <NutritionBar label="חלבון (g)" value={nut.protein} max={targets ? targets.protein : 100} color="#16a34a" />
                         <NutritionBar label="שומן (g)" value={nut.fat} max={targets ? targets.fat : 70} color="#9333ea" />
+                        <NutritionBar label="סיבים (g)" value={nut.fiber} max={30} color="#0284c7" />
+                        <NutritionBar label="🥦 ירקות (ארוחות)" value={calcVeggieMealsCount(log)} max={3} color="#0d9488" />
                         {log.note && <div style={{ padding: '8px 12px', background: '#fffbeb', borderRadius: 10, fontSize: 13, color: '#78350f', marginTop: 8 }}>💬 {log.note}</div>}
                         <textarea value={feedback[log.id] != null ? feedback[log.id] : (log.trainer_feedback || '')} onChange={e => setFeedback(f => ({ ...f, [log.id]: e.target.value }))} placeholder="כתבי משוב..." rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginTop: 10 }} />
                         <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
