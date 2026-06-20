@@ -1449,6 +1449,11 @@ export default function PlanApp({ clientName, userPassword }) {
               <div style={{ fontSize: 11, color: '#bbf7d0', marginTop: 4 }}>{eatenCalories >= targets.calories ? '✅ הגעת ליעד!' : 'נשאר ' + (targets.calories - Math.round(eatenCalories)) + ' קל'}</div>
             </div>
           )}
+          {eatenCalories > 0 && veggieMealsCount === 0 && (
+            <div style={{ marginTop: 10, background: '#ffffff20', borderRadius: 12, padding: '10px 14px', fontSize: 12, color: '#fff', textAlign: 'right' }}>
+              🥦 שמת לב שעדיין לא סימנת ירקות היום? הם עוזרים לשובע ולוויטמינים — כדאי להוסיף בארוחה הקרובה
+            </div>
+          )}
           <div style={{ marginTop: 8, background: '#ffffff15', borderRadius: 10, height: 6, overflow: 'hidden' }}>
             <div style={{ width: Math.round((checkedCount / totalItems) * 100) + '%', height: '100%', background: '#4ade80', borderRadius: 10 }} />
           </div>
