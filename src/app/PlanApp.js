@@ -1297,16 +1297,19 @@ export default function PlanApp({ clientName, userPassword }) {
   // ✅ נקודות בדיקה לפי התקדמות קלורית — לא ברגע שמתחילים להזין (מעט מידי נתונים), אלא בשליש ובשני-שליש מהיעד הקלורי
   const calorieTargetPct = targets && targets.calories > 0 ? (eatenCalories / targets.calories) * 100 : 0
   const warnCheckpoint = calorieTargetPct >= 66 ? 66 : (calorieTargetPct >= 33 ? 33 : 0)
-  // ✅ קופץ אוטומטית (עד פעמיים ביום לכל מדד, בכל צ'קפוינט) כשהצריכה נמוכה מ-50% מהיעד — לא בחירה מודעת מתוך הלשונית, אלא מודעות כוללת
+  // ✅ בצ'קפוינט הראשון (שליש) רוב היום עדיין לפנינו (לרוב לפני ארוחת הצהריים) — מתריעים רק על אפס מוחלט, לא על מתחת ל-50%.
+  // בצ'קפוינט השני (שני-שליש) יש כבר מספיק נתונים — חוזרים לרף הרגיל של מתחת ל-50% מהיעד.
+  const warnThreshold = warnCheckpoint === 33 ? 1 : 50
+  // ✅ קופץ אוטומטית (עד פעמיים ביום לכל מדד, בכל צ'קפוינט) כשהצריכה נמוכה מהרף — לא בחירה מודעת מתוך הלשונית, אלא מודעות כוללת
   useEffect(() => {
     if (!profileDone || !targets || !warnCheckpoint) return
     var newWarnings = []
-    if (!veggieWarnedAt.includes(warnCheckpoint) && veggiesTargetPct < 50) newWarnings.push('🥦 שים לב, התזונה היומית שלך מכילה כמות ירקות נמוכה (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
-    if (!proteinWarnedAt.includes(warnCheckpoint) && proteinTargetPct < 50) newWarnings.push('💪 שים לב, התזונה היומית שלך לא מכילה כמות מספקת של חלבון (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
+    if (!veggieWarnedAt.includes(warnCheckpoint) && veggiesTargetPct < warnThreshold) newWarnings.push('🥦 שים לב, התזונה היומית שלך מכילה כמות ירקות נמוכה (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
+    if (!proteinWarnedAt.includes(warnCheckpoint) && proteinTargetPct < warnThreshold) newWarnings.push('💪 שים לב, התזונה היומית שלך לא מכילה כמות מספקת של חלבון (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
     if (newWarnings.length) {
       setSaveWarnings(w => [...w, ...newWarnings])
-      if (veggiesTargetPct < 50) setVeggieWarnedAt(c => [...c, warnCheckpoint])
-      if (proteinTargetPct < 50) setProteinWarnedAt(c => [...c, warnCheckpoint])
+      if (veggiesTargetPct < warnThreshold) setVeggieWarnedAt(c => [...c, warnCheckpoint])
+      if (proteinTargetPct < warnThreshold) setProteinWarnedAt(c => [...c, warnCheckpoint])
     }
   }, [profileDone, targets, warnCheckpoint, veggiesTargetPct, proteinTargetPct, veggieWarnedAt, proteinWarnedAt])
   const filteredBoker = PLAN.boker.filter(i => !shouldHide(i, dietType, restrictions))
