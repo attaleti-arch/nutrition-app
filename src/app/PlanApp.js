@@ -847,8 +847,8 @@ export default function PlanApp({ clientName, userPassword }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [saveWarnings, setSaveWarnings] = useState([]) // ✅ הודעות "הבנתי" שחייבות אישור — קופצות אוטומטית כשהצריכה נמוכה מ-50% מהיעד
-  const [veggieWarned, setVeggieWarned] = useState(false) // ✅ מוצג פעם אחת ביום
-  const [proteinWarned, setProteinWarned] = useState(false) // ✅ מוצג פעם אחת ביום
+  const [veggieWarnedAt, setVeggieWarnedAt] = useState([]) // ✅ צ'קפוינטים (33/66) שכבר הוצגה בהם הודעה היום
+  const [proteinWarnedAt, setProteinWarnedAt] = useState([])
   const [nutritionData, setNutritionData] = useState({})
   const [sportType, setSportType] = useState('')
   const [sportCommitDays, setSportCommitDays] = useState(2)
@@ -945,7 +945,7 @@ export default function PlanApp({ clientName, userPassword }) {
         setChecks(t.checks || {}); setCarbChecks(t.carb_checks || (t.carb_sel ? { [t.carb_sel]: true } : {})); setProtChecks(t.prot_checks || {}); setFatSel(t.fat_sel)
         setCarbQty(t.carb_qty || {}); setProtQty(t.prot_qty || {})
         setVeggieChecks(t.veggie_checks || (t.veggie_sel ? { [t.veggie_sel]: true } : {})); setLunchOpt(t.lunch_opt); setBenayimSel(t.benayim_sel)
-        setVeggieWarned(false); setProteinWarned(false); setSaveWarnings([])
+        setVeggieWarnedAt([]); setProteinWarnedAt([]); setSaveWarnings([])
         setWater(t.water || 0); setSteps(t.steps || ''); setNote(t.note || '')
         setBokerFree(t.boker_free || ''); setLunchFree(t.lunch_free || ''); setErevFree(t.erev_free || '')
         setBokerExtraCal(t.boker_extra_cal || 0); setLunchExtraCal(t.lunch_extra_cal || 0); setErevExtraCal(t.erev_extra_cal || 0)
@@ -963,7 +963,7 @@ export default function PlanApp({ clientName, userPassword }) {
         setChecks({}); setCarbChecks({}); setProtChecks({}); setFatSel(null)
         setCarbQty({}); setProtQty({})
         setVeggieChecks({}); setLunchOpt(null); setBenayimSel(null)
-        setVeggieWarned(false); setProteinWarned(false); setSaveWarnings([])
+        setVeggieWarnedAt([]); setProteinWarnedAt([]); setSaveWarnings([])
         setWater(0); setSteps(''); setNote('')
         setBokerFree(''); setLunchFree(''); setErevFree('')
         setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
@@ -1294,18 +1294,21 @@ export default function PlanApp({ clientName, userPassword }) {
     { label: 'fat', emoji: '🫒', pct: fatTargetPct, color: plateBarColor(fatTargetPct) },
     { label: 'veggies', emoji: '🥦', pct: veggiesTargetPct, color: plateBarColor(veggiesTargetPct) },
   ]
-  // ✅ קופץ אוטומטית (פעם ביום לכל מדד) כשהצריכה נמוכה מ-50% מהיעד — לא בחירה מודעת מתוך הלשונית, אלא מודעות כוללת
+  // ✅ נקודות בדיקה לפי התקדמות קלורית — לא ברגע שמתחילים להזין (מעט מידי נתונים), אלא בשליש ובשני-שליש מהיעד הקלורי
+  const calorieTargetPct = targets && targets.calories > 0 ? (eatenCalories / targets.calories) * 100 : 0
+  const warnCheckpoint = calorieTargetPct >= 66 ? 66 : (calorieTargetPct >= 33 ? 33 : 0)
+  // ✅ קופץ אוטומטית (עד פעמיים ביום לכל מדד, בכל צ'קפוינט) כשהצריכה נמוכה מ-50% מהיעד — לא בחירה מודעת מתוך הלשונית, אלא מודעות כוללת
   useEffect(() => {
-    if (!profileDone || !targets || eatenCalories <= 0) return
+    if (!profileDone || !targets || !warnCheckpoint) return
     var newWarnings = []
-    if (!veggieWarned && veggiesTargetPct < 50) newWarnings.push('🥦 שים לב, התזונה היומית שלך מכילה כמות ירקות נמוכה (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
-    if (!proteinWarned && proteinTargetPct < 50) newWarnings.push('💪 שים לב, התזונה היומית שלך לא מכילה כמות מספקת של חלבון (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
+    if (!veggieWarnedAt.includes(warnCheckpoint) && veggiesTargetPct < 50) newWarnings.push('🥦 שים לב, התזונה היומית שלך מכילה כמות ירקות נמוכה (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
+    if (!proteinWarnedAt.includes(warnCheckpoint) && proteinTargetPct < 50) newWarnings.push('💪 שים לב, התזונה היומית שלך לא מכילה כמות מספקת של חלבון (מתחת ל-50% מהיעד). אנא דאג/י לאזן.')
     if (newWarnings.length) {
       setSaveWarnings(w => [...w, ...newWarnings])
-      if (veggiesTargetPct < 50) setVeggieWarned(true)
-      if (proteinTargetPct < 50) setProteinWarned(true)
+      if (veggiesTargetPct < 50) setVeggieWarnedAt(c => [...c, warnCheckpoint])
+      if (proteinTargetPct < 50) setProteinWarnedAt(c => [...c, warnCheckpoint])
     }
-  }, [profileDone, targets, eatenCalories, veggiesTargetPct, proteinTargetPct, veggieWarned, proteinWarned])
+  }, [profileDone, targets, warnCheckpoint, veggiesTargetPct, proteinTargetPct, veggieWarnedAt, proteinWarnedAt])
   const filteredBoker = PLAN.boker.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerProtein = PLAN.bokerProtein.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerCarbs = PLAN.bokerCarbs.filter(i => !shouldHide(i, dietType, restrictions))
