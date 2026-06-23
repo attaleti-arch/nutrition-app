@@ -314,8 +314,9 @@ function NutritionRow({ item, onSave }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '8px 16px', borderBottom: '1px solid #f3f4f6', alignItems: 'center' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '8px 16px', borderBottom: '1px solid #f3f4f6', alignItems: 'center' }}>
       <div style={{ fontSize: 13, color: '#333', fontWeight: 600 }}>{item.name}</div>
+      <input type="number" value={vals.base_qty || 0} onChange={function(e) { setVals(function(v) { return { ...v, base_qty: Number(e.target.value) } }) }} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid #c4a354', fontSize: 13, textAlign: 'center', outline: 'none', boxSizing: 'border-box', fontWeight: 700 }} />
       {['calories', 'protein', 'fat', 'fiber'].map(function(field) {
         return <input key={field} type="number" value={vals[field] || 0} onChange={function(e) { setVals(function(v) { return { ...v, [field]: Number(e.target.value) } }) }} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
       })}
@@ -1942,8 +1943,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
             {tab === 'nutrition' && (
               <div style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', border: '1.5px solid #f0f0f0' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '10px 16px', background: '#f8fafc', fontWeight: 700, fontSize: 13, color: '#555', borderBottom: '1.5px solid #f0f0f0' }}>
-                  <div>פריט</div><div style={{ textAlign: 'center' }}>קלוריות</div><div style={{ textAlign: 'center' }}>חלבון</div><div style={{ textAlign: 'center' }}>שומן</div><div style={{ textAlign: 'center' }}>סיבים</div><div></div>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '10px 16px', background: '#f8fafc', fontWeight: 700, fontSize: 13, color: '#555', borderBottom: '1.5px solid #f0f0f0' }}>
+                  <div>פריט</div><div style={{ textAlign: 'center', color: '#b08c3a' }}>גרם (בסיס)</div><div style={{ textAlign: 'center' }}>קלוריות</div><div style={{ textAlign: 'center' }}>חלבון</div><div style={{ textAlign: 'center' }}>שומן</div><div style={{ textAlign: 'center' }}>סיבים</div><div></div>
                 </div>
                 {nutritionItems.map(function(item) {
                   return <NutritionRow key={item.id} item={item} onSave={async function(updated) { await supabase.from('nutrition_data').upsert(updated, { onConflict: 'id' }); const { data } = await supabase.from('nutrition_data').select('*').order('id'); setNutritionItems(data || []) }} />

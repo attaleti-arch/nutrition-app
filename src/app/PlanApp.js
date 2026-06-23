@@ -182,6 +182,12 @@ function nutritionId(id) {
   return id.endsWith('_erev') ? id.slice(0, -5) : id
 }
 
+// ✅ פריטים בלי כמות מפורשת בטקסט (כמו "קוטג׳ / גבינה לבנה 5%") — מציגים את כמות הבסיס מ-nutrition_data כדי שהחישוב יהיה שקוף
+function withBaseQty(text, item) {
+  if (!item || !item.base_qty || /\d/.test(text)) return text
+  return text + ' (' + item.base_qty + ' גרם)'
+}
+
 const AGENT_SYSTEM_PROMPT = `אתה "עוזר החירום" של תוכנית "בין הראש לצלחת" – מבוסס שיטת אתי אטל.
 
 ## זהותך
@@ -2145,7 +2151,7 @@ export default function PlanApp({ clientName, userPassword }) {
               <div style={{ fontSize: 11, fontWeight: 700, color: C.orange, marginBottom: 4, marginTop: 4, textAlign: 'right' }}>🥛 חלבון</div>
               {filteredBokerProtein.map(item => item.calPerSlice
                 ? <SliceQtyRow key={item.id} item={item} accent={C.orange} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
-                : <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
+                : <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
             </>
           )}
           {filteredBokerCarbs.length > 0 && (
@@ -2153,13 +2159,13 @@ export default function PlanApp({ clientName, userPassword }) {
               <div style={{ fontSize: 11, fontWeight: 700, color: '#d97706', marginBottom: 4, marginTop: 8, textAlign: 'right' }}>🍞 פחמימה</div>
               {filteredBokerCarbs.map(item => item.calPerSlice
                 ? <SliceQtyRow key={item.id} item={item} accent={C.orange} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
-                : <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
+                : <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
             </>
           )}
           {filteredBokerExtra.length > 0 && (
             <>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', marginBottom: 4, marginTop: 8, textAlign: 'right' }}>🌿 נוסף</div>
-              {filteredBokerExtra.map(item => <CheckRow key={item.id} id={item.id} text={item.text} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
+              {filteredBokerExtra.map(item => <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
             </>
           )}
           <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות לבוקר:</div>
@@ -2389,7 +2395,7 @@ export default function PlanApp({ clientName, userPassword }) {
         <Section title="ארוחת ערב" icon="🌙" accent={C.purple} light={C.purpleLight}>
           {filteredErev.map(item => item.calPerSlice
             ? <SliceQtyRow key={item.id} item={item} accent={C.purple} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
-            : <CheckRow key={item.id} id={item.id} text={item.text} accent={C.purple} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
+            : <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.purple} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
           <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות לערב:</div>
           {PLAN.veggieOptions.map(o => (<div key={o.id + '_e'} onClick={() => setChecks(c => { var n = {...c}; n[o.id + '_erev'] = !n[o.id + '_erev']; return n })} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', opacity: checks[o.id + '_erev'] ? 0.45 : 1 }}><div style={{ width: 20, height: 20, borderRadius: 6, border: '2px solid ' + (checks[o.id + '_erev'] ? C.teal : '#d1d5db'), background: checks[o.id + '_erev'] ? C.teal : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>{checks[o.id + '_erev'] && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}</div><span style={{ fontSize: 14, color: '#222', textDecoration: checks[o.id + '_erev'] ? 'line-through' : 'none', flex: 1, textAlign: 'right' }}>{o.text}</span></div>))}
           <FreeText value={erevFree} onChange={setErevFree} placeholder="פרטים נוספים על הערב..." />
