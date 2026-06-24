@@ -796,6 +796,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
   useEffect(function() { applyFilter(logs, filterMode, dateFrom, dateTo) }, [logs, filterMode, dateFrom, dateTo])
 
+  // ✅ רענון תקופתי של היומנים — כדי שעדכונים שהלקוחה מבצעת בזמן שהאדמין פתוח לא יישארו "תקועים" על התצלום הישן
+  useEffect(function() {
+    if (!selectedClient?.password) return
+    const interval = setInterval(async function() {
+      const { data } = await supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).order('log_date', { ascending: false }).limit(30)
+      if (data) setLogs(data)
+    }, 20000)
+    return function() { clearInterval(interval) }
+  }, [selectedClient?.password])
+
   function updateProfile(field, value) { setProfile(p => ({ ...p, [field]: value })) }
   function updateBloodTest(key, value) { setProfile(p => ({ ...p, blood_tests: { ...(p.blood_tests || {}), [key]: value } })) }
   function toggleTest(key) { setSelectedTests(t => ({ ...t, [key]: !t[key] })) }
