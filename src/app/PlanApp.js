@@ -184,7 +184,7 @@ function nutritionId(id) {
 
 // ✅ פריטים בלי כמות מפורשת בטקסט (כמו "קוטג׳ / גבינה לבנה 5%") — מציגים את כמות הבסיס מ-nutrition_data כדי שהחישוב יהיה שקוף
 function withBaseQty(text, item) {
-  if (!item || !item.base_qty || /\d/.test(text)) return text
+  if (!item || !item.base_qty || /\d\s*(גרם|g\)|מ"ל|מ״ל|מל)/.test(text)) return text
   return text + ' (' + item.base_qty + ' גרם)'
 }
 
