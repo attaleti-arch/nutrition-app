@@ -2192,7 +2192,7 @@ export default function PlanApp({ clientName, userPassword }) {
                 const protCalActual = Object.keys(protChecks).filter(id => protChecks[id]).reduce((sum, id) => {
                   const item = nutritionData[id]
                   const isEggs = id === 'p8'
-                  const cal100 = item?.calories_per_100 || item?.calories || 0
+                  const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
                   if (isEggs) {
                     const qty = protQty[id] || 2
                     return sum + Math.round(qty * 70)
@@ -2203,7 +2203,7 @@ export default function PlanApp({ clientName, userPassword }) {
                 // ✅ סכום כל הפחמימות שנבחרו (אפשר כמה בו-זמנית)
                 const carbCalActual = Object.keys(carbChecks).filter(id => carbChecks[id]).reduce((sum, id) => {
                   const item = nutritionData[id]
-                  const cal100 = item?.calories_per_100 || item?.calories || 0
+                  const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
                   const qty = carbQty[id] || (cal100 > 0 && carbBudget > 0 ? Math.min(300, Math.round((carbBudget / cal100) * 100)) : 150)
                   return sum + (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
                 }, 0)
@@ -2241,7 +2241,7 @@ export default function PlanApp({ clientName, userPassword }) {
               <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>פחמימה:</div>
               {filteredCarbs.map(o => {
                 const item = nutritionData[o.id]
-                const cal100 = item?.calories_per_100 || item?.calories || 0
+                const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
                 const carbPct = clientPlate?.carbs || 30
                 const carbBudget = targets ? Math.round(targets.calories * carbPct / 100 / 2) : 0
                 const recQty = cal100 > 0 && carbBudget > 0
@@ -2287,7 +2287,7 @@ export default function PlanApp({ clientName, userPassword }) {
               {filteredProt.map(o => {
                 const item = nutritionData[o.id]
                 const isEggs = o.id === 'p8'
-                const cal100 = item?.calories_per_100 || item?.calories || 0
+                const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
                 const protBudget = targets ? (clientPlate?.protein ? Math.round(targets.calories * clientPlate.protein / 100 / 2) : Math.round(targets.protein * 4 / 2)) : 0
                 // ✅ ביצים — המלצה ביחידות, שאר — גרמים
                 const recQty = isEggs ? 2 : (cal100 > 0 && protBudget > 0
