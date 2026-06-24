@@ -1598,7 +1598,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                           {log.trainer_feedback && <span style={{ fontSize: 11, background: '#dcfce7', color: '#166534', borderRadius: 8, padding: '2px 8px' }}>✓ נענה</span>}
                           <span style={{ fontSize: 12, color: '#9ca3af' }}>💧{log.water || 0} 🚶{log.steps || 0}</span>
-                          <button onClick={() => setLogDetails({...log})} style={{ fontSize: 11, padding: '2px 10px', borderRadius: 8, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', cursor: 'pointer', fontWeight: 700 }}>🔍 פרטים</button>
+                          <button onClick={async () => { const { data } = await supabase.from('daily_logs').select('*').eq('id', log.id).maybeSingle(); setLogDetails(data || {...log}) }} style={{ fontSize: 11, padding: '2px 10px', borderRadius: 8, background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe', cursor: 'pointer', fontWeight: 700 }}>🔍 פרטים</button>
                         </div>
                       </div>
                       <div style={{ padding: '12px 16px' }}>
