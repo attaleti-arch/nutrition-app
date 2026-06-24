@@ -82,6 +82,42 @@ function nutritionId(id) {
   return id.endsWith('_erev') ? id.slice(0, -5) : id
 }
 
+// ✅ הטקסט האמיתי שהלקוחה ראתה וסימנה (כמו ב-PLAN בצד הלקוח, PlanApp.js) —
+// משמש כתווית במקום nutrition_data.name, כדי שטעות הקלדה/אי-התאמה בטבלת התזונה
+// לא תציג פריט שגוי בתור "מסומן" באדמין
+var ITEM_LABELS = {
+  b1: 'משקה / חטיף חלבון', b3: 'מעדן פרו', b_kotej: 'קוטג׳ 5% (200g)',
+  b10: 'גבינה לבנה / בולגרית / צפתית 5%', bnew2: 'גבינה צהובה 9% (פרוסה)',
+  b7: 'ביצים קשות / חביתה', b_tuna_full: 'טונה — חבילה שלמה (160g)', b_tuna_half: 'טונה — חצי חבילה (80g)',
+  b4: 'פריכית דגנים מלאים', b6: 'פיתה כוסמין', b_bread1: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת',
+  bc_gf1: 'פרוסת לחם ללא גלוטן', bnew1: '2 פרוסות לחם כוסמין',
+  b8: '½ אבוקדו (100g)', b9: 'שיבולת שועל + חלב / משקה צמחי',
+  b_veggie1: 'סלט או ירקות חתוכים', b_veggie1_oil: '+ כף שמן זית על הסלט',
+  c1: '150 גרם אורז מלא / קינואה', c2: '200 גרם בורגול / כוסמין / קוסקוס', c4: '170 גרם תפוחי אדמה / בטטה',
+  c5: '150 גרם ירקות אנטיפסטי קלויים (קישוא, חציל, בטטה)', c6: '150 גרם עדשים / חומוס מבושל',
+  c7: '100 גרם שעועית לבנה / אדומה', c_gf1: '150 גרם כוסמת מבושלת', c_gf2: '150 גרם פסטה מאורז / תירס',
+  c8: '150 גרם אפונה מבושלת / קפואה',
+  p1: '200 גרם דג לבן (אמנון / בקלה)', p2: '100 גרם סלמון', p9: '100 גרם טונה / סרדינים',
+  p10: '150 גרם חזה עוף', p5: '140 גרם ירך עוף או פרגית ללא עור / 100 גרם הודו טחון', p3: '150 גרם טופו',
+  p8: '2 ביצים / חביתה', p11: '150 גרם מג׳דרה (עדשים + אורז)', p6: '2 המבורגר צמחוני',
+  p13: '200 גרם גרגירי חומוס מבושל', p14: '200 גרם עדשים מבושלות', p15: '150 גרם שעועית לבנה / פול מבושל',
+  p16: '150 גרם אדממה', p17: '200 גרם קוטג׳ 3% / גבינה לבנה 5%', p18: '200 גרם יוגורט יווני 0%',
+  f1: 'כף שמן זית', f2: '2 כפות טחינה גולמית', f3: '50 גרם אבוקדו (רבע)',
+  f4: 'חופן אגוזי מלך / שקדים (30 גרם)', f5: '30 גרם גבינה צהובה 5%', f6: '2 כפות חמאת שקדים / בוטנים טבעית',
+  f7: '2 כפות לאבנה', f8: 'כף סילאן טבעי',
+  v1: 'סלט טרי — מלפפון, עגבנייה, לימון + מלח', v2: 'ירקות קלויים בתנור (זוקיני, פלפל, חציל, ברוקולי)',
+  v3: 'ירקות מאודים (ברוקולי, כרובית, גזר)', v4: 'סלט עלים ירוקים (תרד, רוקט, חסה)',
+  v5: 'שעועית ירוקה מאודה / מוקפצת',
+  e1: 'קוטג׳ / גבינה לבנה 5%', e2: '50 גרם ברנפלקס + חלב / משקה צמחי', e4: 'פיתה / 4 פריכיות',
+  e5: 'סלט ירקות + טחינה / שמן זית', e6: 'יוגורט יווני 0% + פירות יער', e7: '2 ביצים קשות',
+  e8: '100 גרם עדשים מבושלות', enew1: 'שקשוקה 2 ביצים', e_bread1: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת',
+  ben1: 'פרי עונתי (תפוח / אגס / קיווי)', ben2: 'חופן אגוזים / שקדים (5-6 יחידות)',
+  ben3: 'חטיף בריאות / חלבון עד 150 קל', ben4: 'יוגורט 0% + פרי',
+  shop1: 'הכנתי קיטים מראש למקפיא', shop2: 'חתכתי ירקות ושמתי בגובה העיניים במקרר',
+  shop3: 'יש קופסת הצלה מוכנה במקרר', shop4: 'קניתי מקורות חלבון לשבוע',
+  snack: 'חטיף',
+}
+
 // ✅ אותם מזהי ירקות כמו ב-PLAN.veggieOptions בצד הלקוח (PlanApp.js)
 var VEGGIE_IDS = ['v1', 'v2', 'v3', 'v4', 'v5']
 function calcVeggieMealsCount(log) {
@@ -1470,21 +1506,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       <div style={{ background: '#f8fafc', borderRadius: 12, padding: 12, marginBottom: 12 }}>
                         <div style={{ fontWeight: 700, fontSize: 13, color: '#555', marginBottom: 8 }}>✅ פריטים שסומנו</div>
                         {allIds.map((id, i) => {
-                          const slice = SLICE_ITEMS[id]
-                          const item = nutritionData[id]
+                          const realId = nutritionId(id)
+                          const slice = SLICE_ITEMS[realId]
+                          const item = nutritionData[realId]
                           let label, macros
                           if (slice) {
                             const qty = carbQty[id] || slice.recQty
                             const cal = Math.round(slice.calPerSlice * qty)
                             const prot = slice.protPerUnit ? Math.round(qty * slice.protPerUnit) : 0
                             const carbs = slice.protPerUnit ? 0 : Math.round(slice.calPerSlice * qty / 4)
-                            label = slice.name + ' (כמות: ' + qty + ')'
+                            label = (ITEM_LABELS[realId] || slice.name) + ' (כמות: ' + qty + ')'
                             macros = cal + ' קל | ' + prot + 'g חלבון | 0g שומן | ' + carbs + 'g פחמימה'
                           } else if (item) {
-                            label = item.name
+                            label = ITEM_LABELS[realId] || item.name
                             macros = Math.round(item.calories) + ' קל | ' + Math.round(item.protein||0) + 'g חלבון | ' + Math.round(item.fat||0) + 'g שומן | ' + Math.round(item.carbs||0) + 'g פחמימה'
                           } else {
-                            label = id
+                            label = ITEM_LABELS[realId] || id
                             macros = 'אין נתונים'
                           }
                           return (
