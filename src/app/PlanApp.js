@@ -70,12 +70,12 @@ const PLAN = {
   bokerProtein: [
     { id: 'b1', text: 'משקה / חטיף חלבון', tags: [], prot: 25 },
     { id: 'b3', text: 'מעדן פרו', tags: ['vegan'], prot: 20 },
-    { id: 'b_kotej', text: 'קוטג׳ 5% (200g)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 22 },
+    { id: 'b_kotej', text: 'קוטג׳ 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 22 },
     { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 14 },
     { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 7 },
     { id: 'b7', text: 'ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'], calPerSlice: 70, recQty: 1, unit: 'ביצים', protPerUnit: 6.5 },
-    { id: 'b_tuna_full', text: 'טונה — חבילה שלמה (160g)', tags: [], hide: ['vegan', 'vegetarian'], prot: 35 },
-    { id: 'b_tuna_half', text: 'טונה — חצי חבילה (80g)', tags: [], hide: ['vegan', 'vegetarian'], prot: 18 },
+    { id: 'b_tuna_full', text: 'טונה — חבילה שלמה', tags: [], hide: ['vegan', 'vegetarian'], prot: 35 },
+    { id: 'b_tuna_half', text: 'טונה — חצי חבילה', tags: [], hide: ['vegan', 'vegetarian'], prot: 18 },
   ],
   bokerCarbs: [
     { id: 'b4', text: 'פריכית דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'], calPerSlice: 30, recQty: 1, unit: 'פריכיות' },
@@ -84,13 +84,13 @@ const PLAN = {
     { id: 'bc_gf1', text: 'פרוסת לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'], calPerSlice: 80, recQty: 1 },
   ],
   bokerExtra: [
-    { id: 'b8', text: '½ אבוקדו (100g)', tags: ['vegan', 'keto'] },
+    { id: 'b8', text: '½ אבוקדו', tags: ['vegan', 'keto'] },
     { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto', 'no_gluten'], tags: ['vegetarian'] },
   ],
   boker: [
     { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
     { id: 'b3', text: 'מעדן פרו', tags: ['vegan'] },
-    { id: 'b_kotej', text: 'קוטג׳ 5% (200g)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b_kotej', text: 'קוטג׳ 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b4', text: 'פריכית דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
@@ -98,7 +98,7 @@ const PLAN = {
     { id: 'b6', text: 'פיתה כוסמין / 4 פריכיות / 2 פרוסות לחם שיפון', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
     { id: 'bnew1', text: '2 פרוסות לחם כוסמין', tags: [], hide: ['keto', 'no_gluten'] },
     { id: 'bc_gf1', text: 'פרוסת לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'] },
-    { id: 'b8', text: '½ אבוקדו (100g)', tags: ['vegan', 'keto'] },
+    { id: 'b8', text: '½ אבוקדו', tags: ['vegan', 'keto'] },
     { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto', 'no_gluten'], tags: ['vegetarian'] },
   ],
   carbOptions: [
