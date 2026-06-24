@@ -457,7 +457,7 @@ function FloatingPlateBars({ bars }) {
     <div style={{ position: 'fixed', left: 6, top: '50%', transform: 'translateY(-50%)', zIndex: 60, background: 'rgba(255,255,255,0.94)', borderRadius: 16, padding: '10px 6px', boxShadow: '0 2px 12px rgba(0,0,0,0.14)', display: 'flex', gap: 8 }}>
       {bars.map(b => (
         <div key={b.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: b.color }}>{b.pct >= 95 && b.pct <= 110 ? '✓' : b.pct + '%'}</div>
+          <div style={{ fontSize: 10, fontWeight: 800, color: b.color }}>{b.pct >= 95 && b.pct <= 100 ? '✓' : b.pct + '%'}</div>
           <div style={{ width: 11, height: 70, borderRadius: 7, background: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: Math.min(100, b.pct) + '%', background: b.color, borderRadius: 7, transition: 'height 0.3s' }} />
           </div>
