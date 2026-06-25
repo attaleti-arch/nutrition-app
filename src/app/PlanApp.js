@@ -70,8 +70,10 @@ const PLAN = {
   bokerProtein: [
     { id: 'b1', text: 'משקה / חטיף חלבון', tags: [], prot: 25 },
     { id: 'b3', text: 'מעדן פרו', tags: ['vegan'], prot: 20 },
-    { id: 'b_kotej', text: 'קוטג׳ 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 22 },
-    { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 14 },
+    { id: 'b_kotej', text: 'קוטג׳ 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 13.75 },
+    { id: 'b_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 10.5 },
+    { id: 'b_gvina_bulgarit', text: 'גבינה בולגרית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 12.5 },
+    { id: 'b_gvina_tzfat', text: 'גבינה צפתית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 20.5 },
     { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 7 },
     { id: 'b7', text: 'ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'], calPerSlice: 70, recQty: 1, unit: 'ביצים', protPerUnit: 6.5 },
     { id: 'b_tuna_full', text: 'טונה — חבילה שלמה', tags: [], hide: ['vegan', 'vegetarian'], prot: 35 },
@@ -90,9 +92,11 @@ const PLAN = {
   boker: [
     { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
     { id: 'b3', text: 'מעדן פרו', tags: ['vegan'] },
-    { id: 'b_kotej', text: 'קוטג׳ 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b_kotej', text: 'קוטג׳ 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b4', text: 'פריכית דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
-    { id: 'b10', text: 'גבינה לבנה / בולגרית / צפתית 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b_gvina_bulgarit', text: 'גבינה בולגרית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b_gvina_tzfat', text: 'גבינה צפתית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b7', text: 'ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'] },
     { id: 'b6', text: 'פיתה כוסמין / 4 פריכיות / 2 פרוסות לחם שיפון', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
@@ -147,7 +151,10 @@ const PLAN = {
     { id: 'v5', text: 'שעועית ירוקה מאודה / מוקפצת' },
   ],
   erev: [
-    { id: 'e1', text: 'קוטג׳ / גבינה לבנה 5%', hide: ['vegan', 'no_lactose'] },
+    { id: 'e1', text: 'קוטג׳ 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
+    { id: 'e_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
+    { id: 'e_gvina_bulgarit', text: 'גבינה בולגרית 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
+    { id: 'e_gvina_tzfat', text: 'גבינה צפתית 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
     { id: 'e2', text: '50 גרם ברנפלקס + חלב / משקה צמחי', hide: ['keto', 'no_gluten'] },
     { id: 'e4', text: 'פיתה / 4 פריכיות', hide: ['keto', 'no_gluten'] },
     { id: 'e5', text: 'סלט ירקות + טחינה / שמן זית', tags: ['vegan', 'keto'] },
@@ -184,7 +191,7 @@ function nutritionId(id) {
 
 // ✅ פריטים בלי כמות מפורשת בטקסט (כמו "קוטג׳ / גבינה לבנה 5%") — מציגים את כמות הבסיס מ-nutrition_data כדי שהחישוב יהיה שקוף
 function withBaseQty(text, item) {
-  if (!item || !item.base_qty || /\d\s*(גרם|g\)|מ"ל|מ״ל|מל)/.test(text)) return text
+  if (!item || !item.base_qty || /\d\s*(גרם|g\)|מ"ל|מ״ל|מל)|חבילה/.test(text)) return text
   return text + ' (' + item.base_qty + ' גרם)'
 }
 
