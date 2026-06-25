@@ -120,7 +120,6 @@ const PLAN = {
     { id: 'b_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
     { id: 'b_pro20', text: 'מעדן פרו 20 גרם חלבון', tags: ['vegan'] },
     { id: 'b_pro25', text: 'מעדן פרו 25 גרם חלבון', tags: ['vegan'] },
-    { id: 'p20', text: 'סלט עוף (150 גרם חזה עוף + ירקות, חישוב גס)', hide: ['vegan', 'vegetarian'] },
   ],
   fatOptions: [
     { id: 'f1', text: 'כף שמן זית', tags: ['vegan', 'keto'] },
