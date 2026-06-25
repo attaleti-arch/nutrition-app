@@ -364,15 +364,42 @@ function NutritionRow({ item, onSave }) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '8px 16px', borderBottom: '1px solid #f3f4f6', alignItems: 'center' }}>
+    <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '8px 16px', borderBottom: '1px solid #f3f4f6', alignItems: 'center' }}>
       <div style={{ fontSize: 13, color: '#333', fontWeight: 600 }}>{item.name}</div>
       <input type="number" value={vals.base_qty || 0} onChange={function(e) { setVals(function(v) { return { ...v, base_qty: Number(e.target.value) } }) }} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid #c4a354', fontSize: 13, textAlign: 'center', outline: 'none', boxSizing: 'border-box', fontWeight: 700 }} />
-      {['calories', 'protein', 'fat', 'fiber'].map(function(field) {
+      {['calories', 'protein', 'fat', 'carbs', 'fiber'].map(function(field) {
         return <input key={field} type="number" value={vals[field] || 0} onChange={function(e) { setVals(function(v) { return { ...v, [field]: Number(e.target.value) } }) }} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
       })}
       <button onClick={async function() { setSaving(true); await onSave(vals); setSaving(false); setSaved(true); setTimeout(() => setSaved(false), 2000) }} style={{ padding: '6px 10px', borderRadius: 8, background: saved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
         {saving ? '...' : saved ? '✓' : 'שמור'}
       </button>
+    </div>
+  )
+}
+
+function NewNutritionRow({ onAdd }) {
+  const [vals, setVals] = useState({ id: '', name: '', base_qty: 0, calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0 })
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 2fr 1fr 1fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '8px 16px', alignItems: 'center', background: '#fefce8' }}>
+      <input type="text" value={vals.id} placeholder="מזהה (id)" onChange={function(e) { setVals(function(v) { return { ...v, id: e.target.value.trim() } }) }} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
+      <input type="text" value={vals.name} placeholder="שם הפריט" onChange={function(e) { setVals(function(v) { return { ...v, name: e.target.value } }) }} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
+      <input type="number" value={vals.base_qty || 0} placeholder="גרם" onChange={function(e) { setVals(function(v) { return { ...v, base_qty: Number(e.target.value) } }) }} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid #c4a354', fontSize: 13, textAlign: 'center', outline: 'none', boxSizing: 'border-box', fontWeight: 700 }} />
+      {['calories', 'protein', 'fat', 'carbs', 'fiber'].map(function(field) {
+        return <input key={field} type="number" value={vals[field] || 0} onChange={function(e) { setVals(function(v) { return { ...v, [field]: Number(e.target.value) } }) }} style={{ width: '100%', padding: '6px 8px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 13, textAlign: 'center', outline: 'none', boxSizing: 'border-box' }} />
+      })}
+      <button onClick={async function() {
+        if (!vals.id || !vals.name) { setError('צריך מזהה ושם'); return }
+        setError(''); setSaving(true)
+        const ok = await onAdd(vals)
+        setSaving(false)
+        if (ok) setVals({ id: '', name: '', base_qty: 0, calories: 0, protein: 0, fat: 0, carbs: 0, fiber: 0 })
+        else setError('המזהה כבר קיים')
+      }} style={{ padding: '6px 10px', borderRadius: 8, background: '#b08c3a', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>
+        {saving ? '...' : '+ הוסף'}
+      </button>
+      {error && <div style={{ gridColumn: '1 / -1', color: '#dc2626', fontSize: 12 }}>{error}</div>}
     </div>
   )
 }
@@ -2004,12 +2031,20 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
             {tab === 'nutrition' && (
               <div style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', border: '1.5px solid #f0f0f0' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '10px 16px', background: '#f8fafc', fontWeight: 700, fontSize: 13, color: '#555', borderBottom: '1.5px solid #f0f0f0' }}>
-                  <div>פריט</div><div style={{ textAlign: 'center', color: '#b08c3a' }}>גרם (בסיס)</div><div style={{ textAlign: 'center' }}>קלוריות</div><div style={{ textAlign: 'center' }}>חלבון</div><div style={{ textAlign: 'center' }}>שומן</div><div style={{ textAlign: 'center' }}>סיבים</div><div></div>
+                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 1fr 80px', gap: 8, padding: '10px 16px', background: '#f8fafc', fontWeight: 700, fontSize: 13, color: '#555', borderBottom: '1.5px solid #f0f0f0' }}>
+                  <div>פריט</div><div style={{ textAlign: 'center', color: '#b08c3a' }}>גרם (בסיס)</div><div style={{ textAlign: 'center' }}>קלוריות</div><div style={{ textAlign: 'center' }}>חלבון</div><div style={{ textAlign: 'center' }}>שומן</div><div style={{ textAlign: 'center' }}>פחמימה</div><div style={{ textAlign: 'center' }}>סיבים</div><div></div>
                 </div>
                 {nutritionItems.map(function(item) {
                   return <NutritionRow key={item.id} item={item} onSave={async function(updated) { await supabase.from('nutrition_data').upsert(updated, { onConflict: 'id' }); const { data } = await supabase.from('nutrition_data').select('*').order('id'); setNutritionItems(data || []) }} />
                 })}
+                <div style={{ padding: '10px 16px', background: '#f8fafc', fontWeight: 700, fontSize: 13, color: '#b08c3a', borderTop: '1.5px solid #f0f0f0' }}>+ הוספת פריט חדש</div>
+                <NewNutritionRow onAdd={async function(vals) {
+                  if (nutritionItems.some(function(it) { return it.id === vals.id })) return false
+                  await supabase.from('nutrition_data').insert(vals)
+                  const { data } = await supabase.from('nutrition_data').select('*').order('id')
+                  setNutritionItems(data || [])
+                  return true
+                }} />
               </div>
             )}
 
