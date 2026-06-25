@@ -69,7 +69,8 @@ const PLAN = {
   bokerSnack: 'לפני: נס קפה + חטיף בריאות עד 99 קל',
   bokerProtein: [
     { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
-    { id: 'b3', text: 'מעדן פרו', tags: ['vegan'] },
+    { id: 'b_pro20', text: 'מעדן פרו 20 גרם חלבון', tags: ['vegan'] },
+    { id: 'b_pro25', text: 'מעדן פרו 25 גרם חלבון', tags: ['vegan'] },
     { id: 'b_kotej', text: 'קוטג׳ 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b_gvina_bulgarit', text: 'גבינה בולגרית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
@@ -86,22 +87,6 @@ const PLAN = {
     { id: 'bc_gf1', text: 'פרוסת לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'], calPerSlice: 80, recQty: 1 },
   ],
   bokerExtra: [
-    { id: 'b8', text: '½ אבוקדו', tags: ['vegan', 'keto'] },
-    { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto', 'no_gluten'], tags: ['vegetarian'] },
-  ],
-  boker: [
-    { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
-    { id: 'b3', text: 'מעדן פרו', tags: ['vegan'] },
-    { id: 'b_kotej', text: 'קוטג׳ 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b4', text: 'פריכית דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
-    { id: 'b_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b_gvina_bulgarit', text: 'גבינה בולגרית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b_gvina_tzfat', text: 'גבינה צפתית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b7', text: 'ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'] },
-    { id: 'b6', text: 'פיתה כוסמין / 4 פריכיות / 2 פרוסות לחם שיפון', tags: ['vegan'], hide: ['keto', 'no_gluten'] },
-    { id: 'bnew1', text: '2 פרוסות לחם כוסמין', tags: [], hide: ['keto', 'no_gluten'] },
-    { id: 'bc_gf1', text: 'פרוסת לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'] },
     { id: 'b8', text: '½ אבוקדו', tags: ['vegan', 'keto'] },
     { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto', 'no_gluten'], tags: ['vegetarian'] },
   ],
@@ -133,7 +118,8 @@ const PLAN = {
     { id: 'p16', text: '150 גרם אדממה', tags: ['vegan'] },
     { id: 'b_kotej', text: 'קוטג׳ 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
     { id: 'b_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
-    { id: 'b3', text: 'מעדן פרו', tags: ['vegan'] },
+    { id: 'b_pro20', text: 'מעדן פרו 20 גרם חלבון', tags: ['vegan'] },
+    { id: 'b_pro25', text: 'מעדן פרו 25 גרם חלבון', tags: ['vegan'] },
   ],
   fatOptions: [
     { id: 'f1', text: 'כף שמן זית', tags: ['vegan', 'keto'] },
@@ -153,15 +139,16 @@ const PLAN = {
     { id: 'v5', text: 'שעועית ירוקה מאודה / מוקפצת' },
   ],
   erev: [
-    { id: 'e1', text: 'קוטג׳ 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
-    { id: 'e_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
-    { id: 'e_gvina_bulgarit', text: 'גבינה בולגרית 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
-    { id: 'e_gvina_tzfat', text: 'גבינה צפתית 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
-    { id: 'e_tuna_full', text: 'טונה — חבילה שלמה', tags: [], hide: ['vegan', 'vegetarian'] },
-    { id: 'e_tuna_half', text: 'טונה — חצי חבילה', tags: [], hide: ['vegan', 'vegetarian'] },
+    { id: 'b_kotej_erev', text: 'קוטג׳ 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
+    { id: 'b_gvina_levana_erev', text: 'גבינה לבנה 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
+    { id: 'b_gvina_bulgarit_erev', text: 'גבינה בולגרית 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
+    { id: 'b_gvina_tzfat_erev', text: 'גבינה צפתית 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
+    { id: 'b_tuna_full_erev', text: 'טונה — חבילה שלמה', tags: [], hide: ['vegan', 'vegetarian'] },
+    { id: 'b_tuna_half_erev', text: 'טונה — חצי חבילה', tags: [], hide: ['vegan', 'vegetarian'] },
     { id: 'e2', text: '50 גרם ברנפלקס + חלב / משקה צמחי', hide: ['keto', 'no_gluten'] },
     { id: 'e4', text: 'פיתה / 4 פריכיות', hide: ['keto', 'no_gluten'] },
-    { id: 'e6', text: 'מעדן פרו', tags: ['vegan'] },
+    { id: 'b_pro20_erev', text: 'מעדן פרו 20 גרם חלבון', tags: ['vegan'] },
+    { id: 'b_pro25_erev', text: 'מעדן פרו 25 גרם חלבון', tags: ['vegan'] },
     { id: 'e7', text: 'ביצה קשה', hide: ['vegan', 'no_eggs'], calPerSlice: 70, recQty: 1, unit: 'ביצים', protPerUnit: 6.5 },
     { id: 'enew1', text: 'שקשוקה 2 ביצים', tags: [], hide: ['vegan', 'no_eggs'] },
     { id: 'e_bread1', text: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת', tags: [], hide: ['keto', 'no_gluten'], calPerSlice: 80, recQty: 1 },
@@ -1319,7 +1306,6 @@ export default function PlanApp({ clientName, userPassword }) {
       if (proteinTargetPct < warnThreshold) setProteinWarnedAt(c => [...c, warnCheckpoint])
     }
   }, [profileDone, targets, warnCheckpoint, veggiesTargetPct, proteinTargetPct, veggieWarnedAt, proteinWarnedAt])
-  const filteredBoker = PLAN.boker.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerProtein = PLAN.bokerProtein.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerCarbs = PLAN.bokerCarbs.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBokerExtra = PLAN.bokerExtra.filter(i => !shouldHide(i, dietType, restrictions))
@@ -1329,7 +1315,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const filteredFat = PLAN.fatOptions.filter(i => !shouldHide(i, dietType, restrictions))
   const filteredBenayim = PLAN.benayimOptions.filter(i => !shouldHide(i, dietType, restrictions))
   const checkedCount = Object.values(checks).filter(Boolean).length
-  const totalItems = filteredBoker.length + filteredErev.length
+  const totalItems = filteredBokerProtein.length + filteredBokerCarbs.length + filteredBokerExtra.length + filteredErev.length
 
   if (!setupDone) {
     return (
