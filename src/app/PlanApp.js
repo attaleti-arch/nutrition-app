@@ -68,16 +68,16 @@ const BONUS_RECIPES = [
 const PLAN = {
   bokerSnack: 'לפני: נס קפה + חטיף בריאות עד 99 קל',
   bokerProtein: [
-    { id: 'b1', text: 'משקה / חטיף חלבון', tags: [], prot: 25 },
-    { id: 'b3', text: 'מעדן פרו', tags: ['vegan'], prot: 20 },
-    { id: 'b_kotej', text: 'קוטג׳ 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 13.75 },
-    { id: 'b_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 10.5 },
-    { id: 'b_gvina_bulgarit', text: 'גבינה בולגרית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 12.5 },
-    { id: 'b_gvina_tzfat', text: 'גבינה צפתית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 20.5 },
-    { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], prot: 7 },
+    { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
+    { id: 'b3', text: 'מעדן פרו', tags: ['vegan'] },
+    { id: 'b_kotej', text: 'קוטג׳ 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b_gvina_bulgarit', text: 'גבינה בולגרית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b_gvina_tzfat', text: 'גבינה צפתית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b7', text: 'ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'], calPerSlice: 70, recQty: 1, unit: 'ביצים', protPerUnit: 6.5 },
-    { id: 'b_tuna_full', text: 'טונה — חבילה שלמה', tags: [], hide: ['vegan', 'vegetarian'], prot: 35 },
-    { id: 'b_tuna_half', text: 'טונה — חצי חבילה', tags: [], hide: ['vegan', 'vegetarian'], prot: 18 },
+    { id: 'b_tuna_full', text: 'טונה — חבילה שלמה', tags: [], hide: ['vegan', 'vegetarian'] },
+    { id: 'b_tuna_half', text: 'טונה — חצי חבילה', tags: [], hide: ['vegan', 'vegetarian'] },
   ],
   bokerCarbs: [
     { id: 'b4', text: 'פריכית דגנים מלאים', tags: ['vegan'], hide: ['keto', 'no_gluten'], calPerSlice: 30, recQty: 1, unit: 'פריכיות' },
@@ -117,22 +117,23 @@ const PLAN = {
     { id: 'c8', text: '150 גרם אפונה מבושלת / קפואה', tags: ['vegan'] },
   ],
   protOptions: [
-    { id: 'p1', text: '200 גרם דג לבן (אמנון / בקלה)', hide: ['vegan', 'no_fish'], prot: 40, protDefaultQty: 200 },
-    { id: 'p2', text: '100 גרם סלמון', hide: ['vegan', 'no_fish'], prot: 21, protDefaultQty: 100 },
-    { id: 'p9', text: '100 גרם טונה / סרדינים', hide: ['vegan', 'no_fish'], prot: 25, protDefaultQty: 100 },
-    { id: 'p10', text: '150 גרם חזה עוף', hide: ['vegan', 'vegetarian'], prot: 46.5, protDefaultQty: 150 },
-    { id: 'p5', text: '140 גרם ירך עוף או פרגית ללא עור / 100 גרם הודו טחון', hide: ['vegan', 'vegetarian'], prot: 29.4, protDefaultQty: 140 },
-    { id: 'p3', text: '150 גרם טופו', tags: ['vegan'], prot: 13.5, protDefaultQty: 150 },
-    { id: 'p8', text: '2 ביצים / חביתה', hide: ['vegan', 'no_eggs'], prot: 13 },
-    { id: 'p11', text: '150 גרם מג׳דרה (עדשים + אורז)', tags: ['vegan'], prot: 7.5, protDefaultQty: 150 },
-    { id: 'p6', text: '2 המבורגר צמחוני', tags: ['vegan'], prot: 30 },
-    { id: 'p13', text: '200 גרם גרגירי חומוס מבושל', tags: ['vegan'], prot: 18, protDefaultQty: 200 },
-    { id: 'p14', text: '200 גרם עדשים מבושלות', tags: ['vegan'], prot: 18, protDefaultQty: 200 },
-    { id: 'p15', text: '150 גרם שעועית לבנה / פול מבושל', tags: ['vegan'], prot: 12, protDefaultQty: 150 },
-    { id: 'p16', text: '150 גרם אדממה', tags: ['vegan'], prot: 16.5, protDefaultQty: 150 },
-    { id: 'p17', text: 'קוטג׳ 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'], prot: 13.75, protDefaultQty: 125 },
-    { id: 'p19', text: 'גבינה לבנה 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'], prot: 10.5, protDefaultQty: 125 },
-    { id: 'p18', text: 'מעדן פרו', tags: ['vegan'], prot: 20 },
+    { id: 'p1', text: '200 גרם דג לבן (אמנון / בקלה)', hide: ['vegan', 'no_fish'] },
+    { id: 'p2', text: '100 גרם סלמון', hide: ['vegan', 'no_fish'] },
+    { id: 'b_tuna_full', text: 'טונה — חבילה שלמה', hide: ['vegan', 'no_fish'] },
+    { id: 'b_tuna_half', text: 'טונה — חצי חבילה', hide: ['vegan', 'no_fish'] },
+    { id: 'p10', text: '150 גרם חזה עוף', hide: ['vegan', 'vegetarian'] },
+    { id: 'p5', text: '140 גרם ירך עוף או פרגית ללא עור / 100 גרם הודו טחון', hide: ['vegan', 'vegetarian'] },
+    { id: 'p3', text: '150 גרם טופו', tags: ['vegan'] },
+    { id: 'p8', text: '2 ביצים / חביתה', hide: ['vegan', 'no_eggs'] },
+    { id: 'p11', text: '150 גרם מג׳דרה (עדשים + אורז)', tags: ['vegan'] },
+    { id: 'p6', text: '2 המבורגר צמחוני', tags: ['vegan'] },
+    { id: 'p13', text: '200 גרם גרגירי חומוס מבושל', tags: ['vegan'] },
+    { id: 'p14', text: '200 גרם עדשים מבושלות', tags: ['vegan'] },
+    { id: 'p15', text: '150 גרם שעועית לבנה / פול מבושל', tags: ['vegan'] },
+    { id: 'p16', text: '150 גרם אדממה', tags: ['vegan'] },
+    { id: 'p17', text: 'קוטג׳ 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
+    { id: 'p19', text: 'גבינה לבנה 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
+    { id: 'p18', text: 'מעדן פרו', tags: ['vegan'] },
   ],
   fatOptions: [
     { id: 'f1', text: 'כף שמן זית', tags: ['vegan', 'keto'] },
@@ -1140,27 +1141,19 @@ export default function PlanApp({ clientName, userPassword }) {
       if (qtyOverride && item.base_qty && item.base_qty > 0) total += (item.protein || 0) * (qtyOverride / item.base_qty)
       else total += item.protein || 0
     }
-    var bokerProtMap = {}
-    PLAN.bokerProtein.forEach(function(item) { if (item.prot) bokerProtMap[item.id] = item })
-    // ✅ פריטי checks שאין להם prot מוגדר (פחמימות בוקר, ארוחת ערב, ירקות) — מקבלים חלבון מ-nutritionData, כמו קלוריות/שומן/פחמימה
+    // ✅ אותו חישוב בדיוק כמו קלוריות/שומן/פחמימה — חלבון מגיע מ-nutritionData בלבד, בלי טבלת ערכים נפרדת
     if (checks) Object.keys(checks).forEach(function(id) {
       if (!checks[id]) return
-      if (bokerProtMap[id]) { total += bokerProtMap[id].prot; return }
       if (SLICE_ITEMS[id]) {
         if (SLICE_ITEMS[id].protPerUnit) total += Math.round((carbQty[id] || SLICE_ITEMS[id].recQty) * SLICE_ITEMS[id].protPerUnit)
         return
       }
       addNP(nutritionId(id))
     })
-    var protOptMap = {}
-    PLAN.protOptions.forEach(function(item) { if (item.prot) protOptMap[item.id] = item })
     Object.keys(protChecks).forEach(function(id) {
-      if (protChecks[id] && protOptMap[id]) {
-        var item = protOptMap[id]
-        if (id === 'p8') { total += Math.round((protQty[id] || 2) * 6.5) }
-        else if (item.protDefaultQty && protQty[id]) { total += Math.round(item.prot * (protQty[id] / item.protDefaultQty)) }
-        else { total += item.prot }
-      }
+      if (!protChecks[id]) return
+      if (id === 'p8') { total += Math.round((protQty[id] || 2) * 6.5); return }
+      addNP(id, protQty[id])
     })
     Object.keys(carbChecks).forEach(function(id) { if (carbChecks[id]) addNP(id, carbQty[id]) })
     if (fatSel) addNP(fatSel)
