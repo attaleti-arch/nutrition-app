@@ -131,9 +131,9 @@ const PLAN = {
     { id: 'p14', text: '200 גרם עדשים מבושלות', tags: ['vegan'] },
     { id: 'p15', text: '150 גרם שעועית לבנה / פול מבושל', tags: ['vegan'] },
     { id: 'p16', text: '150 גרם אדממה', tags: ['vegan'] },
-    { id: 'p17', text: 'קוטג׳ 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
-    { id: 'p19', text: 'גבינה לבנה 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
-    { id: 'p18', text: 'מעדן פרו', tags: ['vegan'] },
+    { id: 'b_kotej', text: 'קוטג׳ 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
+    { id: 'b_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
+    { id: 'b3', text: 'מעדן פרו', tags: ['vegan'] },
   ],
   fatOptions: [
     { id: 'f1', text: 'כף שמן זית', tags: ['vegan', 'keto'] },
