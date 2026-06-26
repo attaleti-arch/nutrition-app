@@ -309,6 +309,26 @@ body { background: var(--cream); font-family: "Heebo", sans-serif; color: var(--
   <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי במתכון המלא</button>
 </div>
 
+<div class="recipe-card" data-cat="sweet" data-id="21">
+  <div class="card-header"><div class="card-emoji">🧀</div><div class="card-title-wrap"><div class="card-title">עוגת גבינה אפויה</div><div class="card-subtitle">קלאסית, קרמית וקלה — מכינים תבניות גדולות וחותכים לחתיכות</div></div><div class="card-try-btn" onclick="toggleTried(this)">✓</div></div>
+  <div class="card-macros"><span class="macro-pill macro-cal">🔥 45.5 קל</span><span class="macro-pill macro-pro">💪 4.2g חלבון</span><span class="macro-pill macro-time">⏱️ 40 דק׳ אפייה + קירור</span><span class="macro-pill macro-tag">24 חתיכות</span></div>
+  <div class="card-body" style="display:none">
+    <div class="card-section-title">מצרכים (כל המתכון — 3 תבניות אינגליש, 8 חתיכות כל אחת = 24 חתיכות)</div>
+    <div class="card-ingredients">7 ביצים L · 2 כפות סוכר סוויטנגו 0 קלוריות · 500g גבינה 3% · יוגורט ביו 1% · 2 כפות קורנפלור · 2 כפות אינסטנט סוויטנגו</div>
+    <div class="card-section-title">הכנה</div>
+    <ol class="card-steps">
+      <li><div class="step-num">1</div>מחממים תנור ל-170°, מרפדים 3 תבניות אינגליש בנייר אפייה</li>
+      <li><div class="step-num">2</div>טורפים את הביצים עם הסוכר סוויטנגו עד לתערובת אוורירית</li>
+      <li><div class="step-num">3</div>מוסיפים את הגבינה והיוגורט הביו, מערבבים עד למרקם חלק</li>
+      <li><div class="step-num">4</div>מוסיפים קורנפלור ואינסטנט סוויטנגו, מערבבים רק עד להטמעות</li>
+      <li><div class="step-num">5</div>מחלקים בין 3 התבניות, אופים כ-35-40 דקות עד שהמרכז יציב</li>
+      <li><div class="step-num">6</div>מצננים לחלוטין, מקררים במקרר ואז חותכים ל-24 חתיכות</li>
+    </ol>
+    <div class="card-tip"><strong>💡 טיפ של אתי:</strong> ניתן לפזר אבקת סוכר סוויטנגו מלמעלה לפני ההגשה.</div>
+  </div>
+  <button class="expand-btn" onclick="toggleExpand(this)">▼ צפי במתכון המלא</button>
+</div>
+
 <div class="section-label">⚡ פתרונות הצלה מהירים</div>
 
 <div class="recipe-card" data-cat="sweet quick" data-id="7">
@@ -535,7 +555,7 @@ body { background: var(--cream); font-family: "Heebo", sans-serif; color: var(--
 
 <script>
 // מתכונים ללא גלוטן (ללא קמח / ללא שיבולת שועל)
-var gfIds = ['r3','r4','r5','1','3','4','5','6','7','8','r6','9','11','12','19','14','15','18','20'];
+var gfIds = ['r3','r4','r5','1','3','4','5','6','7','8','r6','9','11','12','19','14','15','18','20','21'];
 gfIds.forEach(function(id) {
   var card = document.querySelector('[data-id="' + id + '"]');
   if (card) card.dataset.cat = (card.dataset.cat || '') + ' gf';
