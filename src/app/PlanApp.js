@@ -186,6 +186,24 @@ const UNIT_PROTEIN_ITEMS = {
   p_eggwhite: { calPerUnit: 17, proteinPerUnit: 3.25, defaultQty: 1, unitLabel: 'יח\'', recLabel: 'חלבונים' },
 }
 
+// ✅ "המלצה חכמה לפי צלחת" — עוברת על הפריטים בסדר הרשימה ושומרת יתרת תקציב (קלוריות) שמתעדכנת
+// לפי כל פריט מסומן: אם סומן פריט וכתבה כמות עצמאית, ההמלצה הבאה מתיישרת למה שנותר כדי להגיע ליעד.
+// פריטים ביחידות (ביצה/חלבון ביצה) שומרים על כמות יחידות קבועה ולא מושפעים מהתקציב.
+function buildBudgetRows(items, checksMap, qtyMap, budget, nutritionData, unitMap) {
+  let remaining = budget
+  return items.map(o => {
+    const item = nutritionData[o.id]
+    const unitItem = unitMap ? unitMap[o.id] : null
+    const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
+    const isChecked = !!checksMap[o.id]
+    const recQty = unitItem ? unitItem.defaultQty : (cal100 > 0 ? Math.max(0, Math.round((remaining / cal100) * 100)) : 0)
+    const qty = qtyMap[o.id] || recQty
+    const calDisplay = unitItem ? Math.round(qty * unitItem.calPerUnit) : (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
+    if (isChecked) remaining -= calDisplay
+    return { o, item, unitItem, cal100, isChecked, recQty, qty, calDisplay }
+  })
+}
+
 // ✅ ירקות הערב נשמרים ב-checks עם סיומת '_erev' (כדי לא להתנגש עם בחירת הצהריים) — להסיר לפני חיפוש בנתוני תזונה
 function nutritionId(id) {
   return id.endsWith('_erev') ? id.slice(0, -5) : id
@@ -1367,6 +1385,12 @@ export default function PlanApp({ clientName, userPassword }) {
   const filteredBenayim = PLAN.benayimOptions.filter(i => !shouldHide(i, dietType, restrictions))
   const checkedCount = Object.values(checks).filter(Boolean).length
   const totalItems = filteredBokerProtein.length + filteredBokerCarbs.length + filteredBokerExtra.length + filteredErev.length
+  // ✅ תקציב חלבון/פחמימה לארוחת צהריים לפי הצלחת האישית — מחושב פעם אחת ומשמש גם את מד ההשלמה וגם את רשימת הפריטים
+  const lunchCarbPct = clientPlate?.carbs || (targets ? 30 : 30)
+  const lunchProtBudget = targets ? (clientPlate?.protein ? Math.round(targets.calories * clientPlate.protein / 100 / 2) : Math.round(targets.protein * 4 / 2)) : 0
+  const lunchCarbBudget = targets ? Math.round(targets.calories * lunchCarbPct / 100 / 2) : 0
+  const lunchProtRows = buildBudgetRows(filteredProt, protChecks, protQty, lunchProtBudget, nutritionData, UNIT_PROTEIN_ITEMS)
+  const lunchCarbRows = buildBudgetRows(filteredCarbs, carbChecks, carbQty, lunchCarbBudget, nutritionData, null)
 
   if (!setupDone) {
     return (
@@ -2224,51 +2248,31 @@ export default function PlanApp({ clientName, userPassword }) {
             <div>
               {/* ── מד השלמה חי ── */}
               {(() => {
-                const carbPct = clientPlate?.carbs || (targets ? 30 : 30)
-                const protBudget = targets ? (clientPlate?.protein ? Math.round(targets.calories * clientPlate.protein / 100 / 2) : Math.round(targets.protein * 4 / 2)) : 0
-                const carbBudget = targets ? Math.round(targets.calories * carbPct / 100 / 2) : 0
-
-                // ✅ סכום כל החלבונות שנבחרו
-                const protCalActual = Object.keys(protChecks).filter(id => protChecks[id]).reduce((sum, id) => {
-                  const item = nutritionData[id]
-                  const unitItem = UNIT_PROTEIN_ITEMS[id]
-                  const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
-                  if (unitItem) {
-                    const qty = protQty[id] || unitItem.defaultQty
-                    return sum + Math.round(qty * unitItem.calPerUnit)
-                  }
-                  const qty = protQty[id] || item?.base_qty || 150
-                  return sum + (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
-                }, 0) + calcExtraProt() * 4
-                // ✅ סכום כל הפחמימות שנבחרו (אפשר כמה בו-זמנית)
-                const carbCalActual = Object.keys(carbChecks).filter(id => carbChecks[id]).reduce((sum, id) => {
-                  const item = nutritionData[id]
-                  const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
-                  const qty = carbQty[id] || item?.base_qty || 150
-                  return sum + (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
-                }, 0)
-                const hasProtein = Object.values(protChecks).some(Boolean)
-                const hasCarbs = Object.values(carbChecks).some(Boolean)
-                const protRemain = hasProtein ? Math.max(0, protBudget - protCalActual) : protBudget
-                const carbRemain = hasCarbs ? Math.max(0, carbBudget - carbCalActual) : carbBudget
-
                 if (!targets) return null
+                // ✅ סכום כל החלבונות/הפחמימות שנבחרו — מתוך אותה רשימת lunchProtRows/lunchCarbRows שמזינה גם את הצ'קליסט, כדי שהמד והרשימה לא יסתרו זה את זה
+                const protCalActual = lunchProtRows.filter(r => r.isChecked).reduce((sum, r) => sum + r.calDisplay, 0) + calcExtraProt() * 4
+                const carbCalActual = lunchCarbRows.filter(r => r.isChecked).reduce((sum, r) => sum + r.calDisplay, 0)
+                const hasProtein = lunchProtRows.some(r => r.isChecked)
+                const hasCarbs = lunchCarbRows.some(r => r.isChecked)
+                const protRemain = hasProtein ? Math.max(0, lunchProtBudget - protCalActual) : lunchProtBudget
+                const carbRemain = hasCarbs ? Math.max(0, lunchCarbBudget - carbCalActual) : lunchCarbBudget
+
                 return (
                   <div style={{ background: '#f0fdf4', borderRadius: 12, padding: '10px 14px', marginBottom: 10, border: '1px solid #86efac' }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: '#166534', marginBottom: 6 }}>🎯 יעד הצהריים שלך</div>
                     <div style={{ display: 'flex', gap: 10 }}>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, color: '#555', marginBottom: 3 }}>חלבון: {protCalActual}/{protBudget} קל</div>
+                        <div style={{ fontSize: 11, color: '#555', marginBottom: 3 }}>חלבון: {protCalActual}/{lunchProtBudget} קל</div>
                         <div style={{ height: 6, background: '#dcfce7', borderRadius: 99 }}>
-                          <div style={{ width: Math.min(100, protBudget > 0 ? (protCalActual/protBudget)*100 : 0) + '%', height: '100%', background: '#16a34a', borderRadius: 99, transition: 'width 0.3s' }} />
+                          <div style={{ width: Math.min(100, lunchProtBudget > 0 ? (protCalActual/lunchProtBudget)*100 : 0) + '%', height: '100%', background: '#16a34a', borderRadius: 99, transition: 'width 0.3s' }} />
                         </div>
                         {protRemain > 0 && hasProtein && <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>נשאר {protRemain} קל</div>}
                         {protRemain === 0 && hasProtein && <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>✅ הגעת ליעד!</div>}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 11, color: '#555', marginBottom: 3 }}>פחמימה: {carbCalActual}/{carbBudget} קל</div>
+                        <div style={{ fontSize: 11, color: '#555', marginBottom: 3 }}>פחמימה: {carbCalActual}/{lunchCarbBudget} קל</div>
                         <div style={{ height: 6, background: '#dcfce7', borderRadius: 99 }}>
-                          <div style={{ width: Math.min(100, carbBudget > 0 ? (carbCalActual/carbBudget)*100 : 0) + '%', height: '100%', background: '#f97316', borderRadius: 99, transition: 'width 0.3s' }} />
+                          <div style={{ width: Math.min(100, lunchCarbBudget > 0 ? (carbCalActual/lunchCarbBudget)*100 : 0) + '%', height: '100%', background: '#f97316', borderRadius: 99, transition: 'width 0.3s' }} />
                         </div>
                         {carbRemain > 0 && hasCarbs && <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 2 }}>נשאר {carbRemain} קל</div>}
                         {carbRemain === 0 && hasCarbs && <div style={{ fontSize: 10, color: '#16a34a', marginTop: 2 }}>✅ הגעת ליעד!</div>}
@@ -2279,13 +2283,7 @@ export default function PlanApp({ clientName, userPassword }) {
               })()}
 
               <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>פחמימה:</div>
-              {filteredCarbs.map(o => {
-                const item = nutritionData[o.id]
-                const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
-                const recQty = item?.base_qty || 150
-                const isChecked = !!carbChecks[o.id]
-                const qty = carbQty[o.id] || recQty
-                const calDisplay = cal100 > 0 ? Math.round(cal100 * qty / 100) : 0
+              {lunchCarbRows.map(({ o, isChecked, recQty, calDisplay }) => {
                 return (
                   <div key={o.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -2320,17 +2318,7 @@ export default function PlanApp({ clientName, userPassword }) {
               })}
 
               <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '10px 0 2px', textAlign: 'right' }}>חלבון:</div>
-              {filteredProt.map(o => {
-                const item = nutritionData[o.id]
-                const unitItem = UNIT_PROTEIN_ITEMS[o.id]
-                const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
-                // ✅ ביצים / חלבוני ביצה — המלצה ביחידות, שאר — גרמים (כמות הבסיס של הפריט, לא הערכה אישית)
-                const recQty = unitItem ? unitItem.defaultQty : (item?.base_qty || 150)
-                const isChecked = !!protChecks[o.id]
-                const qty = protQty[o.id] || recQty
-                const calDisplay = unitItem
-                  ? Math.round(qty * unitItem.calPerUnit)
-                  : (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
+              {lunchProtRows.map(({ o, unitItem, isChecked, recQty, calDisplay }) => {
                 return (
                   <div key={o.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
