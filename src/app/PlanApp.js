@@ -194,6 +194,11 @@ const NUTRITION_FALLBACK = {
   c8: { calories: 80, base_qty: 100, protein: 5.5, fat: 0.3, carbs: 14 },
 }
 
+// ✅ ירקות "פשוטים" (סלט/חתוכים/מאודים/עלים) בלי שמן בהכנה — שומן צריך להיות אפס,
+// השמן נספר בנפרד (למשל "+ כף שמן זית"). לא נוגע בפריטים שהשמן הוא חלק מההכנה עצמה
+// (v2 קלויים בתנור, v5 מוקפץ בשמן, c5 אנטיפסטי קלוי) — אלה ממשיכים לפי הערך האמיתי בשרת.
+const ZERO_FAT_VEGGIE_IDS = ['b_veggie1', 'v1', 'v3', 'v4', 'v6']
+
 // ✅ "המלצה חכמה לפי צלחת" — לכל פריט יש שני ערכים נפרדים שלא מתערבבים:
 // recQty = ההמלצה המוצגת (מה שנותר מתקציב הגרמים של המאקרו הרלוונטי — חלבון/פחמימה — כדי להגיע ליעד, בלי קשר אם הפריט מסומן)
 // qty/calDisplay = מה שבאמת נחשב בפועל: הכמות שהוקלדה, ואם לא הוקלדה כמות — ברירת המחדל היא 100 גרם קבועים (לא ההמלצה!)
@@ -989,6 +994,9 @@ export default function PlanApp({ clientName, userPassword }) {
       if (data) data.forEach(item => nd[item.id] = item)
       Object.keys(NUTRITION_FALLBACK).forEach(function(id) {
         if (!nd[id] || !nd[id].calories) nd[id] = Object.assign({ id: id }, NUTRITION_FALLBACK[id])
+      })
+      ZERO_FAT_VEGGIE_IDS.forEach(function(id) {
+        if (nd[id]) nd[id] = Object.assign({}, nd[id], { fat: 0 })
       })
       setNutritionData(nd)
     }
