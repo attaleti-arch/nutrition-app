@@ -186,20 +186,36 @@ const UNIT_PROTEIN_ITEMS = {
   p_eggwhite: { calPerUnit: 17, proteinPerUnit: 3.25, defaultQty: 1, unitLabel: 'יח\'', recLabel: 'חלבונים' },
 }
 
-// ✅ "המלצה חכמה לפי צלחת" — עוברת על הפריטים בסדר הרשימה ושומרת יתרת תקציב (קלוריות) שמתעדכנת
-// לפי כל פריט מסומן: אם סומן פריט וכתבה כמות עצמאית, ההמלצה הבאה מתיישרת למה שנותר כדי להגיע ליעד.
+// ✅ "המלצה חכמה לפי צלחת" — לכל פריט, ההמלצה היא מה שנותר מהתקציב (קלוריות) האישי אחרי מה שבאמת
+// כבר סומן. הסדר הקובע הוא סדר הסימון בפועל (checkOrder) ולא סדר הרשימה — כל אחת אוכלת מה שיוצא
+// לה באותו יום, ופריט שסומן מוקדם "תופס" מהתקציב לפני פריט שסומן אחריו, לא לפי מיקומו בתפריט.
 // פריטים ביחידות (ביצה/חלבון ביצה) שומרים על כמות יחידות קבועה ולא מושפעים מהתקציב.
-function buildBudgetRows(items, checksMap, qtyMap, budget, nutritionData, unitMap) {
+function buildBudgetRows(items, checksMap, qtyMap, checkOrder, budget, nutritionData, unitMap) {
+  const computed = {}
   let remaining = budget
+  checkOrder.forEach(id => {
+    if (!checksMap[id]) return // הוסר סימון אחרי שנכנס ל-checkOrder
+    const item = nutritionData[id]
+    const unitItem = unitMap ? unitMap[id] : null
+    const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
+    const recQty = unitItem ? unitItem.defaultQty : (cal100 > 0 ? Math.max(0, Math.round((remaining / cal100) * 100)) : 0)
+    const qty = qtyMap[id] || recQty
+    const calDisplay = unitItem ? Math.round(qty * unitItem.calPerUnit) : (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
+    computed[id] = { recQty, qty, calDisplay }
+    remaining -= calDisplay
+  })
   return items.map(o => {
     const item = nutritionData[o.id]
     const unitItem = unitMap ? unitMap[o.id] : null
     const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
     const isChecked = !!checksMap[o.id]
+    if (isChecked && computed[o.id]) {
+      return { o, item, unitItem, cal100, isChecked, ...computed[o.id] }
+    }
+    // לא מסומן — ההמלצה משקפת את מה שנותר אחרי כל מה שבאמת כבר סומן (בלי קשר למיקום ברשימה)
     const recQty = unitItem ? unitItem.defaultQty : (cal100 > 0 ? Math.max(0, Math.round((remaining / cal100) * 100)) : 0)
     const qty = qtyMap[o.id] || recQty
     const calDisplay = unitItem ? Math.round(qty * unitItem.calPerUnit) : (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
-    if (isChecked) remaining -= calDisplay
     return { o, item, unitItem, cal100, isChecked, recQty, qty, calDisplay }
   })
 }
@@ -870,6 +886,9 @@ export default function PlanApp({ clientName, userPassword }) {
   const [checks, setChecks] = useState({})
   const [carbChecks, setCarbChecks] = useState({}) // ✅ אפשר כמה פחמימות בו-זמנית, לא בחירה בלעדית
   const [protChecks, setProtChecks] = useState({}) // ✅ כמה חלבונות
+  // ✅ סדר הסימון בפועל (לא סדר הרשימה!) — קובע איזה פריט "תפס" מהתקציב לפני איזה, לפי מה שהיא בחרה לסמן ראשון בזמן אמת
+  const [carbCheckOrder, setCarbCheckOrder] = useState([])
+  const [protCheckOrder, setProtCheckOrder] = useState([])
   const [carbQty, setCarbQty] = useState({})
   const [protQty, setProtQty] = useState({})
   const [checksQty, setChecksQty] = useState({})
@@ -1014,7 +1033,11 @@ export default function PlanApp({ clientName, userPassword }) {
       var todayLog = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
       if (todayLog.data) {
         var t = todayLog.data
-        setChecks(t.checks || {}); setCarbChecks(t.carb_checks || (t.carb_sel ? { [t.carb_sel]: true } : {})); setProtChecks(t.prot_checks || {}); setFatSel(t.fat_sel)
+        var loadedCarbChecks = t.carb_checks || (t.carb_sel ? { [t.carb_sel]: true } : {})
+        var loadedProtChecks = t.prot_checks || {}
+        setChecks(t.checks || {}); setCarbChecks(loadedCarbChecks); setProtChecks(loadedProtChecks); setFatSel(t.fat_sel)
+        setCarbCheckOrder(Object.keys(loadedCarbChecks).filter(id => loadedCarbChecks[id]))
+        setProtCheckOrder(Object.keys(loadedProtChecks).filter(id => loadedProtChecks[id]))
         setCarbQty(t.carb_qty || {}); setProtQty(t.prot_qty || {}); setChecksQty(t.checks_qty || {})
         setVeggieChecks(t.veggie_checks || (t.veggie_sel ? { [t.veggie_sel]: true } : {})); setLunchOpt(t.lunch_opt); setBenayimSel(t.benayim_sel)
         setVeggieWarnedAt([]); setProteinWarnedAt([]); setSaveWarnings([])
@@ -1032,7 +1055,7 @@ export default function PlanApp({ clientName, userPassword }) {
         if (t.nlp_metrics) { var m = t.nlp_metrics; setStressLevel(m.stress || 0); setFatigueLevel(m.fatigue || 0); setHungerLevel(m.hunger || 0); setUserMood(m.mood || null) }
       } else {
         // ✅ אין רשומה ליום הזה (כניסה ראשונה, או שהיום התגלגל לתאריך חדש באמצע הפעלה) — לוודא שלא נשאר מידע מהיום הקודם בזיכרון
-        setChecks({}); setCarbChecks({}); setProtChecks({}); setFatSel(null)
+        setChecks({}); setCarbChecks({}); setProtChecks({}); setCarbCheckOrder([]); setProtCheckOrder([]); setFatSel(null)
         setCarbQty({}); setProtQty({}); setChecksQty({})
         setVeggieChecks({}); setLunchOpt(null); setBenayimSel(null)
         setVeggieWarnedAt([]); setProteinWarnedAt([]); setSaveWarnings([])
@@ -1294,7 +1317,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const resetDay = async function() {
     if (!window.confirm('לאפס את כל הנתונים של היום?')) return
     await supabase.from('daily_logs').delete().eq('client_name', dbKey).eq('log_date', todayKey)
-    setChecks({}); setCarbChecks({}); setProtChecks({}); setCarbQty({}); setProtQty({}); setChecksQty({}); setFatSel(null); setVeggieChecks({}); setBenayimSel(null); setLunchOpt(null)
+    setChecks({}); setCarbChecks({}); setProtChecks({}); setCarbCheckOrder([]); setProtCheckOrder([]); setCarbQty({}); setProtQty({}); setChecksQty({}); setFatSel(null); setVeggieChecks({}); setBenayimSel(null); setLunchOpt(null)
     setWater(0); setSteps(''); setNote(''); setBokerFree(''); setLunchFree(''); setErevFree('')
     setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
     setBokerExtraProt(0); setLunchExtraProt(0); setErevExtraProt(0)
@@ -1389,8 +1412,8 @@ export default function PlanApp({ clientName, userPassword }) {
   const lunchCarbPct = clientPlate?.carbs || (targets ? 30 : 30)
   const lunchProtBudget = targets ? (clientPlate?.protein ? Math.round(targets.calories * clientPlate.protein / 100 / 2) : Math.round(targets.protein * 4 / 2)) : 0
   const lunchCarbBudget = targets ? Math.round(targets.calories * lunchCarbPct / 100 / 2) : 0
-  const lunchProtRows = buildBudgetRows(filteredProt, protChecks, protQty, lunchProtBudget, nutritionData, UNIT_PROTEIN_ITEMS)
-  const lunchCarbRows = buildBudgetRows(filteredCarbs, carbChecks, carbQty, lunchCarbBudget, nutritionData, null)
+  const lunchProtRows = buildBudgetRows(filteredProt, protChecks, protQty, protCheckOrder, lunchProtBudget, nutritionData, UNIT_PROTEIN_ITEMS)
+  const lunchCarbRows = buildBudgetRows(filteredCarbs, carbChecks, carbQty, carbCheckOrder, lunchCarbBudget, nutritionData, null)
 
   if (!setupDone) {
     return (
@@ -2287,7 +2310,7 @@ export default function PlanApp({ clientName, userPassword }) {
                 return (
                   <div key={o.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1 }} onClick={() => setCarbChecks(c => ({ ...c, [o.id]: !c[o.id] }))}>
+                      <div style={{ flex: 1 }} onClick={() => { setCarbChecks(c => ({ ...c, [o.id]: !c[o.id] })); setCarbCheckOrder(ord => carbChecks[o.id] ? ord.filter(x => x !== o.id) : [...ord, o.id]) }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', opacity: isChecked ? 1 : 0.85 }}>
                           <div style={{ width: 20, height: 20, borderRadius: 6, border: '2px solid ' + (isChecked ? C.greenMid : '#d1d5db'), background: isChecked ? C.greenMid : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             {isChecked && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
@@ -2322,7 +2345,7 @@ export default function PlanApp({ clientName, userPassword }) {
                 return (
                   <div key={o.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ flex: 1 }} onClick={() => setProtChecks(p => ({ ...p, [o.id]: !p[o.id] }))}>
+                      <div style={{ flex: 1 }} onClick={() => { setProtChecks(p => ({ ...p, [o.id]: !p[o.id] })); setProtCheckOrder(ord => protChecks[o.id] ? ord.filter(x => x !== o.id) : [...ord, o.id]) }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', opacity: isChecked ? 1 : 0.85 }}>
                           <div style={{ width: 20, height: 20, borderRadius: 6, border: '2px solid ' + (isChecked ? C.greenMid : '#d1d5db'), background: isChecked ? C.greenMid : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                             {isChecked && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
