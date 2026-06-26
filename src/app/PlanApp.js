@@ -129,11 +129,8 @@ const PLAN = {
   fatOptions: [
     { id: 'f1', text: 'כף שמן זית', tags: ['vegan', 'keto'] },
     { id: 'f2', text: '2 כפות טחינה גולמית', tags: ['vegan'] },
-    { id: 'f3', text: '50 גרם אבוקדו (רבע)', tags: ['vegan', 'keto'] },
     { id: 'f4', text: 'חופן אגוזי מלך / שקדים (30 גרם)', tags: ['vegan', 'keto'], hide: ['no_nuts'] },
-    { id: 'f5', text: '30 גרם גבינה צהובה 5%', hide: ['vegan', 'no_lactose'] },
     { id: 'f6', text: '2 כפות חמאת שקדים / בוטנים טבעית', tags: ['vegan'], hide: ['no_nuts'] },
-    { id: 'f7', text: '2 כפות לאבנה', hide: ['vegan', 'no_lactose'] },
     { id: 'f8', text: 'כף סילאן טבעי', tags: ['vegan'], hide: ['keto'] },
     { id: 'f9', text: 'כף צ׳יה', tags: ['vegan', 'keto'] },
   ],
