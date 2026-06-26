@@ -2237,14 +2237,14 @@ export default function PlanApp({ clientName, userPassword }) {
                     const qty = protQty[id] || unitItem.defaultQty
                     return sum + Math.round(qty * unitItem.calPerUnit)
                   }
-                  const qty = protQty[id] || (cal100 > 0 && protBudget > 0 ? Math.min(300, Math.round((protBudget / cal100) * 100)) : 150)
+                  const qty = protQty[id] || item?.base_qty || 150
                   return sum + (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
                 }, 0) + calcExtraProt() * 4
                 // ✅ סכום כל הפחמימות שנבחרו (אפשר כמה בו-זמנית)
                 const carbCalActual = Object.keys(carbChecks).filter(id => carbChecks[id]).reduce((sum, id) => {
                   const item = nutritionData[id]
                   const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
-                  const qty = carbQty[id] || (cal100 > 0 && carbBudget > 0 ? Math.min(300, Math.round((carbBudget / cal100) * 100)) : 150)
+                  const qty = carbQty[id] || item?.base_qty || 150
                   return sum + (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
                 }, 0)
                 const hasProtein = Object.values(protChecks).some(Boolean)
@@ -2282,11 +2282,7 @@ export default function PlanApp({ clientName, userPassword }) {
               {filteredCarbs.map(o => {
                 const item = nutritionData[o.id]
                 const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
-                const carbPct = clientPlate?.carbs || 30
-                const carbBudget = targets ? Math.round(targets.calories * carbPct / 100 / 2) : 0
-                const recQty = cal100 > 0 && carbBudget > 0
-                  ? Math.min(300, Math.round((carbBudget / cal100) * 100))
-                  : 150
+                const recQty = item?.base_qty || 150
                 const isChecked = !!carbChecks[o.id]
                 const qty = carbQty[o.id] || recQty
                 const calDisplay = cal100 > 0 ? Math.round(cal100 * qty / 100) : 0
@@ -2328,11 +2324,8 @@ export default function PlanApp({ clientName, userPassword }) {
                 const item = nutritionData[o.id]
                 const unitItem = UNIT_PROTEIN_ITEMS[o.id]
                 const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
-                const protBudget = targets ? (clientPlate?.protein ? Math.round(targets.calories * clientPlate.protein / 100 / 2) : Math.round(targets.protein * 4 / 2)) : 0
-                // ✅ ביצים / חלבוני ביצה — המלצה ביחידות, שאר — גרמים
-                const recQty = unitItem ? unitItem.defaultQty : (cal100 > 0 && protBudget > 0
-                  ? Math.min(300, Math.round((protBudget / cal100) * 100))
-                  : 150)
+                // ✅ ביצים / חלבוני ביצה — המלצה ביחידות, שאר — גרמים (כמות הבסיס של הפריט, לא הערכה אישית)
+                const recQty = unitItem ? unitItem.defaultQty : (item?.base_qty || 150)
                 const isChecked = !!protChecks[o.id]
                 const qty = protQty[o.id] || recQty
                 const calDisplay = unitItem
