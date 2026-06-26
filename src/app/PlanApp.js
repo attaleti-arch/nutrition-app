@@ -1167,10 +1167,26 @@ export default function PlanApp({ clientName, userPassword }) {
     return () => clearTimeout(autoSaveRef.current)
   }, [checks, carbChecks, protChecks, carbQty, protQty, checksQty, fatSel, veggieChecks, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount, dailyLogLoaded])
 
-  // ✅ אם המשתמשת עוזבת את הדף בתוך חלון ה-debounce, לשמור מיד את מה שהיה ממתין כדי לא לאבד עדכון
+  // ⚠️ אם המשתמשת עוזבת את הדף בתוך חלון ה-debounce (סוגרת טאב / עוברת אפליקציה בנייד / נועלת מסך) —
+  // unmount של רכיב React לא בהכרח קורה (בדפדפן בנייד הדף פשוט מוקפא/נהרג בלי לקרוא ל-cleanup),
+  // אז צריך להאזין ל-visibilitychange/pagehide ולשמור מיד את מה שממתין, לא לסמוך רק על unmount
   useEffect(() => {
+    function flushPending() {
+      if (!pendingSaveRef.current) return
+      if (autoSaveRef.current) clearTimeout(autoSaveRef.current)
+      var payload = pendingSaveRef.current
+      pendingSaveRef.current = null
+      // ⚠️ ה-query builder של supabase-js הוא "עצלן" — הוא לא שולח בקשת רשת בפועל אלא אם קוראים ל-.then()/await עליו.
+      // קריאה "יבשה" בלי await (כמו שהיה כאן קודם) פשוט לא שולחת כלום לשרת בכלל.
+      supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' }).then(() => {}, () => {})
+    }
+    function handleVisibility() { if (document.visibilityState === 'hidden') flushPending() }
+    document.addEventListener('visibilitychange', handleVisibility)
+    window.addEventListener('pagehide', flushPending)
     return () => {
-      if (pendingSaveRef.current) supabase.from('daily_logs').upsert(pendingSaveRef.current, { onConflict: 'client_name,log_date' })
+      document.removeEventListener('visibilitychange', handleVisibility)
+      window.removeEventListener('pagehide', flushPending)
+      flushPending()
     }
   }, [])
 
