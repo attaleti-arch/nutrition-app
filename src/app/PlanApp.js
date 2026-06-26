@@ -184,13 +184,14 @@ const UNIT_PROTEIN_ITEMS = {
   p_eggwhite: { calPerUnit: 17, proteinPerUnit: 3.25, defaultQty: 1, unitLabel: 'יח\'', recLabel: 'חלבונים' },
 }
 
-// ✅ גיבוי קשיח (ערכים ל-100 גרם) לפריטים שהשורה שלהם בטבלת nutrition_data בשרת חסרה/מאופסת —
+// ✅ גיבוי קשיח לפריטים שהשורה שלהם בטבלת nutrition_data בשרת חסרה/מאופסת —
 // נטען רק כשהשרת לא מחזיר ערך תקין, כדי שלא יוצג "0 קל" ללקוחה. אם וכאשר השורה האמיתית תתעדכן
 // בשרת עם calories תקין, הגיבוי הזה מפסיק להידרס אוטומטית (ראו loadNutrition).
+// הגבינות הן "חצי חבילה" בדיוק כמו קוטג' (base_qty 125 גרם, לא 100) — הערכים כבר ל-125 גרם, לא ל-100.
 const NUTRITION_FALLBACK = {
-  b_gvina_levana: { calories: 98, base_qty: 100, protein: 9, fat: 5, carbs: 4.3 },
-  b_gvina_bulgarit: { calories: 130, base_qty: 100, protein: 17, fat: 5, carbs: 1 },
-  b_gvina_tzfat: { calories: 125, base_qty: 100, protein: 15, fat: 5, carbs: 5 },
+  b_gvina_levana: { calories: 122, base_qty: 125, protein: 11, fat: 6, carbs: 5 },
+  b_gvina_bulgarit: { calories: 163, base_qty: 125, protein: 21, fat: 6, carbs: 1 },
+  b_gvina_tzfat: { calories: 156, base_qty: 125, protein: 19, fat: 6, carbs: 6 },
   c8: { calories: 80, base_qty: 100, protein: 5.5, fat: 0.3, carbs: 14 },
 }
 
