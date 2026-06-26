@@ -76,6 +76,14 @@ var SLICE_ITEMS = {
   b7: { calPerSlice: 70, recQty: 1, protPerUnit: 6.5, name: 'ביצים קשות / חביתה' },
   e7: { calPerSlice: 70, recQty: 1, protPerUnit: 6.5, name: 'ביצה קשה' },
   b4: { calPerSlice: 30, recQty: 1, name: 'פריכית דגנים מלאים' },
+  b_eggwhite: { calPerSlice: 17, recQty: 3, protPerUnit: 3.25, name: 'חלבון ביצה בלבד (ללא חלמון)' },
+  e_eggwhite: { calPerSlice: 17, recQty: 3, protPerUnit: 3.25, name: 'חלבון ביצה בלבד (ללא חלמון)' },
+}
+
+// ✅ פריטי חלבון לארוחת צהריים שנמדדים ביחידות (ביצים) — תואם UNIT_PROTEIN_ITEMS בצד הלקוח, PlanApp.js
+var UNIT_PROTEIN_ITEMS = {
+  p8: { calPerUnit: 70, proteinPerUnit: 6.5, defaultQty: 2 },
+  p_eggwhite: { calPerUnit: 17, proteinPerUnit: 3.25, defaultQty: 3 },
 }
 
 // ✅ ירקות הערב נשמרים ב-checks עם סיומת '_erev' — להסיר לפני חיפוש בנתוני תזונה
@@ -95,7 +103,7 @@ var ITEM_LABELS = {
   b_gvina_levana: 'גבינה לבנה 5% (חצי חבילה)', b_gvina_bulgarit: 'גבינה בולגרית 5% (חצי חבילה)',
   b_gvina_tzfat: 'גבינה צפתית 5% (חצי חבילה)', b10: 'גבינה לבנה / בולגרית / צפתית 5%',
   bnew2: 'גבינה צהובה 9% (פרוסה)',
-  b7: 'ביצים קשות / חביתה', b_tuna_full: 'טונה — חבילה שלמה', b_tuna_half: 'טונה — חצי חבילה',
+  b7: 'ביצים קשות / חביתה', b_eggwhite: 'חלבון ביצה בלבד (ללא חלמון)', b_tuna_full: 'טונה — חבילה שלמה', b_tuna_half: 'טונה — חצי חבילה',
   b4: 'פריכית דגנים מלאים', b6: 'פיתה כוסמין', b_bread1: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת',
   bc_gf1: 'פרוסת לחם ללא גלוטן', bnew1: '2 פרוסות לחם כוסמין',
   b8: '½ אבוקדו', b9: 'שיבולת שועל + חלב / משקה צמחי',
@@ -110,7 +118,7 @@ var ITEM_LABELS = {
   p_shawarma: 'שווארמה עוף ביתית (כ-200 גרם בשר)',
   p_beef_meatballs: 'קציצות בקר ברוטב, לא מטוגנות (150 גרם, כ-3 יחידות)', p_fish_meatballs: 'קציצות דגים לבנים ברוטב, לא מטוגנות (150 גרם, כ-3 יחידות)',
   p3: '150 גרם טופו',
-  p8: '2 ביצים / חביתה', p11: '150 גרם מג׳דרה (עדשים + אורז)', p6: '2 המבורגר צמחוני',
+  p8: '2 ביצים / חביתה', p_eggwhite: 'חלבון ביצה בלבד (ללא חלמון)', p11: '150 גרם מג׳דרה (עדשים + אורז)', p6: '2 המבורגר צמחוני',
   p13: '200 גרם גרגירי חומוס מבושל', p14: '200 גרם עדשים מבושלות', p15: '150 גרם שעועית לבנה / פול מבושל',
   p16: '150 גרם אדממה', p17: 'קוטג׳ 5% (חצי חבילה)', p19: 'גבינה לבנה 5% (חצי חבילה)', p18: 'מעדן פרו',
   f1: 'כף שמן זית', f2: '2 כפות טחינה גולמית', f3: '50 גרם אבוקדו (רבע)',
@@ -123,7 +131,7 @@ var ITEM_LABELS = {
   e_gvina_bulgarit: 'גבינה בולגרית 5% (חצי חבילה)', e_gvina_tzfat: 'גבינה צפתית 5% (חצי חבילה)',
   e_tuna_full: 'טונה — חבילה שלמה', e_tuna_half: 'טונה — חצי חבילה',
   e2: '50 גרם ברנפלקס + חלב / משקה צמחי', e4: 'פיתה / 4 פריכיות',
-  e5: 'סלט ירקות + טחינה / שמן זית', e6: 'מעדן פרו', e7: 'ביצה קשה',
+  e5: 'סלט ירקות + טחינה / שמן זית', e6: 'מעדן פרו', e7: 'ביצה קשה', e_eggwhite: 'חלבון ביצה בלבד (ללא חלמון)',
   e8: '100 גרם עדשים מבושלות', enew1: 'שקשוקה 2 ביצים', e_bread1: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת',
   ben1: 'פרי עונתי (תפוח / אגס / קיווי)', ben2: 'חופן אגוזים / שקדים (5-6 יחידות)',
   ben3: 'חטיף בריאות / חלבון עד 150 קל', ben4: 'יוגורט 0% + פרי',
@@ -173,11 +181,12 @@ function calcNutrition(log, nutritionData) {
   if (log.carb_sel) add(log.carb_sel, carbQty[log.carb_sel])
   if (log.prot_checks) Object.keys(log.prot_checks).forEach(function(id) {
     if (!log.prot_checks[id]) return
-    if (id === 'p8') {
-      // ביצים — לפי יחידות, כמו בחישוב בצד הלקוח
-      var eggQty = protQty[id] || 2
-      total.calories += Math.round(eggQty * 70)
-      total.protein += Math.round(eggQty * 6.5)
+    var unitItem = UNIT_PROTEIN_ITEMS[id]
+    if (unitItem) {
+      // ביצים / חלבוני ביצה — לפי יחידות, כמו בחישוב בצד הלקוח
+      var qty = protQty[id] || unitItem.defaultQty
+      total.calories += Math.round(qty * unitItem.calPerUnit)
+      total.protein += Math.round(qty * unitItem.proteinPerUnit)
     } else {
       add(id, protQty[id])
     }

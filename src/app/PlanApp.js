@@ -77,6 +77,7 @@ const PLAN = {
     { id: 'b_gvina_tzfat', text: 'גבינה צפתית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], gramQty: true },
     { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b7', text: 'ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'], calPerSlice: 70, recQty: 1, unit: 'ביצים', protPerUnit: 6.5 },
+    { id: 'b_eggwhite', text: 'חלבון ביצה בלבד (ללא חלמון)', tags: [], hide: ['vegan', 'no_eggs'], calPerSlice: 17, recQty: 3, unit: 'חלבונים', protPerUnit: 3.25 },
     { id: 'b_tuna_full', text: 'טונה — חבילה שלמה', tags: [], hide: ['vegan', 'vegetarian'] },
     { id: 'b_tuna_half', text: 'טונה — חצי חבילה', tags: [], hide: ['vegan', 'vegetarian'] },
   ],
@@ -113,6 +114,7 @@ const PLAN = {
     { id: 'p_fish_meatballs', text: 'קציצות דגים לבנים ברוטב, לא מטוגנות (150 גרם, כ-3 יחידות)', hide: ['vegan', 'vegetarian', 'no_fish'] },
     { id: 'p3', text: '150 גרם טופו', tags: ['vegan'] },
     { id: 'p8', text: '2 ביצים / חביתה', hide: ['vegan', 'no_eggs'] },
+    { id: 'p_eggwhite', text: 'חלבון ביצה בלבד (ללא חלמון)', hide: ['vegan', 'no_eggs'] },
     { id: 'p11', text: '150 גרם מג׳דרה (עדשים + אורז)', tags: ['vegan'] },
     { id: 'p6', text: '2 המבורגר צמחוני', tags: ['vegan'] },
     { id: 'p13', text: '200 גרם גרגירי חומוס מבושל', tags: ['vegan'] },
@@ -154,6 +156,7 @@ const PLAN = {
     { id: 'b_pro20_erev', text: 'מעדן פרו 20 גרם חלבון', tags: ['vegan'] },
     { id: 'b_pro25_erev', text: 'מעדן פרו 25 גרם חלבון', tags: ['vegan'] },
     { id: 'e7', text: 'ביצה קשה', hide: ['vegan', 'no_eggs'], calPerSlice: 70, recQty: 1, unit: 'ביצים', protPerUnit: 6.5 },
+    { id: 'e_eggwhite', text: 'חלבון ביצה בלבד (ללא חלמון)', hide: ['vegan', 'no_eggs'], calPerSlice: 17, recQty: 3, unit: 'חלבונים', protPerUnit: 3.25 },
     { id: 'enew1', text: 'שקשוקה 2 ביצים', tags: [], hide: ['vegan', 'no_eggs'] },
     { id: 'e_bread1', text: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת', tags: [], hide: ['keto', 'no_gluten'], calPerSlice: 80, recQty: 1 },
   ],
@@ -176,6 +179,12 @@ const PLAN = {
 
 const SLICE_ITEMS = {}
 PLAN.bokerCarbs.concat(PLAN.erev).concat(PLAN.bokerProtein).forEach(function(it) { if (it.calPerSlice) SLICE_ITEMS[it.id] = it })
+
+// ✅ פריטי חלבון לארוחת צהריים שנמדדים ביחידות (ביצים) ולא בגרמים — בלי שורת nutrition_data
+const UNIT_PROTEIN_ITEMS = {
+  p8: { calPerUnit: 70, proteinPerUnit: 6.5, defaultQty: 2, unitLabel: 'יח\'', recLabel: 'ביצים' },
+  p_eggwhite: { calPerUnit: 17, proteinPerUnit: 3.25, defaultQty: 3, unitLabel: 'יח\'', recLabel: 'חלבונים' },
+}
 
 // ✅ ירקות הערב נשמרים ב-checks עם סיומת '_erev' (כדי לא להתנגש עם בחירת הצהריים) — להסיר לפני חיפוש בנתוני תזונה
 function nutritionId(id) {
@@ -1141,10 +1150,9 @@ export default function PlanApp({ clientName, userPassword }) {
     // ✅ מחשב כל החלבונות שנבחרו
     Object.keys(protChecks).forEach(id => {
       if (protChecks[id]) {
-        if (id === 'p8') {
-          // ביצים — לפי יחידות
-          const qty = protQty[id] || 2
-          total += Math.round(qty * 70)
+        if (UNIT_PROTEIN_ITEMS[id]) {
+          const u = UNIT_PROTEIN_ITEMS[id]
+          total += Math.round((protQty[id] || u.defaultQty) * u.calPerUnit)
         } else {
           add(id, protQty[id])
         }
@@ -1182,7 +1190,7 @@ export default function PlanApp({ clientName, userPassword }) {
     })
     Object.keys(protChecks).forEach(function(id) {
       if (!protChecks[id]) return
-      if (id === 'p8') { total += Math.round((protQty[id] || 2) * 6.5); return }
+      if (UNIT_PROTEIN_ITEMS[id]) { const u = UNIT_PROTEIN_ITEMS[id]; total += Math.round((protQty[id] || u.defaultQty) * u.proteinPerUnit); return }
       addNP(id, protQty[id])
     })
     Object.keys(carbChecks).forEach(function(id) { if (carbChecks[id]) addNP(id, carbQty[id]) })
@@ -1207,7 +1215,7 @@ export default function PlanApp({ clientName, userPassword }) {
     if (hadSnack) add('snack')
     if (checks) Object.keys(checks).forEach(id => { if (checks[id] && !SLICE_ITEMS[id]) add(nutritionId(id), checksQty[id]) })
     Object.keys(carbChecks).forEach(id => { if (carbChecks[id]) add(id, carbQty[id]) })
-    Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
+    Object.keys(protChecks).forEach(id => { if (protChecks[id] && !UNIT_PROTEIN_ITEMS[id]) add(id, protQty[id]) })
     if (fatSel) add(fatSel)
     Object.keys(veggieChecks).forEach(id => { if (veggieChecks[id]) add(id) })
     if (hadBenayim && benayimSel) add(benayimSel)
@@ -1231,7 +1239,7 @@ export default function PlanApp({ clientName, userPassword }) {
       else { add(nutritionId(id), checksQty[id]) }
     })
     Object.keys(carbChecks).forEach(id => { if (carbChecks[id]) add(id, carbQty[id]) })
-    Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
+    Object.keys(protChecks).forEach(id => { if (protChecks[id] && !UNIT_PROTEIN_ITEMS[id]) add(id, protQty[id]) })
     if (fatSel) add(fatSel)
     Object.keys(veggieChecks).forEach(id => { if (veggieChecks[id]) add(id) })
     if (hadBenayim && benayimSel) add(benayimSel)
@@ -2223,11 +2231,11 @@ export default function PlanApp({ clientName, userPassword }) {
                 // ✅ סכום כל החלבונות שנבחרו
                 const protCalActual = Object.keys(protChecks).filter(id => protChecks[id]).reduce((sum, id) => {
                   const item = nutritionData[id]
-                  const isEggs = id === 'p8'
+                  const unitItem = UNIT_PROTEIN_ITEMS[id]
                   const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
-                  if (isEggs) {
-                    const qty = protQty[id] || 2
-                    return sum + Math.round(qty * 70)
+                  if (unitItem) {
+                    const qty = protQty[id] || unitItem.defaultQty
+                    return sum + Math.round(qty * unitItem.calPerUnit)
                   }
                   const qty = protQty[id] || (cal100 > 0 && protBudget > 0 ? Math.min(300, Math.round((protBudget / cal100) * 100)) : 150)
                   return sum + (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
@@ -2318,18 +2326,17 @@ export default function PlanApp({ clientName, userPassword }) {
               <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '10px 0 2px', textAlign: 'right' }}>חלבון:</div>
               {filteredProt.map(o => {
                 const item = nutritionData[o.id]
-                const isEggs = o.id === 'p8'
+                const unitItem = UNIT_PROTEIN_ITEMS[o.id]
                 const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
                 const protBudget = targets ? (clientPlate?.protein ? Math.round(targets.calories * clientPlate.protein / 100 / 2) : Math.round(targets.protein * 4 / 2)) : 0
-                // ✅ ביצים — המלצה ביחידות, שאר — גרמים
-                const recQty = isEggs ? 2 : (cal100 > 0 && protBudget > 0
+                // ✅ ביצים / חלבוני ביצה — המלצה ביחידות, שאר — גרמים
+                const recQty = unitItem ? unitItem.defaultQty : (cal100 > 0 && protBudget > 0
                   ? Math.min(300, Math.round((protBudget / cal100) * 100))
                   : 150)
                 const isChecked = !!protChecks[o.id]
                 const qty = protQty[o.id] || recQty
-                // ✅ ביצים: כמות × 70 קל לביצה
-                const calDisplay = isEggs
-                  ? Math.round(qty * 70)
+                const calDisplay = unitItem
+                  ? Math.round(qty * unitItem.calPerUnit)
                   : (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
                 return (
                   <div key={o.id}>
@@ -2351,13 +2358,13 @@ export default function PlanApp({ clientName, userPassword }) {
                             placeholder={String(recQty)}
                             style={{ width: 55, padding: '4px 6px', borderRadius: 8, border: '1.5px solid ' + C.greenMid, fontSize: 12, textAlign: 'center', outline: 'none' }}
                           />
-                          <span style={{ fontSize: 11, color: '#9ca3af' }}>{isEggs ? 'יח\'' : 'גר\''}</span>
+                          <span style={{ fontSize: 11, color: '#9ca3af' }}>{unitItem ? unitItem.unitLabel : 'גר\''}</span>
                         </div>
                       )}
                     </div>
                     {isChecked && (
                       <div style={{ fontSize: 11, color: C.greenMid, textAlign: 'left', paddingBottom: 4 }}>
-                        ≈ {calDisplay} קל {!protQty[o.id] && <span style={{ color: '#9ca3af' }}>(מומלץ: {recQty} {isEggs ? 'ביצים' : 'גר\''})</span>}
+                        ≈ {calDisplay} קל {!protQty[o.id] && <span style={{ color: '#9ca3af' }}>(מומלץ: {recQty} {unitItem ? unitItem.recLabel : 'גר\''})</span>}
                       </div>
                     )}
                   </div>
