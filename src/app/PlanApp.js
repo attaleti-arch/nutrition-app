@@ -184,6 +184,16 @@ const UNIT_PROTEIN_ITEMS = {
   p_eggwhite: { calPerUnit: 17, proteinPerUnit: 3.25, defaultQty: 1, unitLabel: 'יח\'', recLabel: 'חלבונים' },
 }
 
+// ✅ גיבוי קשיח (ערכים ל-100 גרם) לפריטים שהשורה שלהם בטבלת nutrition_data בשרת חסרה/מאופסת —
+// נטען רק כשהשרת לא מחזיר ערך תקין, כדי שלא יוצג "0 קל" ללקוחה. אם וכאשר השורה האמיתית תתעדכן
+// בשרת עם calories תקין, הגיבוי הזה מפסיק להידרס אוטומטית (ראו loadNutrition).
+const NUTRITION_FALLBACK = {
+  b_gvina_levana: { calories: 98, base_qty: 100, protein: 9, fat: 5, carbs: 4.3 },
+  b_gvina_bulgarit: { calories: 130, base_qty: 100, protein: 17, fat: 5, carbs: 1 },
+  b_gvina_tzfat: { calories: 125, base_qty: 100, protein: 15, fat: 5, carbs: 5 },
+  c8: { calories: 80, base_qty: 100, protein: 5.5, fat: 0.3, carbs: 14 },
+}
+
 // ✅ "המלצה חכמה לפי צלחת" — לכל פריט יש שני ערכים נפרדים שלא מתערבבים:
 // recQty = ההמלצה המוצגת (מה שנותר מתקציב הגרמים של המאקרו הרלוונטי — חלבון/פחמימה — כדי להגיע ליעד, בלי קשר אם הפריט מסומן)
 // qty/calDisplay = מה שבאמת נחשב בפועל: הכמות שהוקלדה, ואם לא הוקלדה כמות — ברירת המחדל היא 100 גרם קבועים (לא ההמלצה!)
@@ -977,6 +987,9 @@ export default function PlanApp({ clientName, userPassword }) {
       var { data } = await supabase.from('nutrition_data').select('*')
       var nd = {}
       if (data) data.forEach(item => nd[item.id] = item)
+      Object.keys(NUTRITION_FALLBACK).forEach(function(id) {
+        if (!nd[id] || !nd[id].calories) nd[id] = Object.assign({ id: id }, NUTRITION_FALLBACK[id])
+      })
       setNutritionData(nd)
     }
     loadNutrition()
