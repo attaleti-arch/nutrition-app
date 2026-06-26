@@ -71,10 +71,10 @@ const PLAN = {
     { id: 'b1', text: 'משקה / חטיף חלבון', tags: [] },
     { id: 'b_pro20', text: 'מעדן פרו 20 גרם חלבון', tags: ['vegan'] },
     { id: 'b_pro25', text: 'מעדן פרו 25 גרם חלבון', tags: ['vegan'] },
-    { id: 'b_kotej', text: 'קוטג׳ 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b_gvina_bulgarit', text: 'גבינה בולגרית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
-    { id: 'b_gvina_tzfat', text: 'גבינה צפתית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
+    { id: 'b_kotej', text: 'קוטג׳ 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], gramQty: true },
+    { id: 'b_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], gramQty: true },
+    { id: 'b_gvina_bulgarit', text: 'גבינה בולגרית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], gramQty: true },
+    { id: 'b_gvina_tzfat', text: 'גבינה צפתית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], gramQty: true },
     { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b7', text: 'ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'], calPerSlice: 70, recQty: 1, unit: 'ביצים', protPerUnit: 6.5 },
     { id: 'b_tuna_full', text: 'טונה — חבילה שלמה', tags: [], hide: ['vegan', 'vegetarian'] },
@@ -143,10 +143,10 @@ const PLAN = {
     { id: 'v6', text: 'סלט ירקות גדול (כ-1 ליטר, חישוב גס)' },
   ],
   erev: [
-    { id: 'b_kotej_erev', text: 'קוטג׳ 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
-    { id: 'b_gvina_levana_erev', text: 'גבינה לבנה 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
-    { id: 'b_gvina_bulgarit_erev', text: 'גבינה בולגרית 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
-    { id: 'b_gvina_tzfat_erev', text: 'גבינה צפתית 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
+    { id: 'b_kotej_erev', text: 'קוטג׳ 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'], gramQty: true },
+    { id: 'b_gvina_levana_erev', text: 'גבינה לבנה 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'], gramQty: true },
+    { id: 'b_gvina_bulgarit_erev', text: 'גבינה בולגרית 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'], gramQty: true },
+    { id: 'b_gvina_tzfat_erev', text: 'גבינה צפתית 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'], gramQty: true },
     { id: 'b_tuna_full_erev', text: 'טונה — חבילה שלמה', tags: [], hide: ['vegan', 'vegetarian'] },
     { id: 'b_tuna_half_erev', text: 'טונה — חצי חבילה', tags: [], hide: ['vegan', 'vegetarian'] },
     { id: 'e2', text: '50 גרם ברנפלקס + חלב / משקה צמחי', hide: ['keto', 'no_gluten'] },
@@ -725,6 +725,44 @@ function SliceQtyRow({ item, accent, checked, qty, onToggle, onQtyChange }) {
   )
 }
 
+function GramQtyCheckRow({ item, accent, checked, qty, nutritionItem, onToggle, onQtyChange }) {
+  const recQty = nutritionItem?.base_qty || 125
+  const cal100 = nutritionItem?.base_qty > 0 ? Math.round((nutritionItem.calories || 0) / nutritionItem.base_qty * 100) : (nutritionItem?.calories || 0)
+  const displayQty = qty || recQty
+  const calDisplay = cal100 > 0 ? Math.round(cal100 * displayQty / 100) : 0
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ flex: 1 }} onClick={() => onToggle(item.id)}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderBottom: '1px solid #f3f4f6', cursor: 'pointer', opacity: checked ? 0.45 : 1 }}>
+            <div style={{ width: 20, height: 20, borderRadius: 6, border: '2px solid ' + (checked ? accent : '#d1d5db'), background: checked ? accent : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {checked && <span style={{ color: '#fff', fontSize: 11, fontWeight: 900 }}>✓</span>}
+            </div>
+            <span style={{ fontSize: 14, color: '#222', textDecoration: checked ? 'line-through' : 'none', flex: 1, textAlign: 'right' }}>{item.text}</span>
+          </div>
+        </div>
+        {checked && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
+            <input
+              type="number"
+              value={qty || ''}
+              onChange={e => onQtyChange(Number(e.target.value) || 0)}
+              placeholder={String(recQty)}
+              style={{ width: 55, padding: '4px 6px', borderRadius: 8, border: '1.5px solid ' + accent, fontSize: 12, textAlign: 'center', outline: 'none' }}
+            />
+            <span style={{ fontSize: 11, color: '#9ca3af' }}>גר&apos;</span>
+          </div>
+        )}
+      </div>
+      {checked && (
+        <div style={{ fontSize: 11, color: accent, textAlign: 'left', paddingBottom: 4 }}>
+          ≈ {calDisplay} קל {!qty && <span style={{ color: '#9ca3af' }}>(מומלץ: {recQty} גר&apos;)</span>}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function RadioRow({ id, text, accent, selected, onSelect }) {
   const active = selected === id
   return (
@@ -807,6 +845,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const [protChecks, setProtChecks] = useState({}) // ✅ כמה חלבונות
   const [carbQty, setCarbQty] = useState({})
   const [protQty, setProtQty] = useState({})
+  const [checksQty, setChecksQty] = useState({})
   const [fatSel, setFatSel] = useState(null)
   const [veggieChecks, setVeggieChecks] = useState({}) // ✅ אפשר כמה ירקות בו-זמנית, לא בחירה בלעדית
   const [lunchOpt, setLunchOpt] = useState(null)
@@ -949,7 +988,7 @@ export default function PlanApp({ clientName, userPassword }) {
       if (todayLog.data) {
         var t = todayLog.data
         setChecks(t.checks || {}); setCarbChecks(t.carb_checks || (t.carb_sel ? { [t.carb_sel]: true } : {})); setProtChecks(t.prot_checks || {}); setFatSel(t.fat_sel)
-        setCarbQty(t.carb_qty || {}); setProtQty(t.prot_qty || {})
+        setCarbQty(t.carb_qty || {}); setProtQty(t.prot_qty || {}); setChecksQty(t.checks_qty || {})
         setVeggieChecks(t.veggie_checks || (t.veggie_sel ? { [t.veggie_sel]: true } : {})); setLunchOpt(t.lunch_opt); setBenayimSel(t.benayim_sel)
         setVeggieWarnedAt([]); setProteinWarnedAt([]); setSaveWarnings([])
         setWater(t.water || 0); setSteps(t.steps || ''); setNote(t.note || '')
@@ -967,7 +1006,7 @@ export default function PlanApp({ clientName, userPassword }) {
       } else {
         // ✅ אין רשומה ליום הזה (כניסה ראשונה, או שהיום התגלגל לתאריך חדש באמצע הפעלה) — לוודא שלא נשאר מידע מהיום הקודם בזיכרון
         setChecks({}); setCarbChecks({}); setProtChecks({}); setFatSel(null)
-        setCarbQty({}); setProtQty({})
+        setCarbQty({}); setProtQty({}); setChecksQty({})
         setVeggieChecks({}); setLunchOpt(null); setBenayimSel(null)
         setVeggieWarnedAt([]); setProteinWarnedAt([]); setSaveWarnings([])
         setWater(0); setSteps(''); setNote('')
@@ -1045,7 +1084,7 @@ export default function PlanApp({ clientName, userPassword }) {
     var payload = {
       client_name: dbKey, log_date: todayKey, checks,
       carb_checks: carbChecks, prot_checks: protChecks, fat_sel: fatSel, veggie_checks: veggieChecks, lunch_opt: lunchOpt, benayim_sel: benayimSel,
-      carb_qty: carbQty, prot_qty: protQty,
+      carb_qty: carbQty, prot_qty: protQty, checks_qty: checksQty,
       water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
       boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
       boker_extra_prot: bokerExtraProt || 0, lunch_extra_prot: lunchExtraProt || 0, erev_extra_prot: erevExtraProt || 0,
@@ -1063,7 +1102,7 @@ export default function PlanApp({ clientName, userPassword }) {
       pendingSaveRef.current = null
     }, 3000)
     return () => clearTimeout(autoSaveRef.current)
-  }, [checks, carbChecks, protChecks, carbQty, protQty, fatSel, veggieChecks, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount])
+  }, [checks, carbChecks, protChecks, carbQty, protQty, checksQty, fatSel, veggieChecks, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount])
 
   // ✅ אם המשתמשת עוזבת את הדף בתוך חלון ה-debounce, לשמור מיד את מה שהיה ממתין כדי לא לאבד עדכון
   useEffect(() => {
@@ -1096,7 +1135,7 @@ export default function PlanApp({ clientName, userPassword }) {
     if (checks) Object.keys(checks).forEach(id => {
       if (!checks[id]) return
       if (SLICE_ITEMS[id]) { total += Math.round(SLICE_ITEMS[id].calPerSlice * (carbQty[id] || SLICE_ITEMS[id].recQty)) }
-      else { add(nutritionId(id)) }
+      else { add(nutritionId(id), checksQty[id]) }
     })
     Object.keys(carbChecks).forEach(id => { if (carbChecks[id]) add(id, carbQty[id]) })
     // ✅ מחשב כל החלבונות שנבחרו
@@ -1139,7 +1178,7 @@ export default function PlanApp({ clientName, userPassword }) {
         if (SLICE_ITEMS[id].protPerUnit) total += Math.round((carbQty[id] || SLICE_ITEMS[id].recQty) * SLICE_ITEMS[id].protPerUnit)
         return
       }
-      addNP(nutritionId(id))
+      addNP(nutritionId(id), checksQty[id])
     })
     Object.keys(protChecks).forEach(function(id) {
       if (!protChecks[id]) return
@@ -1166,7 +1205,7 @@ export default function PlanApp({ clientName, userPassword }) {
       }
     }
     if (hadSnack) add('snack')
-    if (checks) Object.keys(checks).forEach(id => { if (checks[id] && !SLICE_ITEMS[id]) add(nutritionId(id)) })
+    if (checks) Object.keys(checks).forEach(id => { if (checks[id] && !SLICE_ITEMS[id]) add(nutritionId(id), checksQty[id]) })
     Object.keys(carbChecks).forEach(id => { if (carbChecks[id]) add(id, carbQty[id]) })
     Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
     if (fatSel) add(fatSel)
@@ -1189,7 +1228,7 @@ export default function PlanApp({ clientName, userPassword }) {
     if (checks) Object.keys(checks).forEach(id => {
       if (!checks[id]) return
       if (SLICE_ITEMS[id]) { if (!SLICE_ITEMS[id].protPerUnit) total += Math.round(SLICE_ITEMS[id].calPerSlice * (carbQty[id] || SLICE_ITEMS[id].recQty) / 4) }
-      else { add(nutritionId(id)) }
+      else { add(nutritionId(id), checksQty[id]) }
     })
     Object.keys(carbChecks).forEach(id => { if (carbChecks[id]) add(id, carbQty[id]) })
     Object.keys(protChecks).forEach(id => { if (protChecks[id] && id !== 'p8') add(id, protQty[id]) })
@@ -1229,7 +1268,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const resetDay = async function() {
     if (!window.confirm('לאפס את כל הנתונים של היום?')) return
     await supabase.from('daily_logs').delete().eq('client_name', dbKey).eq('log_date', todayKey)
-    setChecks({}); setCarbChecks({}); setProtChecks({}); setCarbQty({}); setProtQty({}); setFatSel(null); setVeggieChecks({}); setBenayimSel(null); setLunchOpt(null)
+    setChecks({}); setCarbChecks({}); setProtChecks({}); setCarbQty({}); setProtQty({}); setChecksQty({}); setFatSel(null); setVeggieChecks({}); setBenayimSel(null); setLunchOpt(null)
     setWater(0); setSteps(''); setNote(''); setBokerFree(''); setLunchFree(''); setErevFree('')
     setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
     setBokerExtraProt(0); setLunchExtraProt(0); setErevExtraProt(0)
@@ -1244,7 +1283,7 @@ export default function PlanApp({ clientName, userPassword }) {
     var payload = {
       client_name: dbKey, log_date: todayKey, checks,
       carb_checks: carbChecks, prot_checks: protChecks, fat_sel: fatSel, veggie_checks: veggieChecks, lunch_opt: lunchOpt, benayim_sel: benayimSel,
-      carb_qty: carbQty, prot_qty: protQty,
+      carb_qty: carbQty, prot_qty: protQty, checks_qty: checksQty,
       water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
       boker_extra_cal: bokerExtraCal || 0, lunch_extra_cal: lunchExtraCal || 0, erev_extra_cal: erevExtraCal || 0,
       boker_extra_prot: bokerExtraProt || 0, lunch_extra_prot: lunchExtraProt || 0, erev_extra_prot: erevExtraProt || 0,
@@ -2140,7 +2179,9 @@ export default function PlanApp({ clientName, userPassword }) {
           {filteredBokerProtein.length > 0 && (
             <>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.orange, marginBottom: 4, marginTop: 4, textAlign: 'right' }}>🥛 חלבון</div>
-              {filteredBokerProtein.map(item => item.calPerSlice
+              {filteredBokerProtein.map(item => item.gramQty
+                ? <GramQtyCheckRow key={item.id} item={item} accent={C.orange} checked={!!checks[item.id]} qty={checksQty[item.id]} nutritionItem={nutritionData[nutritionId(item.id)]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setChecksQty(q => ({ ...q, [item.id]: v }))} />
+                : item.calPerSlice
                 ? <SliceQtyRow key={item.id} item={item} accent={C.orange} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
                 : <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
             </>
@@ -2384,7 +2425,9 @@ export default function PlanApp({ clientName, userPassword }) {
         </Section>
 
         <Section title="ארוחת ערב" icon="🌙" accent={C.purple} light={C.purpleLight}>
-          {filteredErev.map(item => item.calPerSlice
+          {filteredErev.map(item => item.gramQty
+            ? <GramQtyCheckRow key={item.id} item={item} accent={C.purple} checked={!!checks[item.id]} qty={checksQty[item.id]} nutritionItem={nutritionData[nutritionId(item.id)]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setChecksQty(q => ({ ...q, [item.id]: v }))} />
+            : item.calPerSlice
             ? <SliceQtyRow key={item.id} item={item} accent={C.purple} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
             : <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.purple} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
           <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות לערב:</div>
