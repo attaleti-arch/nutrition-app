@@ -891,6 +891,9 @@ export default function PlanApp({ clientName, userPassword }) {
   // ✅ סדר הסימון בפועל (לא סדר הרשימה!) — קובע איזה פריט "תפס" מהתקציב לפני איזה, לפי מה שהיא בחרה לסמן ראשון בזמן אמת
   const [carbCheckOrder, setCarbCheckOrder] = useState([])
   const [protCheckOrder, setProtCheckOrder] = useState([])
+  // ✅ נדלק רק אחרי שטעינת היומן היומי מהשרת הצליחה (גם אם אין רשומה להיום) — חוסם את השמירה האוטומטית
+  // עד שאנחנו בטוחים מה באמת קיים בשרת, כדי שתקלת רשת/שגיאת שרת לא "תאופס" ותימחק נתונים קיימים בפועל
+  const [dailyLogLoaded, setDailyLogLoaded] = useState(false)
   const [carbQty, setCarbQty] = useState({})
   const [protQty, setProtQty] = useState({})
   const [checksQty, setChecksQty] = useState({})
@@ -1033,7 +1036,11 @@ export default function PlanApp({ clientName, userPassword }) {
       }
 
       var todayLog = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
-      if (todayLog.data) {
+      if (todayLog.error) {
+        // ⚠️ שגיאת שרת/רשת בטעינת היומן — בשום אופן לא לאפס את הנתונים בזיכרון בעקבות זה, ולא להדליק dailyLogLoaded,
+        // כי זה היה חוסם את השמירה האוטומטית מלהריץ "מעל" נתונים קיימים בשרת מתוך מצב מאופס בטעות
+        console.error('❌ נכשלה טעינת היומן היומי, לא מאפסים נתונים קיימים:', todayLog.error.message)
+      } else if (todayLog.data) {
         var t = todayLog.data
         var loadedCarbChecks = t.carb_checks || (t.carb_sel ? { [t.carb_sel]: true } : {})
         var loadedProtChecks = t.prot_checks || {}
@@ -1055,6 +1062,7 @@ export default function PlanApp({ clientName, userPassword }) {
         setScanProtein(t.scan_protein || 0); setScanFat(t.scan_fat || 0); setScanCarbs(t.scan_carbs || 0)
         setFeedback(t.trainer_feedback || null); setReportApproved(t.report_approved || false)
         if (t.nlp_metrics) { var m = t.nlp_metrics; setStressLevel(m.stress || 0); setFatigueLevel(m.fatigue || 0); setHungerLevel(m.hunger || 0); setUserMood(m.mood || null) }
+        setDailyLogLoaded(true)
       } else {
         // ✅ אין רשומה ליום הזה (כניסה ראשונה, או שהיום התגלגל לתאריך חדש באמצע הפעלה) — לוודא שלא נשאר מידע מהיום הקודם בזיכרון
         setChecks({}); setCarbChecks({}); setProtChecks({}); setCarbCheckOrder([]); setProtCheckOrder([]); setFatSel(null)
@@ -1070,6 +1078,7 @@ export default function PlanApp({ clientName, userPassword }) {
         setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0)
         setFeedback(null); setReportApproved(false)
         setStressLevel(0); setFatigueLevel(0); setHungerLevel(0); setUserMood(null)
+        setDailyLogLoaded(true)
       }
 
       // חישוב רצף, שבוע, וממוצע צעדים
@@ -1131,7 +1140,9 @@ export default function PlanApp({ clientName, userPassword }) {
   const autoSaveRef = useRef(null)
   const pendingSaveRef = useRef(null)
   useEffect(() => {
-    if (!dbKey || !todayKey || !profileDone) return
+    // ⚠️ dailyLogLoaded חייב להיות true לפני שמירה אוטומטית — בלעדיו אפשר "לשמור" מצב ריק/בררת-מחדל
+    // מעל נתונים אמיתיים שכבר קיימים בשרת, אם טעינת היומן היומי עדיין באוויר או נכשלה
+    if (!dbKey || !todayKey || !profileDone || !dailyLogLoaded) return
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current)
     var payload = {
       client_name: dbKey, log_date: todayKey, checks,
@@ -1154,7 +1165,7 @@ export default function PlanApp({ clientName, userPassword }) {
       pendingSaveRef.current = null
     }, 3000)
     return () => clearTimeout(autoSaveRef.current)
-  }, [checks, carbChecks, protChecks, carbQty, protQty, checksQty, fatSel, veggieChecks, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount])
+  }, [checks, carbChecks, protChecks, carbQty, protQty, checksQty, fatSel, veggieChecks, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount, dailyLogLoaded])
 
   // ✅ אם המשתמשת עוזבת את הדף בתוך חלון ה-debounce, לשמור מיד את מה שהיה ממתין כדי לא לאבד עדכון
   useEffect(() => {
