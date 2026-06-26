@@ -77,7 +77,7 @@ const PLAN = {
     { id: 'b_gvina_tzfat', text: 'גבינה צפתית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], gramQty: true },
     { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b7', text: 'ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'], calPerSlice: 70, recQty: 1, unit: 'ביצים', protPerUnit: 6.5 },
-    { id: 'b_eggwhite', text: 'חלבון ביצה בלבד (ללא חלמון)', tags: [], hide: ['vegan', 'no_eggs'], calPerSlice: 17, recQty: 3, unit: 'חלבונים', protPerUnit: 3.25 },
+    { id: 'b_eggwhite', text: 'חלבון ביצה בלבד (ללא חלמון)', tags: [], hide: ['vegan', 'no_eggs'], calPerSlice: 17, recQty: 1, unit: 'חלבונים', protPerUnit: 3.25 },
     { id: 'b_tuna_full', text: 'טונה — חבילה שלמה', tags: [], hide: ['vegan', 'vegetarian'] },
     { id: 'b_tuna_half', text: 'טונה — חצי חבילה', tags: [], hide: ['vegan', 'vegetarian'] },
   ],
@@ -156,7 +156,7 @@ const PLAN = {
     { id: 'b_pro20_erev', text: 'מעדן פרו 20 גרם חלבון', tags: ['vegan'] },
     { id: 'b_pro25_erev', text: 'מעדן פרו 25 גרם חלבון', tags: ['vegan'] },
     { id: 'e7', text: 'ביצה קשה', hide: ['vegan', 'no_eggs'], calPerSlice: 70, recQty: 1, unit: 'ביצים', protPerUnit: 6.5 },
-    { id: 'e_eggwhite', text: 'חלבון ביצה בלבד (ללא חלמון)', hide: ['vegan', 'no_eggs'], calPerSlice: 17, recQty: 3, unit: 'חלבונים', protPerUnit: 3.25 },
+    { id: 'e_eggwhite', text: 'חלבון ביצה בלבד (ללא חלמון)', hide: ['vegan', 'no_eggs'], calPerSlice: 17, recQty: 1, unit: 'חלבונים', protPerUnit: 3.25 },
     { id: 'enew1', text: 'שקשוקה 2 ביצים', tags: [], hide: ['vegan', 'no_eggs'] },
     { id: 'e_bread1', text: 'פרוסת לחם שיפון / כוסמין / מלא / מחמצת', tags: [], hide: ['keto', 'no_gluten'], calPerSlice: 80, recQty: 1 },
   ],
@@ -183,7 +183,7 @@ PLAN.bokerCarbs.concat(PLAN.erev).concat(PLAN.bokerProtein).forEach(function(it)
 // ✅ פריטי חלבון לארוחת צהריים שנמדדים ביחידות (ביצים) ולא בגרמים — בלי שורת nutrition_data
 const UNIT_PROTEIN_ITEMS = {
   p8: { calPerUnit: 70, proteinPerUnit: 6.5, defaultQty: 2, unitLabel: 'יח\'', recLabel: 'ביצים' },
-  p_eggwhite: { calPerUnit: 17, proteinPerUnit: 3.25, defaultQty: 3, unitLabel: 'יח\'', recLabel: 'חלבונים' },
+  p_eggwhite: { calPerUnit: 17, proteinPerUnit: 3.25, defaultQty: 1, unitLabel: 'יח\'', recLabel: 'חלבונים' },
 }
 
 // ✅ ירקות הערב נשמרים ב-checks עם סיומת '_erev' (כדי לא להתנגש עם בחירת הצהריים) — להסיר לפני חיפוש בנתוני תזונה

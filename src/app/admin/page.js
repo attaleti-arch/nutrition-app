@@ -76,14 +76,14 @@ var SLICE_ITEMS = {
   b7: { calPerSlice: 70, recQty: 1, protPerUnit: 6.5, name: 'ביצים קשות / חביתה' },
   e7: { calPerSlice: 70, recQty: 1, protPerUnit: 6.5, name: 'ביצה קשה' },
   b4: { calPerSlice: 30, recQty: 1, name: 'פריכית דגנים מלאים' },
-  b_eggwhite: { calPerSlice: 17, recQty: 3, protPerUnit: 3.25, name: 'חלבון ביצה בלבד (ללא חלמון)' },
-  e_eggwhite: { calPerSlice: 17, recQty: 3, protPerUnit: 3.25, name: 'חלבון ביצה בלבד (ללא חלמון)' },
+  b_eggwhite: { calPerSlice: 17, recQty: 1, protPerUnit: 3.25, name: 'חלבון ביצה בלבד (ללא חלמון)' },
+  e_eggwhite: { calPerSlice: 17, recQty: 1, protPerUnit: 3.25, name: 'חלבון ביצה בלבד (ללא חלמון)' },
 }
 
 // ✅ פריטי חלבון לארוחת צהריים שנמדדים ביחידות (ביצים) — תואם UNIT_PROTEIN_ITEMS בצד הלקוח, PlanApp.js
 var UNIT_PROTEIN_ITEMS = {
   p8: { calPerUnit: 70, proteinPerUnit: 6.5, defaultQty: 2 },
-  p_eggwhite: { calPerUnit: 17, proteinPerUnit: 3.25, defaultQty: 3 },
+  p_eggwhite: { calPerUnit: 17, proteinPerUnit: 3.25, defaultQty: 1 },
 }
 
 // ✅ ירקות הערב נשמרים ב-checks עם סיומת '_erev' — להסיר לפני חיפוש בנתוני תזונה
