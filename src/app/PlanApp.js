@@ -909,6 +909,9 @@ export default function PlanApp({ clientName, userPassword }) {
   // ✅ נדלק רק אחרי שטעינת היומן היומי מהשרת הצליחה (גם אם אין רשומה להיום) — חוסם את השמירה האוטומטית
   // עד שאנחנו בטוחים מה באמת קיים בשרת, כדי שתקלת רשת/שגיאת שרת לא "תאופס" ותימחק נתונים קיימים בפועל
   const [dailyLogLoaded, setDailyLogLoaded] = useState(false)
+  // ✅ איזה תאריך נטען/נשמר בפועל — בברירת מחדל היום, אבל אפשר לעבור ל"אתמול" כדי לערוך
+  // יומן שהתחיל לפני חצות בלי שהוא "יתאפס" ליום החדש. ראו switchLogDate.
+  const [logDate, setLogDate] = useState(todayKey)
   const [carbQty, setCarbQty] = useState({})
   const [protQty, setProtQty] = useState({})
   const [checksQty, setChecksQty] = useState({})
@@ -987,6 +990,18 @@ export default function PlanApp({ clientName, userPassword }) {
   const fem = userGender !== 'זכר'
   const gf = (f, m) => fem ? f : m
 
+  // ✅ "אתמול" לפי השעון האמיתי — לא לפי logDate, כדי שהכפתור יציע תמיד את היום שלפני התאריך הנוכחי בפועל
+  const yesterdayKey = new Date(Date.now() - 86400000).toLocaleDateString('sv-SE')
+  const editingYesterday = logDate !== todayKey
+  const logDateDisplay = logDate === todayKey ? today : new Date(logDate + 'T12:00:00').toLocaleDateString('he-IL')
+  function switchLogDate(targetKey) {
+    if (targetKey === logDate) return
+    // ⚠️ לחסום שמירה אוטומטית עד שהנתונים של התאריך החדש נטענו בפועל — אחרת השמירה האוטומטית
+    // עלולה לכתוב את הנתונים הישנים (עדיין בזיכרון) לתאריך הלא נכון לפני שהטעינה מסתיימת
+    setDailyLogLoaded(false)
+    setLogDate(targetKey)
+  }
+
   useEffect(function() {
     async function loadNutrition() {
       var { data } = await supabase.from('nutrition_data').select('*')
@@ -1056,7 +1071,7 @@ export default function PlanApp({ clientName, userPassword }) {
         }
       }
 
-      var todayLog = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
+      var todayLog = await supabase.from('daily_logs').select('*').eq('client_name', dbKey).eq('log_date', logDate).maybeSingle()
       if (todayLog.error) {
         // ⚠️ שגיאת שרת/רשת בטעינת היומן — בשום אופן לא לאפס את הנתונים בזיכרון בעקבות זה, ולא להדליק dailyLogLoaded,
         // כי זה היה חוסם את השמירה האוטומטית מלהריץ "מעל" נתונים קיימים בשרת מתוך מצב מאופס בטעות
@@ -1133,20 +1148,20 @@ export default function PlanApp({ clientName, userPassword }) {
       }
     }
     if (dbKey) load()
-  }, [dbKey, todayKey])
+  }, [dbKey, logDate])
 
-  // בדיקה תקופתית למשוב יומי חדש (כל 60 שניות)
+  // בדיקה תקופתית למשוב יומי חדש (כל 60 שניות) — בודקת על התאריך שנמצא בעריכה כרגע, לא בהכרח היום בפועל
   useEffect(() => {
-    if (!dbKey || !todayKey) return
+    if (!dbKey || !logDate) return
     const interval = setInterval(async () => {
-      const { data } = await supabase.from('daily_logs').select('trainer_feedback, report_approved').eq('client_name', dbKey).eq('log_date', todayKey).maybeSingle()
+      const { data } = await supabase.from('daily_logs').select('trainer_feedback, report_approved').eq('client_name', dbKey).eq('log_date', logDate).maybeSingle()
       if (data && data.report_approved && data.trainer_feedback) {
         setFeedback(data.trainer_feedback)
         setReportApproved(true)
       }
     }, 60000)
     return () => clearInterval(interval)
-  }, [dbKey, todayKey])
+  }, [dbKey, logDate])
 
   // בדיקה תקופתית לניתוח AI מקיף חדש (כל 90 שניות)
   useEffect(() => {
@@ -1163,10 +1178,10 @@ export default function PlanApp({ clientName, userPassword }) {
   useEffect(() => {
     // ⚠️ dailyLogLoaded חייב להיות true לפני שמירה אוטומטית — בלעדיו אפשר "לשמור" מצב ריק/בררת-מחדל
     // מעל נתונים אמיתיים שכבר קיימים בשרת, אם טעינת היומן היומי עדיין באוויר או נכשלה
-    if (!dbKey || !todayKey || !profileDone || !dailyLogLoaded) return
+    if (!dbKey || !logDate || !profileDone || !dailyLogLoaded) return
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current)
     var payload = {
-      client_name: dbKey, log_date: todayKey, checks,
+      client_name: dbKey, log_date: logDate, checks,
       carb_checks: carbChecks, prot_checks: protChecks, fat_sel: fatSel, veggie_checks: veggieChecks, lunch_opt: lunchOpt, benayim_sel: benayimSel,
       carb_qty: carbQty, prot_qty: protQty, checks_qty: checksQty,
       water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
@@ -1186,7 +1201,7 @@ export default function PlanApp({ clientName, userPassword }) {
       pendingSaveRef.current = null
     }, 3000)
     return () => clearTimeout(autoSaveRef.current)
-  }, [checks, carbChecks, protChecks, carbQty, protQty, checksQty, fatSel, veggieChecks, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount, dailyLogLoaded])
+  }, [checks, carbChecks, protChecks, carbQty, protQty, checksQty, fatSel, veggieChecks, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount, dailyLogLoaded, logDate])
 
   // ⚠️ אם המשתמשת עוזבת את הדף בתוך חלון ה-debounce (סוגרת טאב / עוברת אפליקציה בנייד / נועלת מסך) —
   // unmount של רכיב React לא בהכרח קורה (בדפדפן בנייד הדף פשוט מוקפא/נהרג בלי לקרוא ל-cleanup),
@@ -1366,8 +1381,8 @@ export default function PlanApp({ clientName, userPassword }) {
   }
 
   const resetDay = async function() {
-    if (!window.confirm('לאפס את כל הנתונים של היום?')) return
-    await supabase.from('daily_logs').delete().eq('client_name', dbKey).eq('log_date', todayKey)
+    if (!window.confirm(editingYesterday ? 'לאפס את כל הנתונים של אתמול?' : 'לאפס את כל הנתונים של היום?')) return
+    await supabase.from('daily_logs').delete().eq('client_name', dbKey).eq('log_date', logDate)
     setChecks({}); setCarbChecks({}); setProtChecks({}); setCarbCheckOrder([]); setProtCheckOrder([]); setCarbQty({}); setProtQty({}); setChecksQty({}); setFatSel(null); setVeggieChecks({}); setBenayimSel(null); setLunchOpt(null)
     setWater(0); setSteps(''); setNote(''); setBokerFree(''); setLunchFree(''); setErevFree('')
     setBokerExtraCal(0); setLunchExtraCal(0); setErevExtraCal(0)
@@ -1381,7 +1396,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const handleSave = async function() {
     setSaving(true)
     var payload = {
-      client_name: dbKey, log_date: todayKey, checks,
+      client_name: dbKey, log_date: logDate, checks,
       carb_checks: carbChecks, prot_checks: protChecks, fat_sel: fatSel, veggie_checks: veggieChecks, lunch_opt: lunchOpt, benayim_sel: benayimSel,
       carb_qty: carbQty, prot_qty: protQty, checks_qty: checksQty,
       water, steps, note, boker_free: bokerFree, lunch_free: lunchFree, erev_free: erevFree,
@@ -1612,7 +1627,14 @@ export default function PlanApp({ clientName, userPassword }) {
             <div style={{ fontSize: 11, background: '#ffffff25', color: '#fff', padding: '3px 10px', borderRadius: 99, fontWeight: 700 }}>🏆 {stageName}</div>
           </div>
           <div style={{ fontSize: 22, fontWeight: 900 }}>היי {displayName.split(' ')[0]}!</div>
-          <div style={{ fontSize: 12, color: '#bbf7d0', marginTop: 2 }}>{today}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+            <div style={{ fontSize: 12, color: '#bbf7d0' }}>{logDateDisplay}{editingYesterday ? ' (אתמול)' : ''}</div>
+            {editingYesterday ? (
+              <button onClick={() => switchLogDate(todayKey)} style={{ fontSize: 11, padding: '2px 10px', borderRadius: 99, border: 'none', background: '#ffffff30', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>↩ חזרה להיום</button>
+            ) : (
+              <button onClick={() => switchLogDate(yesterdayKey)} style={{ fontSize: 11, padding: '2px 10px', borderRadius: 99, border: 'none', background: '#ffffff20', color: '#fff', cursor: 'pointer', fontWeight: 700 }}>✏️ {gf('ערכי', 'ערוך')} את אתמול</button>
+            )}
+          </div>
           {targets && (
             <div style={{ marginTop: 10, background: '#ffffff20', borderRadius: 12, padding: '10px 14px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#86efac', marginBottom: 6 }}>
@@ -2152,7 +2174,7 @@ export default function PlanApp({ clientName, userPassword }) {
             </div>
           </div>
         )}
-        {feedback && <FeedbackCard feedback={feedback} clientName={displayName} logDate={today} onOpenFull={() => setShowDailyFeedback(true)} />}
+        {feedback && <FeedbackCard feedback={feedback} clientName={displayName} logDate={logDateDisplay} onOpenFull={() => setShowDailyFeedback(true)} />}
 
         {/* ✅ כרטיס רצף ושבוע */}
         {weekDates.length > 0 && (
