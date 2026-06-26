@@ -110,7 +110,7 @@ const PLAN = {
     { id: 'p5', text: '140 גרם ירך עוף או פרגית ללא עור', hide: ['vegan', 'vegetarian'] },
     { id: 'p_shawarma', text: 'שווארמה עוף ביתית (כ-200 גרם בשר)', hide: ['vegan', 'vegetarian'] },
     { id: 'p_beef_meatballs', text: 'קציצות בקר ברוטב, לא מטוגנות (150 גרם, כ-3 יחידות)', hide: ['vegan', 'vegetarian'] },
-    { id: 'p_fish_meatballs', text: 'קציצות דגים ברוטב, לא מטוגנות (150 גרם, כ-3 יחידות)', hide: ['vegan', 'vegetarian', 'no_fish'] },
+    { id: 'p_fish_meatballs', text: 'קציצות דגים לבנים ברוטב, לא מטוגנות (150 גרם, כ-3 יחידות)', hide: ['vegan', 'vegetarian', 'no_fish'] },
     { id: 'p3', text: '150 גרם טופו', tags: ['vegan'] },
     { id: 'p8', text: '2 ביצים / חביתה', hide: ['vegan', 'no_eggs'] },
     { id: 'p11', text: '150 גרם מג׳דרה (עדשים + אורז)', tags: ['vegan'] },
