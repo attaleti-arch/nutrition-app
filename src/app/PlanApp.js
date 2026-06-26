@@ -72,9 +72,9 @@ const PLAN = {
     { id: 'b_pro20', text: 'מעדן פרו 20 גרם חלבון', tags: ['vegan'] },
     { id: 'b_pro25', text: 'מעדן פרו 25 גרם חלבון', tags: ['vegan'] },
     { id: 'b_kotej', text: 'קוטג׳ 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], gramQty: true },
-    { id: 'b_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], gramQty: true },
-    { id: 'b_gvina_bulgarit', text: 'גבינה בולגרית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], gramQty: true },
-    { id: 'b_gvina_tzfat', text: 'גבינה צפתית 5% (חצי חבילה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], gramQty: true },
+    { id: 'b_gvina_levana', text: 'גבינה לבנה 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], gramQty: true },
+    { id: 'b_gvina_bulgarit', text: 'גבינה בולגרית 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], gramQty: true },
+    { id: 'b_gvina_tzfat', text: 'גבינה צפתית 5%', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'], gramQty: true },
     { id: 'bnew2', text: 'גבינה צהובה 9% (פרוסה)', tags: ['vegetarian'], hide: ['vegan', 'no_lactose'] },
     { id: 'b7', text: 'ביצים קשות / חביתה', tags: [], hide: ['vegan', 'no_eggs'], calPerSlice: 70, recQty: 1, unit: 'ביצים', protPerUnit: 6.5 },
     { id: 'b_eggwhite', text: 'חלבון ביצה בלבד (ללא חלמון)', tags: [], hide: ['vegan', 'no_eggs'], calPerSlice: 17, recQty: 1, unit: 'חלבונים', protPerUnit: 3.25 },
@@ -122,7 +122,7 @@ const PLAN = {
     { id: 'p15', text: 'שעועית לבנה / פול מבושל', tags: ['vegan'] },
     { id: 'p16', text: 'אדממה', tags: ['vegan'] },
     { id: 'b_kotej', text: 'קוטג׳ 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
-    { id: 'b_gvina_levana', text: 'גבינה לבנה 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'] },
+    { id: 'b_gvina_levana', text: 'גבינה לבנה 5%', hide: ['vegan', 'no_lactose'] },
     { id: 'b_pro20', text: 'מעדן פרו 20 גרם חלבון', tags: ['vegan'] },
     { id: 'b_pro25', text: 'מעדן פרו 25 גרם חלבון', tags: ['vegan'] },
   ],
@@ -144,9 +144,9 @@ const PLAN = {
   ],
   erev: [
     { id: 'b_kotej_erev', text: 'קוטג׳ 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'], gramQty: true },
-    { id: 'b_gvina_levana_erev', text: 'גבינה לבנה 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'], gramQty: true },
-    { id: 'b_gvina_bulgarit_erev', text: 'גבינה בולגרית 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'], gramQty: true },
-    { id: 'b_gvina_tzfat_erev', text: 'גבינה צפתית 5% (חצי חבילה)', hide: ['vegan', 'no_lactose'], gramQty: true },
+    { id: 'b_gvina_levana_erev', text: 'גבינה לבנה 5%', hide: ['vegan', 'no_lactose'], gramQty: true },
+    { id: 'b_gvina_bulgarit_erev', text: 'גבינה בולגרית 5%', hide: ['vegan', 'no_lactose'], gramQty: true },
+    { id: 'b_gvina_tzfat_erev', text: 'גבינה צפתית 5%', hide: ['vegan', 'no_lactose'], gramQty: true },
     { id: 'b_tuna_full_erev', text: 'טונה — חבילה שלמה', tags: [], hide: ['vegan', 'vegetarian'] },
     { id: 'b_tuna_half_erev', text: 'טונה — חצי חבילה', tags: [], hide: ['vegan', 'vegetarian'] },
     { id: 'e2', text: '50 גרם ברנפלקס + חלב / משקה צמחי', hide: ['keto', 'no_gluten'] },
@@ -187,11 +187,10 @@ const UNIT_PROTEIN_ITEMS = {
 // ✅ גיבוי קשיח לפריטים שהשורה שלהם בטבלת nutrition_data בשרת חסרה/מאופסת —
 // נטען רק כשהשרת לא מחזיר ערך תקין, כדי שלא יוצג "0 קל" ללקוחה. אם וכאשר השורה האמיתית תתעדכן
 // בשרת עם calories תקין, הגיבוי הזה מפסיק להידרס אוטומטית (ראו loadNutrition).
-// הגבינות הן "חצי חבילה" בדיוק כמו קוטג' (base_qty 125 גרם, לא 100) — הערכים כבר ל-125 גרם, לא ל-100.
 const NUTRITION_FALLBACK = {
-  b_gvina_levana: { calories: 122, base_qty: 125, protein: 11, fat: 6, carbs: 5 },
-  b_gvina_bulgarit: { calories: 163, base_qty: 125, protein: 21, fat: 6, carbs: 1 },
-  b_gvina_tzfat: { calories: 156, base_qty: 125, protein: 19, fat: 6, carbs: 6 },
+  b_gvina_levana: { calories: 98, base_qty: 100, protein: 9, fat: 5, carbs: 4.3 },
+  b_gvina_bulgarit: { calories: 130, base_qty: 100, protein: 17, fat: 5, carbs: 1 },
+  b_gvina_tzfat: { calories: 125, base_qty: 100, protein: 15, fat: 5, carbs: 5 },
   c8: { calories: 80, base_qty: 100, protein: 5.5, fat: 0.3, carbs: 14 },
 }
 
