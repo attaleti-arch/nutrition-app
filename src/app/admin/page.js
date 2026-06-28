@@ -86,6 +86,14 @@ var UNIT_PROTEIN_ITEMS = {
   p_eggwhite: { calPerUnit: 17, proteinPerUnit: 3.25, defaultQty: 1 },
 }
 
+// ✅ גיבוי קשיח לפריטים שהשורה שלהם בטבלת nutrition_data בשרת חסרה/מאופסת — תואם NUTRITION_FALLBACK בצד הלקוח, PlanApp.js
+var NUTRITION_FALLBACK = {
+  b_gvina_levana: { calories: 98, base_qty: 100, protein: 9, fat: 5, carbs: 4.3 },
+  b_gvina_bulgarit: { calories: 130, base_qty: 100, protein: 17, fat: 5, carbs: 1 },
+  b_gvina_tzfat: { calories: 125, base_qty: 100, protein: 15, fat: 5, carbs: 5 },
+  c8: { calories: 80, base_qty: 100, protein: 5.5, fat: 0.3, carbs: 14 },
+}
+
 // ✅ ירקות הערב נשמרים ב-checks עם סיומת '_erev' — להסיר לפני חיפוש בנתוני תזונה
 function nutritionId(id) {
   return id.endsWith('_erev') ? id.slice(0, -5) : id
@@ -683,6 +691,9 @@ export default function AdminPage() {
     var { data } = await supabase.from('nutrition_data').select('*')
     var nd = {}
     if (data) data.forEach(function(item) { nd[item.id] = item })
+    Object.keys(NUTRITION_FALLBACK).forEach(function(id) {
+      if (!nd[id] || !nd[id].calories) nd[id] = Object.assign({ id: id }, NUTRITION_FALLBACK[id])
+    })
     setNutritionData(nd)
   }
 
@@ -1558,6 +1569,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                         {allIds.map((id, i) => {
                           const realId = nutritionId(id)
                           const slice = SLICE_ITEMS[realId]
+                          const unitItem = UNIT_PROTEIN_ITEMS[realId]
                           const item = nutritionData[realId]
                           let label, macros
                           if (slice) {
@@ -1567,6 +1579,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                             const carbs = slice.protPerUnit ? 0 : Math.round(slice.calPerSlice * qty / 4)
                             label = (ITEM_LABELS[realId] || slice.name) + ' (כמות: ' + qty + ')'
                             macros = cal + ' קל | ' + prot + 'g חלבון | 0g שומן | ' + carbs + 'g פחמימה'
+                          } else if (unitItem) {
+                            const qty = (logDetails.prot_qty && logDetails.prot_qty[id]) || unitItem.defaultQty
+                            const cal = Math.round(qty * unitItem.calPerUnit)
+                            const prot = Math.round(qty * unitItem.proteinPerUnit)
+                            label = (ITEM_LABELS[realId] || realId) + ' (כמות: ' + qty + ')'
+                            macros = cal + ' קל | ' + prot + 'g חלבון | 0g שומן | 0g פחמימה'
                           } else if (item) {
                             label = ITEM_LABELS[realId] || item.name
                             macros = Math.round(item.calories) + ' קל | ' + Math.round(item.protein||0) + 'g חלבון | ' + Math.round(item.fat||0) + 'g שומן | ' + Math.round(item.carbs||0) + 'g פחמימה'
