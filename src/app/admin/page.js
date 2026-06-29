@@ -218,11 +218,28 @@ function calcNutrition(log, nutritionData) {
 }
 
 function MacroPieChart({ actual, target }) {
-  var actualData = [
-    { name: 'חלבון', value: actual.proteinPct || 0, color: '#16a34a' },
-    { name: 'שומן', value: actual.fatPct || 0, color: '#9333ea' },
-    { name: 'פחמימות', value: actual.carbsPct || 0, color: '#f97316' },
-  ]
+  // ✅ כשיש יעד, "בפועל" מחושב כאחוז מקלוריות היעד (לא מתוך סך הקלוריות שנאכלו בפועל) —
+  // כך עוגת ה"בפועל" ועוגת ה"יעד" חולקות את אותו מכנה, ופרוסה גדולה יותר אומרת תמיד יותר גרם בפועל.
+  // בלי זה, יום עם פחות קלוריות כולל יכול להציג % חלבון גבוה מהיעד גם כשבגרמים היא מתחת ליעד.
+  var actualData
+  if (target && target.calories > 0) {
+    var proteinShare = Math.round((actual.protein * 4 / target.calories) * 100)
+    var fatShare = Math.round((actual.fat * 9 / target.calories) * 100)
+    var carbsShare = Math.round((actual.carbs * 4 / target.calories) * 100)
+    var remaining = Math.max(0, 100 - proteinShare - fatShare - carbsShare)
+    actualData = [
+      { name: 'חלבון', value: proteinShare, color: '#16a34a' },
+      { name: 'שומן', value: fatShare, color: '#9333ea' },
+      { name: 'פחמימות', value: carbsShare, color: '#f97316' },
+    ]
+    if (remaining > 0) actualData.push({ name: 'נותר', value: remaining, color: '#e5e7eb' })
+  } else {
+    actualData = [
+      { name: 'חלבון', value: actual.proteinPct || 0, color: '#16a34a' },
+      { name: 'שומן', value: actual.fatPct || 0, color: '#9333ea' },
+      { name: 'פחמימות', value: actual.carbsPct || 0, color: '#f97316' },
+    ]
+  }
   var targetData = target ? [
     { name: 'חלבון', value: target.proteinPct, color: '#16a34a' },
     { name: 'שומן', value: target.fatPct, color: '#9333ea' },
@@ -266,8 +283,8 @@ function MacroPieChart({ actual, target }) {
           </div>
         )}
       </div>
-      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 6 }}>
-        {[{ l: 'חלבון', c: '#16a34a' }, { l: 'שומן', c: '#9333ea' }, { l: 'פחמימות', c: '#f97316' }].map(function(i) {
+      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 6, flexWrap: 'wrap' }}>
+        {[{ l: 'חלבון', c: '#16a34a' }, { l: 'שומן', c: '#9333ea' }, { l: 'פחמימות', c: '#f97316' }, { l: 'נותר ליעד', c: '#e5e7eb' }].map(function(i) {
           return <div key={i.l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}><div style={{ width: 8, height: 8, borderRadius: 2, background: i.c }} /><span style={{ fontSize: 11, color: '#555' }}>{i.l}</span></div>
         })}
       </div>
