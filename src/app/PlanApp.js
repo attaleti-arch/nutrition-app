@@ -854,6 +854,26 @@ function ExtraCal({ value, onChange, valueProt, onChangeProt }) {
   )
 }
 
+// ✅ סיכום הסריקות שצולמו היום (AI) — חייב להיות גלוי וניתן לתיקון/מחיקה,
+// כי הערכת AI לפעמים שוגה (למשל חבילה שלמה במקום מנה) ועד כה לא היה לזה שום ממשק.
+function ScanCorrection({ desc, cal, onChangeCal, prot, onChangeProt, fat, onChangeFat, carbs, onChangeCarbs, onReset }) {
+  if (!cal && !prot && !fat && !carbs && !desc) return null
+  return (
+    <div style={{ background: '#fff7ed', border: '1.5px solid #fdba74', borderRadius: 12, padding: 12, marginTop: 8 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, gap: 8 }}>
+        <div style={{ fontSize: 12, fontWeight: 700, color: '#9a3412', textAlign: 'right' }}>📸 מהסריקות היום{desc ? ': ' + desc : ''}</div>
+        <button onClick={onReset} style={{ fontSize: 11, color: '#dc2626', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 700, flexShrink: 0 }}>🗑️ מחק</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: 6 }}>
+        <div><div style={{ fontSize: 10, color: '#9a3412', marginBottom: 2, textAlign: 'center' }}>קל'</div><input type="number" value={cal || 0} onChange={e => onChangeCal(Number(e.target.value) || 0)} style={{ width: '100%', padding: 6, borderRadius: 8, border: '1px solid #fdba74', fontSize: 13, textAlign: 'center', boxSizing: 'border-box' }} /></div>
+        <div><div style={{ fontSize: 10, color: '#9a3412', marginBottom: 2, textAlign: 'center' }}>חלבון</div><input type="number" value={prot || 0} onChange={e => onChangeProt(Number(e.target.value) || 0)} style={{ width: '100%', padding: 6, borderRadius: 8, border: '1px solid #fdba74', fontSize: 13, textAlign: 'center', boxSizing: 'border-box' }} /></div>
+        <div><div style={{ fontSize: 10, color: '#9a3412', marginBottom: 2, textAlign: 'center' }}>פחמ'</div><input type="number" value={carbs || 0} onChange={e => onChangeCarbs(Number(e.target.value) || 0)} style={{ width: '100%', padding: 6, borderRadius: 8, border: '1px solid #fdba74', fontSize: 13, textAlign: 'center', boxSizing: 'border-box' }} /></div>
+        <div><div style={{ fontSize: 10, color: '#9a3412', marginBottom: 2, textAlign: 'center' }}>שומן</div><input type="number" value={fat || 0} onChange={e => onChangeFat(Number(e.target.value) || 0)} style={{ width: '100%', padding: 6, borderRadius: 8, border: '1px solid #fdba74', fontSize: 13, textAlign: 'center', boxSizing: 'border-box' }} /></div>
+      </div>
+    </div>
+  )
+}
+
 function YesNo({ value, onChange, labelYes, labelNo, accent }) {
   return (
     <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
@@ -2328,7 +2348,8 @@ export default function PlanApp({ clientName, userPassword }) {
           <CheckRow id="b_veggie1_oil" text="+ כף שמן זית על הסלט" accent={C.teal} checked={!!checks['b_veggie1_oil']} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />
           <FreeText value={bokerFree} onChange={setBokerFree} placeholder="אכלתי גם / פרטים נוספים..." />
           <ExtraCal value={bokerExtraCal} onChange={setBokerExtraCal} valueProt={bokerExtraProt} onChangeProt={setBokerExtraProt} />
-          <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setBokerExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
+          <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
+          <ScanCorrection desc={scanDesc} cal={scanCalories} onChangeCal={setScanCalories} prot={scanProtein} onChangeProt={setScanProtein} fat={scanFat} onChangeFat={setScanFat} carbs={scanCarbs} onChangeCarbs={setScanCarbs} onReset={() => { setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0) }} />
         </Section>
 
         <Section title="ארוחת צהריים" icon="🌞" accent={C.greenMid} light={C.greenLight}>
@@ -2453,7 +2474,8 @@ export default function PlanApp({ clientName, userPassword }) {
           {PLAN.veggieOptions.map(o => <CheckRow key={o.id} id={o.id} text={o.text} accent={C.teal} checked={!!veggieChecks[o.id]} onToggle={id => setVeggieChecks(v => ({ ...v, [id]: !v[id] }))} />)}
           <FreeText value={lunchFree} onChange={setLunchFree} placeholder="פרטים נוספים על הצהריים..." />
           <ExtraCal value={lunchExtraCal} onChange={setLunchExtraCal} valueProt={lunchExtraProt} onChangeProt={setLunchExtraProt} />
-          <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setLunchExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
+          <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
+          <ScanCorrection desc={scanDesc} cal={scanCalories} onChangeCal={setScanCalories} prot={scanProtein} onChangeProt={setScanProtein} fat={scanFat} onChangeFat={setScanFat} carbs={scanCarbs} onChangeCarbs={setScanCarbs} onReset={() => { setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0) }} />
         </Section>
 
         <Section title="ביניים" icon="🌤" accent={C.blue} light={C.blueLight}>
@@ -2511,7 +2533,8 @@ export default function PlanApp({ clientName, userPassword }) {
           <CheckRow id="b_veggie1_oil_erev" text="+ כף שמן זית על הסלט" accent={C.teal} checked={!!checks['b_veggie1_oil_erev']} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />
           <FreeText value={erevFree} onChange={setErevFree} placeholder="פרטים נוספים על הערב..." />
           <ExtraCal value={erevExtraCal} onChange={setErevExtraCal} valueProt={erevExtraProt} onChangeProt={setErevExtraProt} />
-          <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setErevExtraCal(c => c + cal); setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
+          <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
+          <ScanCorrection desc={scanDesc} cal={scanCalories} onChangeCal={setScanCalories} prot={scanProtein} onChangeProt={setScanProtein} fat={scanFat} onChangeFat={setScanFat} carbs={scanCarbs} onChangeCarbs={setScanCarbs} onReset={() => { setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0) }} />
         </Section>
 
         <Section title="🥫 המזווה ועוגני ההתארגנות" icon="🛒" accent={C.teal} light={C.tealLight} isLocked={currentStage < 2} lockMessage="ייפתח לאחר פגישת המזווה שלנו! 🔒">
