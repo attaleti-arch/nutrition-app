@@ -985,7 +985,6 @@ export default function PlanApp({ clientName, userPassword }) {
   const [userGoal, setUserGoal] = useState('ירידה במשקל')
   const [userTargetWeight, setUserTargetWeight] = useState('')
   const [clientData, setClientData] = useState(null)
-  const [clientPlate, setClientPlate] = useState(null) // ✅ אחוזי הצלחת האישית
 
   const fem = userGender !== 'זכר'
   const gf = (f, m) => fem ? f : m
@@ -1024,11 +1023,7 @@ export default function PlanApp({ clientName, userPassword }) {
       if (client.data) {
         var d = client.data
         setClientData(d)
-        // ✅ טוען אחוזי הצלחת מ-client_profiles
         const profileRes = await supabase.from('client_profiles').select('welcome_doc_json, ai_report, roots_feedback, body_feedback, child_feedback').eq('client_password', dbKey).maybeSingle()
-        if (profileRes.data?.welcome_doc_json?.plate) {
-          setClientPlate(profileRes.data.welcome_doc_json.plate)
-        }
         if (profileRes.data?.ai_report) {
           setAiReport(profileRes.data.ai_report)
         }
@@ -1428,14 +1423,13 @@ export default function PlanApp({ clientName, userPassword }) {
   const eatenFat = calcEatenFat()
   const eatenCarbs = calcEatenCarbs()
   const veggieMealsCount = calcVeggieMealsCount()
-  const goalSplit = GOALS_SPLIT[userGoal] || GOALS_SPLIT['ירידה במשקל']
-  const plateCarbsPct = clientPlate?.carbs || goalSplit.carbs
-  const plateFatPct = clientPlate?.fat || goalSplit.fat
   // ✅ כל פס = % מהיעד היומי האישי שנאכל בפועל (100% = הגעת ליעד, מעל 100% = חרגת)
-  // ✅ חלבון: אם יש הרכב צלחת מותאם אישית (clientPlate, מבוסס %) — נשתמש בו; אחרת ביעד גרם/ק"ג שב-targets.protein
-  const targetProteinG = targets ? (clientPlate?.protein ? Math.round(targets.calories * clientPlate.protein / 100 / 4) : targets.protein) : 0
-  const targetCarbsG = targets ? Math.round(targets.calories * plateCarbsPct / 100 / 4) : 0
-  const targetFatG = targets ? Math.round(targets.calories * plateFatPct / 100 / 9) : 0
+  // ✅ clientPlate ("הצלחת החכמה") הוא חלוקת שטח צלחת לתצוגה ויזואלית בלבד (כולל "ירקות", שלא נספרות בקלוריות) —
+  // לא אחוז קלוריות, ולכן אסור להשתמש בו לחישוב יעד גרמים (זה גרם ליעד שומן זעיר וחריגה מדומה של מאות אחוזים).
+  // יעדי הגרמים תמיד מגיעים מהפיצול הקלורי הסטנדרטי שב-targets.
+  const targetProteinG = targets ? targets.protein : 0
+  const targetCarbsG = targets ? targets.carbs : 0
+  const targetFatG = targets ? targets.fat : 0
   const proteinTargetPct = targetProteinG > 0 ? Math.round((eatenProtein / targetProteinG) * 100) : 0
   const carbsTargetPct = targetCarbsG > 0 ? Math.round((eatenCarbs / targetCarbsG) * 100) : 0
   const fatTargetPct = targetFatG > 0 ? Math.round((eatenFat / targetFatG) * 100) : 0
@@ -1477,9 +1471,8 @@ export default function PlanApp({ clientName, userPassword }) {
   // ✅ תקציב חלבון/פחמימה לארוחת צהריים לפי הצלחת האישית — בגרמים של המאקרו עצמו (לא קלוריות כוללות),
   // כי לכל מאכל יחס קלוריות-למאקרו אחר, ותקציב לפי קלוריות היה מספק כמות גרמים שלא תואמת בפועל ליעד הגרמים.
   // מחושב פעם אחת ומשמש גם את מד ההשלמה וגם את רשימת הפריטים.
-  const lunchCarbPct = clientPlate?.carbs || (targets ? 30 : 30)
-  const lunchProtBudget = targets ? (clientPlate?.protein ? Math.round(targets.calories * clientPlate.protein / 100 / 4 / 2) : Math.round(targets.protein / 2)) : 0
-  const lunchCarbBudget = targets ? Math.round(targets.calories * lunchCarbPct / 100 / 4 / 2) : 0
+  const lunchProtBudget = targets ? Math.round(targets.protein / 2) : 0
+  const lunchCarbBudget = targets ? Math.round(targets.carbs / 2) : 0
   const lunchProtRows = buildBudgetRows(filteredProt, protChecks, protQty, protCheckOrder, lunchProtBudget, nutritionData, UNIT_PROTEIN_ITEMS, 'protein')
   const lunchCarbRows = buildBudgetRows(filteredCarbs, carbChecks, carbQty, carbCheckOrder, lunchCarbBudget, nutritionData, null, 'carbs')
 
