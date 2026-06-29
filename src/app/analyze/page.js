@@ -35,6 +35,7 @@ function calcTargets(client) {
     protein: Math.round((calories * split.protein / 100) / 4),
     carbs: Math.round((calories * split.carbs / 100) / 4),
     fat: Math.round((calories * split.fat / 100) / 9),
+    fiber: Math.round(calories * 14 / 1000),
     proteinPct: split.protein,
     carbsPct: split.carbs,
     fatPct: split.fat,
@@ -325,7 +326,7 @@ export default function AnalyzePage() {
                   <NutritionBar label="קלוריות" value={nut.calories} max={targets ? targets.calories : 2000} color="#f97316" />
                   <NutritionBar label="חלבון (g)" value={nut.protein} max={targets ? targets.protein : 100} color="#16a34a" />
                   <NutritionBar label="שומן (g)" value={nut.fat} max={targets ? targets.fat : 70} color="#9333ea" />
-                  <NutritionBar label="סיבים (g)" value={nut.fiber} max={30} color="#0284c7" />
+                  <NutritionBar label="סיבים (g)" value={nut.fiber} max={targets ? targets.fiber : 25} color="#0284c7" />
                   <div style={{fontSize:12,color:'#9ca3af',marginTop:6}}>
                     💧 {l.water || 0}/8 כוסות | 🚶 {l.steps || 0} צעדים
                   </div>

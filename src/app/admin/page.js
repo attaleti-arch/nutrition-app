@@ -60,8 +60,11 @@ function calcTargets(client) {
   var carbFatTotal = split.carbs + split.fat
   var carbs = Math.round(remainCal * (split.carbs / carbFatTotal) / 4)
   var fat = Math.round(remainCal * (split.fat / carbFatTotal) / 9)
+  // ✅ סיבים לפי 14 גרם לכל 1000 קל' מהיעד האישי (התקן התזונתי המקובל) — לא 30 גרם קבוע שמתאים לתפריט של 2000 קל'
+  // ולא ריאלי/מייאש עבור לקוחה בדיאטת ירידה במשקל עם יעד קלורי נמוך
+  var fiber = Math.round(calories * 14 / 1000)
   return {
-    calories, protein, carbs, fat,
+    calories, protein, carbs, fat, fiber,
     proteinPct: calories > 0 ? Math.round((protein * 4 / calories) * 100) : 0,
     carbsPct: calories > 0 ? Math.round((carbs * 4 / calories) * 100) : 0,
     fatPct: calories > 0 ? Math.round((fat * 9 / calories) * 100) : 0,
@@ -1738,7 +1741,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                         <NutritionBar label="קלוריות" value={nut.calories} max={targets ? targets.calories : 2000} color="#f97316" />
                         <NutritionBar label="חלבון (g)" value={nut.protein} max={targets ? targets.protein : 100} color="#16a34a" />
                         <NutritionBar label="שומן (g)" value={nut.fat} max={targets ? targets.fat : 70} color="#9333ea" />
-                        <NutritionBar label="סיבים (g)" value={nut.fiber} max={30} color="#0284c7" />
+                        <NutritionBar label="סיבים (g)" value={nut.fiber} max={targets ? targets.fiber : 25} color="#0284c7" />
                         <NutritionBar label="🥦 ירקות (ארוחות)" value={calcVeggieMealsCount(log)} max={3} color="#0d9488" />
                         {log.note && <div style={{ padding: '8px 12px', background: '#fffbeb', borderRadius: 10, fontSize: 13, color: '#78350f', marginTop: 8 }}>💬 {log.note}</div>}
                         <textarea value={feedback[log.id] != null ? feedback[log.id] : (log.trainer_feedback || '')} onChange={e => setFeedback(f => ({ ...f, [log.id]: e.target.value }))} placeholder="כתבי משוב..." rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', marginTop: 10 }} />
