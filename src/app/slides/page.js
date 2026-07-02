@@ -159,7 +159,7 @@ function inpaintRegion(editCtx, srcW, srcH, strokes, radius) {
 }
 
 async function renderSlide(canvas, opts) {
-  const { photoSrc, lines, subtitle, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColor, zoom, px, py, patchOn, patchY, patchH, logoImg, logoOn, logoColor } = opts
+  const { photoSrc, lines, subtitle, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColor, zoom, px, py, patchOn, patchY, patchH, logoImg, logoOn, logoColor, logoScale } = opts
   const ctx = canvas.getContext('2d')
   canvas.width = W
   canvas.height = H
@@ -262,7 +262,7 @@ async function renderSlide(canvas, opts) {
 
   // logo watermark — bottom center, tinted, semi-transparent
   if (logoOn && logoImg) {
-    const lw = 132
+    const lw = Math.round(132 * logoScale)
     const lh = lw * (logoImg.height / logoImg.width)
     const off = document.createElement('canvas')
     off.width = logoImg.width; off.height = logoImg.height
@@ -308,6 +308,7 @@ export default function SlideGenerator() {
   const [py, setPy] = useState(0)
   const [logoOn, setLogoOn] = useState(true)
   const [logoColorKey, setLogoColorKey] = useState('light')
+  const [logoScale, setLogoScale] = useState(1)
   const [logoReady, setLogoReady] = useState(false)
   const logoRef = useRef(null)
   const [eraseMode, setEraseMode] = useState(false)
@@ -348,12 +349,13 @@ export default function SlideGenerator() {
         zoom, px, py, patchOn, patchY, patchH,
         logoImg: logoRef.current, logoOn,
         logoColor: LOGO_COLORS.find(c => c.key === logoColorKey).val,
+        logoScale,
       })
       setResultUrl(canvas.toDataURL('image/jpeg', 0.94))
     } catch (e) {
       console.error(e)
     }
-  }, [headline, subtitle, photoImg, editVersion, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColorKey, zoom, px, py, patchOn, patchY, patchH, logoOn, logoColorKey, logoReady])
+  }, [headline, subtitle, photoImg, editVersion, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColorKey, zoom, px, py, patchOn, patchY, patchH, logoOn, logoColorKey, logoScale, logoReady])
 
   useEffect(() => {
     clearTimeout(debounceRef.current)
@@ -672,6 +674,10 @@ export default function SlideGenerator() {
             </button>
           ))}
         </div>
+      )}
+      {logoOn && (
+        <Slider label={`גודל לוגו — ${Math.round(logoScale * 100)}%`}
+          value={logoScale} onChange={setLogoScale} min={0.5} max={2.2} step={0.1} />
       )}
 
       <Slider label="מיקום הכותרת — למעלה ⟵ למטה"
