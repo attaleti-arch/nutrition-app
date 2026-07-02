@@ -545,14 +545,13 @@ function FloatingPlateBars({ bars }) {
   )
 }
 
-// ✅ הצלחת החיה — צלחת לימודית בסגנון "הצלחת הבריאה": מקטעים צבעוניים עם שמות
-// (ירקות/חלבונים/פחמימות + שומנים במרכז). הגדלים לפי החלוקה האישית של הלקוחה
-// (welcome_doc_json.plate) אם קיימת, אחרת חלוקה סטנדרטית. כל מקטע מתמלא בצבע
-// ובאוכל ככל שמתקדמים — בלי אחוזים (הם בבר הצף).
+// ✅ הצלחת החיה — צלחת לימודית בסגנון "הצלחת הבריאה": מקטעים עם שמות,
+// גדלים לפי החלוקה האישית (welcome_doc_json.plate) אם קיימת.
+// לפני אכילה המקטע לבן; הצבע מתקדם בתוך המקטע ביחס להתקדמות עד 100%;
+// חריגה מעל 100% מסומנת במקטע אדום יחסי לגודל החריגה + האחוז.
 function LivePlate({ bars, split }) {
   const get = k => (bars.find(b => b.label === k) || { pct: 0 }).pct
   const CX = 110, CY = 102, R = 90
-  // חלוקת שטח: אישית אם קיימת, אחרת ירקות 45% / חלבון 30% / פחמימה 25%
   const raw = {
     veggies: split && split.veggies > 0 ? split.veggies : 45,
     protein: split && split.protein > 0 ? split.protein : 30,
@@ -570,7 +569,6 @@ function LivePlate({ bars, split }) {
     const large = a1 - a0 > Math.PI ? 1 : 0
     return `M ${CX} ${CY} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z`
   }
-  // מתחילים למעלה וממשיכים עם כיוון השעון: חלבון (ימין) ← פחמימה (למטה) ← ירקות (שמאל)
   let angle = -Math.PI / 2
   const rendered = SECTORS.map(sec => {
     const frac = raw[sec.key] / sum
@@ -578,22 +576,26 @@ function LivePlate({ bars, split }) {
     const a1 = angle + frac * Math.PI * 2
     angle = a1
     const pct = get(sec.key)
-    const fillOpacity = 0.18 + 0.72 * Math.min(100, pct) / 100
+    const span = a1 - a0
     const mid = (a0 + a1) / 2
-    // סלוטים לאמוג'ים — מפוזרים בתוך המקטע בשתי טבעות
+    // הצבע מתקדם עם כיוון השעון בתוך המקטע, ביחס להתקדמות עד 100%
+    const fillEnd = a0 + span * Math.min(100, pct) / 100
+    // חריגה: מקטע אדום מסוף המקטע אחורה, יחסי לגודל החריגה (100% חריגה = כל המקטע)
+    const overFrac = pct > 100 ? Math.min(1, (pct - 100) / 100) : 0
     const nSlots = sec.emojis.length
-    const span = (a1 - a0) * 0.72
+    const eSpan = span * 0.72
     const slots = sec.emojis.map((e, i) => {
       const t = nSlots === 1 ? 0.5 : i / (nSlots - 1)
-      const a = mid - span / 2 + span * t
+      const a = mid - eSpan / 2 + eSpan * t
       const r = i % 2 === 0 ? R * 0.52 : R * 0.72
       return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a), e }
     })
     const count = pct <= 0 ? 0 : Math.max(1, Math.min(nSlots, Math.round(Math.min(110, pct) / 100 * nSlots)))
-    return { ...sec, a0, a1, mid, pct, fillOpacity, slots, count }
+    return { ...sec, a0, a1, span, mid, pct, fillEnd, overFrac, slots, count }
   })
   const fatPct = get('fat')
-  const allDone = rendered.every(s => s.pct >= 95) && fatPct >= 95
+  const fatOver = fatPct > 100
+  const allDone = rendered.every(s => s.pct >= 95 && s.pct <= 110) && fatPct >= 95 && fatPct <= 110
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
       <svg width={224} height={206} viewBox="0 0 220 202">
@@ -601,29 +603,44 @@ function LivePlate({ bars, split }) {
         <circle cx={CX} cy={CY} r={R + 4} fill="#fff" stroke="#e5e0d5" strokeWidth={2} />
         {rendered.map(sec => (
           <g key={sec.key}>
-            <path d={slicePath(R, sec.a0, sec.a1)} fill={sec.color} opacity={sec.fillOpacity} stroke="#fff" strokeWidth={2.5} />
+            {/* מקטע ריק — לבן עם קו מתאר עדין */}
+            <path d={slicePath(R, sec.a0, sec.a1)} fill="#fdfdfb" stroke="#eee8dc" strokeWidth={1.5} />
+            {/* הצבע שמתקדם עד 100% */}
+            {sec.pct > 0 && (
+              <path d={slicePath(R, sec.a0, sec.fillEnd)} fill={sec.color} opacity={0.82} stroke="#fff" strokeWidth={1.5} />
+            )}
+            {/* חריגה — אדום יחסי מסוף המקטע */}
+            {sec.overFrac > 0 && (
+              <path d={slicePath(R, sec.a1 - sec.span * sec.overFrac, sec.a1)} fill="#ef4444" opacity={0.85} stroke="#fff" strokeWidth={1.5} />
+            )}
+            {/* קו הפרדה בין מקטעים */}
+            <path d={slicePath(R, sec.a0, sec.a1)} fill="none" stroke="#fff" strokeWidth={2.5} />
             {sec.slots.slice(0, sec.count).map((sl, i) => (
               <text key={i} x={sl.x} y={sl.y + 6} textAnchor="middle" fontSize={19}>{sl.e}</text>
             ))}
           </g>
         ))}
-        {/* שמות המקטעים — לימודי, תמיד גלוי */}
+        {/* שמות מקטעים + אחוז חריגה באדום כשקיימת */}
         {rendered.map(sec => {
           const lx = CX + R * 0.86 * Math.cos(sec.mid)
           const ly = CY + R * 0.86 * Math.sin(sec.mid)
           return (
             <g key={sec.key + '-label'}>
               <rect x={lx - 27} y={ly - 9} width={54} height={17} rx={8.5}
-                fill={sec.color} opacity={0.95} />
-              <text x={lx} y={ly + 3.5} textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#fff">{sec.name}</text>
+                fill={sec.pct > 110 ? '#dc2626' : sec.color} opacity={0.95} />
+              <text x={lx} y={ly + 3.5} textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#fff">
+                {sec.pct > 110 ? `+${sec.pct - 100}%` : sec.name}
+              </text>
             </g>
           )
         })}
-        {/* שומנים — קערית במרכז, כמו בצלחת הבריאה */}
-        <circle cx={CX} cy={CY} r={24} fill="#fffdf5" stroke="#e8d9a8" strokeWidth={2} />
-        <circle cx={CX} cy={CY} r={17} fill="#f2d55c" opacity={0.15 + 0.75 * Math.min(100, fatPct) / 100} />
+        {/* שומנים — קערית במרכז */}
+        <circle cx={CX} cy={CY} r={24} fill="#fffdf5" stroke={fatOver ? '#ef4444' : '#e8d9a8'} strokeWidth={fatOver ? 2.5 : 2} />
+        <circle cx={CX} cy={CY} r={17 * Math.sqrt(Math.min(100, fatPct) / 100) || 0} fill="#f2d55c" opacity={0.85} />
         <text x={CX} y={CY + 1} textAnchor="middle" fontSize="14">🫒</text>
-        <text x={CX} y={CY + 14} textAnchor="middle" fontSize="7.5" fontWeight="800" fill="#8a6d1f">שומנים</text>
+        <text x={CX} y={CY + 14} textAnchor="middle" fontSize="7.5" fontWeight="800" fill={fatOver ? '#dc2626' : '#8a6d1f'}>
+          {fatOver ? `+${Math.round(fatPct) - 100}%` : 'שומנים'}
+        </text>
         {allDone && <text x={192} y={30} textAnchor="middle" fontSize="20">✨</text>}
       </svg>
       {allDone && (
