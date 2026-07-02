@@ -512,17 +512,34 @@ function plateBarColor(pct) {
   return '#ef4444'
 }
 
+function CircularRing({ pct, color, emoji, size = 46 }) {
+  const r = (size - 7) / 2
+  const circ = 2 * Math.PI * r
+  const fill = (Math.min(100, pct) / 100) * circ
+  const label = pct >= 95 && pct <= 110 ? '✓' : pct > 0 ? pct + '%' : ''
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+      <div style={{ position: 'relative', width: size, height: size }}>
+        <svg width={size} height={size} style={{ transform: 'rotate(-90deg)', display: 'block' }}>
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#e2e8f0" strokeWidth={5.5} />
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke={color} strokeWidth={5.5}
+            strokeDasharray={`${fill} ${circ}`} strokeLinecap="round"
+            style={{ transition: 'stroke-dasharray 0.55s cubic-bezier(.4,0,.2,1)' }} />
+        </svg>
+        <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, fontWeight: 800, color, lineHeight: 1 }}>
+          {label}
+        </div>
+      </div>
+      <div style={{ fontSize: 14 }}>{emoji}</div>
+    </div>
+  )
+}
+
 function FloatingPlateBars({ bars }) {
   return (
-    <div style={{ position: 'fixed', left: 6, top: '50%', transform: 'translateY(-50%)', zIndex: 60, background: 'rgba(255,255,255,0.94)', borderRadius: 16, padding: '10px 6px', boxShadow: '0 2px 12px rgba(0,0,0,0.14)', display: 'flex', gap: 8 }}>
+    <div style={{ position: 'fixed', left: 6, top: '50%', transform: 'translateY(-50%)', zIndex: 60, background: 'rgba(255,255,255,0.95)', borderRadius: 18, padding: '10px 7px', boxShadow: '0 4px 18px rgba(0,0,0,0.13)', display: 'flex', flexDirection: 'column', gap: 8 }}>
       {bars.map(b => (
-        <div key={b.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-          <div style={{ fontSize: 10, fontWeight: 800, color: b.color }}>{b.pct >= 95 && b.pct <= 100 ? '✓' : b.pct + '%'}</div>
-          <div style={{ width: 11, height: 70, borderRadius: 7, background: '#f1f5f9', position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: Math.min(100, b.pct) + '%', background: b.color, borderRadius: 7, transition: 'height 0.3s' }} />
-          </div>
-          <div style={{ fontSize: 14 }}>{b.emoji}</div>
-        </div>
+        <CircularRing key={b.label} pct={b.pct} color={b.color} emoji={b.emoji} />
       ))}
     </div>
   )
@@ -992,6 +1009,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const [fatigueLevel, setFatigueLevel] = useState(0)
   const [hungerLevel, setHungerLevel] = useState(0)
   const [userMood, setUserMood] = useState(null)
+  const [eatReasons, setEatReasons] = useState([])
   const [streak, setStreak] = useState(0)
   const [weeklyDays, setWeeklyDays] = useState(0)
   const [weekDates, setWeekDates] = useState([])
@@ -1112,7 +1130,7 @@ export default function PlanApp({ clientName, userPassword }) {
         setScanCalories(t.scan_calories || 0); setScanDesc(t.scan_desc || '')
         setScanProtein(t.scan_protein || 0); setScanFat(t.scan_fat || 0); setScanCarbs(t.scan_carbs || 0)
         setFeedback(t.trainer_feedback || null); setReportApproved(t.report_approved || false)
-        if (t.nlp_metrics) { var m = t.nlp_metrics; setStressLevel(m.stress || 0); setFatigueLevel(m.fatigue || 0); setHungerLevel(m.hunger || 0); setUserMood(m.mood || null) }
+        if (t.nlp_metrics) { var m = t.nlp_metrics; setStressLevel(m.stress || 0); setFatigueLevel(m.fatigue || 0); setHungerLevel(m.hunger || 0); setUserMood(m.mood || null); setEatReasons(m.eat_reasons || []) }
         setDailyLogLoaded(true)
       } else {
         // ✅ אין רשומה ליום הזה (כניסה ראשונה, או שהיום התגלגל לתאריך חדש באמצע הפעלה) — לוודא שלא נשאר מידע מהיום הקודם בזיכרון
@@ -1206,7 +1224,7 @@ export default function PlanApp({ clientName, userPassword }) {
       sport_done_today: sportDoneToday, sport_days_week: sportDaysThisWeek,
       scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
       diet_type: dietType, restrictions,
-      nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood },
+      nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood, eat_reasons: eatReasons },
       updated_at: new Date().toISOString(),
     }
     pendingSaveRef.current = payload
@@ -1216,7 +1234,7 @@ export default function PlanApp({ clientName, userPassword }) {
       pendingSaveRef.current = null
     }, 3000)
     return () => clearTimeout(autoSaveRef.current)
-  }, [checks, carbChecks, protChecks, carbQty, protQty, checksQty, fatSel, veggieChecks, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, drinkType, drinkCount, dailyLogLoaded, logDate])
+  }, [checks, carbChecks, protChecks, carbQty, protQty, checksQty, fatSel, veggieChecks, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, eatReasons, drinkType, drinkCount, dailyLogLoaded, logDate])
 
   // ⚠️ אם המשתמשת עוזבת את הדף בתוך חלון ה-debounce (סוגרת טאב / עוברת אפליקציה בנייד / נועלת מסך) —
   // unmount של רכיב React לא בהכרח קורה (בדפדפן בנייד הדף פשוט מוקפא/נהרג בלי לקרוא ל-cleanup),
@@ -1404,7 +1422,7 @@ export default function PlanApp({ clientName, userPassword }) {
     setBokerExtraProt(0); setLunchExtraProt(0); setErevExtraProt(0)
     setHadSnack(null); setHadBenayim(null); setDrinkType(null); setDrinkCount(0); setSportDoneToday(false)
     setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0)
-    setStressLevel(0); setFatigueLevel(0); setHungerLevel(0); setUserMood(null)
+    setStressLevel(0); setFatigueLevel(0); setHungerLevel(0); setUserMood(null); setEatReasons([])
     setFeedback(null); setReportApproved(false)
   }
 
@@ -1421,7 +1439,7 @@ export default function PlanApp({ clientName, userPassword }) {
       sport_done_today: sportDoneToday, sport_days_week: sportDaysThisWeek,
       scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
       diet_type: dietType, restrictions,
-      nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood },
+      nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood, eat_reasons: eatReasons },
       updated_at: new Date().toISOString(),
     }
     const { error } = await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
@@ -2283,6 +2301,20 @@ export default function PlanApp({ clientName, userPassword }) {
           <NlpSelector label="לחץ וסטרס:" value={stressLevel} onChange={setStressLevel} max={5} lowLabel={gf('רגועה', 'רגוע')} highLabel="עומס" accent="#ef4444" />
           <NlpSelector label="עייפות:" value={fatigueLevel} onChange={setFatigueLevel} max={5} lowLabel={gf('אנרגטית', 'אנרגטי')} highLabel={gf('סחוטה', 'סחוט')} accent={C.orange} />
           <NlpSelector label="רעב ממוצע:" value={hungerLevel} onChange={setHungerLevel} max={5} lowLabel={gf('שבעה', 'שבע')} highLabel="רעב קיצוני" accent={C.blue} />
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 8, textAlign: 'right' }}>למה {gf('אכלת', 'אכלת')} היום? (אפשר לסמן כמה)</div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end' }}>
+              {[{ k: 'hungry', l: 'רעב אמיתי', i: '🍽️' }, { k: 'tired', l: gf('עייפה', 'עייף'), i: '😴' }, { k: 'stressed', l: gf('לחוצה', 'לחוץ'), i: '😤' }, { k: 'bored', l: gf('שעמום', 'שעמום'), i: '🥱' }, { k: 'social', l: 'חברתי', i: '👥' }, { k: 'habit', l: 'הרגל', i: '🔄' }].map(r => {
+                const active = eatReasons.includes(r.k)
+                return (
+                  <button key={r.k} onClick={() => setEatReasons(active ? eatReasons.filter(k => k !== r.k) : [...eatReasons, r.k])}
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 20, border: '1.5px solid ' + (active ? C.greenMid : '#e2e8f0'), background: active ? C.greenLight : '#fafafa', color: active ? C.greenDark : '#64748b', fontSize: 12, fontWeight: active ? 700 : 500, cursor: 'pointer', transition: 'all 0.2s' }}>
+                    <span>{r.i}</span><span>{r.l}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
         </div>
 
         {currentStage >= 2 && (
