@@ -545,55 +545,65 @@ function FloatingPlateBars({ bars }) {
   )
 }
 
-// ✅ הצלחת החיה — אותם אחוזים ואותו רמזור (plateBarColor) כמו הטבעות הצפות,
-// רק בציור צלחת: כל רבע מתמלא רדיאלית לפי אחוז היעד האישי של הלקוחה.
+// ✅ הצלחת החיה — צלחת אמיתית שמתמלאת באוכל ככל שמתקדמים ביעד האישי.
+// בלי אחוזים ובלי רמזור — אלה נשארים בבר הצף. רק אוכל שמופיע על הצלחת.
 function LivePlate({ bars }) {
-  const R = 92, C0 = 105
-  const order = ['protein', 'carbs', 'fat', 'veggies']
-  const names = { protein: 'חלבון', carbs: 'פחמימה', fat: 'שומן', veggies: 'ירקות' }
-  const quads = order.map(k => bars.find(b => b.label === k)).filter(Boolean)
-  // רבע עיגול: startAngle ברדיאנים, ציור slice ברדיוס r
-  function slice(cx, cy, r, a0, a1) {
-    const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0)
-    const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1)
-    return `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1} Z`
+  const get = k => (bars.find(b => b.label === k) || { pct: 0 }).pct
+  // סלוטים קבועים לכל אזור — קומפוזיציה של צלחת מוגשת:
+  // ירקות למעלה-שמאל, חלבון למטה-ימין, פחמימה למעלה-ימין, שומן משמאל
+  const ZONES = {
+    veggies: { pct: get('veggies'), slots: [
+      { x: 72, y: 62, e: '🍅', s: 24 }, { x: 96, y: 48, e: '🥒', s: 23 },
+      { x: 60, y: 88, e: '🥦', s: 26 }, { x: 92, y: 78, e: '🥬', s: 22 },
+      { x: 118, y: 58, e: '🥕', s: 21 },
+    ]},
+    carbs: { pct: get('carbs'), slots: [
+      { x: 148, y: 62, e: '🍚', s: 26 }, { x: 132, y: 86, e: '🍞', s: 23 },
+      { x: 158, y: 88, e: '🌽', s: 21 }, { x: 144, y: 110, e: '🥔', s: 20 },
+    ]},
+    protein: { pct: get('protein'), slots: [
+      { x: 128, y: 138, e: '🍗', s: 28 }, { x: 100, y: 148, e: '🍳', s: 24 },
+      { x: 148, y: 128, e: '🐟', s: 22 }, { x: 118, y: 122, e: '🥚', s: 18 },
+    ]},
+    fat: { pct: get('fat'), slots: [
+      { x: 64, y: 122, e: '🥑', s: 23 }, { x: 84, y: 140, e: '🫒', s: 18 },
+    ]},
   }
-  const angles = [[-Math.PI / 2, 0], [0, Math.PI / 2], [Math.PI / 2, Math.PI], [Math.PI, Math.PI * 1.5]]
+  const count = z => {
+    if (z.pct <= 0) return 0
+    return Math.max(1, Math.min(z.slots.length, Math.round((Math.min(110, z.pct) / 100) * z.slots.length)))
+  }
+  const allDone = ['veggies', 'carbs', 'protein', 'fat'].every(k => ZONES[k].pct >= 95)
+  const anyFood = Object.values(ZONES).some(z => z.pct > 0)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <svg width={210} height={210} viewBox="0 0 210 210">
-        {/* צלחת — שוליים */}
-        <circle cx={C0} cy={C0} r={R + 9} fill="#fff" stroke="#e2e8f0" strokeWidth={2.5} />
-        {quads.map((b, i) => {
-          const [a0, a1] = angles[i]
-          const fillR = R * Math.sqrt(Math.min(100, b.pct) / 100)
-          const mid = (a0 + a1) / 2
-          const lx = C0 + R * 0.58 * Math.cos(mid)
-          const ly = C0 + R * 0.58 * Math.sin(mid)
-          const hit = b.pct >= 95 && b.pct <= 110
-          return (
-            <g key={b.label}>
-              <path d={slice(C0, C0, R, a0, a1)} fill="#f1f5f9" stroke="#fff" strokeWidth={3} />
-              {fillR > 4 && <path d={slice(C0, C0, fillR, a0, a1)} fill={b.color} opacity={0.85} stroke="#fff" strokeWidth={2} />}
-              <text x={lx} y={ly - 8} textAnchor="middle" fontSize="17">{b.emoji}</text>
-              <text x={lx} y={ly + 10} textAnchor="middle" fontSize="12.5" fontWeight="800"
-                fill={b.pct > 0 && fillR > R * 0.45 ? '#fff' : '#475569'}>
-                {hit ? '✓' : b.pct + '%'}
-              </text>
-            </g>
-          )
-        })}
-        <circle cx={C0} cy={C0} r={13} fill="#fff" stroke="#e2e8f0" strokeWidth={2} />
-        <text x={C0} y={C0 + 4.5} textAnchor="middle" fontSize="12">🍽️</text>
+      <svg width={220} height={200} viewBox="0 0 220 200">
+        {/* צל מתחת לצלחת */}
+        <ellipse cx={110} cy={172} rx={78} ry={10} fill="rgba(0,0,0,0.07)" />
+        {/* שוליים חיצוניים של הצלחת */}
+        <circle cx={110} cy={98} r={86} fill="#fff" stroke="#e8e2d8" strokeWidth={2} />
+        {/* פס עדין בשוליים — צלחת קרמיקה */}
+        <circle cx={110} cy={98} r={78} fill="none" stroke="#f0ebe1" strokeWidth={1.5} />
+        {/* מרכז הצלחת */}
+        <circle cx={110} cy={98} r={66} fill="#fdfcf9" />
+        {/* האוכל */}
+        {Object.values(ZONES).map((z, zi) =>
+          z.slots.slice(0, count(z)).map((sl, i) => (
+            <text key={zi + '-' + i} x={sl.x} y={sl.y} textAnchor="middle" fontSize={sl.s}
+              style={{ transition: 'opacity 0.4s' }}>{sl.e}</text>
+          ))
+        )}
+        {/* צלחת ריקה — סכו״ם מרומז */}
+        {!anyFood && (
+          <text x={110} y={106} textAnchor="middle" fontSize="15" fill="#d6cfc2" fontWeight="600">🍽️</text>
+        )}
+        {allDone && (
+          <text x={182} y={38} textAnchor="middle" fontSize="22">✨</text>
+        )}
       </svg>
-      <div style={{ display: 'flex', gap: 10, marginTop: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
-        {quads.map(b => (
-          <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#64748b', fontWeight: 600 }}>
-            <span style={{ width: 9, height: 9, borderRadius: '50%', background: b.color, display: 'inline-block' }} />
-            {names[b.label]}
-          </div>
-        ))}
-      </div>
+      {allDone && (
+        <div style={{ fontSize: 12.5, color: '#15803d', fontWeight: 800, marginTop: 2 }}>הצלחת מאוזנת — הגוף קיבל הכל 💚</div>
+      )}
     </div>
   )
 }
