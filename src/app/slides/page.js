@@ -5,12 +5,21 @@ const W = 1080
 const H = 1350
 
 const BG_OPTIONS = [
-  { name: 'כהה מאוד', val: '#18221a' },
-  { name: 'ירוק עמוק', val: '#2d3c27' },
-  { name: 'ירוק חי', val: '#3a4e2c' },
-  { name: 'ירוק בהיר', val: '#7a8a68' },
+  { name: 'כהה מאוד', val: '#18221a', dark: true },
+  { name: 'ירוק עמוק', val: '#2d3c27', dark: true },
+  { name: 'ירוק חי', val: '#3a4e2c', dark: true },
+  { name: 'ירוק בהיר', val: '#7a8a68', dark: true },
+  { name: 'קרם בהיר', val: '#f5ede0', dark: false },
+  { name: 'קרם כהה', val: '#e8d9c4', dark: false },
+  { name: 'זהב', val: '#c8a83c', dark: false },
+  { name: 'ירוק האפליקציה', val: '#3a5c3a', dark: true },
 ]
 const GOLD = '#c8a455'
+const TITLE_COLORS = [
+  { key: 'gold', label: 'זהב', val: '#c8a455' },
+  { key: 'white', label: 'לבן', val: '#ffffff' },
+  { key: 'black', label: 'שחור', val: '#1a1a1a' },
+]
 
 async function loadHeebo() {
   try {
@@ -54,7 +63,7 @@ function drawPhoto(ctx, img, zoom, px, py) {
 }
 
 async function renderSlide(canvas, opts) {
-  const { photoImg, lines, subtitle, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColor, zoom, px, py } = opts
+  const { photoImg, lines, subtitle, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColor, zoom, px, py, patchOn, patchY, patchH } = opts
   const ctx = canvas.getContext('2d')
   canvas.width = W
   canvas.height = H
@@ -88,6 +97,25 @@ async function renderSlide(canvas, opts) {
       ctx.fillStyle = gBot
       ctx.fillRect(0, H * 0.82, W, H * 0.06)
     }
+  }
+
+  // hide-patch: solid strip in bg color, position + height adjustable
+  if (patchOn) {
+    const ph = H * patchH
+    const pyTop = (H - ph) * patchY
+    const soft = 26
+    const g = ctx.createLinearGradient(0, pyTop - soft, 0, pyTop)
+    g.addColorStop(0, `rgba(${br},${bg_},${bb},0)`)
+    g.addColorStop(1, `rgba(${br},${bg_},${bb},1)`)
+    ctx.fillStyle = g
+    ctx.fillRect(0, pyTop - soft, W, soft)
+    ctx.fillStyle = bgColor
+    ctx.fillRect(0, pyTop, W, ph)
+    const g2 = ctx.createLinearGradient(0, pyTop + ph, 0, pyTop + ph + soft)
+    g2.addColorStop(0, `rgba(${br},${bg_},${bb},1)`)
+    g2.addColorStop(1, `rgba(${br},${bg_},${bb},0)`)
+    ctx.fillStyle = g2
+    ctx.fillRect(0, pyTop + ph, W, soft)
   }
 
   await loadHeebo()
@@ -129,8 +157,9 @@ async function renderSlide(canvas, opts) {
       s -= 2
       ctx.font = `600 ${s}px Heebo, Arial`
     }
-    ctx.fillStyle = 'rgba(255,255,255,0.9)'
-    ctx.shadowColor = 'rgba(0,0,0,0.55)'
+    const subDark = titleColor === '#1a1a1a'
+    ctx.fillStyle = subDark ? 'rgba(26,26,26,0.85)' : 'rgba(255,255,255,0.9)'
+    ctx.shadowColor = subDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.55)'
     ctx.shadowBlur = 10
     ctx.fillText(subtitle, W / 2, startY + filteredLines.length * lineH + 40)
     ctx.shadowBlur = 0
@@ -158,7 +187,10 @@ export default function SlideGenerator() {
   const [posY, setPosY] = useState(0.75)
   const [titleScale, setTitleScale] = useState(1)
   const [subScale, setSubScale] = useState(1)
-  const [titleGold, setTitleGold] = useState(true)
+  const [titleColorKey, setTitleColorKey] = useState('gold')
+  const [patchOn, setPatchOn] = useState(false)
+  const [patchY, setPatchY] = useState(0.05)
+  const [patchH, setPatchH] = useState(0.14)
   const [zoom, setZoom] = useState(1)
   const [px, setPx] = useState(0)
   const [py, setPy] = useState(0)
@@ -182,14 +214,14 @@ export default function SlideGenerator() {
         posY,
         titleScale,
         subScale,
-        titleColor: titleGold ? GOLD : '#ffffff',
-        zoom, px, py,
+        titleColor: TITLE_COLORS.find(c => c.key === titleColorKey).val,
+        zoom, px, py, patchOn, patchY, patchH,
       })
       setResultUrl(canvas.toDataURL('image/jpeg', 0.94))
     } catch (e) {
       console.error(e)
     }
-  }, [headline, subtitle, photoImg, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleGold, zoom, px, py])
+  }, [headline, subtitle, photoImg, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColorKey, zoom, px, py, patchOn, patchY, patchH])
 
   useEffect(() => {
     clearTimeout(debounceRef.current)
@@ -320,6 +352,19 @@ export default function SlideGenerator() {
               style={{ width: 18, height: 18, accentColor: '#3a5c3a' }} />
             כיסוי אטום למעלה ולמטה (מסתיר כיתוב צרוב בתמונה)
           </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#64748b', fontWeight: 600, marginBottom: 10, cursor: 'pointer' }}>
+            <input type="checkbox" checked={patchOn} onChange={e => setPatchOn(e.target.checked)}
+              style={{ width: 18, height: 18, accentColor: '#3a5c3a' }} />
+            טלאי הסתרה — פס בצבע הרקע למחיקת כיתוב צרוב
+          </label>
+          {patchOn && (
+            <div style={{ background: '#f8fafc', borderRadius: 12, padding: '12px 14px 2px', marginBottom: 14 }}>
+              <Slider label="מיקום הטלאי — למעלה ⟵ למטה"
+                value={patchY} onChange={setPatchY} min={0} max={1} step={0.02} />
+              <Slider label={`גובה הטלאי — ${Math.round(patchH * 100)}%`}
+                value={patchH} onChange={setPatchH} min={0.05} max={0.45} step={0.01} />
+            </div>
+          )}
         </>
       )}
 
@@ -327,14 +372,15 @@ export default function SlideGenerator() {
       <label style={{ display: 'block', marginBottom: 6, fontSize: 13, color: '#64748b', fontWeight: 600 }}>
         {photoImg ? 'גוון שכבת הצבע על התמונה' : 'גוון רקע'}
       </label>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 18 }}>
         {BG_OPTIONS.map(o => (
           <button key={o.val} onClick={() => setBgColor(o.val)}
             style={{
-              flex: 1, height: 52, borderRadius: 10, cursor: 'pointer',
+              height: 52, borderRadius: 10, cursor: 'pointer',
               background: o.val,
               border: bgColor === o.val ? '3px solid #c8a455' : '2px solid #e2e8f0',
-              color: 'rgba(255,255,255,0.85)', fontSize: 10, fontWeight: 700,
+              color: o.dark ? 'rgba(255,255,255,0.85)' : 'rgba(40,40,40,0.75)',
+              fontSize: 10, fontWeight: 700,
               display: 'flex', alignItems: 'flex-end', justifyContent: 'center', paddingBottom: 4,
             }}>
             {o.name}
@@ -357,15 +403,17 @@ export default function SlideGenerator() {
         style={{ ...inp, marginBottom: 18 }} />
 
       {/* Title color toggle */}
+      <label style={{ display: 'block', marginBottom: 6, fontSize: 13, color: '#64748b', fontWeight: 600 }}>
+        צבע כותרת
+      </label>
       <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-        <button onClick={() => setTitleGold(true)}
-          style={{ flex: 1, padding: '9px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13, border: titleGold ? '2px solid #c8a455' : '1.5px solid #e2e8f0', background: titleGold ? '#fdf6e3' : '#fafafa', color: '#8a6d1f' }}>
-          כותרת זהב
-        </button>
-        <button onClick={() => setTitleGold(false)}
-          style={{ flex: 1, padding: '9px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13, border: !titleGold ? '2px solid #64748b' : '1.5px solid #e2e8f0', background: !titleGold ? '#f1f5f9' : '#fafafa', color: '#334155' }}>
-          כותרת לבנה
-        </button>
+        {TITLE_COLORS.map(c => (
+          <button key={c.key} onClick={() => setTitleColorKey(c.key)}
+            style={{ flex: 1, padding: '9px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 13, border: titleColorKey === c.key ? '2.5px solid #3a5c3a' : '1.5px solid #e2e8f0', background: '#fafafa', color: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+            <span style={{ width: 14, height: 14, borderRadius: '50%', background: c.val, border: '1px solid #cbd5e1', display: 'inline-block' }} />
+            {c.label}
+          </button>
+        ))}
       </div>
 
       <Slider label="מיקום הכותרת — למעלה ⟵ למטה"
