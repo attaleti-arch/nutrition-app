@@ -14,6 +14,11 @@ const BG_OPTIONS = [
   { name: 'זהב', val: '#c8a83c', dark: false },
   { name: 'ירוק האפליקציה', val: '#3a5c3a', dark: true },
 ]
+const LOGO_COLORS = [
+  { key: 'light', label: 'זהב בהיר', val: '#d4b26a' },
+  { key: 'rich', label: 'זהב עשיר', val: '#c8a83c' },
+  { key: 'white', label: 'לבן', val: '#f2ede2' },
+]
 const TITLE_COLORS = [
   { key: 'gold', label: 'זהב', val: '#c8a455' },
   { key: 'white', label: 'לבן', val: '#ffffff' },
@@ -154,7 +159,7 @@ function inpaintRegion(editCtx, srcW, srcH, strokes, radius) {
 }
 
 async function renderSlide(canvas, opts) {
-  const { photoSrc, lines, subtitle, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColor, zoom, px, py, patchOn, patchY, patchH, logoImg, logoOn } = opts
+  const { photoSrc, lines, subtitle, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColor, zoom, px, py, patchOn, patchY, patchH, logoImg, logoOn, logoColor } = opts
   const ctx = canvas.getContext('2d')
   canvas.width = W
   canvas.height = H
@@ -255,12 +260,19 @@ async function renderSlide(canvas, opts) {
     ctx.shadowBlur = 0
   }
 
-  // logo watermark — bottom center, gold, semi-transparent
+  // logo watermark — bottom center, tinted, semi-transparent
   if (logoOn && logoImg) {
     const lw = 132
     const lh = lw * (logoImg.height / logoImg.width)
+    const off = document.createElement('canvas')
+    off.width = logoImg.width; off.height = logoImg.height
+    const octx = off.getContext('2d')
+    octx.drawImage(logoImg, 0, 0)
+    octx.globalCompositeOperation = 'source-in'
+    octx.fillStyle = logoColor
+    octx.fillRect(0, 0, off.width, off.height)
     ctx.globalAlpha = 0.92
-    ctx.drawImage(logoImg, (W - lw) / 2, H - lh - 34, lw, lh)
+    ctx.drawImage(off, (W - lw) / 2, H - lh - 34, lw, lh)
     ctx.globalAlpha = 1
   }
 }
@@ -295,6 +307,7 @@ export default function SlideGenerator() {
   const [px, setPx] = useState(0)
   const [py, setPy] = useState(0)
   const [logoOn, setLogoOn] = useState(true)
+  const [logoColorKey, setLogoColorKey] = useState('light')
   const [logoReady, setLogoReady] = useState(false)
   const logoRef = useRef(null)
   const [eraseMode, setEraseMode] = useState(false)
@@ -334,12 +347,13 @@ export default function SlideGenerator() {
         titleColor: TITLE_COLORS.find(c => c.key === titleColorKey).val,
         zoom, px, py, patchOn, patchY, patchH,
         logoImg: logoRef.current, logoOn,
+        logoColor: LOGO_COLORS.find(c => c.key === logoColorKey).val,
       })
       setResultUrl(canvas.toDataURL('image/jpeg', 0.94))
     } catch (e) {
       console.error(e)
     }
-  }, [headline, subtitle, photoImg, editVersion, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColorKey, zoom, px, py, patchOn, patchY, patchH, logoOn, logoReady])
+  }, [headline, subtitle, photoImg, editVersion, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColorKey, zoom, px, py, patchOn, patchY, patchH, logoOn, logoColorKey, logoReady])
 
   useEffect(() => {
     clearTimeout(debounceRef.current)
@@ -646,8 +660,19 @@ export default function SlideGenerator() {
       <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#64748b', fontWeight: 600, marginBottom: 14, cursor: 'pointer' }}>
         <input type="checkbox" checked={logoOn} onChange={e => setLogoOn(e.target.checked)}
           style={{ width: 18, height: 18, accentColor: '#3a5c3a' }} />
-        לוגו זהוב קטן בתחתית השקף
+        לוגו קטן בתחתית השקף
       </label>
+      {logoOn && (
+        <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+          {LOGO_COLORS.map(c => (
+            <button key={c.key} onClick={() => setLogoColorKey(c.key)}
+              style={{ flex: 1, padding: '8px', borderRadius: 10, cursor: 'pointer', fontWeight: 700, fontSize: 12, border: logoColorKey === c.key ? '2.5px solid #3a5c3a' : '1.5px solid #e2e8f0', background: '#fafafa', color: '#334155', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <span style={{ width: 13, height: 13, borderRadius: '50%', background: c.val, border: '1px solid #cbd5e1', display: 'inline-block' }} />
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <Slider label="מיקום הכותרת — למעלה ⟵ למטה"
         value={posY} onChange={setPosY} min={0} max={1} step={0.05} />
