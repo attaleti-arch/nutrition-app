@@ -545,6 +545,206 @@ function FloatingPlateBars({ bars }) {
   )
 }
 
+// ✅ הצלחת החיה — אותם אחוזים ואותו רמזור (plateBarColor) כמו הטבעות הצפות,
+// רק בציור צלחת: כל רבע מתמלא רדיאלית לפי אחוז היעד האישי של הלקוחה.
+function LivePlate({ bars }) {
+  const R = 92, C0 = 105
+  const order = ['protein', 'carbs', 'fat', 'veggies']
+  const names = { protein: 'חלבון', carbs: 'פחמימה', fat: 'שומן', veggies: 'ירקות' }
+  const quads = order.map(k => bars.find(b => b.label === k)).filter(Boolean)
+  // רבע עיגול: startAngle ברדיאנים, ציור slice ברדיוס r
+  function slice(cx, cy, r, a0, a1) {
+    const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0)
+    const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1)
+    return `M ${cx} ${cy} L ${x0} ${y0} A ${r} ${r} 0 0 1 ${x1} ${y1} Z`
+  }
+  const angles = [[-Math.PI / 2, 0], [0, Math.PI / 2], [Math.PI / 2, Math.PI], [Math.PI, Math.PI * 1.5]]
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <svg width={210} height={210} viewBox="0 0 210 210">
+        {/* צלחת — שוליים */}
+        <circle cx={C0} cy={C0} r={R + 9} fill="#fff" stroke="#e2e8f0" strokeWidth={2.5} />
+        {quads.map((b, i) => {
+          const [a0, a1] = angles[i]
+          const fillR = R * Math.sqrt(Math.min(100, b.pct) / 100)
+          const mid = (a0 + a1) / 2
+          const lx = C0 + R * 0.58 * Math.cos(mid)
+          const ly = C0 + R * 0.58 * Math.sin(mid)
+          const hit = b.pct >= 95 && b.pct <= 110
+          return (
+            <g key={b.label}>
+              <path d={slice(C0, C0, R, a0, a1)} fill="#f1f5f9" stroke="#fff" strokeWidth={3} />
+              {fillR > 4 && <path d={slice(C0, C0, fillR, a0, a1)} fill={b.color} opacity={0.85} stroke="#fff" strokeWidth={2} />}
+              <text x={lx} y={ly - 8} textAnchor="middle" fontSize="17">{b.emoji}</text>
+              <text x={lx} y={ly + 10} textAnchor="middle" fontSize="12.5" fontWeight="800"
+                fill={b.pct > 0 && fillR > R * 0.45 ? '#fff' : '#475569'}>
+                {hit ? '✓' : b.pct + '%'}
+              </text>
+            </g>
+          )
+        })}
+        <circle cx={C0} cy={C0} r={13} fill="#fff" stroke="#e2e8f0" strokeWidth={2} />
+        <text x={C0} y={C0 + 4.5} textAnchor="middle" fontSize="12">🍽️</text>
+      </svg>
+      <div style={{ display: 'flex', gap: 10, marginTop: 4, flexWrap: 'wrap', justifyContent: 'center' }}>
+        {quads.map(b => (
+          <div key={b.label} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, color: '#64748b', fontWeight: 600 }}>
+            <span style={{ width: 9, height: 9, borderRadius: '50%', background: b.color, display: 'inline-block' }} />
+            {names[b.label]}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ✅ מסע הפרפר — תחנות הרצף עם פרפר המותג שמתקדם לאורך השביל
+function ButterflyJourney({ streak }) {
+  const stones = [1, 3, 7, 14, 21, 30]
+  const W2 = 300, H2 = 64
+  const xs = stones.map((_, i) => 18 + (W2 - 36) * (i / (stones.length - 1)))
+  const ys = stones.map((_, i) => (i % 2 === 0 ? 42 : 24))
+  // מיקום הפרפר: אינטרפולציה בין התחנות לפי הרצף הנוכחי
+  let bx = xs[0], by = ys[0] - 14
+  if (streak >= stones[stones.length - 1]) { bx = xs[xs.length - 1]; by = ys[ys.length - 1] - 14 }
+  else if (streak > 0) {
+    let i = 0
+    while (i < stones.length - 1 && streak >= stones[i + 1]) i++
+    const t = i < stones.length - 1 ? (streak - stones[i]) / (stones[i + 1] - stones[i]) : 0
+    bx = xs[i] + (xs[Math.min(i + 1, xs.length - 1)] - xs[i]) * Math.max(0, t)
+    by = ys[i] + (ys[Math.min(i + 1, ys.length - 1)] - ys[i]) * Math.max(0, t) - 14
+  }
+  let path = `M ${xs[0]} ${ys[0]}`
+  for (let i = 1; i < xs.length; i++) {
+    const mx = (xs[i - 1] + xs[i]) / 2
+    path += ` Q ${mx} ${ys[i - 1]} ${mx} ${(ys[i - 1] + ys[i]) / 2} T ${xs[i]} ${ys[i]}`
+  }
+  return (
+    <div style={{ marginTop: 12 }}>
+      <svg width="100%" viewBox={`0 0 ${W2} ${H2}`} style={{ display: 'block' }}>
+        <path d={path} fill="none" stroke="#e7d3b0" strokeWidth={2.5} strokeDasharray="1 6" strokeLinecap="round" />
+        {stones.map((m, i) => {
+          const passed = streak >= m
+          return (
+            <g key={m}>
+              <circle cx={xs[i]} cy={ys[i]} r={passed ? 9 : 7.5}
+                fill={passed ? '#c8a83c' : '#fff'} stroke={passed ? '#a8862a' : '#e5e7eb'} strokeWidth={2} />
+              <text x={xs[i]} y={ys[i] + 3} textAnchor="middle" fontSize="8" fontWeight="800"
+                fill={passed ? '#fff' : '#9ca3af'}>{m}</text>
+            </g>
+          )
+        })}
+        <g transform={`translate(${bx}, ${by})`} opacity={streak > 0 ? 1 : 0.45}>
+          <g>
+            <path d="M0,6 C-7,-3 -14,-2 -14,4 C-14,10 -6,13 0,7 Z" fill="#d9ab43">
+              <animateTransform attributeName="transform" type="scale" values="1 1;0.55 1;1 1" dur="0.5s" repeatCount="indefinite" additive="sum" />
+            </path>
+            <path d="M0,6 C7,-3 14,-2 14,4 C14,10 6,13 0,7 Z" fill="#d9ab43">
+              <animateTransform attributeName="transform" type="scale" values="1 1;0.55 1;1 1" dur="0.5s" repeatCount="indefinite" additive="sum" />
+            </path>
+            <ellipse cx="0" cy="6.5" rx="1.3" ry="4.5" fill="#2e3a26" />
+          </g>
+        </g>
+      </svg>
+      <div style={{ fontSize: 10.5, color: '#a16207', textAlign: 'center', marginTop: 2, fontWeight: 600 }}>
+        {streak >= 30 ? 'הפרפר הגיע ליעד — 30 יום! 🏆' : streak > 0 ? `הפרפר שלך בדרך — עוד ${stones.find(m => m > streak) - streak} ימים לתחנה הבאה 🦋` : 'הפרפר מחכה שתתחילי את המסע 🦋'}
+      </div>
+    </div>
+  )
+}
+
+// ✅ "מה בא לי?" — המלצות לפי חשק + מה שנשאר מהיעד האישי היום. חישוב בלבד, לא נוגע בשמירה.
+const CRAVING_BANK = [
+  { name: 'יוגורט עם פרי וקינמון', emoji: '🍓', kcal: 130, prot: 6, tags: ['sweet', 'cold', 'light'] },
+  { name: 'שייק חלב/שקדים עם תמר וכף חמאת בוטנים', emoji: '🥤', kcal: 220, prot: 10, tags: ['sweet', 'cold'] },
+  { name: 'פרי + ריבוע שוקולד מריר', emoji: '🍫', kcal: 150, prot: 2, tags: ['sweet', 'light'] },
+  { name: 'גבינה לבנה עם טיפת דבש ואגוזים', emoji: '🍯', kcal: 180, prot: 10, tags: ['sweet'] },
+  { name: 'ביצה קשה + ירקות חתוכים', emoji: '🥚', kcal: 95, prot: 7, tags: ['salty', 'light', 'cold'] },
+  { name: 'קוטג׳ עם פריכית', emoji: '🧀', kcal: 140, prot: 12, tags: ['salty', 'cold'] },
+  { name: 'טונה עם קרקרים וירק', emoji: '🐟', kcal: 190, prot: 20, tags: ['salty', 'cold'] },
+  { name: 'חומוס עם מקלות ירקות', emoji: '🥕', kcal: 150, prot: 6, tags: ['salty', 'light', 'cold'] },
+  { name: 'מרק ירקות חם', emoji: '🍲', kcal: 100, prot: 3, tags: ['hot', 'light'] },
+  { name: 'חביתה מירק קטנה', emoji: '🍳', kcal: 115, prot: 8, tags: ['hot', 'salty'] },
+  { name: 'טוסט קל עם גבינה צהובה 9%', emoji: '🥪', kcal: 200, prot: 13, tags: ['hot', 'salty'] },
+  { name: 'אדממה מאודה', emoji: '🫛', kcal: 120, prot: 11, tags: ['hot', 'salty', 'light'] },
+  { name: 'מקלות ירקות בלי הגבלה', emoji: '🥒', kcal: 40, prot: 1, tags: ['light', 'cold'] },
+]
+
+function CravingHelper({ remainingCal, remainingProt, gfn }) {
+  const [open, setOpen] = useState(false)
+  const [craving, setCraving] = useState(null)
+  const chips = [
+    { k: 'sweet', l: 'מתוק', i: '🍓' },
+    { k: 'salty', l: 'מלוח', i: '🧀' },
+    { k: 'hot', l: 'משהו חם', i: '🍲' },
+    { k: 'cold', l: 'משהו קר', i: '🥶' },
+    { k: 'light', l: 'קליל', i: '🌿' },
+    { k: 'any', l: 'אין לי מושג', i: '🤷‍♀️' },
+  ]
+  const lowBudget = remainingCal < 100
+  let picks = []
+  if (craving && !lowBudget) {
+    picks = CRAVING_BANK
+      .filter(it => craving === 'any' || it.tags.includes(craving))
+      .filter(it => it.kcal <= remainingCal + 60)
+    picks.sort(remainingProt > 15 ? (a, b) => b.prot - a.prot : (a, b) => a.kcal - b.kcal)
+    picks = picks.slice(0, 3)
+  }
+  return (
+    <div style={{ background: 'linear-gradient(135deg,#fdf2f8,#faf5ff)', borderRadius: 18, padding: '14px 18px', marginBottom: 14, border: '1.5px solid #f5d0fe' }}>
+      <div onClick={() => setOpen(!open)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 22 }}>🤔</span>
+          <div>
+            <div style={{ fontWeight: 900, fontSize: 14, color: '#a21caf' }}>{gfn('לא יודעת מה לאכול?', 'לא יודע מה לאכול?')}</div>
+            <div style={{ fontSize: 11, color: '#c026d3' }}>{gfn('ספרי לי מה בא לך — אחשב מה מתאים', 'ספר לי מה בא לך — אחשב מה מתאים')}</div>
+          </div>
+        </div>
+        <div style={{ fontSize: 14, color: '#c026d3', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.2s' }}>◀</div>
+      </div>
+      {open && (
+        <div style={{ marginTop: 12 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+            {chips.map(c => (
+              <button key={c.k} onClick={() => setCraving(c.k)}
+                style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 20, border: '1.5px solid ' + (craving === c.k ? '#c026d3' : '#f0d9f5'), background: craving === c.k ? '#fae8ff' : '#fff', color: craving === c.k ? '#a21caf' : '#64748b', fontSize: 12, fontWeight: craving === c.k ? 700 : 500, cursor: 'pointer' }}>
+                <span>{c.i}</span><span>{c.l}</span>
+              </button>
+            ))}
+          </div>
+          {craving && (
+            lowBudget ? (
+              <div style={{ background: 'rgba(255,255,255,0.75)', borderRadius: 12, padding: '12px 14px', fontSize: 13, color: '#86198f', fontWeight: 600, lineHeight: 1.6 }}>
+                היום שלך כמעט מלא 🥰 אם זה רעב אמיתי — ירקות זה תמיד כן. ואם זה משהו אחר — אולי כוס תה חם ורגע {gfn('לעצמך', 'לעצמך')} 🫶🏻
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 11.5, color: '#a21caf', fontWeight: 700, marginBottom: 8 }}>
+                  נשארו לך היום בערך {Math.max(0, Math.round(remainingCal))} קל׳{remainingProt > 5 ? ` ו-${Math.round(remainingProt)} גרם חלבון` : ''} — הנה מה שמתאים:
+                </div>
+                {picks.length === 0 && (
+                  <div style={{ background: 'rgba(255,255,255,0.75)', borderRadius: 12, padding: '10px 14px', fontSize: 12.5, color: '#86198f' }}>
+                    בתקציב שנשאר הכי מתאים משהו קליל — ירקות חתוכים, מרק צלול או תה 💚
+                  </div>
+                )}
+                {picks.map(it => (
+                  <div key={it.name} style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(255,255,255,0.8)', borderRadius: 12, padding: '10px 12px', marginBottom: 6 }}>
+                    <span style={{ fontSize: 22 }}>{it.emoji}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#333' }}>{it.name}</div>
+                      <div style={{ fontSize: 11, color: '#9ca3af' }}>~{it.kcal} קל׳ · {it.prot} גרם חלבון</div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function Confetti() {
   const colors = ['#16a34a','#f97316','#9333ea','#0284c7','#d97706','#0d9488','#ec4899']
   const pieces = Array.from({ length: 60 }, function(_, i) { return i })
@@ -2206,6 +2406,19 @@ export default function PlanApp({ clientName, userPassword }) {
         )}
         {feedback && <FeedbackCard feedback={feedback} clientName={displayName} logDate={logDateDisplay} onOpenFull={() => setShowDailyFeedback(true)} />}
 
+        {/* ✅ הצלחת החיה — ויזואליזציה של אותם אחוזי יעד אישיים */}
+        {targets && (
+          <div style={{ background: '#fff', borderRadius: 18, padding: '14px 18px 10px', marginBottom: 14, border: '1.5px solid #f0f0f0' }}>
+            <div style={{ fontWeight: 900, fontSize: 14, color: '#1e293b', marginBottom: 4, textAlign: 'center' }}>🍽️ הצלחת שלך היום</div>
+            <LivePlate bars={plateBars} />
+          </div>
+        )}
+
+        {/* ✅ מה בא לי? — המלצה לפי חשק ומה שנשאר מהיעד */}
+        {targets && (
+          <CravingHelper remainingCal={targets.calories - eatenCalories} remainingProt={targets.protein - eatenProtein} gfn={gf} />
+        )}
+
         {/* ✅ כרטיס רצף ושבוע */}
         {weekDates.length > 0 && (
           <div style={{ background: 'linear-gradient(135deg,#fff7ed,#fef3c7)', borderRadius: 18, padding: '14px 18px', marginBottom: 14, border: '1.5px solid #fed7aa' }}>
@@ -2261,6 +2474,7 @@ export default function PlanApp({ clientName, userPassword }) {
                 <div style={{ marginTop: 12, background: 'rgba(255,255,255,0.65)', borderRadius: 12, padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#92400e', textAlign: 'right', lineHeight: 1.5 }}>{msg}</div>
               ) : null
             })()}
+            <ButterflyJourney streak={streak} />
           </div>
         )}
 
