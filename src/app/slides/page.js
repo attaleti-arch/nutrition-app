@@ -154,7 +154,7 @@ function inpaintRegion(editCtx, srcW, srcH, strokes, radius) {
 }
 
 async function renderSlide(canvas, opts) {
-  const { photoSrc, lines, subtitle, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColor, zoom, px, py, patchOn, patchY, patchH } = opts
+  const { photoSrc, lines, subtitle, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColor, zoom, px, py, patchOn, patchY, patchH, logoImg, logoOn } = opts
   const ctx = canvas.getContext('2d')
   canvas.width = W
   canvas.height = H
@@ -254,6 +254,15 @@ async function renderSlide(canvas, opts) {
     ctx.fillText(subtitle, W / 2, startY + filteredLines.length * lineH + 40)
     ctx.shadowBlur = 0
   }
+
+  // logo watermark — bottom center, gold, semi-transparent
+  if (logoOn && logoImg) {
+    const lw = 132
+    const lh = lw * (logoImg.height / logoImg.width)
+    ctx.globalAlpha = 0.92
+    ctx.drawImage(logoImg, (W - lw) / 2, H - lh - 34, lw, lh)
+    ctx.globalAlpha = 1
+  }
 }
 
 function Slider({ label, value, onChange, min, max, step }) {
@@ -285,6 +294,9 @@ export default function SlideGenerator() {
   const [zoom, setZoom] = useState(1)
   const [px, setPx] = useState(0)
   const [py, setPy] = useState(0)
+  const [logoOn, setLogoOn] = useState(true)
+  const [logoReady, setLogoReady] = useState(false)
+  const logoRef = useRef(null)
   const [eraseMode, setEraseMode] = useState(false)
   const [brushSize, setBrushSize] = useState(55)
   const [healing, setHealing] = useState(false)
@@ -298,6 +310,12 @@ export default function SlideGenerator() {
   const strokeRef = useRef(null)
 
   const photoSrc = editRef.current?.canvas || photoImg
+
+  useEffect(() => {
+    const img = new Image()
+    img.onload = () => { logoRef.current = img; setLogoReady(true) }
+    img.src = '/logo-gold.png'
+  }, [])
 
   const generate = useCallback(async () => {
     try {
@@ -315,12 +333,13 @@ export default function SlideGenerator() {
         subScale,
         titleColor: TITLE_COLORS.find(c => c.key === titleColorKey).val,
         zoom, px, py, patchOn, patchY, patchH,
+        logoImg: logoRef.current, logoOn,
       })
       setResultUrl(canvas.toDataURL('image/jpeg', 0.94))
     } catch (e) {
       console.error(e)
     }
-  }, [headline, subtitle, photoImg, editVersion, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColorKey, zoom, px, py, patchOn, patchY, patchH])
+  }, [headline, subtitle, photoImg, editVersion, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColorKey, zoom, px, py, patchOn, patchY, patchH, logoOn, logoReady])
 
   useEffect(() => {
     clearTimeout(debounceRef.current)
@@ -623,6 +642,12 @@ export default function SlideGenerator() {
           </button>
         ))}
       </div>
+
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#64748b', fontWeight: 600, marginBottom: 14, cursor: 'pointer' }}>
+        <input type="checkbox" checked={logoOn} onChange={e => setLogoOn(e.target.checked)}
+          style={{ width: 18, height: 18, accentColor: '#3a5c3a' }} />
+        לוגו זהוב קטן בתחתית השקף
+      </label>
 
       <Slider label="מיקום הכותרת — למעלה ⟵ למטה"
         value={posY} onChange={setPosY} min={0} max={1} step={0.05} />
