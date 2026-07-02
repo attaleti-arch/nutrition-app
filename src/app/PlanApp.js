@@ -730,7 +730,7 @@ function MealScanner({ gender, onAdd, joinedDate }) {
   )
 }
 
-function Section({ title, icon, accent, light, children, defaultOpen, badge, isLocked, lockMessage }) {
+function Section({ title, icon, accent, light, children, defaultOpen, badge, isLocked, lockMessage, cardBg, cardBorder }) {
   const [open, setOpen] = useState(defaultOpen || false)
   if (isLocked) return (
     <div style={{ background: '#fafafa', borderRadius: 18, overflow: 'hidden', border: '1.5px dashed #d1d5db', marginBottom: 10, opacity: 0.75 }}>
@@ -742,8 +742,8 @@ function Section({ title, icon, accent, light, children, defaultOpen, badge, isL
     </div>
   )
   return (
-    <div style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', border: '1.5px solid #f0f0f0', marginBottom: 10 }}>
-      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', background: open ? light : '#fff', border: 'none', cursor: 'pointer' }}>
+    <div style={{ background: cardBg || '#fff', borderRadius: 18, overflow: 'hidden', border: '1.5px solid ' + (cardBorder || '#f0f0f0'), marginBottom: 10 }}>
+      <button onClick={() => setOpen(o => !o)} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', background: open ? light : (cardBg || '#fff'), border: 'none', cursor: 'pointer' }}>
         <span style={{ fontSize: 22 }}>{icon}</span>
         <span style={{ flex: 1, fontWeight: 800, fontSize: 15, color: '#111', textAlign: 'right' }}>{title}</span>
         {badge && <span style={{ fontSize: 11, background: '#dcfce7', color: '#166534', borderRadius: 99, padding: '2px 8px', fontWeight: 700 }}>{badge}</span>}
@@ -1590,7 +1590,7 @@ export default function PlanApp({ clientName, userPassword }) {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', direction: 'rtl' }}>
+    <div style={{ minHeight: '100vh', background: 'linear-gradient(170deg,#faf5ff 0%,#f0fdf4 45%,#fff7ed 100%) fixed', direction: 'rtl' }}>
       {showConfetti && <Confetti />}
 
       {saveWarnings.length > 0 && (
@@ -1622,7 +1622,7 @@ export default function PlanApp({ clientName, userPassword }) {
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#555', marginBottom: 4 }}>
                   <span>🔥 {Math.round(eatenCalories)} קל</span>
                   <span style={{ color: eatenCalories >= targets.calories ? '#f97316' : '#16a34a', fontWeight: 700 }}>
-                    {eatenCalories >= targets.calories ? '✅ הגעת ליעד!' : `נשאר ${targets.calories - Math.round(eatenCalories)} קל`}
+                    {eatenCalories >= targets.calories ? 'עשית את זה! הזנת את הגוף בדיוק במה שהוא צריך ✅' : `נשאר ${targets.calories - Math.round(eatenCalories)} קל`}
                   </span>
                   <span>{targets.calories} קל</span>
                 </div>
@@ -1642,9 +1642,8 @@ export default function PlanApp({ clientName, userPassword }) {
             {targets && eatenProtein > 0 && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontSize: 11, color: eatenProtein >= targets.protein ? '#16a34a' : '#6b7280', fontWeight: 700 }}>
-                  🥩 {Math.round(eatenProtein)}g / {targets.protein}g חלבון
+                  {eatenProtein >= targets.protein ? 'חלבון ✅ שריר, אנרגיה, שובע — הגוף שלך אומר תודה ☺️ 💪' : `🥩 ${Math.round(eatenProtein)}g / ${targets.protein}g חלבון`}
                 </span>
-                {eatenProtein >= targets.protein && <span style={{ fontSize: 11, color: '#16a34a', fontWeight: 700 }}>✅</span>}
               </div>
             )}
           </div>
@@ -2246,6 +2245,22 @@ export default function PlanApp({ clientName, userPassword }) {
                 )
               })}
             </div>
+            {(() => {
+              const msg = streak === 1 ? 'יום ראשון — התחלת. זה הצעד הכי חשוב ❤️'
+                : streak === 3 ? '3 ימים ברצף! כל הכבוד — את מזינה את הגוף שלך בטוב ✨ המשיכי ככה'
+                : streak === 5 ? '5 ימים! את ממש בדרך הנכונה — הגוף שלך מרגיש את זה 💚'
+                : streak === 7 ? 'שבוע שלם 🔥 זה לא מובן מאליו, זו בחירה שאת עושה כל יום. גאה בך!'
+                : streak === 14 ? 'שבועיים ברצף — את לא בדיאטה, את בונה הרגל חדש לגמרי ומזמינה בריאות לחיים 💪'
+                : streak === 21 ? '21 יום! הרגל חדש נוצר 🌱 הגוף שלך כבר מצפה לזה'
+                : streak === 30 ? '30 יום! חודש שלם של בחירות בריאות — זה שינוי אמיתי 🏆'
+                : weeklyDays === 3 ? 'מילאת 3 ימים השבוע — ממש מרגישה אותך מתחילה להתבסס 🙏'
+                : weeklyDays === 5 ? '5 מתוך 7 — שבוע חזק! כל הכבוד על ההתמדה 🌟'
+                : weeklyDays === 7 ? 'שבוע מושלם! 7/7 💚 הגוף שלך קיבל את כל מה שהוא צריך'
+                : null
+              return msg ? (
+                <div style={{ marginTop: 12, background: 'rgba(255,255,255,0.65)', borderRadius: 12, padding: '10px 14px', fontSize: 13, fontWeight: 700, color: '#92400e', textAlign: 'right', lineHeight: 1.5 }}>{msg}</div>
+              ) : null
+            })()}
           </div>
         )}
 
@@ -2287,8 +2302,8 @@ export default function PlanApp({ clientName, userPassword }) {
           </div>
         )}
 
-        <div style={{ background: '#fff', borderRadius: 18, padding: 18, border: '1.5px solid #e2e8f0', marginBottom: 14 }}>
-          <div style={{ fontWeight: 800, fontSize: 15, color: C.greenDark, marginBottom: 12, textAlign: 'right' }}>🧠 מודעות והקשבה לגוף</div>
+        <div style={{ background: '#faf5ff', borderRadius: 18, padding: 18, border: '1.5px solid #ddd6fe', marginBottom: 14 }}>
+          <div style={{ fontWeight: 800, fontSize: 15, color: '#6d28d9', marginBottom: 12, textAlign: 'right' }}>🧠 מודעות והקשבה לגוף</div>
           <div style={{ marginBottom: 12 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: '#333', marginBottom: 6 }}>מה מצב הרוח שלך היום?</div>
             <div style={{ display: 'flex', gap: 6 }}>
@@ -2318,8 +2333,8 @@ export default function PlanApp({ clientName, userPassword }) {
         </div>
 
         {currentStage >= 2 && (
-          <div style={{ background: '#fff', borderRadius: 18, padding: 18, border: '1.5px solid #e2e8f0', marginBottom: 14 }}>
-            <div style={{ fontWeight: 800, fontSize: 15, color: C.purple, marginBottom: 12, textAlign: 'right' }}>🏃 ספורט שבועי</div>
+          <div style={{ background: '#f0fdf4', borderRadius: 18, padding: 18, border: '1.5px solid #bbf7d0', marginBottom: 14 }}>
+            <div style={{ fontWeight: 800, fontSize: 15, color: '#15803d', marginBottom: 12, textAlign: 'right' }}>🏃 ספורט שבועי</div>
             {!sportType ? (
               <>
                 <div style={{ fontSize: 13, color: '#555', marginBottom: 10 }}>{gf('בחרי', 'בחר')} פעילות נוספת על ההליכות:</div>
@@ -2348,7 +2363,7 @@ export default function PlanApp({ clientName, userPassword }) {
           </div>
         )}
 
-        <Section title="ארוחת בוקר" icon="☀️" accent={C.orange} light={C.orangeLight} defaultOpen={true}>
+        <Section title="ארוחת בוקר" icon="☀️" accent={C.orange} light={C.orangeLight} defaultOpen={true} cardBg="#fffdf8" cardBorder="#fed7aa">
           <div style={{ fontSize: 12, color: '#9ca3af', padding: '8px 0 4px', textAlign: 'right' }}>{PLAN.bokerSnack}</div>
           <YesNo value={hadSnack} onChange={setHadSnack} labelYes="✅ אכלתי חטיף" labelNo="❌ דילגתי" accent={C.orange} />
           {filteredBokerProtein.length > 0 && (
@@ -2384,7 +2399,7 @@ export default function PlanApp({ clientName, userPassword }) {
           <ScanCorrection desc={scanDesc} cal={scanCalories} onChangeCal={setScanCalories} prot={scanProtein} onChangeProt={setScanProtein} fat={scanFat} onChangeFat={setScanFat} carbs={scanCarbs} onChangeCarbs={setScanCarbs} onReset={() => { setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0) }} />
         </Section>
 
-        <Section title="ארוחת צהריים" icon="🌞" accent={C.greenMid} light={C.greenLight}>
+        <Section title="ארוחת צהריים" icon="🌞" accent={C.greenMid} light={C.greenLight} cardBg="#fffdf8" cardBorder="#fed7aa">
           <div style={{ display: 'flex', gap: 8, padding: '10px 0' }}>
             {[{ k: 'A', l: '🍽️ מרכיבי הארוחה' }, { k: 'B', l: '🫒 רטבים ונלווים' }].map(opt => (<button key={opt.k} onClick={() => setLunchOpt(lunchOpt === opt.k ? null : opt.k)} style={{ flex: 1, padding: '10px 8px', borderRadius: 12, border: '2px solid ' + (lunchOpt === opt.k ? C.greenMid : '#e5e7eb'), background: lunchOpt === opt.k ? C.greenLight : '#fafafa', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: lunchOpt === opt.k ? C.greenDark : '#555' }}>{opt.l}</button>))}
           </div>
@@ -2554,7 +2569,7 @@ export default function PlanApp({ clientName, userPassword }) {
           )}
         </Section>
 
-        <Section title="ארוחת ערב" icon="🌙" accent={C.purple} light={C.purpleLight}>
+        <Section title="ארוחת ערב" icon="🌙" accent={C.purple} light={C.purpleLight} cardBg="#fffdf8" cardBorder="#fed7aa">
           {filteredErev.map(item => item.gramQty
             ? <GramQtyCheckRow key={item.id} item={item} accent={C.purple} checked={!!checks[item.id]} qty={checksQty[item.id]} nutritionItem={nutritionData[nutritionId(item.id)]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setChecksQty(q => ({ ...q, [item.id]: v }))} />
             : item.calPerSlice
