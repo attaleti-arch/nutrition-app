@@ -545,61 +545,86 @@ function FloatingPlateBars({ bars }) {
   )
 }
 
-// ✅ הצלחת החיה — צלחת אמיתית שמתמלאת באוכל ככל שמתקדמים ביעד האישי.
-// בלי אחוזים ובלי רמזור — אלה נשארים בבר הצף. רק אוכל שמופיע על הצלחת.
-function LivePlate({ bars }) {
+// ✅ הצלחת החיה — צלחת לימודית בסגנון "הצלחת הבריאה": מקטעים צבעוניים עם שמות
+// (ירקות/חלבונים/פחמימות + שומנים במרכז). הגדלים לפי החלוקה האישית של הלקוחה
+// (welcome_doc_json.plate) אם קיימת, אחרת חלוקה סטנדרטית. כל מקטע מתמלא בצבע
+// ובאוכל ככל שמתקדמים — בלי אחוזים (הם בבר הצף).
+function LivePlate({ bars, split }) {
   const get = k => (bars.find(b => b.label === k) || { pct: 0 }).pct
-  // סלוטים קבועים לכל אזור — קומפוזיציה של צלחת מוגשת:
-  // ירקות למעלה-שמאל, חלבון למטה-ימין, פחמימה למעלה-ימין, שומן משמאל
-  const ZONES = {
-    veggies: { pct: get('veggies'), slots: [
-      { x: 72, y: 62, e: '🍅', s: 24 }, { x: 96, y: 48, e: '🥒', s: 23 },
-      { x: 60, y: 88, e: '🥦', s: 26 }, { x: 92, y: 78, e: '🥬', s: 22 },
-      { x: 118, y: 58, e: '🥕', s: 21 },
-    ]},
-    carbs: { pct: get('carbs'), slots: [
-      { x: 148, y: 62, e: '🍚', s: 26 }, { x: 132, y: 86, e: '🍞', s: 23 },
-      { x: 158, y: 88, e: '🌽', s: 21 }, { x: 144, y: 110, e: '🥔', s: 20 },
-    ]},
-    protein: { pct: get('protein'), slots: [
-      { x: 128, y: 138, e: '🍗', s: 28 }, { x: 100, y: 148, e: '🍳', s: 24 },
-      { x: 148, y: 128, e: '🐟', s: 22 }, { x: 118, y: 122, e: '🥚', s: 18 },
-    ]},
-    fat: { pct: get('fat'), slots: [
-      { x: 64, y: 122, e: '🥑', s: 23 }, { x: 84, y: 140, e: '🫒', s: 18 },
-    ]},
+  const CX = 110, CY = 102, R = 90
+  // חלוקת שטח: אישית אם קיימת, אחרת ירקות 45% / חלבון 30% / פחמימה 25%
+  const raw = {
+    veggies: split && split.veggies > 0 ? split.veggies : 45,
+    protein: split && split.protein > 0 ? split.protein : 30,
+    carbs: split && split.carbs > 0 ? split.carbs : 25,
   }
-  const count = z => {
-    if (z.pct <= 0) return 0
-    return Math.max(1, Math.min(z.slots.length, Math.round((Math.min(110, z.pct) / 100) * z.slots.length)))
+  const sum = raw.veggies + raw.protein + raw.carbs
+  const SECTORS = [
+    { key: 'protein', name: 'חלבונים', color: '#ef8b3a', emojis: ['🍗', '🐟', '🥚', '🥩'] },
+    { key: 'carbs', name: 'פחמימות', color: '#d9a83c', emojis: ['🍞', '🍚', '🥔', '🌽'] },
+    { key: 'veggies', name: 'ירקות', color: '#7cb342', emojis: ['🍅', '🥦', '🥒', '🥬', '🥕', '🫑'] },
+  ]
+  function slicePath(r, a0, a1) {
+    const x0 = CX + r * Math.cos(a0), y0 = CY + r * Math.sin(a0)
+    const x1 = CX + r * Math.cos(a1), y1 = CY + r * Math.sin(a1)
+    const large = a1 - a0 > Math.PI ? 1 : 0
+    return `M ${CX} ${CY} L ${x0} ${y0} A ${r} ${r} 0 ${large} 1 ${x1} ${y1} Z`
   }
-  const allDone = ['veggies', 'carbs', 'protein', 'fat'].every(k => ZONES[k].pct >= 95)
-  const anyFood = Object.values(ZONES).some(z => z.pct > 0)
+  // מתחילים למעלה וממשיכים עם כיוון השעון: חלבון (ימין) ← פחמימה (למטה) ← ירקות (שמאל)
+  let angle = -Math.PI / 2
+  const rendered = SECTORS.map(sec => {
+    const frac = raw[sec.key] / sum
+    const a0 = angle
+    const a1 = angle + frac * Math.PI * 2
+    angle = a1
+    const pct = get(sec.key)
+    const fillOpacity = 0.18 + 0.72 * Math.min(100, pct) / 100
+    const mid = (a0 + a1) / 2
+    // סלוטים לאמוג'ים — מפוזרים בתוך המקטע בשתי טבעות
+    const nSlots = sec.emojis.length
+    const span = (a1 - a0) * 0.72
+    const slots = sec.emojis.map((e, i) => {
+      const t = nSlots === 1 ? 0.5 : i / (nSlots - 1)
+      const a = mid - span / 2 + span * t
+      const r = i % 2 === 0 ? R * 0.52 : R * 0.72
+      return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a), e }
+    })
+    const count = pct <= 0 ? 0 : Math.max(1, Math.min(nSlots, Math.round(Math.min(110, pct) / 100 * nSlots)))
+    return { ...sec, a0, a1, mid, pct, fillOpacity, slots, count }
+  })
+  const fatPct = get('fat')
+  const allDone = rendered.every(s => s.pct >= 95) && fatPct >= 95
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <svg width={220} height={200} viewBox="0 0 220 200">
-        {/* צל מתחת לצלחת */}
-        <ellipse cx={110} cy={172} rx={78} ry={10} fill="rgba(0,0,0,0.07)" />
-        {/* שוליים חיצוניים של הצלחת */}
-        <circle cx={110} cy={98} r={86} fill="#fff" stroke="#e8e2d8" strokeWidth={2} />
-        {/* פס עדין בשוליים — צלחת קרמיקה */}
-        <circle cx={110} cy={98} r={78} fill="none" stroke="#f0ebe1" strokeWidth={1.5} />
-        {/* מרכז הצלחת */}
-        <circle cx={110} cy={98} r={66} fill="#fdfcf9" />
-        {/* האוכל */}
-        {Object.values(ZONES).map((z, zi) =>
-          z.slots.slice(0, count(z)).map((sl, i) => (
-            <text key={zi + '-' + i} x={sl.x} y={sl.y} textAnchor="middle" fontSize={sl.s}
-              style={{ transition: 'opacity 0.4s' }}>{sl.e}</text>
-          ))
-        )}
-        {/* צלחת ריקה — סכו״ם מרומז */}
-        {!anyFood && (
-          <text x={110} y={106} textAnchor="middle" fontSize="15" fill="#d6cfc2" fontWeight="600">🍽️</text>
-        )}
-        {allDone && (
-          <text x={182} y={38} textAnchor="middle" fontSize="22">✨</text>
-        )}
+      <svg width={224} height={206} viewBox="0 0 220 202">
+        <ellipse cx={CX} cy={193} rx={80} ry={7} fill="rgba(0,0,0,0.08)" />
+        <circle cx={CX} cy={CY} r={R + 4} fill="#fff" stroke="#e5e0d5" strokeWidth={2} />
+        {rendered.map(sec => (
+          <g key={sec.key}>
+            <path d={slicePath(R, sec.a0, sec.a1)} fill={sec.color} opacity={sec.fillOpacity} stroke="#fff" strokeWidth={2.5} />
+            {sec.slots.slice(0, sec.count).map((sl, i) => (
+              <text key={i} x={sl.x} y={sl.y + 6} textAnchor="middle" fontSize={19}>{sl.e}</text>
+            ))}
+          </g>
+        ))}
+        {/* שמות המקטעים — לימודי, תמיד גלוי */}
+        {rendered.map(sec => {
+          const lx = CX + R * 0.86 * Math.cos(sec.mid)
+          const ly = CY + R * 0.86 * Math.sin(sec.mid)
+          return (
+            <g key={sec.key + '-label'}>
+              <rect x={lx - 27} y={ly - 9} width={54} height={17} rx={8.5}
+                fill={sec.color} opacity={0.95} />
+              <text x={lx} y={ly + 3.5} textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#fff">{sec.name}</text>
+            </g>
+          )
+        })}
+        {/* שומנים — קערית במרכז, כמו בצלחת הבריאה */}
+        <circle cx={CX} cy={CY} r={24} fill="#fffdf5" stroke="#e8d9a8" strokeWidth={2} />
+        <circle cx={CX} cy={CY} r={17} fill="#f2d55c" opacity={0.15 + 0.75 * Math.min(100, fatPct) / 100} />
+        <text x={CX} y={CY + 1} textAnchor="middle" fontSize="14">🫒</text>
+        <text x={CX} y={CY + 14} textAnchor="middle" fontSize="7.5" fontWeight="800" fill="#8a6d1f">שומנים</text>
+        {allDone && <text x={192} y={30} textAnchor="middle" fontSize="20">✨</text>}
       </svg>
       {allDone && (
         <div style={{ fontSize: 12.5, color: '#15803d', fontWeight: 800, marginTop: 2 }}>הצלחת מאוזנת — הגוף קיבל הכל 💚</div>
@@ -1221,6 +1246,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const [userMood, setUserMood] = useState(null)
   const [eatReasons, setEatReasons] = useState([])
   const [streak, setStreak] = useState(0)
+  const [plateSplit, setPlateSplit] = useState(null)
   const [weeklyDays, setWeeklyDays] = useState(0)
   const [weekDates, setWeekDates] = useState([])
   const [avgStepsWeekly, setAvgStepsWeekly] = useState(0)
@@ -1274,6 +1300,9 @@ export default function PlanApp({ clientName, userPassword }) {
         const profileRes = await supabase.from('client_profiles').select('welcome_doc_json, ai_report, roots_feedback, body_feedback, child_feedback').eq('client_password', dbKey).maybeSingle()
         if (profileRes.data?.ai_report) {
           setAiReport(profileRes.data.ai_report)
+        }
+        if (profileRes.data?.welcome_doc_json?.plate) {
+          setPlateSplit(profileRes.data.welcome_doc_json.plate)
         }
         if (profileRes.data?.roots_feedback) {
           setRootsFeedback(profileRes.data.roots_feedback)
@@ -2420,7 +2449,7 @@ export default function PlanApp({ clientName, userPassword }) {
         {targets && (
           <div style={{ background: '#fff', borderRadius: 18, padding: '14px 18px 10px', marginBottom: 14, border: '1.5px solid #f0f0f0' }}>
             <div style={{ fontWeight: 900, fontSize: 14, color: '#1e293b', marginBottom: 4, textAlign: 'center' }}>🍽️ הצלחת שלך היום</div>
-            <LivePlate bars={plateBars} />
+            <LivePlate bars={plateBars} split={plateSplit} />
           </div>
         )}
 
