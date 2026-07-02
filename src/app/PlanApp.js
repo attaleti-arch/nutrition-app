@@ -1146,7 +1146,7 @@ export default function PlanApp({ clientName, userPassword }) {
         setSportDoneToday(false)
         setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0)
         setFeedback(null); setReportApproved(false)
-        setStressLevel(0); setFatigueLevel(0); setHungerLevel(0); setUserMood(null)
+        setStressLevel(0); setFatigueLevel(0); setHungerLevel(0); setUserMood(null); setEatReasons([])
         setDailyLogLoaded(true)
       }
 
