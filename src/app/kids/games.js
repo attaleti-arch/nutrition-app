@@ -7,25 +7,44 @@ import { useState, useEffect, useRef } from 'react'
 
 // בנק משימות הגלגל
 export const WHEEL_MISSIONS = [
-  { t: 'אכול משהו כתום היום 🥕', e: '🟠' },
-  { t: 'שתה כוס מים בעמידה על רגל אחת 🦩', e: '💧' },
-  { t: '10 קפיצות לפני ארוחת ערב ⭐', e: '🦘' },
-  { t: 'עזור לערוך את השולחן 🍽️', e: '🍽️' },
-  { t: 'אכול משהו ירוק היום 🥬', e: '🟢' },
-  { t: 'ספר בארוחה משהו טוב שקרה היום 😊', e: '💬' },
-  { t: 'טעם ביס אחד ממשהו בצלחת של אמא 😄', e: '👀' },
-  { t: 'סדר את הכיסא שלך אחרי האוכל 🪑', e: '🪑' },
+  'מקלות אכילה: תאכל ארוחת ערב רק עם היד הלא-דומיננטית שלך 🥢',
+  'צלחת צבעונית: סדר את האוכל על הצלחת בצורת פרח 🌸',
+  'ביס עיוור: בקש מההורה להגיש לך ביס בעיניים עצומות — נחש מה זה! 🙈',
+  'מגדל ירקות: בנה מגדל מהירקות בצלחת לפני שאתה אוכל אותם 🗼',
+  'שיר קצר: המצא שיר של 3 שורות על המנה המרכזית בצלחת 🎤',
+  'לחישות: מדברים רק בלחישות כל הארוחה 🤫',
+  'הפוך על הפוך: תאכל את הפרי/קינוח לפני האוכל (רק היום!) 🙃',
+  'יד על הראש: אכול 5 ביסים כשהיד השנייה על הראש 🖐️',
+  'אתגר השתיקה: 6 ביסים בלי להשמיע אף צליל — גם לא לעיסה! 🔇',
+  'צחצח שיניים הערב ביד הלא-דומיננטית 🪥',
+  'מנחש הטעמים: נחש מרכיב סודי אחד בכל מאכל בצלחת 🕵️',
+  'ישיבה ישרה: תאכל עם הגב הכי ישר בעולם, כמו מלך או מלכה 👑',
+  'חיקוי חיות: תאכל את הירקות כמו ארנב — בלי ידיים! 🐰',
+  'קצב: הקש עם המזלג על הצלחת קצב של שיר מוכר — שינחשו! 🥁',
+  'ספירה לאחור: אכול 10 ביסים וספור בקול רם ברוורס (10...9...8) 🔢',
+  'מראה: חקה בדיוק את התנועות של ההורה או האח — עד שישימו לב 🪞',
+  'אכול משהו כתום היום 🥕',
+  'שתה כוס מים בעמידה על רגל אחת 🦩',
+  '30 קפיצות לפני ארוחת ערב ⭐',
+  'עזור לערוך את השולחן 🍽️',
+  'אכול משהו ירוק היום 🥬',
+  'ספר בארוחה משהו טוב שקרה היום 😊',
+  'טעם ביס אחד ממשהו בצלחת של אמא 😄',
+  'אכול משהו אדום היום 🍅',
 ]
+// 8 מקטעים צבעוניים על הגלגל — ויזואלי בלבד; המשימה מוגרלת מכל המאגר
+const WHEEL_SEGMENTS = ['🎯', '🌈', '🎲', '🍀', '🎪', '🎨', '⭐', '🎉']
 
 const SECRET_MISSIONS = [
-  'שים כוס מים ליד הצלחת של כל בני הבית — בלי שישימו לב 🕵️',
-  'סדר את המגירה של הכפות בשקט מוחלט 🤫',
-  'שים פתק עם לב ❤️ ליד הצלחת של מישהו במשפחה',
-  'הברח ירק אחד לצלחת שלך לפני שמישהו רואה 🥷',
-  'תגיד לאמא או אבא "תודה על האוכל" — ותראה את הפרצוף שלהם 😊',
-  'שתה כוס מים שלמה כשאף אחד לא מסתכל 💧',
-  'סדר את הנעליים של כולם ליד הדלת בשקט 🥾',
+  'סדר את המגירה של הסכו"ם בשקט מוחלט 🤫',
+  'שכנע בן משפחה לאכול משהו חדש — בלי לגלות שזו משימה 🥷',
+  'משחק ניחוש: תבקש לטעום 3 מאכלים בכיסוי עיניים ותנחש מה הם 🙈',
   'תעשה 5 סקוואטים במקום שאף אחד לא רואה 🏋️',
+  'סוכן מים: תמלא את הכוס של מישהו אחר לפני שהוא שם לב 💧',
+  'סוכן מים 2: תשתה שלוק מים כל פעם שמישהו אומר את השם שלך 🕵️',
+  'אתגר העמידה: תעמוד על רגל אחת בזמן שאתה מחכה למנה הבאה 🦩',
+  'משימת הטעם: תטעם משהו שאתה בדרך-כלל לא אוהב — רק לבדוק אם הטעם השתנה 😮',
+  'קשת בענן: סדר פירות/ירקות לפי צבעי הקשת על מגש — תוסיף צבעים אם חסר 🌈',
 ]
 
 // שלושה בלוקים של ~5 דקות: ליבה · שיווי משקל וקואורדינציה · יוגה ביחד — רבע שעה ביום
@@ -240,17 +259,18 @@ export function CatchVeggie({ onEnd, best }) {
 export function ChallengeWheel({ spun, mission, missionDone, onSpin, onDone }) {
   const [rot, setRot] = useState(0)
   const [spinning, setSpinning] = useState(false)
-  const segAngle = 360 / WHEEL_MISSIONS.length
+  const segAngle = 360 / WHEEL_SEGMENTS.length
 
   const spin = () => {
     if (spinning || spun) return
-    const idx = Math.floor(Math.random() * WHEEL_MISSIONS.length)
-    const target = 360 * 5 + (360 - idx * segAngle - segAngle / 2)
+    const seg = Math.floor(Math.random() * WHEEL_SEGMENTS.length)
+    const mission = WHEEL_MISSIONS[Math.floor(Math.random() * WHEEL_MISSIONS.length)]
+    const target = 360 * 5 + (360 - seg * segAngle - segAngle / 2)
     setSpinning(true)
     setRot(target)
     setTimeout(() => {
       setSpinning(false)
-      onSpin(WHEEL_MISSIONS[idx].t)
+      onSpin(mission)
       if (navigator.vibrate) navigator.vibrate([60, 40, 100])
     }, 3600)
   }
@@ -265,13 +285,13 @@ export function ChallengeWheel({ spun, mission, missionDone, onSpin, onDone }) {
             <div style={{ position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', fontSize: 26, zIndex: 5 }}>🔻</div>
             <div style={{
               width: 230, height: 230, borderRadius: '50%',
-              background: `conic-gradient(${WHEEL_MISSIONS.map((_, i) => `${colors[i]} ${i * segAngle}deg ${(i + 1) * segAngle}deg`).join(',')})`,
+              background: `conic-gradient(${WHEEL_SEGMENTS.map((_, i) => `${colors[i]} ${i * segAngle}deg ${(i + 1) * segAngle}deg`).join(',')})`,
               border: '6px solid #fff', boxShadow: '0 6px 24px rgba(0,0,0,0.18)',
               transform: `rotate(${rot}deg)`, transition: spinning ? 'transform 3.5s cubic-bezier(0.15,0.9,0.28,1)' : 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative',
             }}>
-              {WHEEL_MISSIONS.map((m, i) => (
-                <span key={i} style={{ position: 'absolute', transform: `rotate(${i * segAngle + segAngle / 2}deg) translateY(-82px)`, fontSize: 22 }}>{m.e}</span>
+              {WHEEL_SEGMENTS.map((e, i) => (
+                <span key={i} style={{ position: 'absolute', transform: `rotate(${i * segAngle + segAngle / 2}deg) translateY(-82px)`, fontSize: 22 }}>{e}</span>
               ))}
               <div style={{ width: 46, height: 46, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, zIndex: 2 }}>🎯</div>
             </div>
