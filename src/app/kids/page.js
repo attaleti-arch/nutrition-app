@@ -1033,7 +1033,7 @@ export default function KidsApp() {
                 <MemoryGame onWin={() => bumpCounter('memoryWins', v => v + 1)} />
               )}
               {activeGame === 'wheel' && (
-                <ChallengeWheel spun={!!t2.wheelSpun} mission={t2.wheelMission} missionDone={!!t2.wheelDone}
+                <ChallengeWheel dateStr={t2.date || todayKey()} spun={!!t2.wheelSpun} mission={t2.wheelMission} missionDone={!!t2.wheelDone}
                   onSpin={(m) => { setTodayField({ wheelSpun: true, wheelMission: m }); bumpCounter('spins', v => v + 1) }}
                   onDone={() => { setTodayField({ wheelDone: true }); setConfetti(true); setTimeout(() => setConfetti(false), 2500) }} />
               )}

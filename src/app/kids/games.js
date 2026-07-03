@@ -257,15 +257,23 @@ export function CatchVeggie({ onEnd, best }) {
 }
 
 // ─── גלגל האתגר ───
-export function ChallengeWheel({ spun, mission, missionDone, onSpin, onDone }) {
+export function ChallengeWheel({ dateStr, spun, mission, missionDone, onSpin, onDone }) {
   const [rot, setRot] = useState(0)
   const [spinning, setSpinning] = useState(false)
   const segAngle = 360 / WHEEL_SEGMENTS.length
 
+  // ✅ גיוון מובטח: המאגר מחולק לערכות של 8 משימות, והגלגל מתחלף לערכה
+  // הבאה כל 8 ימים — כך עוברים על כל המאגר בלי חזרות מוקדמות
+  const dayNum = Math.floor(new Date(dateStr + 'T12:00:00').getTime() / 86400000)
+  const windows = Math.ceil(WHEEL_MISSIONS.length / 8)
+  const wIdx = Math.floor(dayNum / 8) % windows
+  let pool = WHEEL_MISSIONS.slice(wIdx * 8, wIdx * 8 + 8)
+  if (pool.length < 8) pool = pool.concat(WHEEL_MISSIONS.slice(0, 8 - pool.length))
+
   const spin = () => {
     if (spinning || spun) return
     const seg = Math.floor(Math.random() * WHEEL_SEGMENTS.length)
-    const mission = WHEEL_MISSIONS[Math.floor(Math.random() * WHEEL_MISSIONS.length)]
+    const mission = pool[seg]
     const target = 360 * 5 + (360 - seg * segAngle - segAngle / 2)
     setSpinning(true)
     setRot(target)
