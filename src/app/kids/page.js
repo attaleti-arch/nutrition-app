@@ -127,6 +127,12 @@ function Dragon({ stage, mood, eating, size = 190, accessories = 0, babies = 0, 
           </g>
         )}
         <g transform={`translate(100 108) scale(${s}) translate(-100 -108)`}>
+          {!stage.wings && (
+            <>
+              <path d="M58,102 C44,92 40,104 48,114 C54,118 60,114 62,107 Z" fill={bodyDark} opacity="0.85" />
+              <path d="M142,102 C156,92 160,104 152,114 C146,118 140,114 138,107 Z" fill={bodyDark} opacity="0.85" />
+            </>
+          )}
           {stage.wings && (
             <>
               <path d="M52,95 C20,68 12,96 30,116 C40,126 55,120 60,110 Z" fill={bodyDark} opacity="0.9">
@@ -137,8 +143,8 @@ function Dragon({ stage, mood, eating, size = 190, accessories = 0, babies = 0, 
               </path>
             </>
           )}
-          <path d="M140,150 C168,152 178,138 172,124 C186,130 190,152 172,162 C160,168 146,162 140,155 Z" fill={body} />
-          <circle cx="176" cy="126" r="7" fill={bodyDark} />
+          <path d="M142,150 C168,150 180,134 176,112 C174,104 168,100 162,102 C170,116 160,138 138,144 Z" fill={body} />
+          <path d="M172,112 L188,96 L192,116 Z" fill={bodyDark} />
           <ellipse cx="100" cy="120" rx="52" ry="48" fill={body} />
           <ellipse cx="100" cy="132" rx="32" ry="28" fill={belly} />
           <ellipse cx="72" cy="164" rx="14" ry="10" fill={bodyDark} />
@@ -152,11 +158,15 @@ function Dragon({ stage, mood, eating, size = 190, accessories = 0, babies = 0, 
               <path d="M116,164 q12,-5 24,0" fill="none" stroke="#fff" strokeWidth="2" />
             </>
           )}
-          <path d="M76,66 C72,52 78,46 84,50 C88,54 86,64 82,70 Z" fill="#fff0c9" stroke={bodyDark} strokeWidth="2" />
-          <path d="M124,66 C128,52 122,46 116,50 C112,54 114,64 118,70 Z" fill="#fff0c9" stroke={bodyDark} strokeWidth="2" />
+          <path d="M76,68 C66,58 63,44 73,37 C77,46 81,56 84,66 Z" fill="#fff0c9" stroke={bodyDark} strokeWidth="2" />
+          <path d="M124,68 C134,58 137,44 127,37 C123,46 119,56 116,66 Z" fill="#fff0c9" stroke={bodyDark} strokeWidth="2" />
+          <path d="M88,56 L93,41 L98,54 Z" fill={bodyDark} />
+          <path d="M97,52 L102,36 L107,51 Z" fill={bodyDark} />
+          <path d="M106,54 L112,41 L116,56 Z" fill={bodyDark} />
           <ellipse cx="100" cy="86" rx="44" ry="36" fill={body} />
           <ellipse cx="58" cy="86" rx="9" ry="14" fill={bodyDark} />
           <ellipse cx="142" cy="86" rx="9" ry="14" fill={bodyDark} />
+          <ellipse cx="100" cy="104" rx="21" ry="14" fill={belly} stroke={bodyDark} strokeWidth="1.5" />
           {mood === 'sleep' ? (
             <>
               <path d="M76,84 q8,6 16,0" fill="none" stroke="#1f2937" strokeWidth="3.5" strokeLinecap="round" />
