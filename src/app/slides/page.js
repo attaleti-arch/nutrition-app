@@ -341,6 +341,17 @@ export default function SlideGenerator() {
     img.src = '/logo-gold.png'
   }, [])
 
+  // "הוסף למסך הבית" מ-/slides צריך להיפתח ב-/slides ולא בדף הבית —
+  // מחליפים את ה-manifest הכללי (שמצביע ל-/) במניפסט ייעודי לעמוד הזה
+  useEffect(() => {
+    const link = document.querySelector('link[rel="manifest"]')
+    if (link) {
+      link.dataset.prevHref = link.href
+      link.href = '/slides-manifest.json'
+      return () => { if (link.dataset.prevHref) link.href = link.dataset.prevHref }
+    }
+  }, [])
+
   const generate = useCallback(async () => {
     try {
       const canvas = canvasRef.current || document.createElement('canvas')

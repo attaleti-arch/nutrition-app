@@ -1,0 +1,13 @@
+{
+  "name": "בונה שקפים — אתי אטל",
+  "short_name": "בונה שקפים",
+  "icons": [
+    { "src": "/logo-full.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo-full.png", "sizes": "512x512", "type": "image/png" }
+  ],
+  "theme_color": "#18221a",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "/slides",
+  "scope": "/slides"
+}
