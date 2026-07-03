@@ -28,15 +28,32 @@ const SECRET_MISSIONS = [
   'תעשה 5 סקוואטים במקום שאף אחד לא רואה 🏋️',
 ]
 
+// שלושה בלוקים של ~5 דקות: ליבה · שיווי משקל וקואורדינציה · יוגה ביחד — רבע שעה ביום
 const EXERCISES = [
-  { name: 'סקוואטים כמו דרקון', emoji: '🐉', kind: 'reps', amount: '10 פעמים' },
-  { name: 'הרמות משקולת קילו', emoji: '🏋️', kind: 'reps', amount: '5 לכל יד' },
-  { name: 'ריצה במקום', emoji: '🏃', kind: 'timer', secs: 20 },
-  { name: 'קפיצות כוכב', emoji: '⭐', kind: 'reps', amount: '8 פעמים' },
-  { name: 'עמידת על-רגל-אחת', emoji: '🦩', kind: 'timer', secs: 15 },
-  { name: 'שכיבות שמיכה (פלאנק)', emoji: '🧘', kind: 'timer', secs: 15 },
-  { name: 'טיפוס הרים על הרצפה', emoji: '⛰️', kind: 'timer', secs: 20 },
-  { name: 'ריקוד חופשי מטורף', emoji: '🕺', kind: 'timer', secs: 20 },
+  { cat: 'ליבה', catEmoji: '💪', name: 'סקוואטים', emoji: '🐉', kind: 'reps', amount: '10 פעמים',
+    how: 'עומדים עם רגליים ברוחב כתפיים, יורדים לאט-לאט כאילו מתיישבים על כיסא בלתי נראה — וקמים בחזרה!' },
+  { cat: 'ליבה', catEmoji: '💪', name: 'קפיצות כוכב', emoji: '⭐', kind: 'reps', amount: '8 פעמים',
+    how: 'קופצים ופותחים ידיים ורגליים לצדדים כמו כוכב ענק — וסוגרים בנחיתה. קלילים כמו דרקון!' },
+  { cat: 'ליבה', catEmoji: '💪', name: 'בטן סטטי (פלאנק)', emoji: '🧘', kind: 'timer', secs: 20,
+    how: 'שוכבים על הבטן, מרימים את הגוף על המרפקים וקצות הרגליים — הגב ישר כמו קרש! מחזיקים חזק.' },
+  { cat: 'ליבה', catEmoji: '💪', name: 'שכיבות שמיכה', emoji: '🛏️', kind: 'reps', amount: '5 פעמים',
+    how: 'ידיים על הרצפה ברוחב כתפיים, גוף ישר — מתכופפים לאט למטה ודוחפים למעלה. מותר על הברכיים!' },
+  { cat: 'שיווי משקל', catEmoji: '🦩', name: 'פלמינגו', emoji: '🦩', kind: 'timer', secs: 15,
+    how: 'עומדים על רגל אחת, ידיים פתוחות לצדדים כמו כנפיים. מחזיקים בלי ליפול — ואז מחליפים רגל!' },
+  { cat: 'שיווי משקל', catEmoji: '🦩', name: 'קפיצות החלפה', emoji: '🦘', kind: 'reps', amount: '5 על כל רגל × 3',
+    how: 'קופצים 5 פעמים על רגל ימין, מחליפים ל-5 על שמאל — ועוד פעמיים. סה"כ 3 סיבובים!' },
+  { cat: 'שיווי משקל', catEmoji: '🦩', name: 'הליכה על חבל דמיוני', emoji: '🤸', kind: 'timer', secs: 20,
+    how: 'הולכים על קו ישר ברצפה — עקב צמוד לאצבעות, צעד אחרי צעד, ידיים לצדדים. לא נופלים מהחבל!' },
+  { cat: 'שיווי משקל', catEmoji: '🦩', name: 'ספר על הראש', emoji: '📚', kind: 'timer', secs: 15,
+    how: 'שמים ספר (או כרית קטנה) על הראש ועומדים על רגל אחת — כמה זמן תחזיקו בלי שייפול? 😄' },
+  { cat: 'יוגה ביחד', catEmoji: '🌳', name: 'עץ זוגי', emoji: '🌳', kind: 'timer', secs: 20,
+    how: 'עומדים זה לצד זה עם אמא או אבא, מחזיקים ידיים, וכל אחד מרים את הרגל החיצונית — עץ כפול!' },
+  { cat: 'יוגה ביחד', catEmoji: '🌳', name: 'כלב מביט מטה', emoji: '🐕', kind: 'timer', secs: 20,
+    how: 'ידיים ורגליים על הרצפה, ישבן גבוה-גבוה למעלה — הגוף בצורת משולש. מי במשפחה מחזיק הכי יפה?' },
+  { cat: 'יוגה ביחד', catEmoji: '🌳', name: 'פרפר זוגי', emoji: '🦋', kind: 'timer', secs: 20,
+    how: 'יושבים אחד מול השני, כפות הרגליים נוגעות, מחזיקים ידיים — ומנפנפים בברכיים כמו כנפי פרפר.' },
+  { cat: 'יוגה ביחד', catEmoji: '🌳', name: 'נשימת דרקון', emoji: '🐲', kind: 'reps', amount: '5 נשימות',
+    how: 'יושבים בשקט, נושמים עמוק-עמוק דרך האף... ונושפים חזק דרך הפה כמו דרקון שמוציא אש!' },
 ]
 
 const TRIVIA = [
@@ -66,9 +83,17 @@ export function hashDay(dateStr) {
 export function dailySecret(dateStr) { return SECRET_MISSIONS[hashDay(dateStr) % SECRET_MISSIONS.length] }
 export function dailyTrivia(dateStr) { return TRIVIA[hashDay(dateStr) % TRIVIA.length] }
 export function dailyWorkout(dateStr) {
+  // 2 תרגילים מכל בלוק (ליבה, שיווי משקל, יוגה ביחד) — מתחלפים לפי היום
   const h = hashDay(dateStr)
   const picks = []
-  for (let i = 0; i < 4; i++) picks.push(EXERCISES[(h + i * 3) % EXERCISES.length])
+  const cats = ['ליבה', 'שיווי משקל', 'יוגה ביחד']
+  for (const cat of cats) {
+    const pool = EXERCISES.filter(e => e.cat === cat)
+    const i1 = h % pool.length
+    let i2 = (h + 1 + (h % 2)) % pool.length
+    if (i2 === i1) i2 = (i1 + 1) % pool.length
+    picks.push(pool[i1], pool[i2])
+  }
   return picks
 }
 
@@ -304,10 +329,11 @@ export function HeroWorkout({ dateStr, doneToday, onFinish }) {
       {idx === -1 && (
         <>
           <div style={{ fontSize: 44, marginBottom: 4 }}>💪</div>
-          <div style={{ fontSize: 13.5, color: '#64748b', marginBottom: 10 }}>4 תרגילי גיבור — אפשר עם משקולות קילו!<br/>הדרקון מתאמן איתך 🐉</div>
+          <div style={{ fontSize: 13.5, color: '#64748b', marginBottom: 10 }}>רבע שעה של כוח: ליבה 💪 · שיווי משקל 🦩 · יוגה ביחד 🌳<br/>עם הסבר לכל תרגיל — והדרקון מתאמן איתך 🐉</div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
             {exercises.map((ex, i) => (
               <div key={i} style={{ background: '#f8fafc', borderRadius: 14, padding: '10px 8px', border: '1.5px solid #e2e8f0' }}>
+                <div style={{ fontSize: 10, fontWeight: 800, color: '#8b5cf6' }}>{ex.catEmoji} {ex.cat}</div>
                 <div style={{ fontSize: 26 }}>{ex.emoji}</div>
                 <div style={{ fontSize: 12, fontWeight: 800, color: '#334155' }}>{ex.name}</div>
                 <div style={{ fontSize: 11, color: '#94a3b8' }}>{ex.kind === 'timer' ? ex.secs + ' שניות' : ex.amount}</div>
@@ -321,10 +347,11 @@ export function HeroWorkout({ dateStr, doneToday, onFinish }) {
       )}
       {idx >= 0 && (
         <>
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 4 }}>תרגיל {idx + 1} מתוך {exercises.length}</div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: '#94a3b8', marginBottom: 4 }}>תרגיל {idx + 1} מתוך {exercises.length} · {exercises[idx].catEmoji} {exercises[idx].cat}</div>
           <div style={{ fontSize: 56 }}>{exercises[idx].emoji}</div>
           <div style={{ fontWeight: 900, fontSize: 20, color: '#1e293b' }}>{exercises[idx].name}</div>
-          <div style={{ fontSize: 15, color: '#64748b', marginBottom: 10 }}>{exercises[idx].kind === 'timer' ? '' : exercises[idx].amount}</div>
+          {exercises[idx].kind === 'reps' && <div style={{ fontSize: 15, fontWeight: 800, color: '#8b5cf6', marginTop: 2 }}>{exercises[idx].amount}</div>}
+          <div style={{ background: '#f5f3ff', border: '1.5px solid #ddd6fe', borderRadius: 14, padding: '12px 14px', fontSize: 14, color: '#5b21b6', fontWeight: 600, lineHeight: 1.7, margin: '10px 0' }}>{exercises[idx].how}</div>
           {exercises[idx].kind === 'timer' && (
             <div style={{ fontSize: 54, fontWeight: 900, color: secs === 0 ? '#16a34a' : '#8b5cf6', lineHeight: 1.1, marginBottom: 8 }}>
               {secs === 0 ? '✓' : secs}
