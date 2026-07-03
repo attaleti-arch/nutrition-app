@@ -30,9 +30,21 @@ export default function ClientHome() {
     if (!password.trim()) return
     const pw = password.trim()
     // ✅ התאמה סלחנית: מתעלמים מהבדלי אותיות גדולות/קטנות (ilike ללא wildcards = השוואה מדויקת חסרת-רגישות)
-    const res = await supabase.from('clients').select('name, terms_accepted_at, password').ilike('password', pw).limit(1)
-    const data = res.data && res.data[0]
+    const res = await supabase.from('clients').select('name, terms_accepted_at, password, client_track').ilike('password', pw).limit(1)
+    let data = res.data && res.data[0]
+    if (!data) {
+      // ✅ ניסיון שני: סיסמה שנשמרה עם רווח מיותר בסוף/בהתחלה באדמין
+      const res2 = await supabase.from('clients').select('name, terms_accepted_at, password, client_track').ilike('password', '%' + pw + '%').limit(2)
+      if (res2.data && res2.data.length === 1 && res2.data[0].password && res2.data[0].password.trim().toLowerCase() === pw.toLowerCase()) {
+        data = res2.data[0]
+      }
+    }
     if (data) {
+      // ✅ מסלול ילד → אפליקציית הדרקון, עם קוד המשפחה מחובר אוטומטית
+      if (data.client_track === 'child') {
+        window.location.href = '/kids?code=' + encodeURIComponent(data.password || pw)
+        return
+      }
       const canonicalPw = data.password || pw
       const acceptedLS = localStorage.getItem('terms_accepted_' + canonicalPw)
       const acceptedDB = data.terms_accepted_at

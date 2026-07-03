@@ -64,6 +64,8 @@ async function syncToServer(s) {
         grew: !!s.today.grew,
         steps: s.today.steps || 0,
         photos: (s.album || []).length,
+        new_foods: (s.alien && s.alien.foods) || [],
+        aliens_caught: s.aliens || 0,
       },
       updated_at: new Date().toISOString(),
     }, { onConflict: 'client_name,log_date' })
@@ -157,6 +159,88 @@ function Dragon({ stage, mood, eating, size = 190 }) {
   )
 }
 
+// ── החייזר — נבנה ממאכלים חדשים: כל טעימה חדשה מוסיפה חלק ──
+// סדר החלקים: עין, עין, אף, פה, אנטנות, ידיים, ובסוף — גוף!
+const ALIEN_PARTS = ['עין ראשונה 👁️', 'עין שנייה 👀', 'אף 👃', 'פה 👄', 'אנטנות 📡', 'ידיים 💪', 'גוף שלם 🕺']
+
+function Alien({ parts, dancing, size = 170 }) {
+  const skin = '#9ee06f'
+  const skinDark = '#6cbb45'
+  const hasBody = parts >= 7
+  return (
+    <div style={{ animation: dancing ? 'alien-dance 0.55s ease-in-out infinite' : 'dragon-idle 3s ease-in-out infinite', transformOrigin: 'bottom center' }}>
+      <svg width={size} height={size} viewBox="0 0 200 200">
+        {/* גוף — מגיע אחרון! עד אז הראש מרחף */}
+        {hasBody && (
+          <g>
+            <ellipse cx="100" cy="150" rx="34" ry="30" fill={skin} />
+            <ellipse cx="100" cy="158" rx="20" ry="16" fill="#c8f0a8" />
+            {/* רגליים */}
+            <ellipse cx="82" cy="182" rx="11" ry="8" fill={skinDark} />
+            <ellipse cx="118" cy="182" rx="11" ry="8" fill={skinDark} />
+          </g>
+        )}
+        {/* ידיים — לפני הגוף הן נדבקות לראש (מצחיק בכוונה) */}
+        {parts >= 6 && (
+          <g>
+            <path d={hasBody ? 'M66,140 C48,130 42,118 48,110' : 'M60,100 C42,94 36,82 42,74'} fill="none" stroke={skinDark} strokeWidth="9" strokeLinecap="round" />
+            <path d={hasBody ? 'M134,140 C152,130 158,118 152,110' : 'M140,100 C158,94 164,82 158,74'} fill="none" stroke={skinDark} strokeWidth="9" strokeLinecap="round" />
+          </g>
+        )}
+        {/* אנטנות */}
+        {parts >= 5 && (
+          <g>
+            <line x1="82" y1="38" x2="72" y2="16" stroke={skinDark} strokeWidth="5" strokeLinecap="round" />
+            <circle cx="70" cy="13" r="7" fill="#f59e0b" />
+            <line x1="118" y1="38" x2="128" y2="16" stroke={skinDark} strokeWidth="5" strokeLinecap="round" />
+            <circle cx="130" cy="13" r="7" fill="#f59e0b" />
+          </g>
+        )}
+        {/* ראש */}
+        <ellipse cx="100" cy={hasBody ? 78 : 100} rx="48" ry="44" fill={skin} stroke={skinDark} strokeWidth="2.5" />
+        <g transform={hasBody ? 'translate(0 -22)' : ''}>
+          {/* עיניים */}
+          {parts >= 1 && (
+            <g>
+              <ellipse cx="82" cy="94" rx="12" ry="16" fill="#1f2937" transform="rotate(-12 82 94)" />
+              <circle cx="85" cy="88" r="4" fill="#fff" />
+            </g>
+          )}
+          {parts >= 2 && (
+            <g>
+              <ellipse cx="118" cy="94" rx="12" ry="16" fill="#1f2937" transform="rotate(12 118 94)" />
+              <circle cx="121" cy="88" r="4" fill="#fff" />
+            </g>
+          )}
+          {/* אף */}
+          {parts >= 3 && (
+            <g>
+              <circle cx="96" cy="112" r="2.5" fill={skinDark} />
+              <circle cx="104" cy="112" r="2.5" fill={skinDark} />
+            </g>
+          )}
+          {/* פה */}
+          {parts >= 4 && (
+            dancing
+              ? <ellipse cx="100" cy="126" rx="9" ry="7" fill="#7c2d12" />
+              : <path d="M88,124 q12,10 24,0" fill="none" stroke="#7c2d12" strokeWidth="3.5" strokeLinecap="round" />
+          )}
+          {/* בלי חלקים בכלל — סימן שאלה עדין */}
+          {parts === 0 && (
+            <text x="100" y="108" textAnchor="middle" fontSize="30" fill={skinDark} fontWeight="900">?</text>
+          )}
+        </g>
+        {dancing && (
+          <>
+            <text x="30" y="60" fontSize="20">🎵</text>
+            <text x="160" y="46" fontSize="20">🎶</text>
+          </>
+        )}
+      </svg>
+    </div>
+  )
+}
+
 // ── קונפטי מסך מלא ──
 function Confetti() {
   const colors = ['#f59e0b', '#ef4444', '#3b82f6', '#22c55e', '#a855f7', '#ec4899', '#f6c445']
@@ -192,13 +276,34 @@ export default function KidsApp() {
   const [nameInput, setNameInput] = useState('')
   const fileRef = useRef(null)
 
-  // טעינה + מעבר יום
+  // טעינה + מעבר יום + קוד משפחה מהקישור (?code=) — הגעה מכניסת מסלול ילד
   useEffect(() => {
     let s = loadState()
     const tk = todayKey()
     if (s && s.today?.date !== tk) {
       s = { ...s, today: { date: tk, checks: {}, steps: 0, grew: false } }
       saveState(s)
+    }
+    const qcode = new URLSearchParams(window.location.search).get('code')
+    if (qcode) {
+      if (s && !s.familyCode) {
+        s = { ...s, familyCode: qcode }
+        saveState(s)
+      } else if (!s) {
+        try { localStorage.setItem('dragon_pending_code', qcode) } catch (e) {}
+      }
+      // מאמתים ומעדכנים שם הורה ברקע
+      supabase.from('clients').select('name, password').ilike('password', qcode).limit(1).then(res => {
+        const row = res.data && res.data[0]
+        if (row) {
+          setState(prev => {
+            if (!prev) return prev
+            const next = { ...prev, familyCode: row.password || qcode, parentName: row.name }
+            saveState(next)
+            return next
+          })
+        }
+      })
     }
     setState(s)
     setLoaded(true)
@@ -251,12 +356,22 @@ export default function KidsApp() {
 
   const hatch = () => {
     if (!nameInput.trim()) return
+    let pendingCode = null
+    try { pendingCode = localStorage.getItem('dragon_pending_code') } catch (e) {}
     update({
       name: nameInput.trim(),
       growthDays: 0,
       today: { date: todayKey(), checks: {}, steps: 0, grew: false },
       album: [],
+      ...(pendingCode ? { familyCode: pendingCode } : {}),
     })
+    if (pendingCode) {
+      supabase.from('clients').select('name, password').ilike('password', pendingCode).limit(1).then(res => {
+        const row = res.data && res.data[0]
+        if (row) update(prev => ({ ...prev, familyCode: row.password, parentName: row.name }))
+      })
+      try { localStorage.removeItem('dragon_pending_code') } catch (e) {}
+    }
   }
 
   // ── האכלה ──
@@ -327,6 +442,47 @@ export default function KidsApp() {
     e.target.value = ''
   }
 
+  // ── חייזר המאכלים החדשים ──
+  const [foodInput, setFoodInput] = useState('')
+  const [foodMsg, setFoodMsg] = useState(null)
+  const alien = state?.alien || { start: null, foods: [] }
+  const allFoods = state?.allFoods || []
+  const alienParts = Math.min(7, alien.foods.length)
+  const alienDone = alienParts >= 7
+
+  const addFood = () => {
+    const name = foodInput.trim()
+    if (!name || !state) return
+    const norm = name.replace(/\s+/g, ' ')
+    if (allFoods.some(f => f === norm)) {
+      setFoodMsg({ type: 'dup', text: 'כבר טעמת את זה! משהו חדש-חדש 😉' })
+      setTimeout(() => setFoodMsg(null), 2500)
+      return
+    }
+    const foods = [...alien.foods, norm]
+    const done = foods.length >= 7
+    update(prev => ({
+      ...prev,
+      alien: { start: prev.alien?.start || todayKey(), foods },
+      allFoods: [...(prev.allFoods || []), norm],
+      aliens: done ? (prev.aliens || 0) + 1 : (prev.aliens || 0),
+    }))
+    setFoodInput('')
+    if (navigator.vibrate) navigator.vibrate(50)
+    if (done) {
+      setConfetti(true)
+      setTimeout(() => setConfetti(false), 4000)
+      if (navigator.vibrate) navigator.vibrate([100, 60, 100, 60, 180])
+    } else {
+      setFoodMsg({ type: 'ok', text: `אמיץ!! נוספה ${ALIEN_PARTS[foods.length - 1]}` })
+      setTimeout(() => setFoodMsg(null), 2500)
+    }
+  }
+
+  const newAlien = () => {
+    update(prev => ({ ...prev, alien: { start: null, foods: [] } }))
+  }
+
   if (!loaded) return null
 
   const css = (
@@ -336,6 +492,7 @@ export default function KidsApp() {
       @keyframes confetti-fall { to { top: 105%; transform: rotate(720deg) } }
       @keyframes grow-flash { 0% { transform: scale(0.6); opacity: 0 } 25% { transform: scale(1.15); opacity: 1 } 75% { transform: scale(1); opacity: 1 } 100% { opacity: 0 } }
       @keyframes egg-wobble { 0%,100% { transform: rotate(0) } 25% { transform: rotate(-6deg) } 75% { transform: rotate(6deg) } }
+      @keyframes alien-dance { 0%,100% { transform: rotate(-7deg) translateX(-7px) } 50% { transform: rotate(7deg) translateX(7px) } }
       * { -webkit-tap-highlight-color: transparent; }
     `}</style>
   )
@@ -586,11 +743,74 @@ export default function KidsApp() {
         </div>
       )}
 
+      {/* ═ טאב חייזר ═ */}
+      {tab === 'alien' && (
+        <div style={{ padding: '10px 16px' }}>
+          <div style={{ background: '#fff', borderRadius: 22, padding: 18, boxShadow: '0 4px 18px rgba(0,0,0,0.07)', textAlign: 'center' }}>
+            <div style={{ fontWeight: 900, fontSize: 18, color: '#166534' }}>👽 בונים חייזר!</div>
+            <div style={{ fontSize: 12.5, color: '#64748b', margin: '4px 0 6px', lineHeight: 1.6 }}>
+              טעמת מאכל שאף פעם לא טעמת? (לא חטיף ולא ממתק 😉)<br/>כל טעימה אמיצה מוסיפה לחייזר חלק — ב-7 הוא קם לרקוד!
+            </div>
+            {(state.aliens || 0) > 0 && (
+              <div style={{ display: 'inline-block', background: '#f0fdf4', borderRadius: 99, padding: '3px 14px', fontSize: 12, fontWeight: 800, color: '#166534', marginBottom: 4 }}>
+                האוסף שלי: {'👽'.repeat(Math.min(8, state.aliens))} {state.aliens > 8 ? `×${state.aliens}` : ''}
+              </div>
+            )}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <Alien parts={alienParts} dancing={alienDone} />
+            </div>
+            {alienDone ? (
+              <>
+                <div style={{ background: 'linear-gradient(135deg,#dcfce7,#bbf7d0)', borderRadius: 16, padding: '12px 16px', fontWeight: 900, color: '#166534', fontSize: 16, marginBottom: 10 }}>
+                  🕺🎉 החייזר קם לחיים ורוקד לכבודך!!
+                </div>
+                <button onClick={newAlien}
+                  style={{ padding: '13px 30px', borderRadius: 14, border: 'none', background: '#16a34a', color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer' }}>
+                  👽 מתחילים חייזר חדש!
+                </button>
+              </>
+            ) : (
+              <>
+                <div style={{ display: 'flex', gap: 4, justifyContent: 'center', margin: '2px 0 12px' }}>
+                  {ALIEN_PARTS.map((p, i) => (
+                    <div key={i} style={{ width: 30, height: 8, borderRadius: 99, background: i < alienParts ? '#16a34a' : '#e2e8f0' }} />
+                  ))}
+                </div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#16a34a', marginBottom: 10 }}>
+                  {alienParts}/7 · החלק הבא: {ALIEN_PARTS[alienParts]}
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input value={foodInput} onChange={e => setFoodInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addFood()}
+                    placeholder="מה טעמת בפעם הראשונה?"
+                    style={{ flex: 1, padding: '13px 14px', borderRadius: 14, border: '2px solid #bbf7d0', fontSize: 15, outline: 'none', fontWeight: 700, minWidth: 0 }} />
+                  <button onClick={addFood}
+                    style={{ padding: '13px 20px', borderRadius: 14, border: 'none', background: '#16a34a', color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+                    טעמתי!
+                  </button>
+                </div>
+                {foodMsg && (
+                  <div style={{ marginTop: 10, fontSize: 13.5, fontWeight: 800, color: foodMsg.type === 'ok' ? '#16a34a' : '#d97706' }}>{foodMsg.text}</div>
+                )}
+              </>
+            )}
+            {alien.foods.length > 0 && (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginTop: 14 }}>
+                {alien.foods.map((f, i) => (
+                  <span key={i} style={{ background: '#f0fdf4', border: '1.5px solid #bbf7d0', borderRadius: 99, padding: '4px 12px', fontSize: 12, fontWeight: 700, color: '#166534' }}>🍽️ {f}</span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ניווט תחתון */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', boxShadow: '0 -4px 20px rgba(0,0,0,0.1)', display: 'flex', zIndex: 100 }}>
         {[
           { k: 'dragon', l: 'הדרקון שלי', i: '🐉' },
           { k: 'steps', l: 'צעדים', i: '👟' },
+          { k: 'alien', l: 'חייזר', i: '👽' },
           { k: 'album', l: 'אלבום', i: '📸' },
         ].map(t => (
           <button key={t.k} onClick={() => setTab(t.k)}
