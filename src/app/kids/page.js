@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { supabase } from '../supabase'
+import { CatchVeggie, ChallengeWheel, SecretMission, HeroWorkout, MemoryGame, DailyTrivia, TrophyRoom } from './games'
 
 // ─────────────────────────────────────────────────────────────
 // מאמן הדרקון — אפליקציית ילדים "בין הראש לצלחת"
@@ -10,13 +11,18 @@ import { supabase } from '../supabase'
 // ─────────────────────────────────────────────────────────────
 
 const STORE_KEY = 'dragon_coach_v1'
-const STEP_GOAL = 7500
 const STAGES = [
-  { min: 0, name: 'גור דרקון', scale: 0.72 },
-  { min: 7, name: 'דרקון צעיר', scale: 0.88 },
-  { min: 14, name: 'דרקון מכונף', scale: 1.0, wings: true },
-  { min: 21, name: 'דרקון זהב', scale: 1.08, wings: true, gold: true },
+  { min: 0, name: 'גור דרקון', scale: 0.6 },
+  { min: 7, name: 'דרקון צעיר', scale: 0.8 },
+  { min: 14, name: 'דרקון מכונף', scale: 0.98, wings: true },
+  { min: 21, name: 'דרקון זהב', scale: 1.14, wings: true, gold: true },
 ]
+// ── יעד צעדים שגדל עם הדרקון: חודש 1 = 4,000 · חודש 2 = 6,000 · חודש 3+ = 7,500 ──
+const MONTH_GOALS = [4000, 6000, 7500]
+function monthOf(growthDays) { return Math.floor((growthDays || 0) / 30) }
+function stepGoalFor(growthDays) { return MONTH_GOALS[Math.min(2, monthOf(growthDays))] }
+// אביזר חדש בכל יום גדילה בתוך השבוע — תגמול נראה מיידי; בסוף שבוע — קפיצת גודל
+const ACCESSORY_NAMES = ['כובע מסיבה 🎩', 'עניבת פרפר 🎀', 'נעליים אדומות 👟', 'משקפי שמש 😎', 'צעיף 🧣', 'בלון 🎈']
 const CHECKS = [
   { k: 'lp', meal: 'צהריים', label: 'חלבון', emoji: '🍗' },
   { k: 'lv', meal: 'צהריים', label: 'ירק', emoji: '🥦' },
@@ -25,10 +31,10 @@ const CHECKS = [
   { k: 'dv', meal: 'ערב', label: 'ירק', emoji: '🥕' },
 ]
 const STEP_STOPS = [
-  { at: 1000, label: 'הטיילת', emoji: '🌊' },
-  { at: 3000, label: 'הגשר', emoji: '🌉' },
-  { at: 5000, label: 'היער', emoji: '🌲' },
-  { at: 7500, label: 'טירת האלופים', emoji: '🏰' },
+  { frac: 0.15, label: 'הטיילת', emoji: '🌊' },
+  { frac: 0.4, label: 'הגשר', emoji: '🌉' },
+  { frac: 0.7, label: 'היער', emoji: '🌲' },
+  { frac: 1.0, label: 'טירת האלופים', emoji: '🏰' },
 ]
 
 function todayKey() {
@@ -66,6 +72,7 @@ async function syncToServer(s) {
         photos: (s.album || []).length,
         new_foods: (s.alien && s.alien.foods) || [],
         aliens_caught: s.aliens || 0,
+        games: s.counters || {},
       },
       updated_at: new Date().toISOString(),
     }, { onConflict: 'client_name,log_date' })
@@ -78,17 +85,44 @@ function stageFor(growthDays) {
   return st
 }
 
-// ── הדרקון עצמו ──
-function Dragon({ stage, mood, eating, size = 190 }) {
+// ── הדרקון עצמו — עם אביזרים שנצברים, תינוקות וביצה ──
+function Dragon({ stage, mood, eating, size = 190, accessories = 0, babies = 0, eggSoon = false }) {
   const body = stage.gold ? '#f6c445' : '#5fd068'
   const bodyDark = stage.gold ? '#dfa321' : '#3fae4e'
   const belly = stage.gold ? '#fdeeb8' : '#d3f5d6'
   const s = stage.scale
+  const acc = n => accessories >= n
   return (
     <div style={{ animation: eating ? 'dragon-eat 0.55s ease' : 'dragon-idle 3s ease-in-out infinite', transformOrigin: 'bottom center' }}>
       <svg width={size} height={size} viewBox="0 0 200 200">
+        {/* תינוקות דרקון — האחריות של החודשים הבאים */}
+        {babies >= 1 && (
+          <g transform="translate(22 158) scale(0.5)">
+            <ellipse cx="0" cy="10" rx="24" ry="20" fill="#8fe08f" />
+            <ellipse cx="0" cy="-8" rx="18" ry="15" fill="#8fe08f" />
+            <circle cx="-6" cy="-10" r="2.8" fill="#1f2937" />
+            <circle cx="6" cy="-10" r="2.8" fill="#1f2937" />
+            <path d="M-5,-2 q5,4 10,0" fill="none" stroke="#7c2d12" strokeWidth="2" strokeLinecap="round" />
+          </g>
+        )}
+        {babies >= 2 && (
+          <g transform="translate(178 160) scale(0.44)">
+            <ellipse cx="0" cy="10" rx="24" ry="20" fill="#a5e6a5" />
+            <ellipse cx="0" cy="-8" rx="18" ry="15" fill="#a5e6a5" />
+            <circle cx="-6" cy="-10" r="2.8" fill="#1f2937" />
+            <circle cx="6" cy="-10" r="2.8" fill="#1f2937" />
+            <path d="M-5,-2 q5,4 10,0" fill="none" stroke="#7c2d12" strokeWidth="2" strokeLinecap="round" />
+          </g>
+        )}
+        {/* ביצה — לקראת סוף החודש */}
+        {eggSoon && (
+          <g transform="translate(174 168)">
+            <ellipse cx="0" cy="0" rx="13" ry="17" fill="#fffbeb" stroke="#e8d9a8" strokeWidth="2">
+              <animateTransform attributeName="transform" type="rotate" values="-4;4;-4" dur="1.2s" repeatCount="indefinite" />
+            </ellipse>
+          </g>
+        )}
         <g transform={`translate(100 108) scale(${s}) translate(-100 -108)`}>
-          {/* כנפיים */}
           {stage.wings && (
             <>
               <path d="M52,95 C20,68 12,96 30,116 C40,126 55,120 60,110 Z" fill={bodyDark} opacity="0.9">
@@ -99,25 +133,26 @@ function Dragon({ stage, mood, eating, size = 190 }) {
               </path>
             </>
           )}
-          {/* זנב */}
           <path d="M140,150 C168,152 178,138 172,124 C186,130 190,152 172,162 C160,168 146,162 140,155 Z" fill={body} />
           <circle cx="176" cy="126" r="7" fill={bodyDark} />
-          {/* גוף */}
           <ellipse cx="100" cy="120" rx="52" ry="48" fill={body} />
-          {/* בטן */}
           <ellipse cx="100" cy="132" rx="32" ry="28" fill={belly} />
-          {/* רגליים */}
           <ellipse cx="72" cy="164" rx="14" ry="10" fill={bodyDark} />
           <ellipse cx="128" cy="164" rx="14" ry="10" fill={bodyDark} />
-          {/* קרניים */}
+          {/* 👟 נעליים אדומות */}
+          {acc(3) && (
+            <>
+              <ellipse cx="72" cy="166" rx="15" ry="9" fill="#ef4444" />
+              <ellipse cx="128" cy="166" rx="15" ry="9" fill="#ef4444" />
+              <path d="M60,164 q12,-5 24,0" fill="none" stroke="#fff" strokeWidth="2" />
+              <path d="M116,164 q12,-5 24,0" fill="none" stroke="#fff" strokeWidth="2" />
+            </>
+          )}
           <path d="M76,66 C72,52 78,46 84,50 C88,54 86,64 82,70 Z" fill="#fff0c9" stroke={bodyDark} strokeWidth="2" />
           <path d="M124,66 C128,52 122,46 116,50 C112,54 114,64 118,70 Z" fill="#fff0c9" stroke={bodyDark} strokeWidth="2" />
-          {/* ראש (חלק מהגוף — בלוב חמוד) */}
           <ellipse cx="100" cy="86" rx="44" ry="36" fill={body} />
-          {/* אוזניים/סנפירים */}
           <ellipse cx="58" cy="86" rx="9" ry="14" fill={bodyDark} />
           <ellipse cx="142" cy="86" rx="9" ry="14" fill={bodyDark} />
-          {/* עיניים לפי מצב רוח */}
           {mood === 'sleep' ? (
             <>
               <path d="M76,84 q8,6 16,0" fill="none" stroke="#1f2937" strokeWidth="3.5" strokeLinecap="round" />
@@ -130,7 +165,6 @@ function Dragon({ stage, mood, eating, size = 190 }) {
               <ellipse cx="116" cy="84" rx="7.5" ry="9" fill="#1f2937" />
               <circle cx="86.5" cy="81" r="2.5" fill="#fff" />
               <circle cx="118.5" cy="81" r="2.5" fill="#fff" />
-              {/* גבות עצובות-מתחננות */}
               <path d="M74,72 q10,-5 18,-1" fill="none" stroke={bodyDark} strokeWidth="3" strokeLinecap="round" />
               <path d="M126,72 q-10,-5 -18,-1" fill="none" stroke={bodyDark} strokeWidth="3" strokeLinecap="round" />
             </>
@@ -142,16 +176,56 @@ function Dragon({ stage, mood, eating, size = 190 }) {
               <circle cx="118.5" cy="79.5" r="3" fill="#fff" />
             </>
           )}
-          {/* נחיריים */}
+          {/* 😎 משקפי שמש */}
+          {acc(4) && mood !== 'sleep' && (
+            <>
+              <rect x="72" y="76" width="24" height="16" rx="7" fill="#1f2937" opacity="0.92" />
+              <rect x="104" y="76" width="24" height="16" rx="7" fill="#1f2937" opacity="0.92" />
+              <line x1="96" y1="82" x2="104" y2="82" stroke="#1f2937" strokeWidth="3" />
+              <circle cx="80" cy="80" r="2.5" fill="#fff" opacity="0.5" />
+              <circle cx="112" cy="80" r="2.5" fill="#fff" opacity="0.5" />
+            </>
+          )}
           <circle cx="94" cy="98" r="2.2" fill={bodyDark} />
           <circle cx="106" cy="98" r="2.2" fill={bodyDark} />
-          {/* פה */}
           {eating ? (
             <ellipse cx="100" cy="110" rx="10" ry="8" fill="#7c2d12" />
           ) : mood === 'hungry' ? (
             <path d="M92,110 q8,-5 16,0" fill="none" stroke="#7c2d12" strokeWidth="3.5" strokeLinecap="round" />
           ) : (
             <path d="M88,107 q12,10 24,0" fill="none" stroke="#7c2d12" strokeWidth="3.5" strokeLinecap="round" />
+          )}
+          {/* 🧣 צעיף */}
+          {acc(5) && (
+            <>
+              <rect x="80" y="114" width="40" height="11" rx="5.5" fill="#f97316" />
+              <rect x="103" y="121" width="11" height="22" rx="5" fill="#fb923c" />
+            </>
+          )}
+          {/* 🎀 עניבת פרפר */}
+          {acc(2) && (
+            <>
+              <path d="M100,122 L84,113 L84,131 Z" fill="#ec4899" />
+              <path d="M100,122 L116,113 L116,131 Z" fill="#ec4899" />
+              <circle cx="100" cy="122" r="4.5" fill="#be185d" />
+            </>
+          )}
+          {/* 🎩 כובע מסיבה */}
+          {acc(1) && (
+            <>
+              <path d="M100,22 L84,58 L116,58 Z" fill="#8b5cf6" />
+              <path d="M92,40 L108,40 L104,49 L96,49 Z" fill="#facc15" />
+              <circle cx="100" cy="20" r="6" fill="#fbbf24" />
+            </>
+          )}
+          {/* 🎈 בלון */}
+          {acc(6) && (
+            <g>
+              <path d="M152,108 C158,84 162,62 160,44" fill="none" stroke="#94a3b8" strokeWidth="1.8" />
+              <ellipse cx="160" cy="34" rx="12" ry="15" fill="#a855f7">
+                <animateTransform attributeName="transform" type="translate" values="0 0;0 -4;0 0" dur="2s" repeatCount="indefinite" />
+              </ellipse>
+            </g>
           )}
         </g>
       </svg>
@@ -403,8 +477,9 @@ export default function KidsApp() {
   // ── צעדים ──
   const setSteps = (n) => {
     if (!state) return
+    const goal = stepGoalFor(state.growthDays || 0)
     const steps = Math.max(0, Math.min(30000, n))
-    const hitGoal = steps >= STEP_GOAL && (state.today.steps || 0) < STEP_GOAL
+    const hitGoal = steps >= goal && (state.today.steps || 0) < goal
     update({ ...state, today: { ...state.today, steps } })
     if (hitGoal) {
       setConfetti(true)
@@ -483,6 +558,32 @@ export default function KidsApp() {
     update(prev => ({ ...prev, alien: { start: null, foods: [] } }))
   }
 
+  // ── מערכת האנרגיה: התנהגות אמיתית ⟵ ⚡ ⟵ סיבובי משחק ──
+  const [activeGame, setActiveGame] = useState(null)
+  const counters = state?.counters || {}
+  const t2 = state?.today || {}
+  const energyEarned =
+    CHECKS.filter(c => (t2.checks || {})[c.k]).length +
+    ((t2.steps || 0) >= stepGoalFor(state?.growthDays || 0) ? 2 : 0) +
+    (t2.wheelDone ? 1 : 0) +
+    (t2.workoutDone ? 1 : 0) +
+    (t2.triviaRight ? 1 : 0)
+  const energy = Math.max(0, energyEarned - (t2.energySpent || 0))
+
+  const bumpCounter = (key, val) => {
+    update(prev => ({ ...prev, counters: { ...(prev.counters || {}), [key]: val(((prev.counters || {})[key]) || 0) } }))
+  }
+  const setTodayField = (fields) => {
+    update(prev => ({ ...prev, today: { ...prev.today, ...fields } }))
+  }
+  const spendEnergy = () => setTodayField({ energySpent: (t2.energySpent || 0) + 1 })
+
+  const openGame = (key, costsEnergy) => {
+    if (costsEnergy && energy <= 0) return
+    if (costsEnergy) spendEnergy()
+    setActiveGame(key)
+  }
+
   if (!loaded) return null
 
   const css = (
@@ -493,6 +594,7 @@ export default function KidsApp() {
       @keyframes grow-flash { 0% { transform: scale(0.6); opacity: 0 } 25% { transform: scale(1.15); opacity: 1 } 75% { transform: scale(1); opacity: 1 } 100% { opacity: 0 } }
       @keyframes egg-wobble { 0%,100% { transform: rotate(0) } 25% { transform: rotate(-6deg) } 75% { transform: rotate(6deg) } }
       @keyframes alien-dance { 0%,100% { transform: rotate(-7deg) translateX(-7px) } 50% { transform: rotate(7deg) translateX(7px) } }
+      @keyframes pop-in { 0% { transform: scale(0.2); opacity: 0 } 100% { transform: scale(1); opacity: 1 } }
       * { -webkit-tap-highlight-color: transparent; }
     `}</style>
   )
@@ -535,6 +637,11 @@ export default function KidsApp() {
   // ═══ האפליקציה ═══
   const stage = stageFor(state.growthDays)
   const nextStage = STAGES.find(s => s.min > state.growthDays)
+  const month = monthOf(state.growthDays)
+  const babies = Math.min(2, month)
+  const eggSoon = (state.growthDays % 30) >= 27 && state.growthDays > 0
+  const accessories = state.growthDays % 7
+  const STEP_GOAL = stepGoalFor(state.growthDays)
   const checks = state.today.checks || {}
   const checkedCount = CHECKS.filter(c => checks[c.k]).length
   const mood = checkedCount === 0 ? 'hungry' : 'happy'
@@ -563,6 +670,7 @@ export default function KidsApp() {
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', borderRadius: 99, padding: '4px 14px', marginTop: 6, boxShadow: '0 2px 10px rgba(0,0,0,0.08)' }}>
           <span style={{ fontSize: 12, fontWeight: 800, color: '#b45309' }}>{stage.name}</span>
           {nextStage && <span style={{ fontSize: 11, color: '#94a3b8' }}>· עוד {nextStage.min - state.growthDays} ימי כוח לשלב הבא</span>}
+          {babies > 0 && <span style={{ fontSize: 11, color: '#0d9488', fontWeight: 800 }}>· הורה ל-{babies} 🐣</span>}
         </div>
         <div style={{ marginTop: 6 }}>
           {state.familyCode ? (
@@ -606,10 +714,10 @@ export default function KidsApp() {
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
             {growFlash && (
               <div style={{ position: 'absolute', top: 6, fontWeight: 900, fontSize: 20, color: '#d97706', animation: 'grow-flash 2.6s ease forwards', zIndex: 5, background: '#fffbeb', borderRadius: 99, padding: '8px 22px', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
-                {state.name} גדל! 🎉
+                {state.growthDays % 7 === 0 ? state.name + ' גדל בגוף!! 🎉' : state.name + ' קיבל ' + ACCESSORY_NAMES[(state.growthDays % 7) - 1] + '!'}
               </div>
             )}
-            <Dragon stage={stage} mood={dragonMood} eating={eating} size={210} />
+            <Dragon stage={stage} mood={dragonMood} eating={eating} size={210} accessories={accessories} babies={babies} eggSoon={eggSoon} />
             <div style={{ background: '#fff', borderRadius: 16, padding: '8px 18px', marginTop: -6, fontSize: 14.5, fontWeight: 700, color: '#334155', boxShadow: '0 3px 14px rgba(0,0,0,0.1)', textAlign: 'center', maxWidth: 300 }}>
               {dragonMood === 'sleep' ? `${state.name} ישן... נתראה מחר 💤`
                 : checkedCount === 0 ? `אני רעב... תאכל ואני אוכל איתך! 🥺`
@@ -665,17 +773,18 @@ export default function KidsApp() {
             <div style={{ fontSize: 44, fontWeight: 900, color: steps >= STEP_GOAL ? '#16a34a' : '#0369a1', lineHeight: 1 }}>
               {steps.toLocaleString()}
             </div>
-            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 14 }}>מתוך {STEP_GOAL.toLocaleString()} צעדים</div>
+            <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 14 }}>מתוך {STEP_GOAL.toLocaleString()} צעדים · יעד חודש {month + 1}{month < 2 ? ' (יגדל עם הדרקון! 🐉)' : ' 🏆'}</div>
 
             {/* פס התקדמות עם תחנות */}
             <div style={{ position: 'relative', height: 60, margin: '0 6px' }}>
               <div style={{ position: 'absolute', top: 24, left: 0, right: 0, height: 14, background: '#e2e8f0', borderRadius: 99 }} />
               <div style={{ position: 'absolute', top: 24, right: 0, width: stepPct + '%', height: 14, background: 'linear-gradient(90deg,#22c55e,#0ea5e9)', borderRadius: 99, transition: 'width 0.5s' }} />
               {STEP_STOPS.map(st => {
-                const pos = (st.at / STEP_GOAL) * 100
-                const passed = steps >= st.at
+                const at = Math.round(st.frac * STEP_GOAL)
+                const pos = st.frac * 100
+                const passed = steps >= at
                 return (
-                  <div key={st.at} style={{ position: 'absolute', right: `calc(${Math.min(100, pos)}% - 14px)`, top: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', width: 28 }}>
+                  <div key={st.label} style={{ position: 'absolute', right: `calc(${Math.min(100, pos)}% - 14px)`, top: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', width: 28 }}>
                     <span style={{ fontSize: 20, filter: passed ? 'none' : 'grayscale(1) opacity(0.5)' }}>{st.emoji}</span>
                     <span style={{ fontSize: 8.5, fontWeight: 700, color: passed ? '#16a34a' : '#94a3b8', marginTop: 22 }}>{st.label}</span>
                   </div>
@@ -805,11 +914,90 @@ export default function KidsApp() {
         </div>
       )}
 
+      {/* ═ טאב משחקים ═ */}
+      {tab === 'games' && (
+        <div style={{ padding: '10px 16px' }}>
+          {/* מד אנרגיה */}
+          <div style={{ background: 'linear-gradient(135deg,#fef9c3,#fde68a)', borderRadius: 18, padding: '12px 16px', marginBottom: 12, border: '2px solid #f59e0b', textAlign: 'center' }}>
+            <span style={{ fontWeight: 900, fontSize: 16, color: '#92400e' }}>⚡ אנרגיה: {energy}</span>
+            <div style={{ fontSize: 11.5, color: '#a16207', marginTop: 2 }}>
+              ארוחות לדרקון, צעדים, אימון ומשימות ממלאים אנרגיה — משחקים משתמשים בה!
+            </div>
+          </div>
+
+          {activeGame === null && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {[
+                { k: 'catch', n: 'תפוס את הירק!', e: '🥦', sub: 'שיא: ' + (counters.bestCatch || 0), cost: true },
+                { k: 'memory', n: 'זיכרון המאכלים', e: '🧠', sub: 'מצאו זוגות', cost: true },
+                { k: 'wheel', n: 'גלגל האתגר', e: '🎡', sub: t2.wheelSpun ? 'המשימה שלך ↓' : 'סיבוב יומי', cost: false },
+                { k: 'workout', n: 'אימון הגיבור', e: '💪', sub: t2.workoutDone ? 'הושלם! 🏅' : 'נותן ⚡', cost: false },
+                { k: 'secret', n: 'משימה חשאית', e: '🕵️', sub: t2.secretDone ? 'בוצע 🥷' : 'ססס... 🤫', cost: false },
+                { k: 'trivia', n: 'חידת הכוח', e: '❓', sub: t2.triviaDone ? 'ענית היום' : 'נותנת ⚡', cost: false },
+                { k: 'trophies', n: 'ארון הגביעים', e: '🏆', sub: 'ההישגים שלי', cost: false },
+              ].map(g => {
+                const locked = g.cost && energy <= 0
+                return (
+                  <div key={g.k} onClick={() => !locked && openGame(g.k, g.cost)}
+                    style={{
+                      background: '#fff', borderRadius: 18, padding: '16px 10px', textAlign: 'center',
+                      boxShadow: '0 4px 14px rgba(0,0,0,0.07)', cursor: locked ? 'default' : 'pointer',
+                      opacity: locked ? 0.55 : 1, border: '2px solid ' + (locked ? '#e2e8f0' : '#bae6fd'),
+                    }}>
+                    <div style={{ fontSize: 36 }}>{g.e}</div>
+                    <div style={{ fontWeight: 900, fontSize: 13.5, color: '#0c4a6e', marginTop: 4 }}>{g.n}</div>
+                    <div style={{ fontSize: 10.5, color: '#94a3b8', marginTop: 2 }}>{locked ? 'צריך ⚡ — סמן ארוחה!' : g.sub}{g.cost && !locked ? ' · עולה ⚡1' : ''}</div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          {activeGame !== null && (
+            <div style={{ background: '#fff', borderRadius: 22, padding: 18, boxShadow: '0 4px 18px rgba(0,0,0,0.07)' }}>
+              <button onClick={() => setActiveGame(null)}
+                style={{ border: 'none', background: 'none', color: '#0369a1', fontWeight: 800, fontSize: 13, cursor: 'pointer', marginBottom: 10, padding: 0 }}>
+                → חזרה למשחקים
+              </button>
+              {activeGame === 'catch' && (
+                <CatchVeggie best={counters.bestCatch || 0}
+                  onEnd={(score) => { if (score > (counters.bestCatch || 0)) bumpCounter('bestCatch', () => score) }} />
+              )}
+              {activeGame === 'memory' && (
+                <MemoryGame onWin={() => bumpCounter('memoryWins', v => v + 1)} />
+              )}
+              {activeGame === 'wheel' && (
+                <ChallengeWheel spun={!!t2.wheelSpun} mission={t2.wheelMission} missionDone={!!t2.wheelDone}
+                  onSpin={(m) => { setTodayField({ wheelSpun: true, wheelMission: m }); bumpCounter('spins', v => v + 1) }}
+                  onDone={() => { setTodayField({ wheelDone: true }); setConfetti(true); setTimeout(() => setConfetti(false), 2500) }} />
+              )}
+              {activeGame === 'workout' && (
+                <HeroWorkout dateStr={t2.date || todayKey()} doneToday={!!t2.workoutDone}
+                  onFinish={() => { setTodayField({ workoutDone: true }); bumpCounter('workouts', v => v + 1); setConfetti(true); setTimeout(() => setConfetti(false), 3000); if (navigator.vibrate) navigator.vibrate([80, 50, 120]) }} />
+              )}
+              {activeGame === 'secret' && (
+                <SecretMission dateStr={t2.date || todayKey()} revealed={!!t2.secretRevealed} done={!!t2.secretDone}
+                  onReveal={() => setTodayField({ secretRevealed: true })}
+                  onDone={() => { setTodayField({ secretDone: true }); bumpCounter('secrets', v => v + 1) }} />
+              )}
+              {activeGame === 'trivia' && (
+                <DailyTrivia dateStr={t2.date || todayKey()} answered={!!t2.triviaDone} wasRight={!!t2.triviaRight}
+                  onAnswer={(right) => { setTodayField({ triviaDone: true, triviaRight: right }); if (right) bumpCounter('triviaRight', v => v + 1) }} />
+              )}
+              {activeGame === 'trophies' && (
+                <TrophyRoom counters={counters} growthDays={state.growthDays || 0} aliens={state.aliens || 0} />
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* ניווט תחתון */}
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, background: '#fff', boxShadow: '0 -4px 20px rgba(0,0,0,0.1)', display: 'flex', zIndex: 100 }}>
         {[
-          { k: 'dragon', l: 'הדרקון שלי', i: '🐉' },
+          { k: 'dragon', l: 'הדרקון', i: '🐉' },
           { k: 'steps', l: 'צעדים', i: '👟' },
+          { k: 'games', l: 'משחקים', i: '🎮' },
           { k: 'alien', l: 'חייזר', i: '👽' },
           { k: 'album', l: 'אלבום', i: '📸' },
         ].map(t => (
