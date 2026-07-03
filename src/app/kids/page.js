@@ -229,9 +229,10 @@ export default function KidsApp() {
     if (!code) return
     setCodeStatus('checking')
     try {
-      const res = await supabase.from('clients').select('name').eq('password', code).maybeSingle()
+      const res0 = await supabase.from('clients').select('name, password').ilike('password', code).limit(1)
+      const res = { data: res0.data && res0.data[0] }
       if (res.data) {
-        update(prev => ({ ...prev, familyCode: code, parentName: res.data.name }))
+        update(prev => ({ ...prev, familyCode: res.data.password || code, parentName: res.data.name }))
         setCodeStatus('ok')
         setTimeout(() => setShowCode(false), 1200)
       } else {

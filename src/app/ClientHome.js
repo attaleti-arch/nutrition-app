@@ -29,16 +29,20 @@ export default function ClientHome() {
   async function handleStart() {
     if (!password.trim()) return
     const pw = password.trim()
-    const { data } = await supabase.from('clients').select('name, terms_accepted_at').eq('password', pw).single()
+    // ✅ התאמה סלחנית: מתעלמים מהבדלי אותיות גדולות/קטנות (ilike ללא wildcards = השוואה מדויקת חסרת-רגישות)
+    const res = await supabase.from('clients').select('name, terms_accepted_at, password').ilike('password', pw).limit(1)
+    const data = res.data && res.data[0]
     if (data) {
-      const acceptedLS = localStorage.getItem('terms_accepted_' + pw)
+      const canonicalPw = data.password || pw
+      const acceptedLS = localStorage.getItem('terms_accepted_' + canonicalPw)
       const acceptedDB = data.terms_accepted_at
       if (acceptedLS || acceptedDB) {
-        if (!acceptedLS) localStorage.setItem('terms_accepted_' + pw, '1')
+        if (!acceptedLS) localStorage.setItem('terms_accepted_' + canonicalPw, '1')
+        setPendingPassword(canonicalPw)
         setClientName(data.name)
         setStarted(true)
       } else {
-        setPendingPassword(pw)
+        setPendingPassword(canonicalPw)
         setPendingName(data.name)
         setShowTerms(true)
       }

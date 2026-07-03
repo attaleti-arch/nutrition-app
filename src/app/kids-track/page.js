@@ -26,13 +26,14 @@ export default function KidsTrack() {
     setLoading(true)
     setError('')
     try {
-      const [logsRes, clientRes] = await Promise.all([
-        supabase.from('daily_logs').select('log_date, checks')
-          .eq('client_name', 'kid:' + c)
-          .order('log_date', { ascending: false })
-          .limit(14),
-        supabase.from('clients').select('name').eq('password', c).maybeSingle(),
-      ])
+      const clientRes0 = await supabase.from('clients').select('name, password').ilike('password', c).limit(1)
+      const clientRow = clientRes0.data && clientRes0.data[0]
+      const canonical = clientRow?.password || c
+      const logsRes = await supabase.from('daily_logs').select('log_date, checks')
+        .eq('client_name', 'kid:' + canonical)
+        .order('log_date', { ascending: false })
+        .limit(14)
+      const clientRes = { data: clientRow }
       if (!logsRes.data || logsRes.data.length === 0) {
         setRows([])
         setError('אין עדיין נתונים לקוד הזה — או שהילד עוד לא חיבר את קוד המשפחה באפליקציה')

@@ -15,7 +15,8 @@ export default function Dashboard() {
 
   async function doLogin() {
     if (!password) return
-    const { data } = await supabase.from('clients').select('name').eq('password', password).single()
+    const res = await supabase.from('clients').select('name').ilike('password', password.trim()).limit(1)
+    const data = res.data && res.data[0]
     if (data || password === 'Esterika26') {
       setAuth(true)
     } else {
