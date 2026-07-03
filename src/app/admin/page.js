@@ -935,6 +935,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     if (!error) setSelectedClient(prev => ({ ...prev, [field]: value }))
   }
 
+  // שינוי סיסמה: מדווח כישלון באמת (לא מעמיד פנים), ומעביר את כל
+  // ההיסטוריה (יומנים, יומני ילד, פרופיל) לסיסמה החדשה לשמירת המשכיות
+  async function changeClientPassword(newPw) {
+    if (!selectedClient) return false
+    const oldPw = selectedClient.password
+    const { error } = await supabase.from('clients').update({ password: newPw }).eq('id', selectedClient.id)
+    if (error) { alert('X הסיסמה לא נשמרה: ' + error.message); return false }
+    try {
+      await supabase.from('daily_logs').update({ client_name: newPw }).eq('client_name', oldPw)
+      await supabase.from('daily_logs').update({ client_name: 'kid:' + newPw }).eq('client_name', 'kid:' + oldPw)
+      await supabase.from('client_profiles').update({ client_password: newPw }).eq('client_password', oldPw)
+    } catch (e) {}
+    setSelectedClient(c => ({ ...c, password: newPw }))
+    alert('V הסיסמה עודכנה ל: ' + newPw + '\nכל ההיסטוריה הועברה לסיסמה החדשה')
+    return true
+  }
+
   function saveSessionKey(key, value) {
     if (!selectedClient?.password) return
     // ref — תמיד עדכני, אין stale closure
@@ -1483,7 +1500,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
               </div>
               {/* עריכת נתוני לקוח */}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                <input type="text" placeholder="סיסמה" defaultValue={selectedClient.password || ''} key={selectedClient.id + '_pw'} onBlur={async e => { const v = e.target.value.trim(); if (v && v !== selectedClient.password) { await updateClientData('password', v); setSelectedClient(c => ({...c, password: v})) } }} style={{ flex: 2, minWidth: 100, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
+                <input type="text" placeholder="סיסמה" defaultValue={selectedClient.password || ''} key={selectedClient.id + '_pw'} onBlur={async e => { const v = e.target.value.trim(); if (v && v !== selectedClient.password) { const ok = await changeClientPassword(v); if (!ok) e.target.value = selectedClient.password || '' } }} style={{ flex: 2, minWidth: 100, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <input type="number" placeholder="גיל" value={selectedClient.age || ''} onChange={e => setSelectedClient(c => ({...c, age: e.target.value}))} onBlur={e => updateClientData('age', e.target.value ? parseInt(e.target.value) : null)} style={{ flex: 1, minWidth: 60, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />

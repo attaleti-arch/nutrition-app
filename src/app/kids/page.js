@@ -73,6 +73,10 @@ async function syncToServer(s) {
         new_foods: (s.alien && s.alien.foods) || [],
         aliens_caught: s.aliens || 0,
         games: s.counters || {},
+        snapshot: {
+          name: s.name, growthDays: s.growthDays, aliens: s.aliens || 0,
+          counters: s.counters || {}, allFoods: s.allFoods || [], alien: s.alien || null,
+        },
       },
       updated_at: new Date().toISOString(),
     }, { onConflict: 'client_name,log_date' })
@@ -379,6 +383,38 @@ export default function KidsApp() {
         }
       })
     }
+    // המשכיות: אין נתונים במכשיר או שהשרת מתקדם יותר — משחזרים מהשרת
+    const knownCode = qcode || (s && s.familyCode)
+    if (knownCode) {
+      supabase.from('daily_logs').select('log_date, checks')
+        .eq('client_name', 'kid:' + knownCode)
+        .order('log_date', { ascending: false }).limit(1)
+        .then(res => {
+          const row = res.data && res.data[0]
+          const snap = row && row.checks && row.checks.snapshot
+          if (!snap || !snap.name) return
+          setState(prev => {
+            if (prev && (prev.growthDays || 0) >= (snap.growthDays || 0)) return prev
+            const sameDay = row.log_date === tk
+            const next = {
+              name: snap.name,
+              growthDays: snap.growthDays || 0,
+              aliens: snap.aliens || 0,
+              counters: snap.counters || {},
+              allFoods: snap.allFoods || [],
+              alien: snap.alien || { start: null, foods: [] },
+              album: (prev && prev.album) || [],
+              familyCode: knownCode,
+              parentName: prev && prev.parentName,
+              today: sameDay
+                ? { date: tk, checks: row.checks.checks || {}, steps: row.checks.steps || 0, grew: !!row.checks.grew }
+                : { date: tk, checks: {}, steps: 0, grew: false },
+            }
+            saveState(next)
+            return next
+          })
+        })
+    }
     setState(s)
     setLoaded(true)
   }, [])
@@ -497,7 +533,7 @@ export default function KidsApp() {
     const url = URL.createObjectURL(file)
     img.onload = () => {
       const c = document.createElement('canvas')
-      const maxW = 420
+      const maxW = 800
       const ratio = Math.min(1, maxW / img.width)
       c.width = Math.round(img.width * ratio)
       c.height = Math.round(img.height * ratio)
@@ -506,7 +542,7 @@ export default function KidsApp() {
       // הדרקון מצטרף לתמונה 🐉
       ctx.font = `${Math.round(c.width * 0.16)}px serif`
       ctx.fillText('🐉', c.width * 0.03, c.height * 0.97)
-      const thumb = c.toDataURL('image/jpeg', 0.72)
+      const thumb = c.toDataURL('image/jpeg', 0.8)
       URL.revokeObjectURL(url)
       update(prev => {
         const album = [{ date: todayKey(), thumb }, ...(prev.album || [])].slice(0, 30)
@@ -515,6 +551,22 @@ export default function KidsApp() {
     }
     img.src = url
     e.target.value = ''
+  }
+
+  // שיתוף יצירה — Web Share (וואטסאפ/גלריה), נפילה להורדה
+  const sharePhoto = async (thumb) => {
+    try {
+      const blob = await (await fetch(thumb)).blob()
+      const file = new File([blob], 'meal-art.jpg', { type: 'image/jpeg' })
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], text: 'תראו איזו ארוחה מצוירת יצרתי! 🎨🐉' })
+        return
+      }
+    } catch (e) {}
+    const a = document.createElement('a')
+    a.href = thumb
+    a.download = 'meal-art.jpg'
+    a.click()
   }
 
   // ── חייזר המאכלים החדשים ──
@@ -830,18 +882,22 @@ export default function KidsApp() {
       {tab === 'album' && (
         <div style={{ padding: '10px 16px' }}>
           <div style={{ background: '#fff', borderRadius: 22, padding: 18, boxShadow: '0 4px 18px rgba(0,0,0,0.07)' }}>
-            <div style={{ fontWeight: 900, fontSize: 18, color: '#0c4a6e', textAlign: 'center' }}>📸 אלבום הגיבור</div>
-            <div style={{ fontSize: 12.5, color: '#64748b', textAlign: 'center', marginBottom: 14 }}>צלמו את הצלחות הכי שוות — {state.name} מצטרף לכל תמונה!</div>
+            <div style={{ fontWeight: 900, fontSize: 18, color: '#0c4a6e', textAlign: 'center' }}>🎨 אלבום הארוחות המצוירות</div>
+            <div style={{ background: '#fff7ed', border: '2px solid #fed7aa', borderRadius: 14, padding: '10px 14px', fontSize: 13, color: '#9a3412', fontWeight: 700, textAlign: 'center', margin: '8px 0 12px', lineHeight: 1.7 }}>המשימה: ליצור פרצוף מאוכל בצלחת! 😄<br/>עיניים, אף, פה — ואולי גם עניבה או כובע?<br/>כמה שיותר פרטים = יצירת מופת!</div>
             <button onClick={() => fileRef.current?.click()}
               style={{ display: 'block', width: '100%', padding: '16px', borderRadius: 16, border: '3px dashed #7dd3fc', background: '#f0f9ff', color: '#0369a1', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}>
-              📷 צלמו צלחת חדשה!
+              📷 צלמו את היצירה!
             </button>
             <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={addPhoto} style={{ display: 'none' }} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
               {(state.album || []).map((p, i) => (
-                <div key={i} style={{ borderRadius: 14, overflow: 'hidden', boxShadow: '0 3px 10px rgba(0,0,0,0.12)', position: 'relative' }}>
-                  <img src={p.thumb} alt="" style={{ width: '100%', display: 'block' }} />
-                  <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.45)', color: '#fff', fontSize: 10, padding: '3px 8px', textAlign: 'left' }}>{p.date}</div>
+                <div key={i} style={{ borderRadius: 14, overflow: 'hidden', boxShadow: '0 3px 10px rgba(0,0,0,0.12)' }}>
+                  <div style={{ position: 'relative' }}>
+                    <img src={p.thumb} alt="" style={{ width: '100%', display: 'block' }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'rgba(0,0,0,0.45)', color: '#fff', fontSize: 10, padding: '3px 8px', textAlign: 'left' }}>{p.date}</div>
+                  </div>
+                  <button onClick={() => sharePhoto(p.thumb)}
+                    style={{ display: 'block', width: '100%', padding: '9px', border: 'none', background: '#25D366', color: '#fff', fontWeight: 900, fontSize: 12.5, cursor: 'pointer' }}>📤 לשלוח לאמא ואבא!</button>
                 </div>
               ))}
             </div>
