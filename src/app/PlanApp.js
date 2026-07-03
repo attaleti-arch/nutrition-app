@@ -213,7 +213,10 @@ function buildBudgetRows(items, checksMap, qtyMap, checkOrder, budget, nutrition
     const unitItem = unitMap ? unitMap[id] : null
     const cal100 = item?.base_qty > 0 ? Math.round((item.calories || 0) / item.base_qty * 100) : (item?.calories || 0)
     const macro100 = item?.base_qty > 0 ? Math.round((item[macroKey] || 0) / item.base_qty * 100) : (item?.[macroKey] || 0)
-    const recQty = unitItem ? unitItem.defaultQty : (macro100 > 0 ? Math.max(0, Math.round((remaining / macro100) * 100)) : 0)
+    // ✅ תקרת מנה שפויה: הנוסחה ממליצה כמה גרם מהפריט ימלאו את כל תקציב המאקרו שנותר —
+    // בפריטים דלי-מאקרו (בטטה ואנטיפסטי: רוב ירקות) זה נתן 600+ גרם. מנה מוגבלת ל-250 גרם.
+    const recRaw = unitItem ? unitItem.defaultQty : (macro100 > 0 ? Math.max(0, Math.round((remaining / macro100) * 100)) : 0)
+    const recQty = unitItem ? recRaw : Math.min(recRaw, 250)
     const qty = unitItem ? (qtyMap[id] || unitItem.defaultQty) : (qtyMap[id] || 100)
     const calDisplay = unitItem ? Math.round(qty * unitItem.calPerUnit) : (cal100 > 0 ? Math.round(cal100 * qty / 100) : 0)
     const macroDisplay = unitItem ? Math.round(qty * (unitItem.proteinPerUnit || 0)) : (macro100 > 0 ? Math.round(macro100 * qty / 100) : 0)
