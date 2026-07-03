@@ -601,24 +601,28 @@ function LivePlate({ bars, split }) {
       <svg width={224} height={206} viewBox="0 0 220 202">
         <ellipse cx={CX} cy={193} rx={80} ry={7} fill="rgba(0,0,0,0.08)" />
         <circle cx={CX} cy={CY} r={R + 4} fill="#fff" stroke="#e5e0d5" strokeWidth={2} />
+        {/* שלב 1: בסיס לבן + מילוי צבע מתקדם לכל מקטע */}
         {rendered.map(sec => (
           <g key={sec.key}>
-            {/* מקטע ריק — לבן עם קו מתאר עדין */}
-            <path d={slicePath(R, sec.a0, sec.a1)} fill="#fdfdfb" stroke="#eee8dc" strokeWidth={1.5} />
-            {/* הצבע שמתקדם עד 100% */}
+            {/* החלק הריק — לבן, בתוך קו המתאר הצבעוני של המקטע */}
+            <path d={slicePath(R, sec.a0, sec.a1)} fill="#fffefb" />
+            {/* הצבע שמתקדם עד 100% — מילוי מלא, בלי שקיפות, שיהיה ברור */}
             {sec.pct > 0 && (
-              <path d={slicePath(R, sec.a0, sec.fillEnd)} fill={sec.color} opacity={0.82} stroke="#fff" strokeWidth={1.5} />
+              <path d={slicePath(R, sec.a0, sec.fillEnd)} fill={sec.color} />
             )}
             {/* חריגה — אדום יחסי מסוף המקטע */}
             {sec.overFrac > 0 && (
-              <path d={slicePath(R, sec.a1 - sec.span * sec.overFrac, sec.a1)} fill="#ef4444" opacity={0.85} stroke="#fff" strokeWidth={1.5} />
+              <path d={slicePath(R, sec.a1 - sec.span * sec.overFrac, sec.a1)} fill="#ef4444" />
             )}
-            {/* קו הפרדה בין מקטעים */}
-            <path d={slicePath(R, sec.a0, sec.a1)} fill="none" stroke="#fff" strokeWidth={2.5} />
             {sec.slots.slice(0, sec.count).map((sl, i) => (
               <text key={i} x={sl.x} y={sl.y + 6} textAnchor="middle" fontSize={19}>{sl.e}</text>
             ))}
           </g>
+        ))}
+        {/* שלב 2: קווי מתאר צבעוניים עבים — החלוקה ברורה גם כשהמקטע ריק */}
+        {rendered.map(sec => (
+          <path key={sec.key + '-outline'} d={slicePath(R, sec.a0, sec.a1)}
+            fill="none" stroke={sec.color} strokeWidth={3.5} strokeLinejoin="round" />
         ))}
         {/* שמות מקטעים + אחוז חריגה באדום כשקיימת */}
         {rendered.map(sec => {
