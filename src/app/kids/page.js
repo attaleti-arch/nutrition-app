@@ -51,7 +51,7 @@ function loadState() {
 }
 
 function saveState(s) {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(s)) } catch (e) { /* quota */ }
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(s)); return true } catch (e) { return false }
 }
 
 // ✅ סנכרון לשרת — רשומה בטבלת daily_logs עם מזהה 'kid:' כדי לא להתערבב
@@ -536,6 +536,7 @@ export default function KidsApp() {
   }
 
   // ── אלבום ──
+  const [photoMsg, setPhotoMsg] = useState(null)
   const addPhoto = (e) => {
     const file = e.target.files?.[0]
     if (!file || !state) return
@@ -543,21 +544,34 @@ export default function KidsApp() {
     const url = URL.createObjectURL(file)
     img.onload = () => {
       const c = document.createElement('canvas')
-      const maxW = 800
+      const maxW = 640
       const ratio = Math.min(1, maxW / img.width)
       c.width = Math.round(img.width * ratio)
       c.height = Math.round(img.height * ratio)
       const ctx = c.getContext('2d')
       ctx.drawImage(img, 0, 0, c.width, c.height)
-      // הדרקון מצטרף לתמונה 🐉
       ctx.font = `${Math.round(c.width * 0.16)}px serif`
       ctx.fillText('🐉', c.width * 0.03, c.height * 0.97)
-      const thumb = c.toDataURL('image/jpeg', 0.8)
+      const thumb = c.toDataURL('image/jpeg', 0.72)
       URL.revokeObjectURL(url)
+      // שמירה עמידה: אם נגמר המקום בזיכרון — מפנים ישנות עד שהחדשה נכנסת
       update(prev => {
-        const album = [{ date: todayKey(), thumb }, ...(prev.album || [])].slice(0, 30)
-        return { ...prev, album }
+        let album = [{ date: todayKey(), thumb }, ...(prev.album || [])].slice(0, 20)
+        let next = { ...prev, album }
+        while (!saveState(next) && album.length > 1) {
+          album = album.slice(0, -1)
+          next = { ...prev, album }
+        }
+        return next
       })
+      setPhotoMsg('✓ היצירה נשמרה לאלבום! 🎨')
+      setTimeout(() => setPhotoMsg(null), 3000)
+      if (navigator.vibrate) navigator.vibrate(50)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      setPhotoMsg('אופס — התמונה לא נקלטה 😕 נסו לצלם ישר מהמצלמה')
+      setTimeout(() => setPhotoMsg(null), 4000)
     }
     img.src = url
     e.target.value = ''
@@ -898,6 +912,9 @@ export default function KidsApp() {
               style={{ display: 'block', width: '100%', padding: '16px', borderRadius: 16, border: '3px dashed #7dd3fc', background: '#f0f9ff', color: '#0369a1', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}>
               📷 צלמו את היצירה!
             </button>
+            {photoMsg && (
+              <div style={{ marginTop: 10, textAlign: 'center', fontSize: 14, fontWeight: 800, color: photoMsg.startsWith('✓') ? '#16a34a' : '#d97706' }}>{photoMsg}</div>
+            )}
             <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={addPhoto} style={{ display: 'none' }} />
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 14 }}>
               {(state.album || []).map((p, i) => (
