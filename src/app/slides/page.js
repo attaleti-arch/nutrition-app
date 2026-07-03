@@ -1,8 +1,14 @@
 'use client'
 import { useState, useRef, useCallback, useEffect } from 'react'
 
-const W = 1080
-const H = 1350
+const FORMATS = [
+  { key: 'post', label: 'פוסט 4:5', sub: 'אינסטגרם · פייסבוק', w: 1080, h: 1350 },
+  { key: 'story', label: 'סטוריז 9:16', sub: 'רילס · טיקטוק', w: 1080, h: 1920 },
+  { key: 'square', label: 'מרובע 1:1', sub: 'פיד', w: 1080, h: 1080 },
+  { key: 'wide', label: 'רוחבי 16:9', sub: 'cover לסרטונים', w: 1920, h: 1080 },
+]
+let W = 1080
+let H = 1350
 
 const BG_OPTIONS = [
   { name: 'כהה מאוד', val: '#18221a', dark: true },
@@ -159,7 +165,9 @@ function inpaintRegion(editCtx, srcW, srcH, strokes, radius) {
 }
 
 async function renderSlide(canvas, opts) {
-  const { photoSrc, lines, subtitle, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColor, zoom, px, py, patchOn, patchY, patchH, logoImg, logoOn, logoColor, logoScale } = opts
+  const { photoSrc, lines, subtitle, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColor, zoom, px, py, patchOn, patchY, patchH, logoImg, logoOn, logoColor, logoScale, format } = opts
+  W = format.w
+  H = format.h
   const ctx = canvas.getContext('2d')
   canvas.width = W
   canvas.height = H
@@ -221,7 +229,8 @@ async function renderSlide(canvas, opts) {
   const maxTextW = W * 0.88
   const filteredLines = lines.filter(l => l.trim())
 
-  let fontSize = Math.round(200 * titleScale)
+  const S = Math.min(W, H) / 1080  // proportion anchor across formats
+  let fontSize = Math.round(200 * titleScale * S)
   for (const line of filteredLines) {
     const s = fitFontSize(ctx, line, maxTextW, fontSize)
     if (s < fontSize) fontSize = s
@@ -233,7 +242,7 @@ async function renderSlide(canvas, opts) {
   ctx.shadowBlur = 18
 
   const lineH = fontSize * 1.15
-  const subSize = subtitle.trim() ? Math.round(54 * subScale) : 0
+  const subSize = subtitle.trim() ? Math.round(54 * subScale * S) : 0
   const blockH = filteredLines.length * lineH + (subSize ? subSize + 55 : 0)
 
   const margin = 90
@@ -262,7 +271,7 @@ async function renderSlide(canvas, opts) {
 
   // logo watermark — bottom center, tinted, semi-transparent
   if (logoOn && logoImg) {
-    const lw = Math.round(132 * logoScale)
+    const lw = Math.round(132 * logoScale * S)
     const lh = lw * (logoImg.height / logoImg.width)
     const off = document.createElement('canvas')
     off.width = logoImg.width; off.height = logoImg.height
@@ -289,6 +298,7 @@ function Slider({ label, value, onChange, min, max, step }) {
 }
 
 export default function SlideGenerator() {
+  const [format, setFormat] = useState(FORMATS[0])
   const [headline, setHeadline] = useState('יום קשה?\nמגיע לך פינוק')
   const [subtitle, setSubtitle] = useState('(רמז: לא באמת)')
   const [photoImg, setPhotoImg] = useState(null)
@@ -350,12 +360,13 @@ export default function SlideGenerator() {
         logoImg: logoRef.current, logoOn,
         logoColor: LOGO_COLORS.find(c => c.key === logoColorKey).val,
         logoScale,
+        format,
       })
       setResultUrl(canvas.toDataURL('image/jpeg', 0.94))
     } catch (e) {
       console.error(e)
     }
-  }, [headline, subtitle, photoImg, editVersion, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColorKey, zoom, px, py, patchOn, patchY, patchH, logoOn, logoColorKey, logoScale, logoReady])
+  }, [headline, subtitle, photoImg, editVersion, bgColor, overlayOpacity, coverEdges, posY, titleScale, subScale, titleColorKey, zoom, px, py, patchOn, patchY, patchH, logoOn, logoColorKey, logoScale, logoReady, format])
 
   useEffect(() => {
     clearTimeout(debounceRef.current)
@@ -512,7 +523,7 @@ export default function SlideGenerator() {
     if (!resultUrl) return
     const a = document.createElement('a')
     a.href = resultUrl
-    a.download = 'slide.jpg'
+    a.download = `slide-${format.key}.jpg`
     a.click()
   }
 
@@ -525,9 +536,31 @@ export default function SlideGenerator() {
 
   return (
     <div dir="rtl" style={{ maxWidth: 480, margin: '0 auto', padding: '24px 16px 48px', fontFamily: 'Arial, sans-serif' }}>
-      <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 20, color: '#1e293b' }}>
+      <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 14, color: '#1e293b' }}>
         ✨ בונה שקפים
       </h2>
+
+      {/* בורר פורמט */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 18 }}>
+        {FORMATS.map(f => (
+          <button key={f.key} onClick={() => setFormat(f)}
+            style={{
+              padding: '8px 4px', borderRadius: 10, cursor: 'pointer',
+              border: format.key === f.key ? '2.5px solid #3a5c3a' : '1.5px solid #e2e8f0',
+              background: format.key === f.key ? '#f0fdf4' : '#fafafa',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+            }}>
+            <span style={{
+              width: f.w >= f.h ? 26 : Math.round(26 * f.w / f.h),
+              height: f.h >= f.w ? 26 : Math.round(26 * f.h / f.w),
+              border: '2px solid ' + (format.key === f.key ? '#3a5c3a' : '#94a3b8'),
+              borderRadius: 4, display: 'block',
+            }} />
+            <span style={{ fontSize: 10.5, fontWeight: 800, color: format.key === f.key ? '#15803d' : '#475569' }}>{f.label}</span>
+            <span style={{ fontSize: 8.5, color: '#94a3b8' }}>{f.sub}</span>
+          </button>
+        ))}
+      </div>
 
       {/* Photo upload */}
       <label style={{
@@ -698,7 +731,7 @@ export default function SlideGenerator() {
               background: '#15803d', color: '#fff',
               fontSize: 16, fontWeight: 700, cursor: 'pointer',
             }}>
-            ⬇️ הורד תמונה (4:5)
+            ⬇️ הורד תמונה ({format.label})
           </button>
         </div>
       )}
