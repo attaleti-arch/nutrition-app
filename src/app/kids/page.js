@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { supabase } from '../supabase'
 
 // ─────────────────────────────────────────────────────────────
 // מאמן הדרקון — אפליקציית ילדים "בין הראש לצלחת"
@@ -45,6 +46,28 @@ function loadState() {
 
 function saveState(s) {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(s)) } catch (e) { /* quota */ }
+}
+
+// ✅ סנכרון לשרת — רשומה בטבלת daily_logs עם מזהה 'kid:' כדי לא להתערבב
+// עם רשומות הלקוחות. כל נתוני היום נשמרים בתוך עמודת ה-JSONB הקיימת checks.
+async function syncToServer(s) {
+  if (!s || !s.familyCode) return
+  try {
+    await supabase.from('daily_logs').upsert({
+      client_name: 'kid:' + s.familyCode,
+      log_date: s.today.date,
+      checks: {
+        kid: true,
+        dragon_name: s.name,
+        growth_days: s.growthDays,
+        checks: s.today.checks || {},
+        grew: !!s.today.grew,
+        steps: s.today.steps || 0,
+        photos: (s.album || []).length,
+      },
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'client_name,log_date' })
+  } catch (e) { /* offline — ננסה בפעם הבאה */ }
 }
 
 function stageFor(growthDays) {
@@ -188,6 +211,34 @@ export default function KidsApp() {
       return next
     })
   }, [])
+
+  // סנכרון מושהה לשרת אחרי כל שינוי
+  const syncTimer = useRef(null)
+  useEffect(() => {
+    if (!state || !state.familyCode) return
+    clearTimeout(syncTimer.current)
+    syncTimer.current = setTimeout(() => syncToServer(state), 1500)
+    return () => clearTimeout(syncTimer.current)
+  }, [state])
+
+  const [codeInput, setCodeInput] = useState('')
+  const [showCode, setShowCode] = useState(false)
+  const [codeStatus, setCodeStatus] = useState(null) // null | checking | ok | bad
+  const connectFamily = async () => {
+    const code = codeInput.trim()
+    if (!code) return
+    setCodeStatus('checking')
+    try {
+      const res = await supabase.from('clients').select('name').eq('password', code).maybeSingle()
+      if (res.data) {
+        update(prev => ({ ...prev, familyCode: code, parentName: res.data.name }))
+        setCodeStatus('ok')
+        setTimeout(() => setShowCode(false), 1200)
+      } else {
+        setCodeStatus('bad')
+      }
+    } catch (e) { setCodeStatus('bad') }
+  }
 
   // ── בקיעה ──
   const crackEgg = () => {
@@ -355,7 +406,41 @@ export default function KidsApp() {
           <span style={{ fontSize: 12, fontWeight: 800, color: '#b45309' }}>{stage.name}</span>
           {nextStage && <span style={{ fontSize: 11, color: '#94a3b8' }}>· עוד {nextStage.min - state.growthDays} ימי כוח לשלב הבא</span>}
         </div>
+        <div style={{ marginTop: 6 }}>
+          {state.familyCode ? (
+            <span style={{ fontSize: 10.5, color: '#16a34a', fontWeight: 700 }}>🔗 מחובר למשפחת {state.parentName || ''}</span>
+          ) : (
+            <button onClick={() => setShowCode(true)} style={{ border: 'none', background: 'none', fontSize: 10.5, color: '#94a3b8', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }}>
+              🔑 להורים: חיבור קוד משפחה
+            </button>
+          )}
+        </div>
       </div>
+
+      {/* חלון קוד משפחה */}
+      {showCode && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 500, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ background: '#fff', borderRadius: 22, padding: 24, width: '100%', maxWidth: 340, textAlign: 'center' }}>
+            <div style={{ fontSize: 34, marginBottom: 6 }}>🔑</div>
+            <div style={{ fontWeight: 900, fontSize: 17, color: '#1e293b', marginBottom: 4 }}>חיבור קוד משפחה</div>
+            <div style={{ fontSize: 13, color: '#64748b', marginBottom: 14, lineHeight: 1.6 }}>להורים: הקלידו את הקוד האישי שקיבלתם מאתי — כך ההתקדמות תגיע גם אליה למעקב</div>
+            <input value={codeInput} onChange={e => { setCodeInput(e.target.value); setCodeStatus(null) }} placeholder="הקוד שלכם..."
+              style={{ padding: '12px 16px', borderRadius: 14, border: '2px solid ' + (codeStatus === 'bad' ? '#ef4444' : '#e2e8f0'), fontSize: 17, textAlign: 'center', width: '100%', boxSizing: 'border-box', outline: 'none', fontWeight: 700 }} />
+            {codeStatus === 'bad' && <div style={{ fontSize: 12, color: '#ef4444', marginTop: 6, fontWeight: 700 }}>קוד לא מזוהה — בדקו עם אתי</div>}
+            {codeStatus === 'ok' && <div style={{ fontSize: 13, color: '#16a34a', marginTop: 6, fontWeight: 800 }}>✓ מחובר! ההתקדמות תגיע לאתי</div>}
+            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+              <button onClick={connectFamily} disabled={codeStatus === 'checking'}
+                style={{ flex: 1, padding: '13px', borderRadius: 14, border: 'none', background: '#0ea5e9', color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer' }}>
+                {codeStatus === 'checking' ? 'בודק...' : 'חיבור'}
+              </button>
+              <button onClick={() => setShowCode(false)}
+                style={{ padding: '13px 18px', borderRadius: 14, border: '2px solid #e2e8f0', background: '#fff', color: '#94a3b8', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                סגירה
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ═ טאב דרקון ═ */}
       {tab === 'dragon' && (
