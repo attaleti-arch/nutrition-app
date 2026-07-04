@@ -58,6 +58,20 @@ function fitFontSize(ctx, text, maxWidth, startSize, minSize = 36) {
   return size
 }
 
+// שבירת שורות אוטומטית: שומרים על הגודל שנבחר ומגלגלים מילים לשורה חדשה
+function wrapWords(ctx, text, maxW) {
+  const words = text.split(' ')
+  const out = []
+  let cur = ''
+  for (const w of words) {
+    const t = cur ? cur + ' ' + w : w
+    if (!cur || ctx.measureText(t).width <= maxW) cur = t
+    else { out.push(cur); cur = w }
+  }
+  if (cur) out.push(cur)
+  return out
+}
+
 // Photo cover-fit transform for the 4:5 canvas. Returns draw params so the
 // same math can be inverted for brush → source-pixel mapping.
 function photoTransform(srcW, srcH, zoom, px, py) {
@@ -231,25 +245,29 @@ async function renderSlide(canvas, opts) {
 
   const S = Math.min(W, H) / 1080  // proportion anchor across formats
   let fontSize = Math.round(200 * titleScale * S)
-  for (const line of filteredLines) {
-    const s = fitFontSize(ctx, line, maxTextW, fontSize)
+  // הגודל שנבחר נשמר: טקסט ארוך יורד שורה במקום להתכווץ.
+  // מקטינים רק אם מילה בודדת רחבה מהשקף.
+  ctx.font = `900 ${fontSize}px Heebo, 'Arial Black', Arial`
+  const allWords = filteredLines.flatMap(l => l.split(' ')).filter(Boolean)
+  for (const w of allWords) {
+    const s = fitFontSize(ctx, w, maxTextW, fontSize)
     if (s < fontSize) fontSize = s
   }
-
   ctx.font = `900 ${fontSize}px Heebo, 'Arial Black', Arial`
+  const wrappedLines = filteredLines.flatMap(l => wrapWords(ctx, l, maxTextW))
   ctx.fillStyle = titleColor
   ctx.shadowColor = 'rgba(0,0,0,0.6)'
   ctx.shadowBlur = 18
 
   const lineH = fontSize * 1.15
   const subSize = subtitle.trim() ? Math.round(54 * subScale * S) : 0
-  const blockH = filteredLines.length * lineH + (subSize ? subSize + 55 : 0)
+  const blockH = wrappedLines.length * lineH + (subSize ? subSize + 55 : 0)
 
   const margin = 90
   const centerY = margin + blockH / 2 + (H - 2 * margin - blockH) * posY
   const startY = centerY - blockH / 2 + lineH * 0.85
 
-  filteredLines.forEach((line, i) => {
+  wrappedLines.forEach((line, i) => {
     ctx.fillText(line, W / 2, startY + i * lineH)
   })
 
@@ -265,7 +283,7 @@ async function renderSlide(canvas, opts) {
     ctx.fillStyle = subDark ? 'rgba(26,26,26,0.85)' : 'rgba(255,255,255,0.9)'
     ctx.shadowColor = subDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.55)'
     ctx.shadowBlur = 10
-    ctx.fillText(subtitle, W / 2, startY + filteredLines.length * lineH + 40)
+    ctx.fillText(subtitle, W / 2, startY + wrappedLines.length * lineH + 40)
     ctx.shadowBlur = 0
   }
 
