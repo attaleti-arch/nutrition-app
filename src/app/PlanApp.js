@@ -88,6 +88,7 @@ const PLAN = {
     { id: 'bc_gf1', text: 'פרוסת לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'], calPerSlice: 80, recQty: 1 },
   ],
   bokerExtra: [
+    { id: 'b8q', text: '¼ אבוקדו', tags: ['vegan', 'keto'] },
     { id: 'b8', text: '½ אבוקדו', tags: ['vegan', 'keto'] },
     { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto', 'no_gluten'], tags: ['vegetarian'] },
   ],
@@ -242,6 +243,7 @@ function buildBudgetRows(items, checksMap, qtyMap, checkOrder, budget, nutrition
 
 // ✅ ירקות הערב נשמרים ב-checks עם סיומת '_erev' (כדי לא להתנגש עם בחירת הצהריים) — להסיר לפני חיפוש בנתוני תזונה
 function nutritionId(id) {
+  if (id === 'b8q') return 'f3' // ¼ אבוקדו לבוקר משתמש באותה שורת תזונה כמו "50 גרם אבוקדו (רבע)" בשומנים — אין צורך בשורה כפולה
   return id.endsWith('_erev') ? id.slice(0, -5) : id
 }
 
