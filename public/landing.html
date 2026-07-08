@@ -422,6 +422,26 @@
     }
     .btn-wa:hover .btn-wa-inner { background: #1ebe5a; box-shadow: 0 12px 32px rgba(37,211,102,0.4); }
     .cta-note { margin-top: 18px; font-size: 14px; color: rgba(255,255,255,0.45); }
+    .cta-divider { display: flex; align-items: center; gap: 16px; max-width: 420px; margin: 40px auto; color: rgba(255,255,255,0.4); font-size: 13px; }
+    .cta-divider::before, .cta-divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.2); }
+    .lead-form { max-width: 420px; margin: 0 auto; text-align: right; display: flex; flex-direction: column; gap: 14px; }
+    .lead-form input, .lead-form textarea {
+      width: 100%; padding: 14px 18px; border-radius: 14px; border: none;
+      font-family: 'Heebo', sans-serif; font-size: 15px; background: rgba(255,255,255,0.95); color: var(--dark-green);
+      outline: none; box-sizing: border-box;
+    }
+    .lead-form textarea { resize: vertical; min-height: 84px; font-family: inherit; }
+    .lead-form input:focus, .lead-form textarea:focus { box-shadow: 0 0 0 3px rgba(200,168,60,0.5); }
+    .lead-submit {
+      background: var(--gold); color: var(--dark-green); border: none; cursor: pointer;
+      font-weight: 900; font-size: 16px; padding: 16px 24px; border-radius: 50px;
+      transition: all 0.25s; font-family: 'Heebo', sans-serif;
+    }
+    .lead-submit:hover { background: var(--gold-light); transform: translateY(-2px); }
+    .lead-submit:disabled { opacity: 0.6; cursor: default; transform: none; }
+    .lead-status { font-size: 14px; margin-top: 4px; min-height: 20px; }
+    .lead-status.ok { color: #a6e0b0; }
+    .lead-status.err { color: #f3b3b3; }
 
     .floating-wa {
       position: fixed; bottom: 22px; left: 22px; width: 58px; height: 58px;
@@ -881,6 +901,18 @@
       אסביר לך בדיוק מה מתאים לך ולמשפחה שלך,<br>
       ומה הצעד הראשון לשינוי האמיתי.
     </p>
+
+    <form class="lead-form" id="leadForm">
+      <input type="text" id="leadName" placeholder="שם מלא" required autocomplete="name">
+      <input type="tel" id="leadPhone" placeholder="טלפון" required autocomplete="tel">
+      <input type="email" id="leadEmail" placeholder="כתובת מייל" autocomplete="email">
+      <textarea id="leadMessage" placeholder="ספרי לי קצת על מה שאת מתמודדת איתו..."></textarea>
+      <button type="submit" class="lead-submit" id="leadSubmit">שלחי לי פרטים</button>
+      <div class="lead-status" id="leadStatus"></div>
+    </form>
+
+    <div class="cta-divider">או</div>
+
     <a href="https://wa.me/972523336766?text=היי%20אתי%2C%20אשמח%20לשמוע%20עוד%20על%20תוכנית%20הליווי%20שלך%20🌿" class="btn-wa" target="_blank">
       <span class="btn-wa-inner">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -981,6 +1013,49 @@
   window.addEventListener('resize', onScroll);
   updateArchParallax();
   updateButterflies();
+
+  var leadForm = document.getElementById('leadForm');
+  if (leadForm) {
+    leadForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var submitBtn = document.getElementById('leadSubmit');
+      var status = document.getElementById('leadStatus');
+      var payload = {
+        name: document.getElementById('leadName').value,
+        phone: document.getElementById('leadPhone').value,
+        email: document.getElementById('leadEmail').value,
+        message: document.getElementById('leadMessage').value
+      };
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'שולחת...';
+      status.textContent = '';
+      status.className = 'lead-status';
+      fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+        .then(function(result) {
+          if (result.ok) {
+            status.textContent = 'תודה! קיבלתי את הפרטים ואחזור אלייך בקרוב 🌿';
+            status.className = 'lead-status ok';
+            leadForm.reset();
+          } else {
+            status.textContent = (result.data && result.data.error) || 'שגיאה בשליחה, נסי שוב';
+            status.className = 'lead-status err';
+          }
+        })
+        .catch(function() {
+          status.textContent = 'שגיאה בשליחה, נסי שוב או כתבי בוואטסאפ';
+          status.className = 'lead-status err';
+        })
+        .finally(function() {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'שלחי לי פרטים';
+        });
+    });
+  }
 </script>
 
 </body>
