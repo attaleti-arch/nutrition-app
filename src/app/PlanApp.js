@@ -88,8 +88,8 @@ const PLAN = {
     { id: 'bc_gf1', text: 'פרוסת לחם ללא גלוטן', tags: ['vegan'], hide: ['keto'], calPerSlice: 80, recQty: 1 },
   ],
   bokerExtra: [
-    { id: 'b8q', text: '¼ אבוקדו', tags: ['vegan', 'keto'] },
-    { id: 'b8', text: '½ אבוקדו', tags: ['vegan', 'keto'] },
+    { id: 'b8q', text: '¼ אבוקדו (50 גרם)', tags: ['vegan', 'keto'] },
+    { id: 'b8', text: '½ אבוקדו (100 גרם)', tags: ['vegan', 'keto'] },
     { id: 'b9', text: 'שיבולת שועל + חלב / משקה צמחי', hide: ['keto', 'no_gluten'], tags: ['vegetarian'] },
   ],
   carbOptions: [
