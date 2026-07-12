@@ -903,51 +903,22 @@ function NlpSelector({ label, value, onChange, max, lowLabel, highLabel, accent 
   )
 }
 
-function VisionEnvelope({ clientData, supabase, dbKey, onReveal }) {
-  const [revealed, setRevealed] = useState(clientData?.vision_revealed || false)
-  const [revealing, setRevealing] = useState(false)
-
-  async function handleReveal() {
-    if (revealed) return
-    setRevealing(true)
-    await supabase.from('clients').update({ vision_revealed: true }).eq('password', dbKey)
-    setRevealed(true)
-    setRevealing(false)
-    if (onReveal) onReveal({ vision_revealed: true })
-  }
-
+function VisionCard({ clientData }) {
   const goalText = clientData?.vision_goal_text
 
-  if (revealed) {
-    return (
-      <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', borderRadius: 18, overflow: 'hidden', marginBottom: 16 }}>
-        <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 24 }}>✨</span>
-          <div>
-            <div style={{ fontWeight: 900, fontSize: 15, color: '#c7d2fe' }}>הויז׳ן שלך</div>
-            <div style={{ fontSize: 12, color: '#818cf8' }}>ברכות — הגעת!</div>
-          </div>
-        </div>
-        <img src={clientData.vision_image_url} alt="vision" style={{ width: '100%', display: 'block' }} />
-        {goalText && <div style={{ padding: '12px 18px', textAlign: 'center', fontSize: 14, fontWeight: 700, color: '#a5b4fc' }}>🎯 {goalText} — עשית את זה!</div>}
-      </div>
-    )
-  }
-
   return (
-    <div
-      onClick={handleReveal}
-      style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', borderRadius: 18, padding: '24px 20px', marginBottom: 16, cursor: revealing ? 'default' : 'pointer', textAlign: 'center', direction: 'rtl', userSelect: 'none' }}
-    >
-      <div style={{ fontSize: 48, marginBottom: 10 }}>📩</div>
-      <div style={{ fontWeight: 900, fontSize: 17, color: '#c7d2fe', marginBottom: 6 }}>הויז׳ן שלך</div>
-      {goalText && (
-        <div style={{ fontSize: 13, color: '#818cf8', marginBottom: 12 }}>
-          תפתחי כשתגיעי ל{goalText}
+    <div style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 16, boxShadow: '0 8px 32px rgba(99,102,241,0.25)' }}>
+      <img src={clientData.vision_image_url} alt="הויז׳ן שלך" style={{ width: '100%', display: 'block' }} />
+      <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', padding: '14px 18px', textAlign: 'center', direction: 'rtl' }}>
+        <div style={{ fontWeight: 900, fontSize: 16, color: '#e0e7ff', marginBottom: 4 }}>✨ הויז׳ן שלך</div>
+        <div style={{ fontSize: 13, color: '#a5b4fc', lineHeight: 1.6 }}>
+          זכרי למה את עושה את זה 🫶🏻
         </div>
-      )}
-      <div style={{ fontSize: 12, color: '#6366f1', background: 'rgba(99,102,241,0.15)', borderRadius: 20, padding: '6px 14px', display: 'inline-block', fontWeight: 700 }}>
-        {revealing ? '⏳ פותחת...' : 'לחצי לחשיפה ✨'}
+        {goalText && (
+          <div style={{ marginTop: 8, fontSize: 13, color: '#c7d2fe', fontWeight: 700 }}>
+            המטרה: {goalText}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -2133,9 +2104,9 @@ export default function PlanApp({ clientName, userPassword }) {
       {activeTab === 'guides' && currentStage >= 2 && (
         <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px' }}>
 
-          {/* ✨ AI Vision Envelope */}
+          {/* ✨ AI Vision */}
           {clientData?.vision_image_url && (
-            <VisionEnvelope clientData={clientData} supabase={supabase} dbKey={dbKey} onReveal={updated => setClientData(prev => ({ ...prev, ...updated }))} />
+            <VisionCard clientData={clientData} />
           )}
 
           {videoUrl && (

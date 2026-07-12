@@ -2679,8 +2679,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
                 {/* ── ✨ AI Vision Builder ── */}
                 <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', borderRadius: 18, padding: '18px 20px', marginTop: 16, marginBottom: 4 }}>
-                  <div style={{ fontWeight: 900, fontSize: 16, color: '#c7d2fe', marginBottom: 2 }}>✨ ויז׳ן AI — המעטפה הסגורה</div>
-                  <div style={{ fontSize: 12, color: '#818cf8', marginBottom: 14 }}>בנו יחד את הפרומפט ושלחו לה תמונה שתתגלה רק כשתגיע למטרה</div>
+                  <div style={{ fontWeight: 900, fontSize: 16, color: '#c7d2fe', marginBottom: 2 }}>✨ ויז׳ן AI — ויזואליזציה של המטרה</div>
+                  <div style={{ fontSize: 12, color: '#818cf8', marginBottom: 14 }}>בנו יחד תמונה שתזכיר לה בכל יום למה היא עושה את זה 🫶🏻</div>
 
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ fontSize: 12, color: '#c7d2fe', marginBottom: 6, fontWeight: 700 }}>📍 מיקום</div>
@@ -2712,7 +2712,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   </div>
 
                   <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 12, color: '#c7d2fe', marginBottom: 6, fontWeight: 700 }}>🎯 המטרה (מה תכתב על המעטפה)</div>
+                    <div style={{ fontSize: 12, color: '#c7d2fe', marginBottom: 6, fontWeight: 700 }}>🎯 המטרה (יוצג מתחת לתמונה)</div>
                     <input
                       value={visionGoalText}
                       onChange={e => setVisionGoalText(e.target.value)}
@@ -2725,13 +2725,14 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
                   {visionImageUrl && (
                     <div style={{ marginBottom: 14 }}>
-                      <div style={{ fontSize: 12, color: '#86efac', marginBottom: 8, fontWeight: 700 }}>✅ הויז׳ן נשמר אצלה! {visionGoalText && '— תיפתח כשתגיע ל' + visionGoalText}</div>
+                      <div style={{ fontSize: 12, color: '#86efac', marginBottom: 8, fontWeight: 700 }}>✅ הויז׳ן נשמר — היא רואה אותו בטאב המדריכים</div>
                       <img src={visionImageUrl} alt="vision" style={{ width: '100%', borderRadius: 14, border: '2px solid #818cf8' }} />
                       <button onClick={async () => {
-                        await supabase.from('clients').update({ vision_revealed: false }).eq('id', selectedClient.id)
-                        setSelectedClient(prev => ({ ...prev, vision_revealed: false }))
+                        await supabase.from('clients').update({ vision_image_url: null, vision_prompt: null, vision_goal_text: null }).eq('id', selectedClient.id)
+                        setVisionImageUrl(null)
+                        setSelectedClient(prev => ({ ...prev, vision_image_url: null }))
                       }} style={{ marginTop: 8, width: '100%', padding: '10px', borderRadius: 10, background: 'rgba(255,255,255,0.1)', color: '#e0e7ff', border: '1.5px solid rgba(255,255,255,0.2)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        🔒 אפסי — החזירי למעטפה סגורה
+                        🗑️ מחקי ויז׳ן
                       </button>
                     </div>
                   )}
