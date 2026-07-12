@@ -905,17 +905,23 @@ function NlpSelector({ label, value, onChange, max, lowLabel, highLabel, accent 
 
 function VisionCard({ clientData }) {
   const goalText = clientData?.vision_goal_text
+  const paragraph = clientData?.vision_paragraph
 
   return (
     <div style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 16, boxShadow: '0 8px 32px rgba(99,102,241,0.25)' }}>
       <img src={clientData.vision_image_url} alt="הויז׳ן שלך" style={{ width: '100%', display: 'block' }} />
-      <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', padding: '14px 18px', textAlign: 'center', direction: 'rtl' }}>
-        <div style={{ fontWeight: 900, fontSize: 16, color: '#e0e7ff', marginBottom: 4 }}>✨ הויז׳ן שלך</div>
-        <div style={{ fontSize: 13, color: '#a5b4fc', lineHeight: 1.6 }}>
+      <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', padding: '16px 18px', textAlign: 'right', direction: 'rtl' }}>
+        <div style={{ fontWeight: 900, fontSize: 16, color: '#e0e7ff', marginBottom: 4, textAlign: 'center' }}>✨ הויז׳ן שלך</div>
+        {paragraph && (
+          <div style={{ fontSize: 14, color: '#c7d2fe', lineHeight: 1.8, marginBottom: 10, whiteSpace: 'pre-line' }}>
+            {paragraph}
+          </div>
+        )}
+        <div style={{ fontSize: 12, color: '#818cf8', textAlign: 'center' }}>
           זכרי למה את עושה את זה 🫶🏻
         </div>
         {goalText && (
-          <div style={{ marginTop: 8, fontSize: 13, color: '#c7d2fe', fontWeight: 700 }}>
+          <div style={{ marginTop: 8, fontSize: 13, color: '#a5b4fc', fontWeight: 700, textAlign: 'center' }}>
             המטרה: {goalText}
           </div>
         )}

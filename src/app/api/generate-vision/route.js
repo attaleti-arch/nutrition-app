@@ -1,43 +1,67 @@
 import OpenAI from 'openai'
+import Anthropic from '@anthropic-ai/sdk'
 import { createClient } from '@supabase/supabase-js'
 
 export const maxDuration = 120
 
 function getSupabase() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.SUPABASE_SERVICE_ROLE_KEY
-  )
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
 }
 
 export async function POST(req) {
   try {
-    const { clientId, clientName, location, clothing, freetext, goalText } = await req.json()
+    const { clientId, clientName, location, clothing, seeText, hearText, feelText, targetWeight, photoBase64 } = await req.json()
 
     if (!clientId) return Response.json({ error: 'חסר מזהה לקוחה' }, { status: 400 })
-    if (!process.env.OPENAI_API_KEY) return Response.json({ error: 'OPENAI_API_KEY לא מוגדר — הוסיפי את המפתח בהגדרות הסביבה' }, { status: 500 })
+    if (!process.env.OPENAI_API_KEY) return Response.json({ error: 'OPENAI_API_KEY לא מוגדר' }, { status: 500 })
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
     const supabase = getSupabase()
 
     const locationMap = {
-      beach: 'on a sunny beach with the sea in the background',
-      park: 'in a green citrus grove orchard with trees',
-      city: 'in a vibrant city street with warm light',
-      other: 'in a beautiful natural setting'
+      beach: 'on a sunny beach at golden hour with soft sea breeze and warm sand',
+      park: 'in a lush green citrus grove orchard with dappled sunlight',
+      city: 'on a vibrant city street with warm afternoon light and energy',
+      other: 'in a beautiful natural setting with soft warm light',
     }
     const clothingMap = {
-      jeans: 'wearing stylish slim-fit jeans and a fitted top',
-      dress: 'wearing an elegant flowy dress',
-      professional: 'wearing smart professional attire',
-      other: 'wearing comfortable stylish clothes'
+      jeans: 'wearing stylish slim-fit jeans and a fitted flattering top',
+      dress: 'wearing an elegant flowy summer dress',
+      professional: 'wearing smart chic professional attire',
+      other: 'wearing comfortable stylish clothes',
+    }
+
+    let personDescription = 'A confident, radiant Israeli woman'
+
+    // Use Claude vision to analyze the uploaded photo
+    if (photoBase64 && process.env.ANTHROPIC_API_KEY) {
+      try {
+        const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+        // Detect media type — default jpeg
+        const mediaType = photoBase64.startsWith('/9j') ? 'image/jpeg' : photoBase64.startsWith('iVBORw') ? 'image/png' : 'image/jpeg'
+        const visionRes = await anthropic.messages.create({
+          model: 'claude-sonnet-4-6',
+          max_tokens: 150,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: mediaType, data: photoBase64 } },
+              { type: 'text', text: 'Describe this person for a photorealistic image generation prompt. Focus only on: hair color and length/style, eye color, skin tone, approximate age. Write exactly 1 sentence in English starting with "A woman with". Be specific and concise.' }
+            ]
+          }]
+        })
+        personDescription = visionRes.content[0].text.trim().replace(/^["']|["']$/g, '')
+      } catch (e) {
+        console.error('Photo analysis failed, using default description:', e.message)
+      }
     }
 
     const locationDesc = locationMap[location] || locationMap.city
     const clothingDesc = clothingMap[clothing] || clothingMap.jeans
-    const extraDetails = freetext ? `. Additional details: ${freetext}` : ''
+    const weightNote = targetWeight ? `, visibly slimmer and toned at her goal weight` : ''
+    const sceneDetails = [seeText, hearText, feelText].filter(Boolean).slice(0, 2).join('. ')
 
-    const prompt = `A confident, radiant Israeli woman ${locationDesc}, ${clothingDesc}. She looks healthy, happy, and glowing — at her ideal weight after achieving her wellness goal. Her posture is upright and confident, with a natural warm smile. The lighting is soft and flattering, golden-hour light. Professional lifestyle photography style, warm tones, photorealistic${extraDetails}. No text in image.`
+    const prompt = `${personDescription} ${locationDesc}, ${clothingDesc}${weightNote}. She looks healthy, happy, glowing and deeply confident — having achieved her wellness goal. Upright posture, natural warm smile, radiant energy. Soft golden-hour lighting. Professional lifestyle photography, warm photorealistic tones.${sceneDetails ? ' ' + sceneDetails + '.' : ''} No text in image.`
 
     const response = await openai.images.generate({
       model: 'dall-e-3',
@@ -49,31 +73,30 @@ export async function POST(req) {
 
     const imageUrl = response.data[0].url
 
-    // Download and upload to Supabase Storage for permanent storage
-    const imgResponse = await fetch(imageUrl)
-    const imgBuffer = await imgResponse.arrayBuffer()
-    const fileName = `vision_${clientId}_${Date.now()}.png`
-
-    const { error: uploadError } = await supabase.storage
-      .from('vision-images')
-      .upload(fileName, imgBuffer, { contentType: 'image/png', upsert: false })
-
+    // Download and upload to Supabase Storage
     let permanentUrl = imageUrl
     let warning = null
-
-    if (uploadError) {
-      // Bucket doesn't exist — use temp URL, still save to DB
-      warning = 'אחסון קבוע נכשל — השתמש ב-URL זמני. צרי bucket בשם vision-images בסופאבייס Storage.'
-    } else {
-      const { data: publicUrlData } = supabase.storage.from('vision-images').getPublicUrl(fileName)
-      permanentUrl = publicUrlData.publicUrl
+    try {
+      const imgResponse = await fetch(imageUrl)
+      const imgBuffer = await imgResponse.arrayBuffer()
+      const fileName = `vision_${clientId}_${Date.now()}.png`
+      const { error: uploadError } = await supabase.storage
+        .from('vision-images')
+        .upload(fileName, imgBuffer, { contentType: 'image/png', upsert: false })
+      if (!uploadError) {
+        const { data: publicUrlData } = supabase.storage.from('vision-images').getPublicUrl(fileName)
+        permanentUrl = publicUrlData.publicUrl
+      } else {
+        warning = 'צרי bucket בשם vision-images ב-Supabase Storage לאחסון קבוע'
+      }
+    } catch (e) {
+      warning = 'אחסון קבוע נכשל — התמונה זמנית בלבד'
     }
 
     await supabase.from('clients').update({
       vision_image_url: permanentUrl,
       vision_prompt: prompt,
-      vision_goal_text: goalText || '',
-      vision_revealed: false
+      vision_goal_text: targetWeight || '',
     }).eq('id', clientId)
 
     return Response.json({ imageUrl: permanentUrl, prompt, ...(warning ? { warning } : {}) })
