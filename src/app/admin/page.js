@@ -1540,7 +1540,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', marginBottom: 4, paddingRight: 4 }}>🧠 מפגשים</div>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                   {[
-                    { k: 'ai', l: '🧠 דוח פתיחה' },
+                    { k: 'ai', l: '🧠 דו״ח פתיחה' },
                     { k: 'journey', l: '🧭 מטרה' },
                     { k: 'roots', l: '🌱 שורשים' },
                     { k: 'body', l: '🩺 גוף מדבר' },
@@ -2105,7 +2105,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     </>
                   ) : (
                     <>
-                      <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>🧠 דוח פתיחה אישי</div>
+                      <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>🧠 דו״ח פתיחה מקיף</div>
                       <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>משלב: שאלון פתיחה + תזונה נוכחית + מדדי דם</div>
                       <textarea value={foodDiary} onChange={e => setFoodDiary(e.target.value)} placeholder='3 ימי אכילה אופייניים...' rows={8} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
                     </>
