@@ -685,6 +685,45 @@ export default function AdminPage() {
   const [calculatingPlate, setCalculatingPlate] = useState(false)
   const [plateResult, setPlateResult] = useState(null)
 
+  // ── ✨ AI Vision state ──
+  const [visionLocation, setVisionLocation] = useState('beach')
+  const [visionClothing, setVisionClothing] = useState('jeans')
+  const [visionFreetext, setVisionFreetext] = useState('')
+  const [visionGoalText, setVisionGoalText] = useState('')
+  const [generatingVision, setGeneratingVision] = useState(false)
+  const [visionImageUrl, setVisionImageUrl] = useState(null)
+  const [visionError, setVisionError] = useState('')
+  const [visionSaved, setVisionSaved] = useState(false)
+
+  async function generateVision() {
+    if (!selectedClient?.id) return
+    setGeneratingVision(true)
+    setVisionError('')
+    setVisionImageUrl(null)
+    setVisionSaved(false)
+    try {
+      const res = await fetch('/api/generate-vision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: selectedClient.id,
+          clientName: selectedClient.name,
+          location: visionLocation,
+          clothing: visionClothing,
+          freetext: visionFreetext,
+          goalText: visionGoalText
+        })
+      })
+      const data = await res.json()
+      if (data.error) { setVisionError(data.error); return }
+      setVisionImageUrl(data.imageUrl)
+      setSelectedClient(prev => ({ ...prev, vision_image_url: data.imageUrl, vision_goal_text: visionGoalText }))
+      setVisionSaved(true)
+      if (data.warning) setVisionError('⚠️ ' + data.warning)
+    } catch(e) { setVisionError('שגיאה: ' + e.message) }
+    setGeneratingVision(false)
+  }
+
   async function calcPlate() {
     if (!selectedClient?.password) return
     setCalculatingPlate(true)
@@ -851,6 +890,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     const activeClient = freshClient || client
     setSelectedClient(activeClient)
     setAgentInstructions(activeClient.agent_instructions || '')
+    setVisionImageUrl(activeClient.vision_image_url || null)
+    setVisionGoalText(activeClient.vision_goal_text || '')
+    setVisionSaved(false)
+    setVisionError('')
 
     let { data } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
     if (!data) {
@@ -2633,6 +2676,74 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     )}
                   </div>
                 )}
+
+                {/* ── ✨ AI Vision Builder ── */}
+                <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', borderRadius: 18, padding: '18px 20px', marginTop: 16, marginBottom: 4 }}>
+                  <div style={{ fontWeight: 900, fontSize: 16, color: '#c7d2fe', marginBottom: 2 }}>✨ ויז׳ן AI — המעטפה הסגורה</div>
+                  <div style={{ fontSize: 12, color: '#818cf8', marginBottom: 14 }}>בנו יחד את הפרומפט ושלחו לה תמונה שתתגלה רק כשתגיע למטרה</div>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, color: '#c7d2fe', marginBottom: 6, fontWeight: 700 }}>📍 מיקום</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {[{ k: 'beach', l: '🏖️ חוף ים' }, { k: 'park', l: '🌳 פרדס' }, { k: 'city', l: '🏙️ עיר' }, { k: 'other', l: '🌿 אחר' }].map(o => (
+                        <button key={o.k} onClick={() => setVisionLocation(o.k)} style={{ padding: '8px 14px', borderRadius: 20, border: '2px solid ' + (visionLocation === o.k ? '#818cf8' : 'rgba(255,255,255,0.2)'), background: visionLocation === o.k ? '#4338ca' : 'rgba(255,255,255,0.08)', color: '#e0e7ff', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{o.l}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, color: '#c7d2fe', marginBottom: 6, fontWeight: 700 }}>👗 לבוש</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {[{ k: 'jeans', l: '👖 ג׳ינס' }, { k: 'dress', l: '👗 שמלה' }, { k: 'professional', l: '🧥 מקצועי' }, { k: 'other', l: '✨ אחר' }].map(o => (
+                        <button key={o.k} onClick={() => setVisionClothing(o.k)} style={{ padding: '8px 14px', borderRadius: 20, border: '2px solid ' + (visionClothing === o.k ? '#818cf8' : 'rgba(255,255,255,0.2)'), background: visionClothing === o.k ? '#4338ca' : 'rgba(255,255,255,0.08)', color: '#e0e7ff', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{o.l}</button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, color: '#c7d2fe', marginBottom: 6, fontWeight: 700 }}>💬 פרטים נוספים (אופציונלי)</div>
+                    <textarea
+                      value={visionFreetext}
+                      onChange={e => setVisionFreetext(e.target.value)}
+                      rows={2}
+                      placeholder="למשל: עם ילדיה, חיוך גדול, שיער ארוך, בהיר, אנרגטית..."
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: '#e0e7ff', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.6, fontFamily: 'sans-serif', direction: 'rtl' }}
+                    />
+                  </div>
+
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 12, color: '#c7d2fe', marginBottom: 6, fontWeight: 700 }}>🎯 המטרה (מה תכתב על המעטפה)</div>
+                    <input
+                      value={visionGoalText}
+                      onChange={e => setVisionGoalText(e.target.value)}
+                      placeholder="למשל: מינוס 20 ק״ג"
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)', color: '#e0e7ff', fontSize: 14, outline: 'none', textAlign: 'right', boxSizing: 'border-box', fontFamily: 'sans-serif', direction: 'rtl' }}
+                    />
+                  </div>
+
+                  {visionError && <div style={{ background: 'rgba(239,68,68,0.15)', borderRadius: 10, padding: '10px 14px', marginBottom: 12, color: '#fca5a5', fontSize: 13 }}>{visionError}</div>}
+
+                  {visionImageUrl && (
+                    <div style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 12, color: '#86efac', marginBottom: 8, fontWeight: 700 }}>✅ הויז׳ן נשמר אצלה! {visionGoalText && '— תיפתח כשתגיע ל' + visionGoalText}</div>
+                      <img src={visionImageUrl} alt="vision" style={{ width: '100%', borderRadius: 14, border: '2px solid #818cf8' }} />
+                      <button onClick={async () => {
+                        await supabase.from('clients').update({ vision_revealed: false }).eq('id', selectedClient.id)
+                        setSelectedClient(prev => ({ ...prev, vision_revealed: false }))
+                      }} style={{ marginTop: 8, width: '100%', padding: '10px', borderRadius: 10, background: 'rgba(255,255,255,0.1)', color: '#e0e7ff', border: '1.5px solid rgba(255,255,255,0.2)', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        🔒 אפסי — החזירי למעטפה סגורה
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={generateVision}
+                    disabled={generatingVision}
+                    style={{ width: '100%', padding: 14, borderRadius: 14, background: generatingVision ? 'rgba(255,255,255,0.1)' : 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: generatingVision ? '#9ca3af' : '#fff', border: 'none', cursor: generatingVision ? 'default' : 'pointer', fontWeight: 800, fontSize: 15 }}
+                  >
+                    {generatingVision ? '⏳ יוצרת תמונה... (~20 שניות)' : visionImageUrl ? '🔄 צרי ויז׳ן חדש' : '✨ צרי ויז׳ן'}
+                  </button>
+                </div>
               </div>
             )}
 
