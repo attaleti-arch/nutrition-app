@@ -25,10 +25,10 @@ export async function POST(req) {
       other: 'in a beautiful natural setting with soft warm light',
     }
     const clothingMap = {
-      jeans: 'wearing stylish slim-fit jeans and a fitted flattering top',
-      dress: 'wearing an elegant flowy summer dress',
-      professional: 'wearing smart chic professional attire',
-      other: 'wearing comfortable stylish clothes',
+      jeans: 'wearing comfortable relaxed jeans and a loose casual top',
+      dress: 'wearing a comfortable flowy everyday dress',
+      professional: 'wearing relaxed professional attire',
+      other: 'wearing comfortable everyday clothes',
     }
 
     let personDescription = 'A confident, radiant Israeli woman'
@@ -58,10 +58,9 @@ export async function POST(req) {
 
     const locationDesc = locationMap[location] || locationMap.city
     const clothingDesc = clothingMap[clothing] || clothingMap.jeans
-    const weightNote = targetWeight ? `, visibly slimmer and toned at her goal weight` : ''
     const sceneDetails = [seeText, hearText, feelText].filter(Boolean).slice(0, 2).join('. ')
 
-    const prompt = `${personDescription} ${locationDesc}, ${clothingDesc}${weightNote}. She looks healthy, happy, glowing and deeply confident — having achieved her wellness goal. Upright posture, natural warm smile, radiant energy. Soft golden-hour lighting. Professional lifestyle photography, warm photorealistic tones.${sceneDetails ? ' ' + sceneDetails + '.' : ''} No text in image.`
+    const prompt = `${personDescription} ${locationDesc}, ${clothingDesc}. She looks healthy, energetic, happy and deeply confident. Natural upright posture, genuine warm smile, inner radiance and vitality. Realistic natural body — do not alter her body shape or proportions. No revealing or tight clothing. Soft golden-hour lighting. Professional lifestyle photography, warm photorealistic tones.${sceneDetails ? ' ' + sceneDetails + '.' : ''} No text in image. Realistic, achievable, empowering.`
 
     const response = await openai.images.generate({
       model: 'dall-e-3',
