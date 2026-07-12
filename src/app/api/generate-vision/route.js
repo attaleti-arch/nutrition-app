@@ -10,7 +10,7 @@ function getSupabase() {
 
 export async function POST(req) {
   try {
-    const { clientId, clientName, location, clothing, seeText, hearText, feelText, targetWeight, photoBase64 } = await req.json()
+    const { clientId, clientName, location, clothing, seeText, hearText, feelText, currentWeight, targetWeight, photoBase64 } = await req.json()
 
     if (!clientId) return Response.json({ error: 'חסר מזהה לקוחה' }, { status: 400 })
     if (!process.env.OPENAI_API_KEY) return Response.json({ error: 'OPENAI_API_KEY לא מוגדר' }, { status: 500 })
@@ -60,7 +60,23 @@ export async function POST(req) {
     const clothingDesc = clothingMap[clothing] || clothingMap.jeans
     const sceneDetails = [seeText, hearText, feelText].filter(Boolean).slice(0, 2).join('. ')
 
-    const prompt = `${personDescription} ${locationDesc}, ${clothingDesc}. She looks healthy, energetic, happy and deeply confident. Natural upright posture, genuine warm smile, inner radiance and vitality. Realistic natural body — do not alter her body shape or proportions. No revealing or tight clothing. Soft golden-hour lighting. Professional lifestyle photography, warm photorealistic tones.${sceneDetails ? ' ' + sceneDetails + '.' : ''} No text in image. Realistic, achievable, empowering.`
+    const weightDiff = currentWeight && targetWeight
+      ? Math.abs(parseFloat(currentWeight) - parseFloat(targetWeight))
+      : null
+
+    let bodyNote
+    if (weightDiff !== null && weightDiff <= 7) {
+      // מטרת חיטוב — הפרש קטן, דגש על טונוס ואנרגיה
+      bodyNote = 'Body looks naturally toned and fit — same realistic body type as herself, slightly lighter, with visible vitality and muscle tone. Not dramatically thinner, just healthy and strong.'
+    } else if (weightDiff !== null && weightDiff <= 15) {
+      // ירידה בינונית — קצת יותר קלה, אותו מבנה
+      bodyNote = 'Body looks naturally lighter and healthier — same realistic body frame and proportions as herself, but more energetic and comfortable. Subtle, believable change.'
+    } else {
+      // ירידה משמעותית או לא ידוע — שמור על מבנה הגוף, אנרגיה
+      bodyNote = 'Realistic natural body — same body type and proportions as herself. Do not alter her body shape dramatically. She radiates health and energy.'
+    }
+
+    const prompt = `${personDescription} ${locationDesc}, ${clothingDesc}. ${bodyNote} She looks healthy, energetic, happy and deeply confident. Natural upright posture, genuine warm smile, inner radiance. No revealing or tight clothing. Soft golden-hour lighting. Professional lifestyle photography, warm photorealistic tones.${sceneDetails ? ' ' + sceneDetails + '.' : ''} No text in image. Realistic, achievable, empowering.`
 
     const response = await openai.images.generate({
       model: 'dall-e-3',

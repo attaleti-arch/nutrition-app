@@ -757,6 +757,7 @@ export default function AdminPage() {
           seeText: visionSeeText,
           hearText: visionHearText,
           feelText: visionFeelText,
+          currentWeight: visionCurrentWeight,
           targetWeight: visionTargetWeight,
           photoBase64: visionPhotoBase64,
         })
