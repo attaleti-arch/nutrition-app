@@ -1540,7 +1540,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', marginBottom: 4, paddingRight: 4 }}>🧠 מפגשים</div>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                   {[
-                    { k: 'ai', l: '🧠 AI' },
+                    { k: 'ai', l: '🧠 דוח פתיחה' },
                     { k: 'journey', l: '🧭 מטרה' },
                     { k: 'roots', l: '🌱 שורשים' },
                     { k: 'body', l: '🩺 גוף מדבר' },
@@ -2105,8 +2105,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     </>
                   ) : (
                     <>
-                      <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>🧠 ניתוח AI מקיף</div>
-                      <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>משלב: שאלון 360 + בדיקות דם + NLP + ימי אכילה</div>
+                      <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>🧠 דוח פתיחה אישי</div>
+                      <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>משלב: שאלון פתיחה + תזונה נוכחית + מדדי דם</div>
                       <textarea value={foodDiary} onChange={e => setFoodDiary(e.target.value)} placeholder='3 ימי אכילה אופייניים...' rows={8} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
                     </>
                   )}
@@ -2146,7 +2146,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>
                     <div style={{ fontSize: 40, marginBottom: 12 }}>🧠</div>
                     <div>עדיין לא הופק ניתוח AI</div>
-                    <button onClick={() => setTab('ai')} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}>עברי לטאב AI</button>
+                    <button onClick={() => setTab('ai')} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}>עברי לדוח פתיחה</button>
                   </div>
                 )}
               </div>
