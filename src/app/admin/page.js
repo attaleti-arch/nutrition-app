@@ -687,7 +687,9 @@ export default function AdminPage() {
 
   // ── ✨ AI Vision state ──
   const [visionLocation, setVisionLocation] = useState('beach')
+  const [visionLocationCustom, setVisionLocationCustom] = useState('')
   const [visionClothing, setVisionClothing] = useState('jeans')
+  const [visionClothingCustom, setVisionClothingCustom] = useState('')
   const [visionSeeText, setVisionSeeText] = useState('')
   const [visionHearText, setVisionHearText] = useState('')
   const [visionFeelText, setVisionFeelText] = useState('')
@@ -725,8 +727,8 @@ export default function AdminPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           clientName: selectedClient.name,
-          location: visionLocation,
-          clothing: visionClothing,
+          location: visionLocation === 'other' ? (visionLocationCustom || 'other') : visionLocation,
+          clothing: visionClothing === 'other' ? (visionClothingCustom || 'other') : visionClothing,
           seeText: visionSeeText,
           hearText: visionHearText,
           feelText: visionFeelText,
@@ -752,8 +754,8 @@ export default function AdminPage() {
         body: JSON.stringify({
           clientId: selectedClient.id,
           clientName: selectedClient.name,
-          location: visionLocation,
-          clothing: visionClothing,
+          location: visionLocation === 'other' ? (visionLocationCustom || 'other') : visionLocation,
+          clothing: visionClothing === 'other' ? (visionClothingCustom || 'other') : visionClothing,
           seeText: visionSeeText,
           hearText: visionHearText,
           feelText: visionFeelText,
@@ -2806,7 +2808,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       ))}
                     </div>
                     {visionLocation === 'other' && (
-                      <input value={visionSeeText.startsWith('מיקום:') ? '' : ''} placeholder="תארי את המיקום..." onChange={e => {}} style={{ marginTop: 8, width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <input value={visionLocationCustom} onChange={e => setVisionLocationCustom(e.target.value)} placeholder="תארי את המיקום..." style={{ marginTop: 8, width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #7c3aed', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     )}
                   </div>
                   <div>
@@ -2816,6 +2818,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                         <button key={o.k} onClick={() => setVisionClothing(o.k)} style={{ padding: '8px 14px', borderRadius: 20, border: '2px solid ' + (visionClothing === o.k ? '#7c3aed' : '#e5e7eb'), background: visionClothing === o.k ? '#f3e8ff' : '#fff', color: visionClothing === o.k ? '#7c3aed' : '#555', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{o.l}</button>
                       ))}
                     </div>
+                    {visionClothing === 'other' && (
+                      <input value={visionClothingCustom} onChange={e => setVisionClothingCustom(e.target.value)} placeholder="תארי את הלבוש..." style={{ marginTop: 8, width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #7c3aed', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    )}
                   </div>
                 </div>
 

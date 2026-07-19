@@ -56,8 +56,8 @@ export async function POST(req) {
       }
     }
 
-    const locationDesc = locationMap[location] || locationMap.city
-    const clothingDesc = clothingMap[clothing] || clothingMap.jeans
+    const locationDesc = locationMap[location] || `in ${location} with beautiful natural light`
+    const clothingDesc = clothingMap[clothing] || `wearing ${clothing}`
     const sceneDetails = [seeText, hearText, feelText].filter(Boolean).slice(0, 2).join('. ')
 
     const weightDiff = currentWeight && targetWeight
