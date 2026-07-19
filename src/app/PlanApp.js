@@ -1181,6 +1181,33 @@ function NlpSelector({ label, value, onChange, max, lowLabel, highLabel, accent 
   )
 }
 
+function VisionCard({ clientData }) {
+  const goalText = clientData?.vision_goal_text
+  const paragraph = clientData?.vision_paragraph
+
+  return (
+    <div style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 16, boxShadow: '0 8px 32px rgba(99,102,241,0.25)' }}>
+      <img src={clientData.vision_image_url} alt="הויז׳ן שלך" style={{ width: '100%', display: 'block' }} />
+      <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', padding: '16px 18px', textAlign: 'right', direction: 'rtl' }}>
+        <div style={{ fontWeight: 900, fontSize: 16, color: '#e0e7ff', marginBottom: 4, textAlign: 'center' }}>✨ הויז׳ן שלך</div>
+        {paragraph && (
+          <div style={{ fontSize: 14, color: '#c7d2fe', lineHeight: 1.8, marginBottom: 10, whiteSpace: 'pre-line' }}>
+            {paragraph}
+          </div>
+        )}
+        <div style={{ fontSize: 12, color: '#818cf8', textAlign: 'center' }}>
+          זכרי למה את עושה את זה 🫶🏻
+        </div>
+        {goalText && (
+          <div style={{ marginTop: 8, fontSize: 13, color: '#a5b4fc', fontWeight: 700, textAlign: 'center' }}>
+            המטרה: {goalText}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function PlanApp({ clientName, userPassword }) {
   const displayName = clientName || userPassword || ''
   const dbKey = userPassword || clientName || ''
@@ -2364,6 +2391,12 @@ export default function PlanApp({ clientName, userPassword }) {
 
       {activeTab === 'guides' && currentStage >= 2 && (
         <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px' }}>
+
+          {/* ✨ AI Vision */}
+          {clientData?.vision_image_url && (
+            <VisionCard clientData={clientData} />
+          )}
+
           {videoUrl && (
             <div style={{ background: '#fff', borderRadius: 18, overflow: 'hidden', border: '1.5px solid #f0f0f0', marginBottom: 12 }}>
               <div style={{ padding: '14px 18px', background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', fontWeight: 800, fontSize: 15 }}>🎬 ברכת פתיחה מאתי</div>
