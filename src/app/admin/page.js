@@ -542,6 +542,7 @@ export default function AdminPage() {
   const [pin, setPin] = useState('')
   const [auth, setAuth] = useState(false)
   const [clients, setClients] = useState([])
+  const [leads, setLeads] = useState([])
   const [selectedClient, setSelectedClient] = useState(null)
   const [profile, setProfile] = useState({})
   const [nutritionItems, setNutritionItems] = useState([])
@@ -830,7 +831,17 @@ export default function AdminPage() {
 
   useEffect(function() { journeyAnswersRef.current = journeyAnswers }, [journeyAnswers])
 
-  useEffect(function() { if (auth) { loadClients(); loadNutritionData() } }, [auth])
+  useEffect(function() { if (auth) { loadClients(); loadNutritionData(); loadLeads() } }, [auth])
+
+  async function loadLeads() {
+    const { data } = await supabase.from('leads').select('*').order('created_at', { ascending: false })
+    setLeads(data || [])
+  }
+
+  async function markLeadContacted(id, contacted) {
+    await supabase.from('leads').update({ contacted: contacted }).eq('id', id)
+    setLeads(ls => ls.map(l => l.id === id ? { ...l, contacted: contacted } : l))
+  }
 
   async function loadNutritionData() {
     var { data } = await supabase.from('nutrition_data').select('*')
@@ -1069,6 +1080,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     if (!selectedClient) return
     const { error } = await supabase.from('clients').update({ [field]: value }).eq('id', selectedClient.id)
     if (!error) setSelectedClient(prev => ({ ...prev, [field]: value }))
+  }
+
+  // שינוי סיסמה: מדווח כישלון באמת (לא מעמיד פנים), ומעביר את כל
+  // ההיסטוריה (יומנים, יומני ילד, פרופיל) לסיסמה החדשה לשמירת המשכיות
+  async function changeClientPassword(newPw) {
+    if (!selectedClient) return false
+    const oldPw = selectedClient.password
+    const { error } = await supabase.from('clients').update({ password: newPw }).eq('id', selectedClient.id)
+    if (error) { alert('X הסיסמה לא נשמרה: ' + error.message); return false }
+    try {
+      await supabase.from('daily_logs').update({ client_name: newPw }).eq('client_name', oldPw)
+      await supabase.from('daily_logs').update({ client_name: 'kid:' + newPw }).eq('client_name', 'kid:' + oldPw)
+      await supabase.from('client_profiles').update({ client_password: newPw }).eq('client_password', oldPw)
+    } catch (e) {}
+    setSelectedClient(c => ({ ...c, password: newPw }))
+    alert('V הסיסמה עודכנה ל: ' + newPw + '\nכל ההיסטוריה הועברה לסיסמה החדשה')
+    return true
   }
 
   function saveSessionKey(key, value) {
@@ -1549,7 +1577,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
         {/* ניהול — תמיד גלוי, ללא צורך בלקוחה נבחרת */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
-          {[{ k: 'pantry', l: '🛒 מזווה' }, { k: 'newclient', l: '➕ לקוח/ה' }, { k: 'guide', l: '📚 מדריך' }].map(t => (
+          {[{ k: 'leads', l: '📥 לידים' + (leads.filter(l => !l.contacted).length > 0 ? ' (' + leads.filter(l => !l.contacted).length + ')' : '') }, { k: 'pantry', l: '🛒 מזווה' }, { k: 'newclient', l: '➕ לקוח/ה' }, { k: 'guide', l: '📚 מדריך' }].map(t => (
             <button key={t.k} onClick={() => { setSelectedClient(null); setTab(t.k) }} style={{ flex: 1, padding: '11px 4px', borderRadius: 12, border: '2px solid ' + (tab === t.k ? '#0f4c2a' : '#e5e7eb'), background: tab === t.k ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: tab === t.k ? '#0f4c2a' : '#555' }}>{t.l}</button>
           ))}
         </div>
@@ -1619,7 +1647,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
               </div>
               {/* עריכת נתוני לקוח */}
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                <input type="text" placeholder="סיסמה" defaultValue={selectedClient.password || ''} key={selectedClient.id + '_pw'} onBlur={async e => { const v = e.target.value.trim(); if (v && v !== selectedClient.password) { await updateClientData('password', v); setSelectedClient(c => ({...c, password: v})) } }} style={{ flex: 2, minWidth: 100, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
+                <input type="text" placeholder="סיסמה" defaultValue={selectedClient.password || ''} key={selectedClient.id + '_pw'} onBlur={async e => { const v = e.target.value.trim(); if (v && v !== selectedClient.password) { const ok = await changeClientPassword(v); if (!ok) e.target.value = selectedClient.password || '' } }} style={{ flex: 2, minWidth: 100, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                 <input type="number" placeholder="גיל" value={selectedClient.age || ''} onChange={e => setSelectedClient(c => ({...c, age: e.target.value}))} onBlur={e => updateClientData('age', e.target.value ? parseInt(e.target.value) : null)} style={{ flex: 1, minWidth: 60, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, textAlign: 'center', outline: 'none' }} />
@@ -3565,6 +3593,51 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
             )}
 
           </>
+        )}
+
+        {tab === 'leads' && (
+          <div>
+            {leads.length === 0 && (
+              <div style={{ background: '#fff', borderRadius: 18, padding: 24, border: '1.5px solid #f0f0f0', textAlign: 'center', color: '#9ca3af', fontSize: 14 }}>
+                עדיין אין פניות מדף הנחיתה
+              </div>
+            )}
+            {leads.map(lead => (
+              <div key={lead.id} style={{ background: '#fff', borderRadius: 16, padding: 16, marginBottom: 10, border: '1.5px solid ' + (lead.contacted ? '#f0f0f0' : '#fde68a') }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: 15, color: '#0f4c2a' }}>{lead.name}</div>
+                    <div style={{ fontSize: 13, color: '#555', marginTop: 2 }}>📞 {lead.phone}</div>
+                    {lead.email && <div style={{ fontSize: 13, color: '#555' }}>✉️ {lead.email}</div>}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#9ca3af', whiteSpace: 'nowrap' }}>
+                    {lead.created_at ? new Date(lead.created_at).toLocaleDateString('he-IL') : ''}
+                  </div>
+                </div>
+                {lead.message && (
+                  <div style={{ fontSize: 13, color: '#374151', background: '#f9fafb', borderRadius: 10, padding: '8px 12px', marginTop: 10, lineHeight: 1.6 }}>{lead.message}</div>
+                )}
+                <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                  <button
+                    onClick={() => {
+                      setNewClient(c => ({ ...c, name: lead.name, phone: lead.phone }))
+                      setSelectedClient(null)
+                      setTab('newclient')
+                    }}
+                    style={{ flex: 1, padding: 10, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}
+                  >
+                    👤 הפכי ללקוחה
+                  </button>
+                  <button
+                    onClick={() => markLeadContacted(lead.id, !lead.contacted)}
+                    style={{ padding: '10px 14px', borderRadius: 10, background: lead.contacted ? '#dcfce7' : '#fff7ed', color: lead.contacted ? '#0f4c2a' : '#f97316', border: '1.5px solid ' + (lead.contacted ? '#86efac' : '#fed7aa'), cursor: 'pointer', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap' }}
+                  >
+                    {lead.contacted ? '✓ נוצר קשר' : 'סמני כטופל'}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
 
         {tab === 'newclient' && (

@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>אתי רפאלה זיתון — בין הראש לצלחת</title>
+  <meta name="description" content="ליווי אישי לנשים ומשפחות: NLP, תזונה התנהגותית וסידור הסביבה הביתית. השינוי לא מתחיל בצלחת — הוא מתחיל בראש. שיחת היכרות חינם.">
+  <link rel="icon" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo-full.png">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.eti-zitun.com/">
+  <meta property="og:title" content="אתי רפאלה זיתון — בין הראש לצלחת">
+  <meta property="og:description" content="ליווי אישי לנשים ומשפחות: NLP, תזונה התנהגותית וסידור הסביבה הביתית. השינוי לא מתחיל בצלחת — הוא מתחיל בראש.">
+  <meta property="og:image" content="https://www.eti-zitun.com/og-image.jpg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:locale" content="he_IL">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&display=swap" rel="stylesheet">
   <style>
@@ -410,6 +422,26 @@
     }
     .btn-wa:hover .btn-wa-inner { background: #1ebe5a; box-shadow: 0 12px 32px rgba(37,211,102,0.4); }
     .cta-note { margin-top: 18px; font-size: 14px; color: rgba(255,255,255,0.45); }
+    .cta-divider { display: flex; align-items: center; gap: 16px; max-width: 420px; margin: 40px auto; color: rgba(255,255,255,0.4); font-size: 13px; }
+    .cta-divider::before, .cta-divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.2); }
+    .lead-form { max-width: 420px; margin: 0 auto; text-align: right; display: flex; flex-direction: column; gap: 14px; }
+    .lead-form input, .lead-form textarea {
+      width: 100%; padding: 14px 18px; border-radius: 14px; border: none;
+      font-family: 'Heebo', sans-serif; font-size: 15px; background: rgba(255,255,255,0.95); color: var(--dark-green);
+      outline: none; box-sizing: border-box;
+    }
+    .lead-form textarea { resize: vertical; min-height: 84px; font-family: inherit; }
+    .lead-form input:focus, .lead-form textarea:focus { box-shadow: 0 0 0 3px rgba(200,168,60,0.5); }
+    .lead-submit {
+      background: var(--gold); color: var(--dark-green); border: none; cursor: pointer;
+      font-weight: 900; font-size: 16px; padding: 16px 24px; border-radius: 50px;
+      transition: all 0.25s; font-family: 'Heebo', sans-serif;
+    }
+    .lead-submit:hover { background: var(--gold-light); transform: translateY(-2px); }
+    .lead-submit:disabled { opacity: 0.6; cursor: default; transform: none; }
+    .lead-status { font-size: 14px; margin-top: 4px; min-height: 20px; }
+    .lead-status.ok { color: #a6e0b0; }
+    .lead-status.err { color: #f3b3b3; }
 
     .floating-wa {
       position: fixed; bottom: 22px; left: 22px; width: 58px; height: 58px;
@@ -468,6 +500,7 @@
     <div class="nav-logo">
       <img src="/logo-full.png" alt="בין הראש לצלחת – אתי רפאלה זיתון">
     </div>
+    <a href="https://wa.me/972523336766?text=%D7%94%D7%99%D7%99%20%D7%90%D7%AA%D7%99%20%F0%9F%8C%BF%20%D7%90%D7%A0%D7%99%20%D7%A8%D7%95%D7%A6%D7%94%20%D7%9C%D7%A9%D7%A0%D7%95%D7%AA%20%D7%90%D7%AA%20%D7%9E%D7%A2%D7%A8%D7%9B%D7%AA%20%D7%94%D7%99%D7%97%D7%A1%D7%99%D7%9D%20%D7%A9%D7%9C%D7%99%20%D7%A2%D7%9D%20%D7%90%D7%95%D7%9B%D7%9C%20%E2%80%94%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%A9%D7%9E%D7%95%D7%A2%20%D7%A2%D7%9C%20%D7%94%D7%9E%D7%A1%D7%A2" class="nav-cta" target="_blank">ליצירת קשר</a>
   </div>
 </nav>
 
@@ -684,7 +717,7 @@
           <li>מענה באפליקציה ובוואטסאפ לאורך התהליך</li>
         </ul>
         <li class="prc-expand">אופציית הרחבה: מפגש שורש הסיפור (שורשים + הגוף מדבר)</li>
-        <a href="https://wa.me/972523336766" class="prc-btn" target="_blank">לפרטים ←</a>
+        <a href="https://wa.me/972523336766?text=%D7%94%D7%99%D7%99%20%D7%90%D7%AA%D7%99%2C%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%A9%D7%9E%D7%95%D7%A2%20%D7%A4%D7%A8%D7%98%D7%99%D7%9D%20%D7%A0%D7%95%D7%A1%D7%A4%D7%99%D7%9D%20%D7%A2%D7%9C%20%D7%AA%D7%95%D7%9B%D7%A0%D7%99%D7%AA%20%D7%91%D7%99%D7%9F%20%D7%94%D7%A8%D7%90%D7%A9%20%D7%9C%D7%A6%D7%9C%D7%97%D7%AA%20%D7%A2%D7%91%D7%95%D7%A8%20%D7%94%D7%99%D7%9C%D7%93%20%F0%9F%8C%BF" class="prc-btn" target="_blank">לפרטים ←</a>
       </div>
 
       <div class="prc-card star">
@@ -703,7 +736,7 @@
           <li>מענה באפליקציה ובוואטסאפ לאורך התהליך</li>
         </ul>
         <li class="prc-expand">אופציית הרחבה: מפגש שורש הסיפור (שורשים + הגוף מדבר)</li>
-        <a href="https://wa.me/972523336766?text=היי%20אתי%2C%20אשמח%20להתחיל%20בתוכנית%20בין%20הראש%20לצלחת%20🌿" class="prc-btn" target="_blank">אני רוצה להתחיל ←</a>
+        <a href="https://wa.me/972523336766?text=%D7%94%D7%99%D7%99%20%D7%90%D7%AA%D7%99%2C%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%A9%D7%9E%D7%95%D7%A2%20%D7%A4%D7%A8%D7%98%D7%99%D7%9D%20%D7%A0%D7%95%D7%A1%D7%A4%D7%99%D7%9D%20%D7%A2%D7%9C%20%D7%AA%D7%95%D7%9B%D7%A0%D7%99%D7%AA%20%D7%91%D7%99%D7%9F%20%D7%94%D7%A8%D7%90%D7%A9%20%D7%9C%D7%A6%D7%9C%D7%97%D7%AA%20%D7%A2%D7%91%D7%95%D7%A8%20%D7%A2%D7%A6%D7%9E%D7%99%20%F0%9F%8C%BF" class="prc-btn" target="_blank">אני רוצה להתחיל ←</a>
       </div>
 
       <div class="prc-card">
@@ -721,7 +754,7 @@
           <li>מענה באפליקציה ובוואטסאפ לאורך התהליך</li>
         </ul>
         <li class="prc-expand">אופציית הרחבה: מפגש שורש הסיפור (שורשים + הגוף מדבר)</li>
-        <a href="https://wa.me/972523336766" class="prc-btn" target="_blank">לפרטים ←</a>
+        <a href="https://wa.me/972523336766?text=%D7%94%D7%99%D7%99%20%D7%90%D7%AA%D7%99%2C%20%D7%90%D7%A9%D7%9E%D7%97%20%D7%9C%D7%A9%D7%9E%D7%95%D7%A2%20%D7%A4%D7%A8%D7%98%D7%99%D7%9D%20%D7%A0%D7%95%D7%A1%D7%A4%D7%99%D7%9D%20%D7%A2%D7%9C%20%D7%AA%D7%95%D7%9B%D7%A0%D7%99%D7%AA%20%D7%91%D7%99%D7%9F%20%D7%94%D7%A8%D7%90%D7%A9%20%D7%9C%D7%A6%D7%9C%D7%97%D7%AA%20%D7%A2%D7%91%D7%95%D7%A8%20%D7%A9%D7%A0%D7%99%D7%A0%D7%95%20%F0%9F%8C%BF" class="prc-btn" target="_blank">לפרטים ←</a>
       </div>
 
     </div>
@@ -733,7 +766,7 @@
   <div class="container">
     <div class="about-grid">
       <div class="about-photo-wrap">
-        <img src="/eti-about.jpeg" alt="אתי רפאלה זיתון">
+        <img src="/eti-about.jpeg" alt="אתי רפאלה זיתון" loading="lazy">
         <div class="butterfly about-butterfly reveal" aria-hidden="true">
           <svg viewBox="0 0 100 100" width="34" height="34">
             <g class="wing wing-left">
@@ -771,12 +804,12 @@
   <div class="container">
     <p class="foodart-caption">ככה הכל התחיל — ארוחות מצוירות שיצרתי בשביל הבנים שלי</p>
     <div class="foodart-arches">
-      <div class="arch arch-left reveal"><img src="/food-art-love.jpg" alt="ארוחה מצוירת - לב ואהבה"></div>
-      <div class="arch arch-right reveal"><img src="/food-art-unicorn.jpg" alt="ארוחה מצוירת - חד קרן"></div>
+      <div class="arch arch-left reveal"><img src="/food-art-love.jpg" alt="ארוחה מצוירת - לב ואהבה" loading="lazy"></div>
+      <div class="arch arch-right reveal"><img src="/food-art-unicorn.jpg" alt="ארוחה מצוירת - חד קרן" loading="lazy"></div>
     </div>
     <div class="foodart-arches">
-      <div class="arch arch-left reveal"><img src="/food-art-minion.jpg" alt="ארוחה מצוירת - מיניון"></div>
-      <div class="arch arch-right reveal"><img src="/food-art-anger.jpg" alt="ארוחה מצוירת - אנגר"></div>
+      <div class="arch arch-left reveal"><img src="/food-art-minion.jpg" alt="ארוחה מצוירת - מיניון" loading="lazy"></div>
+      <div class="arch arch-right reveal"><img src="/food-art-anger.jpg" alt="ארוחה מצוירת - אנגר" loading="lazy"></div>
     </div>
   </div>
 </section>
@@ -860,14 +893,26 @@
 <!-- CTA -->
 <section class="cta-section" id="contact">
   <div class="container">
-    <div class="sec-label">מוכנה לסיים עם המלחמה הזאת?</div>
-    <h2 class="sec-title">שלחי לי הודעה —<br>
-      <span class="gold">שיחת היכרות חינמית, בלי התחייבות</span>
+    <div class="sec-label">הצעד הראשון הוא הכי קטן</div>
+    <h2 class="sec-title">משהו כאן דיבר אלייך?<br>
+      <span class="gold">בואי נדבר</span>
     </h2>
     <p class="cta-body">
       אסביר לך בדיוק מה מתאים לך ולמשפחה שלך,<br>
       ומה הצעד הראשון לשינוי האמיתי.
     </p>
+
+    <form class="lead-form" id="leadForm">
+      <input type="text" id="leadName" placeholder="שם מלא" required autocomplete="name">
+      <input type="tel" id="leadPhone" placeholder="טלפון" required autocomplete="tel">
+      <input type="email" id="leadEmail" placeholder="כתובת מייל" autocomplete="email">
+      <textarea id="leadMessage" placeholder="ספרי לי קצת על מה שאת מתמודדת איתו..."></textarea>
+      <button type="submit" class="lead-submit" id="leadSubmit">שלחי לי פרטים</button>
+      <div class="lead-status" id="leadStatus"></div>
+    </form>
+
+    <div class="cta-divider">או</div>
+
     <a href="https://wa.me/972523336766?text=היי%20אתי%2C%20אשמח%20לשמוע%20עוד%20על%20תוכנית%20הליווי%20שלך%20🌿" class="btn-wa" target="_blank">
       <span class="btn-wa-inner">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
@@ -895,7 +940,7 @@
         @eti.rafaela.zitun
       </a>
     </div>
-    <div class="footer-bottom">© 2025 אתי רפאלה זיתון — כל הזכויות שמורות</div>
+    <div class="footer-bottom">© 2026 אתי רפאלה זיתון — כל הזכויות שמורות</div>
   </div>
 </footer>
 
@@ -968,6 +1013,49 @@
   window.addEventListener('resize', onScroll);
   updateArchParallax();
   updateButterflies();
+
+  var leadForm = document.getElementById('leadForm');
+  if (leadForm) {
+    leadForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+      var submitBtn = document.getElementById('leadSubmit');
+      var status = document.getElementById('leadStatus');
+      var payload = {
+        name: document.getElementById('leadName').value,
+        phone: document.getElementById('leadPhone').value,
+        email: document.getElementById('leadEmail').value,
+        message: document.getElementById('leadMessage').value
+      };
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'שולחת...';
+      status.textContent = '';
+      status.className = 'lead-status';
+      fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(function(res) { return res.json().then(function(data) { return { ok: res.ok, data: data }; }); })
+        .then(function(result) {
+          if (result.ok) {
+            status.textContent = 'תודה! קיבלתי את הפרטים ואחזור אלייך בקרוב 🌿';
+            status.className = 'lead-status ok';
+            leadForm.reset();
+          } else {
+            status.textContent = (result.data && result.data.error) || 'שגיאה בשליחה, נסי שוב';
+            status.className = 'lead-status err';
+          }
+        })
+        .catch(function() {
+          status.textContent = 'שגיאה בשליחה, נסי שוב או כתבי בוואטסאפ';
+          status.className = 'lead-status err';
+        })
+        .finally(function() {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'שלחי לי פרטים';
+        });
+    });
+  }
 </script>
 
 </body>

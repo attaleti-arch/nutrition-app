@@ -29,16 +29,32 @@ export default function ClientHome() {
   async function handleStart() {
     if (!password.trim()) return
     const pw = password.trim()
-    const { data } = await supabase.from('clients').select('name, terms_accepted_at').eq('password', pw).single()
+    // ✅ התאמה סלחנית: מתעלמים מהבדלי אותיות גדולות/קטנות (ilike ללא wildcards = השוואה מדויקת חסרת-רגישות)
+    const res = await supabase.from('clients').select('name, terms_accepted_at, password, client_track, is_child').ilike('password', pw).limit(1)
+    let data = res.data && res.data[0]
+    if (!data) {
+      // ✅ ניסיון שני: סיסמה שנשמרה עם רווח מיותר בסוף/בהתחלה באדמין
+      const res2 = await supabase.from('clients').select('name, terms_accepted_at, password, client_track, is_child').ilike('password', '%' + pw + '%').limit(2)
+      if (res2.data && res2.data.length === 1 && res2.data[0].password && res2.data[0].password.trim().toLowerCase() === pw.toLowerCase()) {
+        data = res2.data[0]
+      }
+    }
     if (data) {
-      const acceptedLS = localStorage.getItem('terms_accepted_' + pw)
+      // ✅ ילד (רשומת ילד is_child או מסלול 'עבור ילד') → אפליקציית הדרקון, מחובר אוטומטית
+      if (data.is_child || data.client_track === 'child') {
+        window.location.href = '/kids?code=' + encodeURIComponent(data.password || pw)
+        return
+      }
+      const canonicalPw = data.password || pw
+      const acceptedLS = localStorage.getItem('terms_accepted_' + canonicalPw)
       const acceptedDB = data.terms_accepted_at
       if (acceptedLS || acceptedDB) {
-        if (!acceptedLS) localStorage.setItem('terms_accepted_' + pw, '1')
+        if (!acceptedLS) localStorage.setItem('terms_accepted_' + canonicalPw, '1')
+        setPendingPassword(canonicalPw)
         setClientName(data.name)
         setStarted(true)
       } else {
-        setPendingPassword(pw)
+        setPendingPassword(canonicalPw)
         setPendingName(data.name)
         setShowTerms(true)
       }
