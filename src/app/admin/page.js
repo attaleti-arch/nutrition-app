@@ -3282,12 +3282,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                         ))}
                       </div>
 
-                      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center', marginBottom: 10 }}>
                         <button onClick={toggleAudio} style={{ width: 52, height: 52, borderRadius: '50%', background: '#6366f1', border: 'none', cursor: 'pointer', fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
                           {audioPlaying ? '⏸' : '▶️'}
                         </button>
                         <a href={visionAudioUrl} download="vision-audio.webm" style={{ padding: '10px 18px', borderRadius: 12, background: '#4338ca', color: '#e0e7ff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
-                          ⬇️ הורידי לשליחה
+                          ⬇️ הורידי
+                        </a>
+                        <a href={`https://wa.me/${selectedClient?.phone ? selectedClient.phone.replace(/\D/g,'') : ''}?text=${encodeURIComponent('🎧 הקלטה אישית בשבילך 💜\n' + visionAudioUrl)}`} target="_blank" rel="noopener noreferrer" style={{ padding: '10px 18px', borderRadius: 12, background: '#25d366', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
+                          📱 שלחי בוואטסאפ
                         </a>
                       </div>
 
