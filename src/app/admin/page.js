@@ -1043,7 +1043,7 @@ ${innerHtml}
   function openVisionReportHTML() {
     if (!selectedClient) return
     const clientName = selectedClient.name + (selectedClient.last_name ? ' ' + selectedClient.last_name : '')
-    const imgSrc = visionImageUrl || ''
+    const imgSrc = visionImageUrl || (visionPhotoBase64 ? `data:image/jpeg;base64,${visionPhotoBase64}` : '')
     const paragraph = visionParagraph || ''
     const audioSrc = visionAudioUrl || ''
     const targetW = visionTargetWeight || selectedClient.vision_goal_text || ''
@@ -1140,6 +1140,10 @@ body {
   <div class="footer">
     <div class="name">${clientName}</div>
     ${targetW ? `<div class="target">🎯 יעד: ${targetW} ק״ג</div>` : ''}
+    <div style="margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button onclick="window.print()" style="padding:12px 28px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#4338ca);color:#fff;border:none;cursor:pointer;font-size:15px;font-weight:700;font-family:inherit;">🖨️ הדפס / שמור PDF</button>
+      <button onclick="window.close()" style="padding:12px 20px;border-radius:14px;background:rgba(255,255,255,0.08);color:#c7d2fe;border:1.5px solid rgba(129,140,248,0.3);cursor:pointer;font-size:15px;font-weight:700;font-family:inherit;">✕ סגרי</button>
+    </div>
   </div>
 </div>
 <script>
@@ -3217,8 +3221,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   </div>
                 )}
 
-                {/* שלחי לה + דוח יפה — רק אחרי הקלטה */}
-                {visionAudioUrl && (
+                {/* שמרי ושלחי לה + דוח יפה */}
+                {(visionParagraph || visionImageUrl || visionPhotoPreview) && (
                   <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
                     <button onClick={saveVision} disabled={visionSaving} style={{ flex: 2, padding: 14, borderRadius: 12, background: visionSaved ? '#16a34a' : visionSaving ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: visionSaving ? 'default' : 'pointer', fontWeight: 800, fontSize: 15 }}>
                       {visionSaving ? '⏳ שולחת...' : visionSaved ? '✅ נשלח אליה!' : '📤 שלחי לה'}
@@ -3227,13 +3231,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       🌟 דוח יפה
                     </button>
                   </div>
-                )}
-
-                {/* דוח יפה גם בלי הקלטה אם יש תמונה/פסקה */}
-                {!visionAudioUrl && (visionImageUrl || visionParagraph) && (
-                  <button onClick={openVisionReportHTML} style={{ width: '100%', padding: 12, borderRadius: 12, background: 'linear-gradient(135deg,#1e1b4b,#312e81)', color: '#c7d2fe', border: '1.5px solid #4338ca', cursor: 'pointer', fontWeight: 700, fontSize: 14, marginBottom: 8 }}>
-                    🌟 פתחי דוח ויזואליזציה יפה
-                  </button>
                 )}
 
                 {visionSaved && <div style={{ textAlign: 'center', fontSize: 12, color: '#16a34a', fontWeight: 600 }}>הויזואליזציה מופיעה עכשיו בטאב המדריכים שלה ✨</div>}
