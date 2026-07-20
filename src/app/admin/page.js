@@ -714,6 +714,7 @@ export default function AdminPage() {
   const [isRecording, setIsRecording] = useState(false)
   const [recordingSeconds, setRecordingSeconds] = useState(0)
   const [uploadingRecording, setUploadingRecording] = useState(false)
+  const [recordingSaved, setRecordingSaved] = useState(false)
   const audioRef = useRef(null)
   const mediaRecorderRef = useRef(null)
   const recordingChunksRef = useRef([])
@@ -891,6 +892,8 @@ export default function AdminPage() {
               URL.revokeObjectURL(localUrl)
               setVisionAudioUrl(data.url)
               setSelectedClient(prev => ({ ...prev, vision_audio_url: data.url }))
+              setRecordingSaved(true)
+              setTimeout(() => setRecordingSaved(false), 3000)
             } else {
               alert('שגיאה בשמירת ההקלטה: ' + (data.error || 'נסי שוב'))
             }
@@ -1311,6 +1314,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     setSelectedClient(activeClient)
     setAgentInstructions(activeClient.agent_instructions || '')
     setVisionImageUrl(activeClient.vision_image_url || null)
+    setVisionAudioUrl(activeClient.vision_audio_url || null)
     setVisionParagraph(activeClient.vision_paragraph || '')
     setVisionTargetWeight(activeClient.vision_goal_text || '')
     const va = activeClient.vision_answers || {}
@@ -3276,8 +3280,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
                   {visionAudioUrl && !isRecording && (
                     <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', borderRadius: 18, padding: '16px 18px', direction: 'rtl', marginTop: 10 }}>
-                      <div style={{ fontSize: 13, color: '#c7d2fe', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
-                        {uploadingRecording ? '⏳ שומרת ברקע...' : '🎧 ההקלטה מוכנה'}
+                      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, textAlign: 'center', color: recordingSaved ? '#4ade80' : uploadingRecording ? '#a5b4fc' : '#c7d2fe' }}>
+                        {recordingSaved ? '✅ ההקלטה נשמרה!' : uploadingRecording ? '⏳ שומרת...' : '🎧 ההקלטה מוכנה לשליחה'}
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, marginBottom: 14, height: 36 }}>
