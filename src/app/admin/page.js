@@ -963,6 +963,36 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     URL.revokeObjectURL(url)
   }
 
+  function printAnalysisHTML(titleHe, analysisText) {
+    if (!analysisText || !selectedClient) return
+    const innerHtml = renderMd(analysisText).__html
+    const clientName = selectedClient.name + (selectedClient.last_name ? ' ' + selectedClient.last_name : '')
+    const html = `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8"/>
+<title>${titleHe} — ${clientName}</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; direction: rtl; padding: 24px 28px; color: #1a1a1a; }
+h1,h2,h3 { margin: 16px 0 6px; }
+p,li { line-height: 1.85; margin-bottom: 6px; }
+strong { font-weight: 700; }
+.hdr { background: #0f4c2a; border-radius: 10px; padding: 16px 20px; color: #fff; margin-bottom: 20px; }
+.hdr h1 { font-size: 20px; font-weight: 900; margin: 0 0 2px; }
+.hdr .sub { font-size: 13px; color: #86efac; }
+@media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+<div class="hdr"><h1>${titleHe}</h1><div class="sub">${clientName} · ${new Date().toLocaleDateString('he-IL')}</div></div>
+${innerHtml}
+<script>window.onload=()=>window.print()</script>
+</body></html>`
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close() }
+  }
+
   function downloadPantryHTML() {
     if (!selectedClient?.pantry_notes) return
     const clientName = selectedClient.name + (selectedClient.last_name ? ' ' + selectedClient.last_name : '')
@@ -2785,7 +2815,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
                 {journeyAnalysis && (
                   <div style={{ background: '#fff', borderRadius: 18, padding: '18px', marginBottom: 16, border: '2px solid #7c3aed' }}>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: '#7c3aed', marginBottom: 12 }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <div style={{ fontWeight: 800, fontSize: 15, color: '#7c3aed' }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={() => printAnalysisHTML('ניתוח מטרה', journeyAnalysis)} style={{ padding: '6px 14px', borderRadius: 8, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>🖨️ הדפס</button>
+                        <button onClick={() => downloadAnalysisHTML('ניתוח מטרה', journeyAnalysis)} style={{ padding: '6px 14px', borderRadius: 8, background: '#f0fdf4', color: '#15803d', border: '1.5px solid #86efac', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>⬇️ HTML</button>
+                      </div>
+                    </div>
                     <div style={{ fontSize: 13, color: '#333', lineHeight: 1.9, textAlign: 'right', direction: 'rtl' }} dangerouslySetInnerHTML={renderMd(journeyAnalysis)} />
                   </div>
                 )}
@@ -2815,7 +2851,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                         <div style={{ padding: 16, maxHeight: 400, overflowY: 'auto', background: '#faf5ff' }}>
                           <textarea value={journeyClientDocPreview} onChange={e => setJourneyClientDocPreview(e.target.value)} rows={16} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
                         </div>
-                        <div style={{ padding: '12px 16px', display: 'flex', gap: 8 }}>
+                        <div style={{ padding: '12px 16px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           <button onClick={async () => {
                             setJourneyDocApproving(true)
                             await supabase.from('clients').update({ outcome_doc: journeyClientDocPreview }).eq('id', selectedClient.id)
@@ -2824,10 +2860,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                             setJourneyClientDocPreview('')
                             setJourneyDocApproving(false)
                             setTimeout(() => setJourneyDocSent(false), 4000)
-                          }} disabled={journeyDocApproving} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#16a34a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                          }} disabled={journeyDocApproving} style={{ flex: 2, minWidth: 120, padding: 12, borderRadius: 10, background: '#16a34a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                             {journeyDocApproving ? '⏳...' : '✅ אשרי ושלחי אליה'}
                           </button>
-                          <button onClick={() => setJourneyClientDocPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                          <button onClick={() => printAnalysisHTML('מסמך מסע המטרה', journeyClientDocPreview)} style={{ flex: 1, minWidth: 80, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                            🖨️ הדפס
+                          </button>
+                          <button onClick={() => downloadAnalysisHTML('מסמך מסע המטרה', journeyClientDocPreview)} style={{ flex: 1, minWidth: 80, padding: 12, borderRadius: 10, background: '#f0fdf4', color: '#15803d', border: '1.5px solid #86efac', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                            ⬇️ HTML
+                          </button>
+                          <button onClick={() => setJourneyClientDocPreview('')} style={{ flex: 1, minWidth: 60, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                             ✕ בטלי
                           </button>
                         </div>
