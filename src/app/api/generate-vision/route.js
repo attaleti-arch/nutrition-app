@@ -16,7 +16,8 @@ export async function POST(req) {
     if (!process.env.OPENAI_API_KEY) return Response.json({ error: 'OPENAI_API_KEY לא מוגדר' }, { status: 500 })
 
     const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-    const supabase = getSupabase()
+    let supabase = null
+    try { supabase = getSupabase() } catch(e) { console.error('Supabase init skipped:', e.message) }
 
     const locationMap = {
       beach: 'on a sunny beach at golden hour with soft sea breeze and warm sand',
@@ -91,28 +92,32 @@ export async function POST(req) {
     // Download and upload to Supabase Storage
     let permanentUrl = imageUrl
     let warning = null
-    try {
-      const imgResponse = await fetch(imageUrl)
-      const imgBuffer = await imgResponse.arrayBuffer()
-      const fileName = `vision_${clientId}_${Date.now()}.png`
-      const { error: uploadError } = await supabase.storage
-        .from('vision-images')
-        .upload(fileName, imgBuffer, { contentType: 'image/png', upsert: false })
-      if (!uploadError) {
-        const { data: publicUrlData } = supabase.storage.from('vision-images').getPublicUrl(fileName)
-        permanentUrl = publicUrlData.publicUrl
-      } else {
-        warning = 'צרי bucket בשם vision-images ב-Supabase Storage לאחסון קבוע'
+    if (supabase) {
+      try {
+        const imgResponse = await fetch(imageUrl)
+        const imgBuffer = await imgResponse.arrayBuffer()
+        const fileName = `vision_${clientId}_${Date.now()}.png`
+        const { error: uploadError } = await supabase.storage
+          .from('vision-images')
+          .upload(fileName, imgBuffer, { contentType: 'image/png', upsert: false })
+        if (!uploadError) {
+          const { data: publicUrlData } = supabase.storage.from('vision-images').getPublicUrl(fileName)
+          permanentUrl = publicUrlData.publicUrl
+        } else {
+          warning = 'צרי bucket בשם vision-images ב-Supabase Storage לאחסון קבוע'
+        }
+      } catch (e) {
+        warning = 'אחסון קבוע נכשל — התמונה זמנית בלבד'
       }
-    } catch (e) {
-      warning = 'אחסון קבוע נכשל — התמונה זמנית בלבד'
-    }
 
-    await supabase.from('clients').update({
-      vision_image_url: permanentUrl,
-      vision_prompt: prompt,
-      vision_goal_text: targetWeight || '',
-    }).eq('id', clientId)
+      try {
+        await supabase.from('clients').update({
+          vision_image_url: permanentUrl,
+          vision_prompt: prompt,
+          vision_goal_text: targetWeight || '',
+        }).eq('id', clientId)
+      } catch(e) { console.error('Supabase client update failed:', e.message) }
+    }
 
     return Response.json({ imageUrl: permanentUrl, prompt, ...(warning ? { warning } : {}) })
   } catch (err) {
