@@ -2765,12 +2765,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
                 <button onClick={async () => {
                   setJourneyLoading(true); setJourneyAnalysis('')
-                  const profileSummary = `מחלות: ${profile.medical_history || 'לא צוין'} | תרופות: ${profile.medications || 'לא צוין'} | אכילה רגשית: ${profile.emotional_eating || 'לא צוין'} | מה מעכב: ${profile.goal_obstacles || 'לא צוין'}`
-                  const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, clientProfile: profileSummary, outputType: 'analysis' }) })
-                  const data = await res.json()
-                  const jResult = data.result || ''
-                  setJourneyAnalysis(jResult)
-                  saveJourney(journeyAnswers, jResult)
+                  try {
+                    const profileSummary = `מחלות: ${profile.medical_history || 'לא צוין'} | תרופות: ${profile.medications || 'לא צוין'} | אכילה רגשית: ${profile.emotional_eating || 'לא צוין'} | מה מעכב: ${profile.goal_obstacles || 'לא צוין'}`
+                    const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, clientProfile: profileSummary, outputType: 'analysis' }) })
+                    const data = await res.json()
+                    const jResult = data.result || ''
+                    setJourneyAnalysis(jResult)
+                    saveJourney(journeyAnswers, jResult)
+                  } catch(e) {
+                    alert('הניתוח נכשל — נסי שוב. אם הבעיה חוזרת, רעננו את הדף.')
+                  }
                   setJourneyLoading(false)
                 }} disabled={journeyLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginBottom: 8 }}>
                   {journeyLoading ? '⏳ מנתח... (עד דקה וחצי)' : '🔍 הפק ניתוח לפגישה (לעיניך בלבד)'}
