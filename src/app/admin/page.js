@@ -811,12 +811,17 @@ export default function AdminPage() {
       const res = await fetch('/api/generate-vision-audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paragraph: visionParagraph })
+        body: JSON.stringify({ paragraph: visionParagraph, clientId: selectedClient?.id })
       })
       if (!res.ok) { setVisionError('שגיאה ביצירת אודיו'); setGeneratingAudio(false); return }
-      const blob = await res.blob()
-      const url = URL.createObjectURL(blob)
-      setVisionAudioUrl(url)
+      // Use permanent Supabase URL if available, else blob URL for the player
+      const permanentUrl = res.headers.get('X-Audio-Url')
+      if (permanentUrl) {
+        setVisionAudioUrl(permanentUrl)
+      } else {
+        const blob = await res.blob()
+        setVisionAudioUrl(URL.createObjectURL(blob))
+      }
       setAudioPlaying(false)
     } catch(e) { setVisionError('שגיאה: ' + e.message) }
     setGeneratingAudio(false)
