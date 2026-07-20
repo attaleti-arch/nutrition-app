@@ -3317,17 +3317,28 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
                 {/* שמרי ושלחי לה + דוח יפה */}
                 {(visionParagraph || visionImageUrl || visionPhotoPreview) && (
-                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
-                    <button onClick={saveVision} disabled={visionSaving} style={{ flex: 2, padding: 14, borderRadius: 12, background: visionSaved ? '#16a34a' : visionSaving ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: visionSaving ? 'default' : 'pointer', fontWeight: 800, fontSize: 15 }}>
-                      {visionSaving ? '⏳ שולחת...' : visionSaved ? '✅ נשלח אליה!' : '📤 שלחי לה'}
-                    </button>
-                    <button onClick={openVisionReportHTML} style={{ flex: 1, padding: 14, borderRadius: 12, background: 'linear-gradient(135deg,#1e1b4b,#312e81)', color: '#c7d2fe', border: '1.5px solid #4338ca', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                      🌟 דוח יפה
-                    </button>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={saveVision} disabled={visionSaving} style={{ flex: 2, padding: 14, borderRadius: 12, background: visionSaved ? '#16a34a' : visionSaving ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: visionSaving ? 'default' : 'pointer', fontWeight: 800, fontSize: 15 }}>
+                        {visionSaving ? '⏳ שומרת...' : visionSaved ? '✅ נשמר!' : '💾 שמרי'}
+                      </button>
+                      <button onClick={() => window.open(`/vision/${selectedClient?.id}`, '_blank')} style={{ flex: 1, padding: 14, borderRadius: 12, background: 'linear-gradient(135deg,#1e1b4b,#312e81)', color: '#c7d2fe', border: '1.5px solid #4338ca', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        🌟 דוח יפה
+                      </button>
+                    </div>
+                    {selectedClient?.id && (
+                      <a
+                        href={`https://wa.me/${selectedClient?.phone ? selectedClient.phone.replace(/\D/g,'') : ''}?text=${encodeURIComponent(`✨ הויזואליזציה שלך מוכנה!\nפתחי כאן לדוח יפה עם תמונה, פסקה והקלטה 💜\n${typeof window !== 'undefined' ? window.location.origin : ''}/vision/${selectedClient.id}`)}`}
+                        target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'block', padding: 14, borderRadius: 12, background: '#25d366', color: '#fff', fontWeight: 800, fontSize: 15, textDecoration: 'none', textAlign: 'center' }}
+                      >
+                        📱 שלחי לה בוואטסאפ
+                      </a>
+                    )}
                   </div>
                 )}
 
-                {visionSaved && <div style={{ textAlign: 'center', fontSize: 12, color: '#16a34a', fontWeight: 600 }}>הויזואליזציה מופיעה עכשיו בטאב המדריכים שלה ✨</div>}
+                {visionSaved && <div style={{ textAlign: 'center', fontSize: 12, color: '#16a34a', fontWeight: 600 }}>הויזואליזציה נשמרה ✨</div>}
 
               </div>
             )}
