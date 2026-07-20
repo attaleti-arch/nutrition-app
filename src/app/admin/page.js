@@ -707,19 +707,41 @@ export default function AdminPage() {
   const [generatingVisionText, setGeneratingVisionText] = useState(false)
   const [generatingVision, setGeneratingVision] = useState(false)
   const [uploadingAltImage, setUploadingAltImage] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [generatingAudio, setGeneratingAudio] = useState(false)
   const [visionAudioUrl, setVisionAudioUrl] = useState(null)
   const [audioPlaying, setAudioPlaying] = useState(false)
   const audioRef = useRef(null)
 
-  function handleVisionPhotoUpload(file) {
+  async function handleVisionPhotoUpload(file) {
     if (!file) return
+    setUploadingPhoto(true)
     const reader = new FileReader()
-    reader.onload = e => {
+    reader.onload = async e => {
       const dataUrl = e.target.result
+      const base64 = dataUrl.split(',')[1]
       setVisionPhotoPreview(dataUrl)
-      // strip data URL prefix to get raw base64
-      setVisionPhotoBase64(dataUrl.split(',')[1])
+      setVisionPhotoBase64(base64)
+
+      // Upload immediately to Supabase Storage so it persists
+      try {
+        const byteString = atob(base64)
+        const bytes = new Uint8Array(byteString.length)
+        for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i)
+        const ext = file.type === 'image/png' ? 'png' : 'jpg'
+        const fileName = `vision_${selectedClient?.id}_client_${Date.now()}.${ext}`
+        const { error } = await supabase.storage.from('vision-images').upload(fileName, bytes.buffer, { contentType: file.type || 'image/jpeg', upsert: false })
+        if (!error) {
+          const { data: pub } = supabase.storage.from('vision-images').getPublicUrl(fileName)
+          const url = pub.publicUrl
+          setVisionImageUrl(url)
+          if (selectedClient?.id) {
+            await supabase.from('clients').update({ vision_image_url: url }).eq('id', selectedClient.id)
+            setSelectedClient(prev => ({ ...prev, vision_image_url: url }))
+          }
+        }
+      } catch(e) { console.error('Photo upload failed:', e.message) }
+      setUploadingPhoto(false)
     }
     reader.readAsDataURL(file)
   }
@@ -3073,9 +3095,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       <button onClick={() => { setVisionPhotoBase64(null); setVisionPhotoPreview(null) }} style={{ marginTop: 6, padding: '6px 14px', borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>✕ הסירי תמונה</button>
                     </div>
                   ) : (
-                    <label style={{ display: 'block', padding: '20px', borderRadius: 12, border: '2px dashed #c4b5fd', textAlign: 'center', cursor: 'pointer', color: '#7c3aed', fontWeight: 700, fontSize: 13 }}>
-                      📸 לחצי להעלאת תמונה
-                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleVisionPhotoUpload(e.target.files[0])} />
+                    <label style={{ display: 'block', padding: '20px', borderRadius: 12, border: '2px dashed #c4b5fd', textAlign: 'center', cursor: uploadingPhoto ? 'default' : 'pointer', color: '#7c3aed', fontWeight: 700, fontSize: 13, opacity: uploadingPhoto ? 0.6 : 1 }}>
+                      {uploadingPhoto ? '⏳ מעלה ושומרת...' : '📸 לחצי להעלאת תמונה'}
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleVisionPhotoUpload(e.target.files[0])} disabled={uploadingPhoto} />
                     </label>
                   )}
                 </div>
