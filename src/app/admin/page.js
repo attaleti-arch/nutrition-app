@@ -871,6 +871,11 @@ export default function AdminPage() {
         stream.getTracks().forEach(t => t.stop())
         const mimeType = mr.mimeType || 'audio/webm'
         const blob = new Blob(recordingChunksRef.current, { type: mimeType })
+
+        // הצג נגן מיידי עם URL מקומי כדי לשמוע לפני השמירה
+        const localUrl = URL.createObjectURL(blob)
+        setVisionAudioUrl(localUrl)
+
         setUploadingRecording(true)
         const reader = new FileReader()
         reader.onload = async ev => {
@@ -883,12 +888,15 @@ export default function AdminPage() {
             })
             const data = await res.json()
             if (data.url) {
+              URL.revokeObjectURL(localUrl)
               setVisionAudioUrl(data.url)
               setSelectedClient(prev => ({ ...prev, vision_audio_url: data.url }))
             } else {
-              console.error('Recording upload failed:', data.error)
+              alert('שגיאה בשמירת ההקלטה: ' + (data.error || 'נסי שוב'))
             }
-          } catch(e) { console.error('Recording upload failed:', e.message) }
+          } catch(e) {
+            alert('שגיאה בשמירת ההקלטה: ' + e.message)
+          }
           setUploadingRecording(false)
         }
         reader.readAsDataURL(blob)
@@ -3266,9 +3274,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     </button>
                   )}
 
-                  {visionAudioUrl && !isRecording && !uploadingRecording && (
+                  {visionAudioUrl && !isRecording && (
                     <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', borderRadius: 18, padding: '16px 18px', direction: 'rtl', marginTop: 10 }}>
-                      <div style={{ fontSize: 13, color: '#c7d2fe', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>🎧 ההקלטה מוכנה</div>
+                      <div style={{ fontSize: 13, color: '#c7d2fe', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>
+                        {uploadingRecording ? '⏳ שומרת ברקע...' : '🎧 ההקלטה מוכנה'}
+                      </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, marginBottom: 14, height: 36 }}>
                         {Array.from({ length: 28 }).map((_, i) => (
