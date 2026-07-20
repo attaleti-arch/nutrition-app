@@ -1040,6 +1040,125 @@ ${innerHtml}
     if (w) { w.document.write(html); w.document.close() }
   }
 
+  function openVisionReportHTML() {
+    if (!selectedClient) return
+    const clientName = selectedClient.name + (selectedClient.last_name ? ' ' + selectedClient.last_name : '')
+    const imgSrc = visionImageUrl || ''
+    const paragraph = visionParagraph || ''
+    const audioSrc = visionAudioUrl || ''
+    const targetW = visionTargetWeight || selectedClient.vision_goal_text || ''
+    const date = new Date().toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })
+
+    const html = `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>הויזואליזציה שלי — ${clientName}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;700;900&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  background: linear-gradient(160deg, #0f0c29, #1e1b4b 40%, #2d1b69 100%);
+  min-height: 100vh;
+  color: #e0e7ff;
+  direction: rtl;
+  padding: 0 0 60px;
+}
+.stars {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; overflow: hidden; z-index: 0;
+}
+.star {
+  position: absolute; border-radius: 50%;
+  background: rgba(199,210,254,0.6);
+  animation: twinkle var(--d) ease-in-out infinite alternate;
+}
+@keyframes twinkle { from { opacity: 0.2; transform: scale(1); } to { opacity: 1; transform: scale(1.4); } }
+.wrap { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding: 40px 20px; }
+.header { text-align: center; margin-bottom: 32px; }
+.header .eyebrow { font-size: 12px; letter-spacing: 3px; color: #818cf8; text-transform: uppercase; margin-bottom: 10px; }
+.header h1 { font-size: 32px; font-weight: 900; color: #c7d2fe; line-height: 1.3; margin-bottom: 6px; }
+.header .date { font-size: 13px; color: #6366f1; }
+.divider { width: 60px; height: 2px; background: linear-gradient(90deg, transparent, #818cf8, transparent); margin: 20px auto; }
+.image-card {
+  border-radius: 24px;
+  overflow: hidden;
+  margin-bottom: 28px;
+  box-shadow: 0 0 60px rgba(99,102,241,0.4), 0 20px 40px rgba(0,0,0,0.5);
+  border: 1.5px solid rgba(129,140,248,0.3);
+}
+.image-card img { width: 100%; display: block; }
+.paragraph-card {
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(129,140,248,0.25);
+  border-radius: 20px;
+  padding: 28px 24px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 30px rgba(99,102,241,0.15);
+}
+.paragraph-card .label {
+  font-size: 11px; letter-spacing: 2px; color: #818cf8;
+  text-transform: uppercase; margin-bottom: 16px;
+}
+.paragraph-card p {
+  font-size: 18px; line-height: 2; color: #e0e7ff;
+  font-weight: 300;
+}
+.audio-card {
+  background: rgba(99,102,241,0.12);
+  border: 1.5px solid rgba(129,140,248,0.3);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.audio-card .label { font-size: 12px; color: #a5b4fc; margin-bottom: 10px; letter-spacing: 1px; }
+.audio-card audio { width: 100%; border-radius: 8px; }
+.footer { text-align: center; margin-top: 32px; }
+.footer .name { font-size: 20px; font-weight: 700; color: #c7d2fe; margin-bottom: 4px; }
+.footer .target { font-size: 14px; color: #818cf8; }
+.glow { display: inline-block; filter: drop-shadow(0 0 12px rgba(167,139,250,0.7)); font-size: 28px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="wrap">
+  <div class="header">
+    <div class="glow">✨</div>
+    <div class="eyebrow">הויזואליזציה שלי</div>
+    <h1>${clientName}</h1>
+    <div class="date">${date}</div>
+  </div>
+  <div class="divider"></div>
+  ${imgSrc ? `<div class="image-card"><img src="${imgSrc}" alt="ויזואליזציה" /></div>` : ''}
+  ${paragraph ? `<div class="paragraph-card"><div class="label">דמיון מודרך 🔮</div><p>${paragraph.replace(/\n/g, '<br/>')}</p></div>` : ''}
+  ${audioSrc ? `<div class="audio-card"><div class="label">🎧 האזיני לדמיון המודרך</div><audio controls src="${audioSrc}"></audio></div>` : ''}
+  <div class="footer">
+    <div class="name">${clientName}</div>
+    ${targetW ? `<div class="target">🎯 יעד: ${targetW} ק״ג</div>` : ''}
+  </div>
+</div>
+<script>
+const s = document.getElementById('stars')
+for (let i = 0; i < 60; i++) {
+  const el = document.createElement('div')
+  el.className = 'star'
+  const size = Math.random() * 2.5 + 0.5
+  el.style.cssText = 'width:'+size+'px;height:'+size+'px;top:'+Math.random()*100+'%;left:'+Math.random()*100+'%;--d:'+(2+Math.random()*4)+'s;animation-delay:'+(Math.random()*5)+'s'
+  s.appendChild(el)
+}
+</script>
+</body>
+</html>`
+
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close() }
+  }
+
   function downloadPantryHTML() {
     if (!selectedClient?.pantry_notes) return
     const clientName = selectedClient.name + (selectedClient.last_name ? ' ' + selectedClient.last_name : '')
@@ -3098,10 +3217,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   </div>
                 )}
 
-                {/* שלחי לה — רק אחרי הקלטה */}
+                {/* שלחי לה + דוח יפה — רק אחרי הקלטה */}
                 {visionAudioUrl && (
-                  <button onClick={saveVision} disabled={visionSaving} style={{ width: '100%', padding: 14, borderRadius: 12, background: visionSaved ? '#16a34a' : visionSaving ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: visionSaving ? 'default' : 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 8 }}>
-                    {visionSaving ? '⏳ שולחת...' : visionSaved ? '✅ נשלח אליה!' : '📤 שלחי לה'}
+                  <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+                    <button onClick={saveVision} disabled={visionSaving} style={{ flex: 2, padding: 14, borderRadius: 12, background: visionSaved ? '#16a34a' : visionSaving ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: visionSaving ? 'default' : 'pointer', fontWeight: 800, fontSize: 15 }}>
+                      {visionSaving ? '⏳ שולחת...' : visionSaved ? '✅ נשלח אליה!' : '📤 שלחי לה'}
+                    </button>
+                    <button onClick={openVisionReportHTML} style={{ flex: 1, padding: 14, borderRadius: 12, background: 'linear-gradient(135deg,#1e1b4b,#312e81)', color: '#c7d2fe', border: '1.5px solid #4338ca', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      🌟 דוח יפה
+                    </button>
+                  </div>
+                )}
+
+                {/* דוח יפה גם בלי הקלטה אם יש תמונה/פסקה */}
+                {!visionAudioUrl && (visionImageUrl || visionParagraph) && (
+                  <button onClick={openVisionReportHTML} style={{ width: '100%', padding: 12, borderRadius: 12, background: 'linear-gradient(135deg,#1e1b4b,#312e81)', color: '#c7d2fe', border: '1.5px solid #4338ca', cursor: 'pointer', fontWeight: 700, fontSize: 14, marginBottom: 8 }}>
+                    🌟 פתחי דוח ויזואליזציה יפה
                   </button>
                 )}
 
