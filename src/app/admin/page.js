@@ -711,7 +711,13 @@ export default function AdminPage() {
   const [generatingAudio, setGeneratingAudio] = useState(false)
   const [visionAudioUrl, setVisionAudioUrl] = useState(null)
   const [audioPlaying, setAudioPlaying] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingSeconds, setRecordingSeconds] = useState(0)
+  const [uploadingRecording, setUploadingRecording] = useState(false)
   const audioRef = useRef(null)
+  const mediaRecorderRef = useRef(null)
+  const recordingChunksRef = useRef([])
+  const recordingIntervalRef = useRef(null)
 
   async function handleVisionPhotoUpload(file) {
     if (!file) return
@@ -852,6 +858,62 @@ export default function AdminPage() {
     if (!audioRef.current) return
     if (audioPlaying) { audioRef.current.pause(); setAudioPlaying(false) }
     else { audioRef.current.play(); setAudioPlaying(true) }
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      mediaRecorderRef.current = mr
+      recordingChunksRef.current = []
+      mr.ondataavailable = e => { if (e.data.size > 0) recordingChunksRef.current.push(e.data) }
+      mr.onstop = async () => {
+        stream.getTracks().forEach(t => t.stop())
+        const mimeType = mr.mimeType || 'audio/webm'
+        const blob = new Blob(recordingChunksRef.current, { type: mimeType })
+        setUploadingRecording(true)
+        const reader = new FileReader()
+        reader.onload = async ev => {
+          const base64 = ev.target.result.split(',')[1]
+          try {
+            const res = await fetch('/api/upload-voice-recording', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ base64, clientId: selectedClient?.id, mimeType })
+            })
+            const data = await res.json()
+            if (data.url) {
+              setVisionAudioUrl(data.url)
+              setSelectedClient(prev => ({ ...prev, vision_audio_url: data.url }))
+            } else {
+              console.error('Recording upload failed:', data.error)
+            }
+          } catch(e) { console.error('Recording upload failed:', e.message) }
+          setUploadingRecording(false)
+        }
+        reader.readAsDataURL(blob)
+      }
+      mr.start()
+      setIsRecording(true)
+      setRecordingSeconds(0)
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingSeconds(s => s + 1)
+      }, 1000)
+    } catch(e) {
+      alert('לא ניתן לגשת למיקרופון: ' + e.message)
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop()
+    }
+    setIsRecording(false)
+    setRecordingSeconds(0)
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current)
+      recordingIntervalRef.current = null
+    }
   }
 
   async function saveVision() {
@@ -3182,47 +3244,57 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   </div>
                 )}
 
-                {/* 🎙️ אודיו — דמיון מודרך */}
-                {visionParagraph && (
-                  <div style={{ marginBottom: 12 }}>
-                    <button onClick={generateVisionAudio} disabled={generatingAudio} style={{ width: '100%', padding: 13, borderRadius: 12, background: generatingAudio ? '#9ca3af' : 'linear-gradient(135deg,#ec4899,#be185d)', color: '#fff', border: 'none', cursor: generatingAudio ? 'default' : 'pointer', fontWeight: 700, fontSize: 14, marginBottom: visionAudioUrl ? 10 : 0 }}>
-                      {generatingAudio ? '⏳ יוצרת הקלטה...' : visionAudioUrl ? '🔄 צרי הקלטה חדשה' : '🎙️ צרי הודעת שמע (דמיון מודרך)'}
+                {/* 🎙️ הקלטת קול */}
+                <div style={{ marginBottom: 12 }}>
+                  <style>{`
+                    @keyframes wave { from { height: 4px } to { height: 28px } }
+                    @keyframes pulse-red { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
+                  `}</style>
+
+                  {uploadingRecording ? (
+                    <div style={{ width: '100%', padding: 13, borderRadius: 12, background: '#9ca3af', color: '#fff', fontWeight: 700, fontSize: 14, textAlign: 'center' }}>
+                      ⏳ שומרת הקלטה...
+                    </div>
+                  ) : isRecording ? (
+                    <button onClick={stopRecording} style={{ width: '100%', padding: 13, borderRadius: 12, background: 'linear-gradient(135deg,#ef4444,#b91c1c)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                      <span style={{ animation: 'pulse-red 1s ease-in-out infinite', display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#fff' }} />
+                      ⏹ עצרי • {String(Math.floor(recordingSeconds/60)).padStart(2,'0')}:{String(recordingSeconds%60).padStart(2,'0')}
                     </button>
+                  ) : (
+                    <button onClick={startRecording} style={{ width: '100%', padding: 13, borderRadius: 12, background: visionAudioUrl ? 'linear-gradient(135deg,#6b7280,#4b5563)' : 'linear-gradient(135deg,#ec4899,#be185d)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                      {visionAudioUrl ? '🔄 הקלטה חדשה' : '🎙️ הקליטי הודעה ללקוחה'}
+                    </button>
+                  )}
 
-                    {visionAudioUrl && (
-                      <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', borderRadius: 18, padding: '16px 18px', direction: 'rtl' }}>
-                        <div style={{ fontSize: 13, color: '#c7d2fe', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>🎧 הודעת השמע מוכנה</div>
+                  {visionAudioUrl && !isRecording && !uploadingRecording && (
+                    <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', borderRadius: 18, padding: '16px 18px', direction: 'rtl', marginTop: 10 }}>
+                      <div style={{ fontSize: 13, color: '#c7d2fe', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>🎧 ההקלטה מוכנה</div>
 
-                        {/* גלי קול */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, marginBottom: 14, height: 36 }}>
-                          {Array.from({ length: 28 }).map((_, i) => (
-                            <div key={i} style={{
-                              width: 3, borderRadius: 2,
-                              background: '#818cf8',
-                              height: audioPlaying ? undefined : (8 + Math.sin(i * 0.8) * 10 + 8) + 'px',
-                              animation: audioPlaying ? `wave ${0.6 + (i % 5) * 0.12}s ease-in-out infinite alternate` : 'none',
-                              animationDelay: (i * 0.04) + 's',
-                            }} />
-                          ))}
-                        </div>
-
-                        <style>{`@keyframes wave { from { height: 4px } to { height: 28px } }`}</style>
-
-                        {/* קונטרולים */}
-                        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
-                          <button onClick={toggleAudio} style={{ width: 52, height: 52, borderRadius: '50%', background: '#6366f1', border: 'none', cursor: 'pointer', fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
-                            {audioPlaying ? '⏸' : '▶️'}
-                          </button>
-                          <a href={visionAudioUrl} download="vision-meditation.mp3" style={{ padding: '10px 18px', borderRadius: 12, background: '#4338ca', color: '#e0e7ff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
-                            ⬇️ הורידי לשליחה
-                          </a>
-                        </div>
-
-                        <audio ref={audioRef} src={visionAudioUrl} onEnded={() => setAudioPlaying(false)} style={{ display: 'none' }} />
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, marginBottom: 14, height: 36 }}>
+                        {Array.from({ length: 28 }).map((_, i) => (
+                          <div key={i} style={{
+                            width: 3, borderRadius: 2,
+                            background: '#818cf8',
+                            height: audioPlaying ? undefined : (8 + Math.sin(i * 0.8) * 10 + 8) + 'px',
+                            animation: audioPlaying ? `wave ${0.6 + (i % 5) * 0.12}s ease-in-out infinite alternate` : 'none',
+                            animationDelay: (i * 0.04) + 's',
+                          }} />
+                        ))}
                       </div>
-                    )}
-                  </div>
-                )}
+
+                      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
+                        <button onClick={toggleAudio} style={{ width: 52, height: 52, borderRadius: '50%', background: '#6366f1', border: 'none', cursor: 'pointer', fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
+                          {audioPlaying ? '⏸' : '▶️'}
+                        </button>
+                        <a href={visionAudioUrl} download="vision-audio.webm" style={{ padding: '10px 18px', borderRadius: 12, background: '#4338ca', color: '#e0e7ff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
+                          ⬇️ הורידי לשליחה
+                        </a>
+                      </div>
+
+                      <audio ref={audioRef} src={visionAudioUrl} onEnded={() => setAudioPlaying(false)} style={{ display: 'none' }} />
+                    </div>
+                  )}
+                </div>
 
                 {/* כפתור תמונה */}
                 <button onClick={generateVision} disabled={generatingVision} style={{ width: '100%', padding: 13, borderRadius: 12, background: generatingVision ? '#9ca3af' : 'linear-gradient(135deg,#6366f1,#4338ca)', color: '#fff', border: 'none', cursor: generatingVision ? 'default' : 'pointer', fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
