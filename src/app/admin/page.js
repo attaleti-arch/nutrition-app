@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
+import { createClient } from '@supabase/supabase-js'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import WelcomeDocument from '../WelcomeDocument'
 
@@ -702,6 +703,7 @@ export default function AdminPage() {
   const [visionImageUrl, setVisionImageUrl] = useState(null)
   const [visionError, setVisionError] = useState('')
   const [visionSaved, setVisionSaved] = useState(false)
+  const [visionSaving, setVisionSaving] = useState(false)
   const [visionAnswersSaved, setVisionAnswersSaved] = useState(false)
   const [visionParagraphSaved, setVisionParagraphSaved] = useState(false)
   const [generatingVisionText, setGeneratingVisionText] = useState(false)
@@ -837,12 +839,35 @@ export default function AdminPage() {
 
   async function saveVision() {
     if (!selectedClient?.id) return
+    setVisionSaving(true)
+    let imageUrl = visionImageUrl
+
+    // If no AI image but user uploaded a photo — upload it to storage
+    if (!imageUrl && visionPhotoBase64) {
+      try {
+        const byteString = atob(visionPhotoBase64)
+        const bytes = new Uint8Array(byteString.length)
+        for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i)
+        const fileName = `vision_${selectedClient.id}_photo_${Date.now()}.jpg`
+        const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+        const { error } = await sb.storage.from('vision-images').upload(fileName, bytes.buffer, { contentType: 'image/jpeg', upsert: false })
+        if (!error) {
+          const { data: pub } = sb.storage.from('vision-images').getPublicUrl(fileName)
+          imageUrl = pub.publicUrl
+          setVisionImageUrl(imageUrl)
+        } else {
+          imageUrl = visionPhotoPreview
+        }
+      } catch(e) { console.error('Photo upload failed:', e.message) }
+    }
+
     await supabase.from('clients').update({
-      vision_image_url: visionImageUrl,
+      vision_image_url: imageUrl,
       vision_paragraph: visionParagraph,
       vision_goal_text: visionTargetWeight || '',
     }).eq('id', selectedClient.id)
-    setSelectedClient(prev => ({ ...prev, vision_image_url: visionImageUrl, vision_paragraph: visionParagraph, vision_goal_text: visionTargetWeight || '' }))
+    setSelectedClient(prev => ({ ...prev, vision_image_url: imageUrl, vision_paragraph: visionParagraph, vision_goal_text: visionTargetWeight || '' }))
+    setVisionSaving(false)
     setVisionSaved(true)
     setTimeout(() => setVisionSaved(false), 3000)
   }
@@ -3087,9 +3112,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                 )}
 
                 {/* שמירה */}
-                {(visionParagraph || visionImageUrl) && (
-                  <button onClick={saveVision} style={{ width: '100%', padding: 14, borderRadius: 12, background: visionSaved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 8 }}>
-                    {visionSaved ? '✅ נשמר אצלה!' : '💾 שמרי ושלחי לה'}
+                {(visionParagraph || visionImageUrl || visionPhotoPreview) && (
+                  <button onClick={saveVision} disabled={visionSaving} style={{ width: '100%', padding: 14, borderRadius: 12, background: visionSaved ? '#16a34a' : visionSaving ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: visionSaving ? 'default' : 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 8 }}>
+                    {visionSaving ? '⏳ שומרת...' : visionSaved ? '✅ נשמר אצלה!' : '💾 שמרי ושלחי לה'}
                   </button>
                 )}
 
