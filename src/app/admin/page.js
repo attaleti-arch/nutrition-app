@@ -705,6 +705,10 @@ export default function AdminPage() {
   const [generatingVisionText, setGeneratingVisionText] = useState(false)
   const [generatingVision, setGeneratingVision] = useState(false)
   const [uploadingAltImage, setUploadingAltImage] = useState(false)
+  const [generatingAudio, setGeneratingAudio] = useState(false)
+  const [visionAudioUrl, setVisionAudioUrl] = useState(null)
+  const [audioPlaying, setAudioPlaying] = useState(false)
+  const audioRef = useRef(null)
 
   function handleVisionPhotoUpload(file) {
     if (!file) return
@@ -797,6 +801,31 @@ export default function AdminPage() {
       setSelectedClient(prev => ({ ...prev, vision_image_url: url }))
     } catch(e) { setVisionError('שגיאה בהעלאה: ' + e.message) }
     setUploadingAltImage(false)
+  }
+
+  async function generateVisionAudio() {
+    if (!visionParagraph) return
+    setGeneratingAudio(true)
+    setVisionAudioUrl(null)
+    try {
+      const res = await fetch('/api/generate-vision-audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paragraph: visionParagraph })
+      })
+      if (!res.ok) { setVisionError('שגיאה ביצירת אודיו'); setGeneratingAudio(false); return }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      setVisionAudioUrl(url)
+      setAudioPlaying(false)
+    } catch(e) { setVisionError('שגיאה: ' + e.message) }
+    setGeneratingAudio(false)
+  }
+
+  function toggleAudio() {
+    if (!audioRef.current) return
+    if (audioPlaying) { audioRef.current.pause(); setAudioPlaying(false) }
+    else { audioRef.current.play(); setAudioPlaying(true) }
   }
 
   async function saveVision() {
@@ -2904,6 +2933,48 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       rows={6}
                       style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }}
                     />
+                  </div>
+                )}
+
+                {/* 🎙️ אודיו — דמיון מודרך */}
+                {visionParagraph && (
+                  <div style={{ marginBottom: 12 }}>
+                    <button onClick={generateVisionAudio} disabled={generatingAudio} style={{ width: '100%', padding: 13, borderRadius: 12, background: generatingAudio ? '#9ca3af' : 'linear-gradient(135deg,#ec4899,#be185d)', color: '#fff', border: 'none', cursor: generatingAudio ? 'default' : 'pointer', fontWeight: 700, fontSize: 14, marginBottom: visionAudioUrl ? 10 : 0 }}>
+                      {generatingAudio ? '⏳ יוצרת הקלטה...' : visionAudioUrl ? '🔄 צרי הקלטה חדשה' : '🎙️ צרי הודעת שמע (דמיון מודרך)'}
+                    </button>
+
+                    {visionAudioUrl && (
+                      <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', borderRadius: 18, padding: '16px 18px', direction: 'rtl' }}>
+                        <div style={{ fontSize: 13, color: '#c7d2fe', fontWeight: 700, marginBottom: 12, textAlign: 'center' }}>🎧 הודעת השמע מוכנה</div>
+
+                        {/* גלי קול */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3, marginBottom: 14, height: 36 }}>
+                          {Array.from({ length: 28 }).map((_, i) => (
+                            <div key={i} style={{
+                              width: 3, borderRadius: 2,
+                              background: '#818cf8',
+                              height: audioPlaying ? undefined : (8 + Math.sin(i * 0.8) * 10 + 8) + 'px',
+                              animation: audioPlaying ? `wave ${0.6 + (i % 5) * 0.12}s ease-in-out infinite alternate` : 'none',
+                              animationDelay: (i * 0.04) + 's',
+                            }} />
+                          ))}
+                        </div>
+
+                        <style>{`@keyframes wave { from { height: 4px } to { height: 28px } }`}</style>
+
+                        {/* קונטרולים */}
+                        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
+                          <button onClick={toggleAudio} style={{ width: 52, height: 52, borderRadius: '50%', background: '#6366f1', border: 'none', cursor: 'pointer', fontSize: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0 }}>
+                            {audioPlaying ? '⏸' : '▶️'}
+                          </button>
+                          <a href={visionAudioUrl} download="vision-meditation.mp3" style={{ padding: '10px 18px', borderRadius: 12, background: '#4338ca', color: '#e0e7ff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
+                            ⬇️ הורידי לשליחה
+                          </a>
+                        </div>
+
+                        <audio ref={audioRef} src={visionAudioUrl} onEnded={() => setAudioPlaying(false)} style={{ display: 'none' }} />
+                      </div>
+                    )}
                   </div>
                 )}
 
