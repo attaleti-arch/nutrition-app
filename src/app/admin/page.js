@@ -715,6 +715,9 @@ export default function AdminPage() {
   const [recordingSeconds, setRecordingSeconds] = useState(0)
   const [uploadingRecording, setUploadingRecording] = useState(false)
   const [recordingSaved, setRecordingSaved] = useState(false)
+  const [pendingAudioUrl, setPendingAudioUrl] = useState(null)
+  const pendingAudioBlobRef = useRef(null)
+  const pendingAudioMimeRef = useRef(null)
   const audioRef = useRef(null)
   const mediaRecorderRef = useRef(null)
   const recordingChunksRef = useRef([])
@@ -868,41 +871,14 @@ export default function AdminPage() {
       mediaRecorderRef.current = mr
       recordingChunksRef.current = []
       mr.ondataavailable = e => { if (e.data.size > 0) recordingChunksRef.current.push(e.data) }
-      mr.onstop = async () => {
+      mr.onstop = () => {
         stream.getTracks().forEach(t => t.stop())
         const mimeType = mr.mimeType || 'audio/webm'
         const blob = new Blob(recordingChunksRef.current, { type: mimeType })
-
-        // הצג נגן מיידי עם URL מקומי כדי לשמוע לפני השמירה
-        const localUrl = URL.createObjectURL(blob)
-        setVisionAudioUrl(localUrl)
-
-        setUploadingRecording(true)
-        const reader = new FileReader()
-        reader.onload = async ev => {
-          const base64 = ev.target.result.split(',')[1]
-          try {
-            const res = await fetch('/api/upload-voice-recording', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ base64, clientId: selectedClient?.id, mimeType })
-            })
-            const data = await res.json()
-            if (data.url) {
-              URL.revokeObjectURL(localUrl)
-              setVisionAudioUrl(data.url)
-              setSelectedClient(prev => ({ ...prev, vision_audio_url: data.url }))
-              setRecordingSaved(true)
-              setTimeout(() => setRecordingSaved(false), 3000)
-            } else {
-              alert('שגיאה בשמירת ההקלטה: ' + (data.error || 'נסי שוב'))
-            }
-          } catch(e) {
-            alert('שגיאה בשמירת ההקלטה: ' + e.message)
-          }
-          setUploadingRecording(false)
-        }
-        reader.readAsDataURL(blob)
+        pendingAudioBlobRef.current = blob
+        pendingAudioMimeRef.current = mimeType
+        if (pendingAudioUrl) URL.revokeObjectURL(pendingAudioUrl)
+        setPendingAudioUrl(URL.createObjectURL(blob))
       }
       mr.start()
       setIsRecording(true)
@@ -925,6 +901,40 @@ export default function AdminPage() {
       clearInterval(recordingIntervalRef.current)
       recordingIntervalRef.current = null
     }
+  }
+
+  async function approveRecording() {
+    const blob = pendingAudioBlobRef.current
+    const mimeType = pendingAudioMimeRef.current || 'audio/webm'
+    if (!blob || !selectedClient?.id) return
+    setUploadingRecording(true)
+    const reader = new FileReader()
+    reader.onload = async ev => {
+      const base64 = ev.target.result.split(',')[1]
+      try {
+        const res = await fetch('/api/upload-voice-recording', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64, clientId: selectedClient.id, mimeType })
+        })
+        const data = await res.json()
+        if (data.url) {
+          if (pendingAudioUrl) URL.revokeObjectURL(pendingAudioUrl)
+          setPendingAudioUrl(null)
+          pendingAudioBlobRef.current = null
+          setVisionAudioUrl(data.url)
+          setSelectedClient(prev => ({ ...prev, vision_audio_url: data.url }))
+          setRecordingSaved(true)
+          setTimeout(() => setRecordingSaved(false), 3000)
+        } else {
+          alert('שגיאה בשמירת ההקלטה: ' + (data.error || 'נסי שוב'))
+        }
+      } catch(e) {
+        alert('שגיאה: ' + e.message)
+      }
+      setUploadingRecording(false)
+    }
+    reader.readAsDataURL(blob)
   }
 
   async function saveVision() {
@@ -3278,15 +3288,30 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     </button>
                   )}
 
-                  {visionAudioUrl && !isRecording && (
-                    <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', borderRadius: 18, padding: '16px 18px', direction: 'rtl', marginTop: 10 }}>
-                      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, textAlign: 'center', color: recordingSaved ? '#4ade80' : uploadingRecording ? '#a5b4fc' : '#c7d2fe' }}>
-                        {recordingSaved ? '✅ ההקלטה נשמרה!' : uploadingRecording ? '⏳ שומרת...' : '🎧 ההקלטה מוכנה לשליחה'}
+                  {/* preview לפני אישור */}
+                  {pendingAudioUrl && !isRecording && (
+                    <div style={{ background: 'rgba(251,191,36,0.08)', border: '1.5px solid #fbbf24', borderRadius: 16, padding: '14px 16px', marginTop: 10 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#fbbf24', marginBottom: 10, textAlign: 'center' }}>👂 האזיני — זו הגרסה הנוכחית</div>
+                      <audio controls src={pendingAudioUrl} style={{ width: '100%', marginBottom: 10, borderRadius: 8 }} />
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => { setPendingAudioUrl(null); pendingAudioBlobRef.current = null }} style={{ flex: 1, padding: '10px 0', borderRadius: 10, background: 'rgba(255,255,255,0.08)', color: '#e0e7ff', border: '1px solid #6b7280', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                          🔄 הקלטה חדשה
+                        </button>
+                        <button onClick={approveRecording} disabled={uploadingRecording} style={{ flex: 2, padding: '10px 0', borderRadius: 10, background: uploadingRecording ? '#9ca3af' : 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', border: 'none', cursor: uploadingRecording ? 'default' : 'pointer', fontWeight: 800, fontSize: 14 }}>
+                          {uploadingRecording ? '⏳ שומרת...' : '✅ אשרי ושמרי סופית'}
+                        </button>
                       </div>
+                    </div>
+                  )}
 
+                  {/* הקלטה מאושרת ושמורה */}
+                  {visionAudioUrl && !isRecording && !pendingAudioUrl && (
+                    <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', borderRadius: 18, padding: '16px 18px', direction: 'rtl', marginTop: 10 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, textAlign: 'center', color: recordingSaved ? '#4ade80' : '#c7d2fe' }}>
+                        {recordingSaved ? '✅ ההקלטה נשמרה!' : '🎧 ההקלטה הסופית המאושרת'}
+                      </div>
                       <audio controls src={visionAudioUrl} style={{ width: '100%', marginBottom: 12, borderRadius: 8 }} />
-
-                      <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
                         <a href={visionAudioUrl} download="vision-audio.webm" style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: '#4338ca', color: '#e0e7ff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
                           ⬇️ הורידי
                         </a>
