@@ -1184,6 +1184,7 @@ function NlpSelector({ label, value, onChange, max, lowLabel, highLabel, accent 
 function VisionCard({ clientData }) {
   const goalText = clientData?.vision_goal_text
   const paragraph = clientData?.vision_paragraph
+  const audioUrl = clientData?.vision_audio_url
 
   return (
     <div style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 16, boxShadow: '0 8px 32px rgba(99,102,241,0.25)' }}>
@@ -1193,6 +1194,12 @@ function VisionCard({ clientData }) {
         {paragraph && (
           <div style={{ fontSize: 14, color: '#c7d2fe', lineHeight: 1.8, marginBottom: 10, whiteSpace: 'pre-line' }}>
             {paragraph}
+          </div>
+        )}
+        {audioUrl && (
+          <div style={{ marginBottom: 12, background: 'rgba(0,0,0,0.25)', borderRadius: 14, padding: '12px 14px' }}>
+            <div style={{ fontSize: 12, color: '#a5b4fc', fontWeight: 700, marginBottom: 8, textAlign: 'center' }}>🎧 דמיון מודרך — הקשיבי</div>
+            <audio controls src={audioUrl} style={{ width: '100%', borderRadius: 8 }} />
           </div>
         )}
         <div style={{ fontSize: 12, color: '#818cf8', textAlign: 'center' }}>
