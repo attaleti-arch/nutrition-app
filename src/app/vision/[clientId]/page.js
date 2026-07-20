@@ -112,6 +112,10 @@ export default function VisionPage() {
             {client.vision_goal_text && (
               <div style={{ fontSize: 14, color: '#818cf8' }}>🎯 יעד: {client.vision_goal_text} ק״ג</div>
             )}
+            <div style={{ marginTop: 28, display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button onClick={() => window.print()} style={{ padding: '12px 28px', borderRadius: 14, background: 'linear-gradient(135deg,#6366f1,#4338ca)', color: '#fff', border: 'none', cursor: 'pointer', fontSize: 15, fontWeight: 700, fontFamily: 'inherit' }}>🖨️ הדפס / שמור PDF</button>
+              <button onClick={() => window.close()} style={{ padding: '12px 20px', borderRadius: 14, background: 'rgba(255,255,255,0.08)', color: '#c7d2fe', border: '1.5px solid rgba(129,140,248,0.3)', cursor: 'pointer', fontSize: 15, fontWeight: 700, fontFamily: 'inherit' }}>✕ סגרי</button>
+            </div>
           </div>
 
         </div>
