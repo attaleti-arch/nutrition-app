@@ -3312,12 +3312,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       </div>
                       <audio controls src={visionAudioUrl} style={{ width: '100%', marginBottom: 12, borderRadius: 8 }} />
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <a href={visionAudioUrl} download="vision-audio.webm" style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: '#4338ca', color: '#e0e7ff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
-                          ⬇️ הורידי
-                        </a>
-                        <a href={`https://wa.me/${selectedClient?.phone ? selectedClient.phone.replace(/\D/g,'') : ''}?text=${encodeURIComponent('🎧 הקלטה אישית בשבילך 💜\n' + visionAudioUrl)}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: '#25d366', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
-                          📱 שלחי בוואטסאפ
-                        </a>
+                        {visionAudioUrl.startsWith('https://') && (
+                          <a href={visionAudioUrl} download="vision-audio.webm" style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: '#4338ca', color: '#e0e7ff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
+                            ⬇️ הורידי
+                          </a>
+                        )}
+                        {visionAudioUrl.startsWith('https://') && (
+                          <a href={`https://wa.me/${selectedClient?.phone ? selectedClient.phone.replace(/\D/g,'') : ''}?text=${encodeURIComponent('🎧 הקלטה אישית בשבילך 💜\n' + visionAudioUrl)}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: '#25d366', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
+                            📱 שלחי בוואטסאפ
+                          </a>
+                        )}
+                        {!visionAudioUrl.startsWith('https://') && (
+                          <div style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: 'rgba(255,255,255,0.1)', color: '#9ca3af', fontWeight: 700, fontSize: 12, textAlign: 'center' }}>
+                            ⚠️ הקלטה לא נשמרה בשרת — הקליטי שוב
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
