@@ -702,6 +702,8 @@ export default function AdminPage() {
   const [visionImageUrl, setVisionImageUrl] = useState(null)
   const [visionError, setVisionError] = useState('')
   const [visionSaved, setVisionSaved] = useState(false)
+  const [visionAnswersSaved, setVisionAnswersSaved] = useState(false)
+  const [visionParagraphSaved, setVisionParagraphSaved] = useState(false)
   const [generatingVisionText, setGeneratingVisionText] = useState(false)
   const [generatingVision, setGeneratingVision] = useState(false)
   const [uploadingAltImage, setUploadingAltImage] = useState(false)
@@ -843,6 +845,32 @@ export default function AdminPage() {
     setSelectedClient(prev => ({ ...prev, vision_image_url: visionImageUrl, vision_paragraph: visionParagraph, vision_goal_text: visionTargetWeight || '' }))
     setVisionSaved(true)
     setTimeout(() => setVisionSaved(false), 3000)
+  }
+
+  async function saveVisionAnswers() {
+    if (!selectedClient?.id) return
+    const answers = {
+      location: visionLocation,
+      locationCustom: visionLocationCustom,
+      clothing: visionClothing,
+      clothingCustom: visionClothingCustom,
+      see: visionSeeText,
+      hear: visionHearText,
+      feel: visionFeelText,
+      currentWeight: visionCurrentWeight,
+      targetWeight: visionTargetWeight,
+    }
+    await supabase.from('clients').update({ vision_answers: answers, vision_goal_text: visionTargetWeight || '' }).eq('id', selectedClient.id)
+    setVisionAnswersSaved(true)
+    setTimeout(() => setVisionAnswersSaved(false), 3000)
+  }
+
+  async function saveVisionParagraph() {
+    if (!selectedClient?.id || !visionParagraph) return
+    await supabase.from('clients').update({ vision_paragraph: visionParagraph }).eq('id', selectedClient.id)
+    setSelectedClient(prev => ({ ...prev, vision_paragraph: visionParagraph }))
+    setVisionParagraphSaved(true)
+    setTimeout(() => setVisionParagraphSaved(false), 3000)
   }
 
   async function calcPlate() {
@@ -1054,10 +1082,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     setVisionImageUrl(activeClient.vision_image_url || null)
     setVisionParagraph(activeClient.vision_paragraph || '')
     setVisionTargetWeight(activeClient.vision_goal_text || '')
-    setVisionSeeText('')
-    setVisionHearText('')
-    setVisionFeelText('')
-    setVisionCurrentWeight('')
+    const va = activeClient.vision_answers || {}
+    setVisionLocation(va.location || 'beach')
+    setVisionLocationCustom(va.locationCustom || '')
+    setVisionClothing(va.clothing || 'jeans')
+    setVisionClothingCustom(va.clothingCustom || '')
+    setVisionSeeText(va.see || '')
+    setVisionHearText(va.hear || '')
+    setVisionFeelText(va.feel || '')
+    setVisionCurrentWeight(va.currentWeight || '')
     setVisionPhotoBase64(null)
     setVisionPhotoPreview(null)
     setVisionSaved(false)
@@ -2969,6 +3002,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
                 {visionError && <div style={{ background: '#fef2f2', borderRadius: 10, padding: '10px 14px', marginBottom: 12, color: '#ef4444', fontSize: 13, border: '1px solid #fecaca' }}>{visionError}</div>}
 
+                {/* שמור תשובות */}
+                <button onClick={saveVisionAnswers} style={{ width: '100%', padding: 11, borderRadius: 12, background: visionAnswersSaved ? '#16a34a' : '#f5f3ff', color: visionAnswersSaved ? '#fff' : '#7c3aed', border: '1.5px solid #c4b5fd', cursor: 'pointer', fontWeight: 700, fontSize: 13, marginBottom: 12 }}>
+                  {visionAnswersSaved ? '✅ התשובות נשמרו!' : '💾 שמרי תשובות'}
+                </button>
+
                 {/* כפתור פסקה */}
                 <button onClick={generateVisionText} disabled={generatingVisionText} style={{ width: '100%', padding: 13, borderRadius: 12, background: generatingVisionText ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: generatingVisionText ? 'default' : 'pointer', fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
                   {generatingVisionText ? '⏳ כותבת פסקה...' : '✍️ צרי פסקת ויזואליזציה'}
@@ -2984,6 +3022,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       rows={6}
                       style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }}
                     />
+                    <button onClick={saveVisionParagraph} style={{ marginTop: 8, width: '100%', padding: 10, borderRadius: 10, background: visionParagraphSaved ? '#16a34a' : '#ede9fe', color: visionParagraphSaved ? '#fff' : '#7c3aed', border: '1.5px solid #c4b5fd', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                      {visionParagraphSaved ? '✅ הפסקה נשמרה!' : '💾 שמרי פסקה'}
+                    </button>
                   </div>
                 )}
 
