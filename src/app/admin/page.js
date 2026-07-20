@@ -2894,7 +2894,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <div style={{ fontWeight: 800, fontSize: 14, color: '#312e81', marginBottom: 10 }}>📸 תמונה של הלקוחה</div>
                   {visionPhotoPreview ? (
                     <div style={{ marginBottom: 10 }}>
-                      <img src={visionPhotoPreview} alt="תמונה" style={{ width: '100%', borderRadius: 12, maxHeight: 320, objectFit: 'contain', background: '#f8f8f8' }} />
+                      <img src={visionPhotoPreview} alt="תמונה" style={{ width: '100%', borderRadius: 12 }} />
                       <button onClick={() => { setVisionPhotoBase64(null); setVisionPhotoPreview(null) }} style={{ marginTop: 6, padding: '6px 14px', borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>✕ הסירי תמונה</button>
                     </div>
                   ) : (
