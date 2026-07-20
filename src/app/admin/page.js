@@ -723,22 +723,19 @@ export default function AdminPage() {
       setVisionPhotoPreview(dataUrl)
       setVisionPhotoBase64(base64)
 
-      // Upload immediately to Supabase Storage so it persists
+      // Upload via server-side API (uses service role key to bypass RLS)
       try {
-        const byteString = atob(base64)
-        const bytes = new Uint8Array(byteString.length)
-        for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i)
-        const ext = file.type === 'image/png' ? 'png' : 'jpg'
-        const fileName = `vision_${selectedClient?.id}_client_${Date.now()}.${ext}`
-        const { error } = await supabase.storage.from('vision-images').upload(fileName, bytes.buffer, { contentType: file.type || 'image/jpeg', upsert: false })
-        if (!error) {
-          const { data: pub } = supabase.storage.from('vision-images').getPublicUrl(fileName)
-          const url = pub.publicUrl
-          setVisionImageUrl(url)
-          if (selectedClient?.id) {
-            await supabase.from('clients').update({ vision_image_url: url }).eq('id', selectedClient.id)
-            setSelectedClient(prev => ({ ...prev, vision_image_url: url }))
-          }
+        const res = await fetch('/api/upload-vision-photo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64, clientId: selectedClient?.id, mimeType: file.type || 'image/jpeg' })
+        })
+        const data = await res.json()
+        if (data.url) {
+          setVisionImageUrl(data.url)
+          setSelectedClient(prev => ({ ...prev, vision_image_url: data.url }))
+        } else {
+          console.error('Photo upload failed:', data.error)
         }
       } catch(e) { console.error('Photo upload failed:', e.message) }
       setUploadingPhoto(false)
