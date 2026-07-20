@@ -704,8 +704,6 @@ export default function AdminPage() {
   const [visionError, setVisionError] = useState('')
   const [visionSaved, setVisionSaved] = useState(false)
   const [visionSaving, setVisionSaving] = useState(false)
-  const [visionAnswersSaved, setVisionAnswersSaved] = useState(false)
-  const [visionParagraphSaved, setVisionParagraphSaved] = useState(false)
   const [generatingVisionText, setGeneratingVisionText] = useState(false)
   const [generatingVision, setGeneratingVision] = useState(false)
   const [uploadingAltImage, setUploadingAltImage] = useState(false)
@@ -872,30 +870,26 @@ export default function AdminPage() {
     setTimeout(() => setVisionSaved(false), 3000)
   }
 
-  async function saveVisionAnswers() {
+  async function persistVisionState(overrides = {}) {
     if (!selectedClient?.id) return
-    const answers = {
-      location: visionLocation,
-      locationCustom: visionLocationCustom,
-      clothing: visionClothing,
-      clothingCustom: visionClothingCustom,
-      see: visionSeeText,
-      hear: visionHearText,
-      feel: visionFeelText,
-      currentWeight: visionCurrentWeight,
-      targetWeight: visionTargetWeight,
-    }
-    await supabase.from('clients').update({ vision_answers: answers, vision_goal_text: visionTargetWeight || '' }).eq('id', selectedClient.id)
-    setVisionAnswersSaved(true)
-    setTimeout(() => setVisionAnswersSaved(false), 3000)
-  }
-
-  async function saveVisionParagraph() {
-    if (!selectedClient?.id || !visionParagraph) return
-    await supabase.from('clients').update({ vision_paragraph: visionParagraph }).eq('id', selectedClient.id)
-    setSelectedClient(prev => ({ ...prev, vision_paragraph: visionParagraph }))
-    setVisionParagraphSaved(true)
-    setTimeout(() => setVisionParagraphSaved(false), 3000)
+    try {
+      await supabase.from('clients').update({
+        vision_paragraph: overrides.paragraph ?? visionParagraph,
+        vision_goal_text: overrides.targetWeight ?? visionTargetWeight ?? '',
+        vision_answers: {
+          location: overrides.location ?? visionLocation,
+          locationCustom: overrides.locationCustom ?? visionLocationCustom,
+          clothing: overrides.clothing ?? visionClothing,
+          clothingCustom: overrides.clothingCustom ?? visionClothingCustom,
+          see: overrides.see ?? visionSeeText,
+          hear: overrides.hear ?? visionHearText,
+          feel: overrides.feel ?? visionFeelText,
+          currentWeight: overrides.currentWeight ?? visionCurrentWeight,
+          targetWeight: overrides.targetWeight ?? visionTargetWeight,
+        },
+        ...(visionImageUrl ? { vision_image_url: visionImageUrl } : {}),
+      }).eq('id', selectedClient.id)
+    } catch(e) { /* silent auto-save */ }
   }
 
   async function calcPlate() {
@@ -2970,22 +2964,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div style={{ fontSize: 12, color: '#555', marginBottom: 6, fontWeight: 700 }}>📍 מיקום</div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       {[{ k: 'beach', l: '🏖️ חוף ים' }, { k: 'park', l: '🌳 פרדס' }, { k: 'city', l: '🏙️ עיר' }, { k: 'other', l: '✏️ אחר' }].map(o => (
-                        <button key={o.k} onClick={() => setVisionLocation(o.k)} style={{ padding: '8px 14px', borderRadius: 20, border: '2px solid ' + (visionLocation === o.k ? '#7c3aed' : '#e5e7eb'), background: visionLocation === o.k ? '#f3e8ff' : '#fff', color: visionLocation === o.k ? '#7c3aed' : '#555', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{o.l}</button>
+                        <button key={o.k} onClick={() => { setVisionLocation(o.k); persistVisionState({ location: o.k }) }} style={{ padding: '8px 14px', borderRadius: 20, border: '2px solid ' + (visionLocation === o.k ? '#7c3aed' : '#e5e7eb'), background: visionLocation === o.k ? '#f3e8ff' : '#fff', color: visionLocation === o.k ? '#7c3aed' : '#555', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{o.l}</button>
                       ))}
                     </div>
                     {visionLocation === 'other' && (
-                      <input value={visionLocationCustom} onChange={e => setVisionLocationCustom(e.target.value)} placeholder="תארי את המיקום..." style={{ marginTop: 8, width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #7c3aed', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <input value={visionLocationCustom} onChange={e => setVisionLocationCustom(e.target.value)} onBlur={() => persistVisionState()} placeholder="תארי את המיקום..." style={{ marginTop: 8, width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #7c3aed', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     )}
                   </div>
                   <div>
                     <div style={{ fontSize: 12, color: '#555', marginBottom: 6, fontWeight: 700 }}>👗 לבוש</div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                       {[{ k: 'jeans', l: "👖 ג'ינס" }, { k: 'dress', l: '👗 שמלה' }, { k: 'professional', l: '🧥 מקצועי' }, { k: 'other', l: '✏️ אחר' }].map(o => (
-                        <button key={o.k} onClick={() => setVisionClothing(o.k)} style={{ padding: '8px 14px', borderRadius: 20, border: '2px solid ' + (visionClothing === o.k ? '#7c3aed' : '#e5e7eb'), background: visionClothing === o.k ? '#f3e8ff' : '#fff', color: visionClothing === o.k ? '#7c3aed' : '#555', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{o.l}</button>
+                        <button key={o.k} onClick={() => { setVisionClothing(o.k); persistVisionState({ clothing: o.k }) }} style={{ padding: '8px 14px', borderRadius: 20, border: '2px solid ' + (visionClothing === o.k ? '#7c3aed' : '#e5e7eb'), background: visionClothing === o.k ? '#f3e8ff' : '#fff', color: visionClothing === o.k ? '#7c3aed' : '#555', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{o.l}</button>
                       ))}
                     </div>
                     {visionClothing === 'other' && (
-                      <input value={visionClothingCustom} onChange={e => setVisionClothingCustom(e.target.value)} placeholder="תארי את הלבוש..." style={{ marginTop: 8, width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #7c3aed', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <input value={visionClothingCustom} onChange={e => setVisionClothingCustom(e.target.value)} onBlur={() => persistVisionState()} placeholder="תארי את הלבוש..." style={{ marginTop: 8, width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #7c3aed', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     )}
                   </div>
                 </div>
@@ -3000,7 +2994,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   ].map(f => (
                     <div key={f.key} style={{ marginBottom: 12 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#222', marginBottom: 4 }}>{f.label}</div>
-                      <textarea value={f.val} onChange={e => f.set(e.target.value)} rows={2} placeholder={f.ph} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <textarea value={f.val} onChange={e => f.set(e.target.value)} onBlur={() => persistVisionState()} rows={2} placeholder={f.ph} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                     </div>
                   ))}
                 </div>
@@ -3011,11 +3005,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <div style={{ display: 'flex', gap: 12 }}>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>משקל נוכחי (ק״ג)</div>
-                      <input type="number" value={visionCurrentWeight} onChange={e => setVisionCurrentWeight(e.target.value)} placeholder="70" style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 15, outline: 'none', textAlign: 'center', boxSizing: 'border-box', fontWeight: 700 }} />
+                      <input type="number" value={visionCurrentWeight} onChange={e => setVisionCurrentWeight(e.target.value)} onBlur={() => persistVisionState()} placeholder="70" style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 15, outline: 'none', textAlign: 'center', boxSizing: 'border-box', fontWeight: 700 }} />
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>משקל יעד (ק״ג)</div>
-                      <input type="number" value={visionTargetWeight} onChange={e => setVisionTargetWeight(e.target.value)} placeholder="55" style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #7c3aed', fontSize: 15, outline: 'none', textAlign: 'center', boxSizing: 'border-box', fontWeight: 700, color: '#7c3aed' }} />
+                      <input type="number" value={visionTargetWeight} onChange={e => setVisionTargetWeight(e.target.value)} onBlur={e => persistVisionState({ targetWeight: e.target.value })} placeholder="55" style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #7c3aed', fontSize: 15, outline: 'none', textAlign: 'center', boxSizing: 'border-box', fontWeight: 700, color: '#7c3aed' }} />
                     </div>
                   </div>
                   {visionCurrentWeight && visionTargetWeight && (
@@ -3026,11 +3020,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                 </div>
 
                 {visionError && <div style={{ background: '#fef2f2', borderRadius: 10, padding: '10px 14px', marginBottom: 12, color: '#ef4444', fontSize: 13, border: '1px solid #fecaca' }}>{visionError}</div>}
-
-                {/* שמור תשובות */}
-                <button onClick={saveVisionAnswers} style={{ width: '100%', padding: 11, borderRadius: 12, background: visionAnswersSaved ? '#16a34a' : '#f5f3ff', color: visionAnswersSaved ? '#fff' : '#7c3aed', border: '1.5px solid #c4b5fd', cursor: 'pointer', fontWeight: 700, fontSize: 13, marginBottom: 12 }}>
-                  {visionAnswersSaved ? '✅ התשובות נשמרו!' : '💾 שמרי תשובות'}
-                </button>
 
                 {/* כפתור פסקה */}
                 <button onClick={generateVisionText} disabled={generatingVisionText} style={{ width: '100%', padding: 13, borderRadius: 12, background: generatingVisionText ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: generatingVisionText ? 'default' : 'pointer', fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
@@ -3044,12 +3033,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <textarea
                       value={visionParagraph}
                       onChange={e => setVisionParagraph(e.target.value)}
+                      onBlur={e => persistVisionState({ paragraph: e.target.value })}
                       rows={6}
                       style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }}
                     />
-                    <button onClick={saveVisionParagraph} style={{ marginTop: 8, width: '100%', padding: 10, borderRadius: 10, background: visionParagraphSaved ? '#16a34a' : '#ede9fe', color: visionParagraphSaved ? '#fff' : '#7c3aed', border: '1.5px solid #c4b5fd', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                      {visionParagraphSaved ? '✅ הפסקה נשמרה!' : '💾 שמרי פסקה'}
-                    </button>
                   </div>
                 )}
 
@@ -3111,10 +3098,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   </div>
                 )}
 
-                {/* שמירה */}
-                {(visionParagraph || visionImageUrl || visionPhotoPreview) && (
+                {/* שלחי לה — רק אחרי הקלטה */}
+                {visionAudioUrl && (
                   <button onClick={saveVision} disabled={visionSaving} style={{ width: '100%', padding: 14, borderRadius: 12, background: visionSaved ? '#16a34a' : visionSaving ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: visionSaving ? 'default' : 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 8 }}>
-                    {visionSaving ? '⏳ שומרת...' : visionSaved ? '✅ נשמר אצלה!' : '💾 שמרי ושלחי לה'}
+                    {visionSaving ? '⏳ שולחת...' : visionSaved ? '✅ נשלח אליה!' : '📤 שלחי לה'}
                   </button>
                 )}
 
