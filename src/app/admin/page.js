@@ -607,6 +607,9 @@ export default function AdminPage() {
   const [journeySaving, setJourneySaving] = useState(false)
   const [journeySaved, setJourneySaved] = useState(false)
   const journeyAnswersRef = useRef({})
+  const [journeyUnlockAt, setJourneyUnlockAt] = useState(null)
+  const [journeyUnlockInput, setJourneyUnlockInput] = useState('')
+  const [journeyUnlockSaving, setJourneyUnlockSaving] = useState(false)
   const [sessionNotes, setSessionNotes] = useState('')
   const [journeyDocLoading, setJourneyDocLoading] = useState(false)
   const [journeyDocSent, setJourneyDocSent] = useState(false)
@@ -1362,7 +1365,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     sessionDataRef.current = sd
     const lsLoad = (key, isJson) => { try { const v = localStorage.getItem('sd_' + key + '_' + pw); return v ? (isJson ? JSON.parse(v) : v) : null } catch(e) { return null } }
     // journey — עמודות ייעודיות (עדיפות), fallback ל-sessions_data ול-localStorage
-    const jA = (data?.journey_answers && Object.keys(data.journey_answers).length > 0) ? data.journey_answers : (sd.journey_answers || lsLoad('journey_answers', true)); if (jA) setJourneyAnswers(prev => ({ ...prev, ...jA }))
+    const jA = (data?.journey_answers && Object.keys(data.journey_answers).length > 0) ? data.journey_answers : (sd.journey_answers || lsLoad('journey_answers', true))
+    if (jA) {
+      setJourneyAnswers(prev => ({ ...prev, ...jA }))
+      if (jA.__journey_unlock_at) {
+        setJourneyUnlockAt(jA.__journey_unlock_at)
+        setJourneyUnlockInput(jA.__journey_unlock_at.slice(0, 16))
+      } else {
+        setJourneyUnlockAt(null)
+        setJourneyUnlockInput('')
+      }
+    }
     const jAn = (data?.journey_analysis && data.journey_analysis.length > 0) ? data.journey_analysis : (sd.journey_analysis || lsLoad('journey_analysis', false)); if (jAn) setJourneyAnalysis(jAn)
     const sN = sd.session_notes || lsLoad('session_notes', false); if (sN) setSessionNotes(sN)
     const rN = sd.roots_notes || lsLoad('roots_notes', true); if (rN) setRootsNotes(n => ({ ...n, ...rN }))
@@ -2911,6 +2924,53 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     </button>
                   </div>
                 </div>
+
+                {/* ── 🔒 פתיחת שאלון מסע המטרה ── */}
+                {(() => {
+                  const isUnlocked = journeyUnlockAt && new Date(journeyUnlockAt) <= new Date()
+                  const isScheduled = journeyUnlockAt && new Date(journeyUnlockAt) > new Date()
+                  async function setUnlock(isoDate) {
+                    setJourneyUnlockSaving(true)
+                    const updated = { ...journeyAnswersRef.current, __journey_unlock_at: isoDate }
+                    journeyAnswersRef.current = updated
+                    setJourneyUnlockAt(isoDate)
+                    await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, journey_answers: updated }, { onConflict: 'client_password' })
+                    setJourneyUnlockSaving(false)
+                  }
+                  return (
+                    <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '2px solid ' + (isUnlocked ? '#16a34a' : isScheduled ? '#f97316' : '#e5e7eb') }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+                        <span style={{ fontSize: 22 }}>{isUnlocked ? '🔓' : isScheduled ? '⏰' : '🔒'}</span>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: 14, color: isUnlocked ? '#15803d' : isScheduled ? '#c2410c' : '#374151' }}>
+                            שאלון מסע המטרה — {isUnlocked ? 'פתוח ללקוחה' : isScheduled ? 'מתוזמן לפתיחה' : 'נעול'}
+                          </div>
+                          {isUnlocked && <div style={{ fontSize: 11, color: '#9ca3af' }}>נפתח {new Date(journeyUnlockAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>}
+                          {isScheduled && <div style={{ fontSize: 11, color: '#f97316' }}>ייפתח {new Date(journeyUnlockAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>}
+                          {!journeyUnlockAt && <div style={{ fontSize: 11, color: '#9ca3af' }}>הלקוחה לא רואה את השאלון עד שתפתחי</div>}
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                        {!isUnlocked && (
+                          <button onClick={() => setUnlock(new Date().toISOString())} disabled={journeyUnlockSaving} style={{ padding: '9px 16px', borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                            {journeyUnlockSaving ? '...' : '🔓 פתחי עכשיו'}
+                          </button>
+                        )}
+                        {isUnlocked && (
+                          <button onClick={() => { if (window.confirm('לנעול את השאלון שוב?')) setUnlock(new Date(Date.now() + 100 * 365 * 24 * 3600000).toISOString()) }} style={{ padding: '9px 16px', borderRadius: 10, background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                            🔒 נעלי שוב
+                          </button>
+                        )}
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1 }}>
+                          <input type="datetime-local" value={journeyUnlockInput} onChange={e => setJourneyUnlockInput(e.target.value)} style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', minWidth: 0 }} />
+                          <button onClick={() => { if (journeyUnlockInput) setUnlock(new Date(journeyUnlockInput).toISOString()) }} disabled={!journeyUnlockInput || journeyUnlockSaving} style={{ padding: '9px 12px', borderRadius: 10, background: journeyUnlockInput ? '#f97316' : '#f3f4f6', color: journeyUnlockInput ? '#fff' : '#9ca3af', border: 'none', cursor: journeyUnlockInput ? 'pointer' : 'default', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap' }}>
+                            ⏰ תזמני
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
 
                 <div style={{ background: 'linear-gradient(135deg,#7c3aed15,#faf5ff)', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
                   <div style={{ fontWeight: 900, fontSize: 16, color: '#7c3aed', marginBottom: 4 }}>🧭 מסע המטרה</div>

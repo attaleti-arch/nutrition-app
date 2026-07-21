@@ -1287,6 +1287,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const [activeTab, setActiveTab] = useState('diary')
   const [showDocsMenu, setShowDocsMenu] = useState(false)
   const [journeyAnswers, setJourneyAnswers] = useState({})
+  const [journeyUnlockAt, setJourneyUnlockAt] = useState(null)
   const [recordingKey, setRecordingKey] = useState(null)
   const [journeySaved, setJourneySaved] = useState(false)
   const [journeySaving, setJourneySaving] = useState(false)
@@ -1378,8 +1379,10 @@ export default function PlanApp({ clientName, userPassword }) {
           setChildFeedback(profileRes.data.child_feedback)
         }
         if (profileRes.data?.journey_answers && Object.keys(profileRes.data.journey_answers).length > 0) {
-          setJourneyAnswers(profileRes.data.journey_answers)
-          journeyAnswersRef.current = profileRes.data.journey_answers
+          const jA = profileRes.data.journey_answers
+          setJourneyAnswers(jA)
+          journeyAnswersRef.current = jA
+          if (jA.__journey_unlock_at) setJourneyUnlockAt(jA.__journey_unlock_at)
         }
         if (d.weight) { setUserWeight(String(d.weight)); setProfileDone(true) }
         if (d.height) setUserHeight(String(d.height))
@@ -2445,7 +2448,29 @@ export default function PlanApp({ clientName, userPassword }) {
         </div>
       )}
 
-      {activeTab === 'journey' && (
+      {activeTab === 'journey' && (() => {
+        const isUnlocked = journeyUnlockAt && new Date(journeyUnlockAt) <= new Date()
+        const isScheduled = journeyUnlockAt && new Date(journeyUnlockAt) > new Date()
+        if (!isUnlocked) return (
+          <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px', direction: 'rtl' }}>
+            <div style={{ background: '#f9fafb', borderRadius: 20, border: '2px dashed #d1d5db', padding: '40px 24px', textAlign: 'center', marginTop: 20 }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>🔒</div>
+              <div style={{ fontWeight: 800, fontSize: 18, color: '#374151', marginBottom: 8 }}>שאלון מסע המטרה</div>
+              {isScheduled ? (
+                <>
+                  <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 4 }}>ייפתח עבורך</div>
+                  <div style={{ fontWeight: 700, fontSize: 15, color: '#7c3aed' }}>
+                    {new Date(journeyUnlockAt).toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
+                  </div>
+                  <div style={{ fontSize: 13, color: '#9ca3af', marginTop: 8 }}>תקבלי הודעה מאתי כשיהיה מוכן</div>
+                </>
+              ) : (
+                <div style={{ fontSize: 14, color: '#9ca3af', lineHeight: 1.6 }}>השאלון ייפתח בקרוב.<br />אתי תעדכן אותך מתי הזמן.</div>
+              )}
+            </div>
+          </div>
+        )
+        return (
         <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px', direction: 'rtl' }}>
           <div style={{ background: 'linear-gradient(135deg,#7c3aed,#9333ea)', borderRadius: 18, padding: '20px 20px', marginBottom: 16, color: '#fff' }}>
             <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 4 }}>🧭 מסע המטרה שלי</div>
@@ -2511,7 +2536,8 @@ export default function PlanApp({ clientName, userPassword }) {
             {journeySaving ? 'שומרת...' : journeySaved ? '✅ נשמר! אתי תראה את התשובות' : '💜 שלחי לאתי'}
           </button>
         </div>
-      )}
+        )
+      })()}
 
       {activeTab === 'agent' && (
         <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px' }}>
