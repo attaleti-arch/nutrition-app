@@ -1286,6 +1286,10 @@ export default function PlanApp({ clientName, userPassword }) {
   const [reportApproved, setReportApproved] = useState(false)
   const [activeTab, setActiveTab] = useState('diary')
   const [showDocsMenu, setShowDocsMenu] = useState(false)
+  const [journeyAnswers, setJourneyAnswers] = useState({})
+  const [recordingKey, setRecordingKey] = useState(null)
+  const [journeySaved, setJourneySaved] = useState(false)
+  const [journeySaving, setJourneySaving] = useState(false)
   const [showInitialReport, setShowInitialReport] = useState(false)
   const [showOutcomeDoc, setShowOutcomeDoc] = useState(false)
   const [showDailyFeedback, setShowDailyFeedback] = useState(false)
@@ -1357,7 +1361,7 @@ export default function PlanApp({ clientName, userPassword }) {
       if (client.data) {
         var d = client.data
         setClientData(d)
-        const profileRes = await supabase.from('client_profiles').select('welcome_doc_json, ai_report, roots_feedback, body_feedback, child_feedback').eq('client_password', dbKey).maybeSingle()
+        const profileRes = await supabase.from('client_profiles').select('welcome_doc_json, ai_report, roots_feedback, body_feedback, child_feedback, journey_answers').eq('client_password', dbKey).maybeSingle()
         if (profileRes.data?.ai_report) {
           setAiReport(profileRes.data.ai_report)
         }
@@ -1372,6 +1376,10 @@ export default function PlanApp({ clientName, userPassword }) {
         }
         if (profileRes.data?.child_feedback) {
           setChildFeedback(profileRes.data.child_feedback)
+        }
+        if (profileRes.data?.journey_answers && Object.keys(profileRes.data.journey_answers).length > 0) {
+          setJourneyAnswers(profileRes.data.journey_answers)
+          journeyAnswersRef.current = profileRes.data.journey_answers
         }
         if (d.weight) { setUserWeight(String(d.weight)); setProfileDone(true) }
         if (d.height) setUserHeight(String(d.height))
@@ -1507,6 +1515,8 @@ export default function PlanApp({ clientName, userPassword }) {
 
   const autoSaveRef = useRef(null)
   const pendingSaveRef = useRef(null)
+  const journeyAnswersRef = useRef({})
+  const recognitionRef = useRef(null)
   useEffect(() => {
     // ⚠️ dailyLogLoaded חייב להיות true לפני שמירה אוטומטית — בלעדיו אפשר "לשמור" מצב ריק/בררת-מחדל
     // מעל נתונים אמיתיים שכבר קיימים בשרת, אם טעינת היומן היומי עדיין באוויר או נכשלה
@@ -1565,6 +1575,48 @@ export default function PlanApp({ clientName, userPassword }) {
     window.addEventListener('message', handleGuideClose)
     return () => window.removeEventListener('message', handleGuideClose)
   }, [])
+
+  function startRecording(key) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) { alert('הדפדפן שלך אינו תומך בהקלטה. נסי בChromee.'); return }
+    if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null }
+    const recognition = new SR()
+    recognition.lang = 'he-IL'
+    recognition.continuous = true
+    recognition.interimResults = true
+    recognition.onresult = (e) => {
+      let transcript = ''
+      for (let i = 0; i < e.results.length; i++) transcript += e.results[i][0].transcript
+      const updated = { ...journeyAnswersRef.current, [key]: transcript }
+      journeyAnswersRef.current = updated
+      setJourneyAnswers({ ...updated })
+    }
+    recognition.onend = () => { setRecordingKey(null); recognitionRef.current = null }
+    recognition.onerror = () => { setRecordingKey(null); recognitionRef.current = null }
+    recognition.start()
+    recognitionRef.current = recognition
+    setRecordingKey(key)
+  }
+
+  function stopRecording() {
+    if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null }
+    setRecordingKey(null)
+  }
+
+  function updateJourneyAnswer(key, value) {
+    const updated = { ...journeyAnswersRef.current, [key]: value }
+    journeyAnswersRef.current = updated
+    setJourneyAnswers({ ...updated })
+    setJourneySaved(false)
+  }
+
+  async function saveJourneyAnswers() {
+    setJourneySaving(true)
+    await supabase.from('client_profiles').upsert({ client_password: dbKey, journey_answers: journeyAnswersRef.current }, { onConflict: 'client_password' })
+    setJourneySaving(false)
+    setJourneySaved(true)
+    setTimeout(() => setJourneySaved(false), 3000)
+  }
 
   function calcEatenCalories() {
     var total = 0
@@ -2000,6 +2052,9 @@ export default function PlanApp({ clientName, userPassword }) {
             🤖 Agent
             <span style={{ position: 'absolute', top: 4, left: 4, width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 4px #4ade80' }} />
           </button>
+          <button onClick={() => { setActiveTab('journey'); setShowDocsMenu(false) }} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (activeTab === 'journey' ? '#7c3aed' : '#e5e7eb'), background: activeTab === 'journey' ? '#faf5ff' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: activeTab === 'journey' ? '#7c3aed' : '#555' }}>
+            🧭 מסע
+          </button>
           <button onClick={() => setShowDocsMenu(!showDocsMenu)} style={{ flex: 1, minWidth: 70, padding: '10px 6px', borderRadius: 12, border: '2px solid ' + (showDocsMenu ? '#7c3aed' : '#e5e7eb'), background: showDocsMenu ? '#faf5ff' : '#fff', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: showDocsMenu ? '#7c3aed' : '#555', position: 'relative' }}>
             📂 המסמכים
           </button>
@@ -2387,6 +2442,74 @@ export default function PlanApp({ clientName, userPassword }) {
               })
             })()}
           </div>
+        </div>
+      )}
+
+      {activeTab === 'journey' && (
+        <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px', direction: 'rtl' }}>
+          <div style={{ background: 'linear-gradient(135deg,#7c3aed,#9333ea)', borderRadius: 18, padding: '20px 20px', marginBottom: 16, color: '#fff' }}>
+            <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 4 }}>🧭 מסע המטרה שלי</div>
+            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>ענה בקול או הקלידי — התשובות יגיעו ישירות לאתי לפני הפגישה</div>
+          </div>
+
+          {[
+            { key: 'goal_reason', section: 'המטרה', q: 'מה הביא אותך לכאן?', hint: 'ספרי מה גרם לך להחליט שעכשיו הזמן' },
+            { key: 'goal_what', section: 'המטרה', q: 'מה את רוצה? איך ייראה השינוי עבורך?', hint: 'תארי בפרטים — גוף, אנרגיה, לבוש, תחושה' },
+            { key: 'goal_why', section: 'המטרה', q: 'למה זה חשוב לך?', hint: 'מה יש מאחורי הרצון? מה תרגישי כשתגיעי?' },
+            { key: 'goal_proof', section: 'המטרה', q: 'איך תדעי שהגעת?', hint: 'מה תרגישי, תראי, תשמעי — ההוכחה שהשינוי קרה' },
+            { key: 'vision_see', section: 'החזון', q: 'כשתגיעי למטרה — מה תראי?', hint: 'תמונה ברורה — מה נמצא מסביבך?' },
+            { key: 'vision_hear', section: 'החזון', q: 'מה תשמעי?', hint: 'קולות, מילים, שירים — מה ישמע אחרת?' },
+            { key: 'vision_feel', section: 'החזון', q: 'מה תרגישי בגוף?', hint: 'כבדות, קלילות, חום, כוח — תארי את התחושה הפיזית' },
+            { key: 'ecology_keep', section: 'המשאבים', q: 'האם יש משהו שאת מפחדת לאבד אם תשתני?', hint: 'לפעמים השינוי מאיים על משהו שאוהבים — מה יכול להיות קשה?' },
+            { key: 'resources_has', section: 'המשאבים', q: 'מה כבר יש לך שיעזור לך?', hint: 'כוחות, תכונות, אנשים, ידע, ניסיון עבר' },
+            { key: 'resources_past', section: 'המשאבים', q: 'מה עזר לך בעבר כשהצלחת?', hint: 'רגע שבו התגברת על משהו — מה עזר שם?' },
+            { key: 'vaccine_moment', section: 'הצעד הראשון', q: 'מהו הרגע הכי קשה ביום עבורך עם אוכל?', hint: 'שעה, מצב, רגש — מה מפיל אותך?' },
+            { key: 'first_step', section: 'הצעד הראשון', q: 'מה הצעד הראשון שתעשי השבוע?', hint: 'משהו קטן וריאלי — לא כל התכנית, רק הצעד הבא' },
+          ].reduce((acc, item) => {
+            const last = acc[acc.length - 1]
+            if (!last || last.section !== item.section) acc.push({ section: item.section, items: [item] })
+            else last.items.push(item)
+            return acc
+          }, []).map(({ section, items }) => (
+            <div key={section} style={{ marginBottom: 18 }}>
+              <div style={{ fontWeight: 800, fontSize: 13, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, paddingRight: 4 }}>{section}</div>
+              {items.map(({ key, q, hint }) => (
+                <div key={key} style={{ background: '#fff', borderRadius: 16, border: '1.5px solid ' + (recordingKey === key ? '#a855f7' : '#e5e7eb'), marginBottom: 10, overflow: 'hidden', transition: 'border-color 0.2s' }}>
+                  <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid #f5f3ff' }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, color: '#111', marginBottom: 4 }}>{q}</div>
+                    <div style={{ fontSize: 12, color: '#9ca3af' }}>{hint}</div>
+                  </div>
+                  <div style={{ padding: '10px 14px' }}>
+                    <textarea
+                      value={journeyAnswers[key] || ''}
+                      onChange={e => updateJourneyAnswer(key, e.target.value)}
+                      placeholder={recordingKey === key ? '🔴 מקליטה...' : 'הקלידי כאן או השתמשי בהקלטה'}
+                      rows={3}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid ' + (recordingKey === key ? '#c084fc' : '#e5e7eb'), fontSize: 14, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: recordingKey === key ? '#fdf4ff' : '#fff', transition: 'all 0.2s', lineHeight: 1.6 }}
+                    />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
+                      {recordingKey === key ? (
+                        <button onClick={stopRecording} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#fff', animation: 'pulse 1s infinite' }} />
+                          עצרי הקלטה
+                        </button>
+                      ) : (
+                        <button onClick={() => startRecording(key)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, background: '#f5f3ff', color: '#7c3aed', border: '1.5px solid #c4b5fd', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                          🎙️ הקלטה
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ))}
+
+          <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
+
+          <button onClick={saveJourneyAnswers} disabled={journeySaving} style={{ width: '100%', padding: 16, borderRadius: 16, background: journeySaved ? '#16a34a' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 17, marginTop: 4 }}>
+            {journeySaving ? 'שומרת...' : journeySaved ? '✅ נשמר! אתי תראה את התשובות' : '💜 שלחי לאתי'}
+          </button>
         </div>
       )}
 
