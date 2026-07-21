@@ -607,6 +607,14 @@ export default function AdminPage() {
   const [journeySaving, setJourneySaving] = useState(false)
   const [journeySaved, setJourneySaved] = useState(false)
   const journeyAnswersRef = useRef({})
+  const [journeyUnlockAt, setJourneyUnlockAt] = useState(null)
+  const [journeyUnlockInput, setJourneyUnlockInput] = useState('')
+  const [journeyUnlockSaving, setJourneyUnlockSaving] = useState(false)
+  const [journeyMode, setJourneyMode] = useState('together')
+  const [rootsUnlockAt, setRootsUnlockAt] = useState(null)
+  const [rootsUnlockInput, setRootsUnlockInput] = useState('')
+  const [bodyUnlockAt, setBodyUnlockAt] = useState(null)
+  const [bodyUnlockInput, setBodyUnlockInput] = useState('')
   const [sessionNotes, setSessionNotes] = useState('')
   const [journeyDocLoading, setJourneyDocLoading] = useState(false)
   const [journeyDocSent, setJourneyDocSent] = useState(false)
@@ -1362,7 +1370,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     sessionDataRef.current = sd
     const lsLoad = (key, isJson) => { try { const v = localStorage.getItem('sd_' + key + '_' + pw); return v ? (isJson ? JSON.parse(v) : v) : null } catch(e) { return null } }
     // journey — עמודות ייעודיות (עדיפות), fallback ל-sessions_data ול-localStorage
-    const jA = (data?.journey_answers && Object.keys(data.journey_answers).length > 0) ? data.journey_answers : (sd.journey_answers || lsLoad('journey_answers', true)); if (jA) setJourneyAnswers(prev => ({ ...prev, ...jA }))
+    const jA = (data?.journey_answers && Object.keys(data.journey_answers).length > 0) ? data.journey_answers : (sd.journey_answers || lsLoad('journey_answers', true))
+    if (jA) {
+      setJourneyAnswers(prev => ({ ...prev, ...jA }))
+      if (jA.__journey_unlock_at) { setJourneyUnlockAt(jA.__journey_unlock_at); setJourneyUnlockInput(jA.__journey_unlock_at.slice(0, 16)) } else { setJourneyUnlockAt(null); setJourneyUnlockInput('') }
+      if (jA.__roots_unlock_at) { setRootsUnlockAt(jA.__roots_unlock_at); setRootsUnlockInput(jA.__roots_unlock_at.slice(0, 16)) } else { setRootsUnlockAt(null); setRootsUnlockInput('') }
+      if (jA.__body_unlock_at) { setBodyUnlockAt(jA.__body_unlock_at); setBodyUnlockInput(jA.__body_unlock_at.slice(0, 16)) } else { setBodyUnlockAt(null); setBodyUnlockInput('') }
+    }
     const jAn = (data?.journey_analysis && data.journey_analysis.length > 0) ? data.journey_analysis : (sd.journey_analysis || lsLoad('journey_analysis', false)); if (jAn) setJourneyAnalysis(jAn)
     const sN = sd.session_notes || lsLoad('session_notes', false); if (sN) setSessionNotes(sN)
     const rN = sd.roots_notes || lsLoad('roots_notes', true); if (rN) setRootsNotes(n => ({ ...n, ...rN }))
@@ -2875,6 +2889,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
             {tab === 'journey' && (
               <div style={{ direction: 'rtl' }}>
 
+                {/* ── בחירת מצב מילוי ── */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16, background: '#f9fafb', borderRadius: 14, padding: 6 }}>
+                  <button onClick={() => setJourneyMode('together')} style={{ flex: 1, padding: '10px 8px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: journeyMode === 'together' ? '#7c3aed' : 'transparent', color: journeyMode === 'together' ? '#fff' : '#6b7280', transition: 'all 0.15s' }}>
+                    🤝 מלאי איתה בפגישה
+                  </button>
+                  <button onClick={() => setJourneyMode('alone')} style={{ flex: 1, padding: '10px 8px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: journeyMode === 'alone' ? '#7c3aed' : 'transparent', color: journeyMode === 'alone' ? '#fff' : '#6b7280', transition: 'all 0.15s' }}>
+                    📱 שלחי לה למלא לבד
+                  </button>
+                </div>
+
                 {/* ── ✅ פאנל הנחיות Agent — בראש הטאב ── */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: 18, marginBottom: 16, border: '2px solid #4a9b8e' }}>
                   <div style={{ fontWeight: 900, fontSize: 15, color: '#3a7a6e', marginBottom: 4 }}>
@@ -2912,12 +2936,57 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   </div>
                 </div>
 
-                <div style={{ background: 'linear-gradient(135deg,#7c3aed15,#faf5ff)', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
+                {/* ── 🔒 פתיחת שאלונים — מצב "שלחי לה" ── */}
+                {journeyMode === 'alone' && (() => {
+                  const questionnaires = [
+                    { label: '🧭 מסע המטרה', sub: 'שאלות על מטרה, חזון ומשאבים', unlockAt: journeyUnlockAt, setUnlockAt: setJourneyUnlockAt, inputVal: journeyUnlockInput, setInput: setJourneyUnlockInput, metaKey: '__journey_unlock_at', color: '#7c3aed' },
+                    { label: '🌱 ירושה רגשית', sub: 'שאלות על הבית שגדלת בו ודפוסים', unlockAt: rootsUnlockAt, setUnlockAt: setRootsUnlockAt, inputVal: rootsUnlockInput, setInput: setRootsUnlockInput, metaKey: '__roots_unlock_at', color: '#16a34a' },
+                    { label: '🩺 הגוף מדבר', sub: 'שאלות על תחושות גוף, שינה ורעב', unlockAt: bodyUnlockAt, setUnlockAt: setBodyUnlockAt, inputVal: bodyUnlockInput, setInput: setBodyUnlockInput, metaKey: '__body_unlock_at', color: '#0284c7' },
+                  ]
+                  async function setUnlock(metaKey, setUnlockAt, isoDate) {
+                    setJourneyUnlockSaving(true)
+                    const updated = { ...journeyAnswersRef.current, [metaKey]: isoDate }
+                    journeyAnswersRef.current = updated
+                    setUnlockAt(isoDate)
+                    await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, journey_answers: updated }, { onConflict: 'client_password' })
+                    setJourneyUnlockSaving(false)
+                  }
+                  return (
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10, textAlign: 'right' }}>כל שאלון שתפתחי יצטרף לאפליקציה שלה — הקודמים נשארים פתוחים</div>
+                      {questionnaires.map(({ label, sub, unlockAt, setUnlockAt, inputVal, setInput, metaKey, color }) => {
+                        const isOpen = unlockAt && new Date(unlockAt) <= new Date()
+                        const isScheduled = unlockAt && new Date(unlockAt) > new Date()
+                        return (
+                          <div key={metaKey} style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 10, border: '2px solid ' + (isOpen ? color : isScheduled ? '#f97316' : '#e5e7eb') }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                              <span style={{ fontSize: 20 }}>{isOpen ? '🔓' : isScheduled ? '⏰' : '🔒'}</span>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: 800, fontSize: 14, color: isOpen ? color : '#374151' }}>{label}</div>
+                                <div style={{ fontSize: 11, color: isOpen ? '#9ca3af' : isScheduled ? '#f97316' : '#9ca3af' }}>
+                                  {isOpen ? 'פתוח · ' + new Date(unlockAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' }) : isScheduled ? 'ייפתח ' + new Date(unlockAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : sub}
+                                </div>
+                              </div>
+                              {!isOpen && <button onClick={() => setUnlock(metaKey, setUnlockAt, new Date().toISOString())} disabled={journeyUnlockSaving} style={{ padding: '7px 14px', borderRadius: 8, background: color, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap' }}>🔓 עכשיו</button>}
+                              {isOpen && <button onClick={() => { if (window.confirm('לנעול שוב?')) setUnlock(metaKey, setUnlockAt, new Date(Date.now() + 100 * 365 * 24 * 3600000).toISOString()) }} style={{ padding: '7px 12px', borderRadius: 8, background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>🔒</button>}
+                            </div>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <input type="datetime-local" value={inputVal} onChange={e => setInput(e.target.value)} style={{ flex: 1, padding: '7px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 12, outline: 'none' }} />
+                              <button onClick={() => { if (inputVal) setUnlock(metaKey, setUnlockAt, new Date(inputVal).toISOString()) }} disabled={!inputVal || journeyUnlockSaving} style={{ padding: '7px 12px', borderRadius: 8, background: inputVal ? '#f97316' : '#f3f4f6', color: inputVal ? '#fff' : '#9ca3af', border: 'none', cursor: inputVal ? 'pointer' : 'default', fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap' }}>⏰ תזמני</button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
+
+                {journeyMode === 'together' && <div style={{ background: 'linear-gradient(135deg,#7c3aed15,#faf5ff)', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
                   <div style={{ fontWeight: 900, fontSize: 16, color: '#7c3aed', marginBottom: 4 }}>🧭 מסע המטרה</div>
                   <div style={{ fontSize: 12, color: '#9ca3af' }}>מלאי יחד עם הלקוחה בפגישה הראשונה</div>
-                </div>
+                </div>}
 
-                {/* ── 🧮 חישוב הרכב צלחת ── */}
+                {journeyMode === 'together' && <>{/* ── 🧮 חישוב הרכב צלחת ── */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: 18, marginBottom: 16, border: '2px solid #f97316' }}>
                   <div style={{ fontWeight: 900, fontSize: 15, color: '#c2410c', marginBottom: 4 }}>
                     🧮 הרכב צלחת אישי — {selectedClient?.name}
@@ -3156,6 +3225,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     )}
                   </div>
                 )}
+                </>}
 
               </div>
             )}
@@ -3312,12 +3382,21 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       </div>
                       <audio controls src={visionAudioUrl} style={{ width: '100%', marginBottom: 12, borderRadius: 8 }} />
                       <div style={{ display: 'flex', gap: 8 }}>
-                        <a href={visionAudioUrl} download="vision-audio.webm" style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: '#4338ca', color: '#e0e7ff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
-                          ⬇️ הורידי
-                        </a>
-                        <a href={`https://wa.me/${selectedClient?.phone ? selectedClient.phone.replace(/\D/g,'') : ''}?text=${encodeURIComponent('🎧 הקלטה אישית בשבילך 💜\n' + visionAudioUrl)}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: '#25d366', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
-                          📱 שלחי בוואטסאפ
-                        </a>
+                        {visionAudioUrl.startsWith('https://') && (
+                          <a href={visionAudioUrl} download="vision-audio.webm" style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: '#4338ca', color: '#e0e7ff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
+                            ⬇️ הורידי
+                          </a>
+                        )}
+                        {visionAudioUrl.startsWith('https://') && (
+                          <a href={`https://wa.me/${selectedClient?.phone ? selectedClient.phone.replace(/\D/g,'') : ''}?text=${encodeURIComponent('🎧 הקלטה אישית בשבילך 💜\n' + visionAudioUrl)}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: '#25d366', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
+                            📱 שלחי בוואטסאפ
+                          </a>
+                        )}
+                        {!visionAudioUrl.startsWith('https://') && (
+                          <div style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: 'rgba(255,255,255,0.1)', color: '#9ca3af', fontWeight: 700, fontSize: 12, textAlign: 'center' }}>
+                            ⚠️ הקלטה לא נשמרה בשרת — הקליטי שוב
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
