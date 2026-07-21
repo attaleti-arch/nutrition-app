@@ -610,6 +610,7 @@ export default function AdminPage() {
   const [journeyUnlockAt, setJourneyUnlockAt] = useState(null)
   const [journeyUnlockInput, setJourneyUnlockInput] = useState('')
   const [journeyUnlockSaving, setJourneyUnlockSaving] = useState(false)
+  const [journeyMode, setJourneyMode] = useState('together')
   const [sessionNotes, setSessionNotes] = useState('')
   const [journeyDocLoading, setJourneyDocLoading] = useState(false)
   const [journeyDocSent, setJourneyDocSent] = useState(false)
@@ -2888,6 +2889,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
             {tab === 'journey' && (
               <div style={{ direction: 'rtl' }}>
 
+                {/* ── בחירת מצב מילוי ── */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16, background: '#f9fafb', borderRadius: 14, padding: 6 }}>
+                  <button onClick={() => setJourneyMode('together')} style={{ flex: 1, padding: '10px 8px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: journeyMode === 'together' ? '#7c3aed' : 'transparent', color: journeyMode === 'together' ? '#fff' : '#6b7280', transition: 'all 0.15s' }}>
+                    🤝 מלאי איתה בפגישה
+                  </button>
+                  <button onClick={() => setJourneyMode('alone')} style={{ flex: 1, padding: '10px 8px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: journeyMode === 'alone' ? '#7c3aed' : 'transparent', color: journeyMode === 'alone' ? '#fff' : '#6b7280', transition: 'all 0.15s' }}>
+                    📱 שלחי לה למלא לבד
+                  </button>
+                </div>
+
                 {/* ── ✅ פאנל הנחיות Agent — בראש הטאב ── */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: 18, marginBottom: 16, border: '2px solid #4a9b8e' }}>
                   <div style={{ fontWeight: 900, fontSize: 15, color: '#3a7a6e', marginBottom: 4 }}>
@@ -2926,7 +2937,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                 </div>
 
                 {/* ── 🔒 פתיחת שאלון מסע המטרה ── */}
-                {(() => {
+                {journeyMode === 'alone' && (() => {
                   const isUnlocked = journeyUnlockAt && new Date(journeyUnlockAt) <= new Date()
                   const isScheduled = journeyUnlockAt && new Date(journeyUnlockAt) > new Date()
                   async function setUnlock(isoDate) {
@@ -2972,12 +2983,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   )
                 })()}
 
-                <div style={{ background: 'linear-gradient(135deg,#7c3aed15,#faf5ff)', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
+                {journeyMode === 'together' && <div style={{ background: 'linear-gradient(135deg,#7c3aed15,#faf5ff)', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
                   <div style={{ fontWeight: 900, fontSize: 16, color: '#7c3aed', marginBottom: 4 }}>🧭 מסע המטרה</div>
                   <div style={{ fontSize: 12, color: '#9ca3af' }}>מלאי יחד עם הלקוחה בפגישה הראשונה</div>
-                </div>
+                </div>}
 
-                {/* ── 🧮 חישוב הרכב צלחת ── */}
+                {journeyMode === 'together' && <>{/* ── 🧮 חישוב הרכב צלחת ── */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: 18, marginBottom: 16, border: '2px solid #f97316' }}>
                   <div style={{ fontWeight: 900, fontSize: 15, color: '#c2410c', marginBottom: 4 }}>
                     🧮 הרכב צלחת אישי — {selectedClient?.name}
@@ -3216,6 +3227,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     )}
                   </div>
                 )}
+                </>}
 
               </div>
             )}
