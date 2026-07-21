@@ -724,12 +724,14 @@ export default function AdminPage() {
   const [uploadingRecording, setUploadingRecording] = useState(false)
   const [recordingSaved, setRecordingSaved] = useState(false)
   const [pendingAudioUrl, setPendingAudioUrl] = useState(null)
+  const [adminRecordingKey, setAdminRecordingKey] = useState(null)
   const pendingAudioBlobRef = useRef(null)
   const pendingAudioMimeRef = useRef(null)
   const audioRef = useRef(null)
   const mediaRecorderRef = useRef(null)
   const recordingChunksRef = useRef([])
   const recordingIntervalRef = useRef(null)
+  const adminRecognitionRef = useRef(null)
 
   async function handleVisionPhotoUpload(file) {
     if (!file) return
@@ -909,6 +911,23 @@ export default function AdminPage() {
       clearInterval(recordingIntervalRef.current)
       recordingIntervalRef.current = null
     }
+  }
+
+  function startAdminSpeech(key, onTranscript) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) { alert('הדפדפן שלך אינו תומך בהקלטה. נסי ב-Chrome.'); return }
+    if (adminRecognitionRef.current) { adminRecognitionRef.current.stop(); adminRecognitionRef.current = null }
+    const r = new SR()
+    r.lang = 'he-IL'; r.continuous = true; r.interimResults = true
+    r.onresult = e => { let t = ''; for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript; onTranscript(t) }
+    r.onend = () => { setAdminRecordingKey(null); adminRecognitionRef.current = null }
+    r.onerror = () => { setAdminRecordingKey(null); adminRecognitionRef.current = null }
+    r.start(); adminRecognitionRef.current = r; setAdminRecordingKey(key)
+  }
+
+  function stopAdminSpeech() {
+    if (adminRecognitionRef.current) { adminRecognitionRef.current.stop(); adminRecognitionRef.current = null }
+    setAdminRecordingKey(null)
   }
 
   async function approveRecording() {
@@ -2640,6 +2659,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4, color: '#0f4c2a' }}>✏️ ערכי לפני שליחה</div>
                     <textarea value={editableAnalysis} onChange={e => setEditableAnalysis(e.target.value)} rows={20} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8 }} />
                     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <button onClick={() => printAnalysisHTML('ניתוח מקיף', editableAnalysis)} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>🖨️ הדפס</button>
                       <button onClick={() => window.open('/report?client=' + selectedClient.password + '&preview=true', '_blank')} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה</button>
                       <button onClick={sendAnalysisToClient} disabled={sendingToClient} style={{ flex: 2, padding: 14, borderRadius: 12, background: sentToClient ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
                         {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
@@ -3046,7 +3066,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -3062,7 +3085,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#0284c7', marginBottom: 4, fontStyle: 'italic' }}>💙 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -3078,7 +3104,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#0d9488', marginBottom: 4, fontStyle: 'italic' }}>💚 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -3093,7 +3122,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#dc2626', marginBottom: 4, fontStyle: 'italic' }}>❤️ {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -3107,7 +3139,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#d97706', marginBottom: 4, fontStyle: 'italic' }}>🧡 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -3123,7 +3158,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -3177,7 +3215,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <div style={{ background: '#fff', borderRadius: 18, padding: '18px', border: '1.5px solid #e9d5ff' }}>
                     <div style={{ fontWeight: 800, fontSize: 14, color: '#7c3aed', marginBottom: 8 }}>📝 מה גילינו בפגישה 2</div>
                     <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>הוסיפי בקצרה מה השתנה, מה פירקנו, מה האמונה החדשה</div>
-                    <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} onBlur={() => saveSessionKey('session_notes', sessionNotes)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
+                    <div style={{ position: 'relative', marginBottom: 12 }}>
+                      <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} onBlur={() => saveSessionKey('session_notes', sessionNotes)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid ' + (adminRecordingKey === 'session_notes' ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7 }} />
+                      <button onClick={() => adminRecordingKey === 'session_notes' ? stopAdminSpeech() : startAdminSpeech('session_notes', t => setSessionNotes(t))} style={{ position: 'absolute', left: 8, bottom: 8, padding: '4px 10px', borderRadius: 8, border: 'none', background: adminRecordingKey === 'session_notes' ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === 'session_notes' ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{adminRecordingKey === 'session_notes' ? '⏹ עצרי' : '🎙 הקלטה'}</button>
+                    </div>
                     <button onClick={async () => {
                       setJourneyDocLoading(true)
                       setJourneyClientDocPreview('')
@@ -3290,7 +3331,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   ].map(f => (
                     <div key={f.key} style={{ marginBottom: 12 }}>
                       <div style={{ fontSize: 13, fontWeight: 700, color: '#222', marginBottom: 4 }}>{f.label}</div>
-                      <textarea value={f.val} onChange={e => f.set(e.target.value)} onBlur={() => persistVisionState()} rows={2} placeholder={f.ph} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={f.val} onChange={e => f.set(e.target.value)} onBlur={() => persistVisionState()} rows={2} placeholder={f.ph} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === 'vision_' + f.key ? '#312e81' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === 'vision_' + f.key ? stopAdminSpeech() : startAdminSpeech('vision_' + f.key, t => { f.set(t); persistVisionState() })} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === 'vision_' + f.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === 'vision_' + f.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === 'vision_' + f.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -3581,14 +3625,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>מלאי אחרי הפגישה הפיזית → הפיקי סיכום ללקוחה</div>
                   </div>
                   <div style={{ padding: 16 }}>
-                    <textarea
-                      value={rootsSessionNotes}
-                      onChange={e => setRootsSessionNotes(e.target.value)}
-                      onBlur={() => saveSessionKey('roots_session_notes', rootsSessionNotes)}
-                      placeholder="מה עלה בפגישה? אמונות שנגעתם, רגעים ספציפיים, מה הלקוחה גילתה..."
-                      rows={5}
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <textarea
+                        value={rootsSessionNotes}
+                        onChange={e => setRootsSessionNotes(e.target.value)}
+                        onBlur={() => saveSessionKey('roots_session_notes', rootsSessionNotes)}
+                        placeholder="מה עלה בפגישה? אמונות שנגעתם, רגעים ספציפיים, מה הלקוחה גילתה..."
+                        rows={5}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === 'roots_session_notes' ? '#c4956a' : '#e5e7eb'), fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                      />
+                      <button onClick={() => adminRecordingKey === 'roots_session_notes' ? stopAdminSpeech() : startAdminSpeech('roots_session_notes', t => setRootsSessionNotes(t))} style={{ position: 'absolute', left: 8, bottom: 8, padding: '4px 10px', borderRadius: 8, border: 'none', background: adminRecordingKey === 'roots_session_notes' ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === 'roots_session_notes' ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{adminRecordingKey === 'roots_session_notes' ? '⏹ עצרי' : '🎙 הקלטה'}</button>
+                    </div>
                   </div>
                   <div style={{ padding: '0 16px 16px' }}>
                     <button onClick={async () => {
@@ -3822,14 +3869,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>מלאי אחרי הפגישה הפיזית → הפיקי סיכום ללקוחה</div>
                   </div>
                   <div style={{ padding: 16 }}>
-                    <textarea
-                      value={bodySessionNotes}
-                      onChange={e => setBodySessionNotes(e.target.value)}
-                      onBlur={() => saveSessionKey('body_session_notes', bodySessionNotes)}
-                      placeholder="מה עלה בפגישה? סימפטומים שזוהו, מנגנונים שהסתברו, מה הלקוחה חיברה..."
-                      rows={5}
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <textarea
+                        value={bodySessionNotes}
+                        onChange={e => setBodySessionNotes(e.target.value)}
+                        onBlur={() => saveSessionKey('body_session_notes', bodySessionNotes)}
+                        placeholder="מה עלה בפגישה? סימפטומים שזוהו, מנגנונים שהסתברו, מה הלקוחה חיברה..."
+                        rows={5}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === 'body_session_notes' ? '#0d9488' : '#e5e7eb'), fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                      />
+                      <button onClick={() => adminRecordingKey === 'body_session_notes' ? stopAdminSpeech() : startAdminSpeech('body_session_notes', t => setBodySessionNotes(t))} style={{ position: 'absolute', left: 8, bottom: 8, padding: '4px 10px', borderRadius: 8, border: 'none', background: adminRecordingKey === 'body_session_notes' ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === 'body_session_notes' ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{adminRecordingKey === 'body_session_notes' ? '⏹ עצרי' : '🎙 הקלטה'}</button>
+                    </div>
                   </div>
                   <div style={{ padding: '0 16px 16px' }}>
                     <button onClick={async () => {
