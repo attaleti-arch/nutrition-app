@@ -1288,6 +1288,8 @@ export default function PlanApp({ clientName, userPassword }) {
   const [showDocsMenu, setShowDocsMenu] = useState(false)
   const [journeyAnswers, setJourneyAnswers] = useState({})
   const [journeyUnlockAt, setJourneyUnlockAt] = useState(null)
+  const [rootsUnlockAt, setRootsUnlockAt] = useState(null)
+  const [bodyUnlockAt, setBodyUnlockAt] = useState(null)
   const [recordingKey, setRecordingKey] = useState(null)
   const [journeySaved, setJourneySaved] = useState(false)
   const [journeySaving, setJourneySaving] = useState(false)
@@ -1383,6 +1385,8 @@ export default function PlanApp({ clientName, userPassword }) {
           setJourneyAnswers(jA)
           journeyAnswersRef.current = jA
           if (jA.__journey_unlock_at) setJourneyUnlockAt(jA.__journey_unlock_at)
+          if (jA.__roots_unlock_at) setRootsUnlockAt(jA.__roots_unlock_at)
+          if (jA.__body_unlock_at) setBodyUnlockAt(jA.__body_unlock_at)
         }
         if (d.weight) { setUserWeight(String(d.weight)); setProfileDone(true) }
         if (d.height) setUserHeight(String(d.height))
@@ -2449,93 +2453,136 @@ export default function PlanApp({ clientName, userPassword }) {
       )}
 
       {activeTab === 'journey' && (() => {
-        const isUnlocked = journeyUnlockAt && new Date(journeyUnlockAt) <= new Date()
-        const isScheduled = journeyUnlockAt && new Date(journeyUnlockAt) > new Date()
-        if (!isUnlocked) return (
-          <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px', direction: 'rtl' }}>
-            <div style={{ background: '#f9fafb', borderRadius: 20, border: '2px dashed #d1d5db', padding: '40px 24px', textAlign: 'center', marginTop: 20 }}>
+        const now = new Date()
+        const journeyOpen = journeyUnlockAt && new Date(journeyUnlockAt) <= now
+        const rootsOpen = rootsUnlockAt && new Date(rootsUnlockAt) <= now
+        const bodyOpen = bodyUnlockAt && new Date(bodyUnlockAt) <= now
+        const anyOpen = journeyOpen || rootsOpen || bodyOpen
+
+        const journeyScheduled = journeyUnlockAt && new Date(journeyUnlockAt) > now
+        const rootsScheduled = rootsUnlockAt && new Date(rootsUnlockAt) > now
+        const bodyScheduled = bodyUnlockAt && new Date(bodyUnlockAt) > now
+
+        function QuestionBlock({ qKey, q, hint, accentColor }) {
+          const isRec = recordingKey === qKey
+          return (
+            <div style={{ background: '#fff', borderRadius: 16, border: '1.5px solid ' + (isRec ? accentColor : '#e5e7eb'), marginBottom: 10, overflow: 'hidden' }}>
+              <div style={{ padding: '12px 16px 8px', borderBottom: '1px solid #f5f5f5' }}>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#111', marginBottom: 3 }}>{q}</div>
+                <div style={{ fontSize: 12, color: '#9ca3af' }}>{hint}</div>
+              </div>
+              <div style={{ padding: '10px 14px' }}>
+                <textarea value={journeyAnswers[qKey] || ''} onChange={e => updateJourneyAnswer(qKey, e.target.value)} placeholder={isRec ? '🔴 מקליטה...' : 'הקלידי כאן או השתמשי בהקלטה'} rows={3} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid ' + (isRec ? accentColor : '#e5e7eb'), fontSize: 14, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: isRec ? '#fafafa' : '#fff', lineHeight: 1.6 }} />
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+                  {isRec
+                    ? <button onClick={stopRecording} style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 9, background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}><span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fff', display: 'inline-block', animation: 'pulse 1s infinite' }} />עצרי</button>
+                    : <button onClick={() => startRecording(qKey)} style={{ padding: '7px 13px', borderRadius: 9, background: '#f5f5f5', color: '#555', border: '1.5px solid #e0e0e0', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>🎙️ הקלטה</button>
+                  }
+                </div>
+              </div>
+            </div>
+          )
+        }
+
+        function LockedBadge({ label, unlockAt, color }) {
+          const scheduled = unlockAt && new Date(unlockAt) > now
+          return (
+            <div style={{ background: '#f9fafb', borderRadius: 14, border: '2px dashed #e5e7eb', padding: '16px 18px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 26 }}>{scheduled ? '⏰' : '🔒'}</span>
+              <div>
+                <div style={{ fontWeight: 700, fontSize: 14, color: '#9ca3af' }}>{label}</div>
+                <div style={{ fontSize: 12, color: '#c0c0c0' }}>{scheduled ? 'ייפתח ' + new Date(unlockAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : 'ייפתח בקרוב'}</div>
+              </div>
+            </div>
+          )
+        }
+
+        if (!anyOpen) return (
+          <div style={{ maxWidth: 520, margin: '0 auto', padding: '20px 14px 80px', direction: 'rtl' }}>
+            <div style={{ background: '#f9fafb', borderRadius: 20, border: '2px dashed #d1d5db', padding: '40px 24px', textAlign: 'center' }}>
               <div style={{ fontSize: 48, marginBottom: 12 }}>🔒</div>
-              <div style={{ fontWeight: 800, fontSize: 18, color: '#374151', marginBottom: 8 }}>שאלון מסע המטרה</div>
-              {isScheduled ? (
-                <>
-                  <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 4 }}>ייפתח עבורך</div>
-                  <div style={{ fontWeight: 700, fontSize: 15, color: '#7c3aed' }}>
-                    {new Date(journeyUnlockAt).toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                  <div style={{ fontSize: 13, color: '#9ca3af', marginTop: 8 }}>תקבלי הודעה מאתי כשיהיה מוכן</div>
-                </>
-              ) : (
-                <div style={{ fontSize: 14, color: '#9ca3af', lineHeight: 1.6 }}>השאלון ייפתח בקרוב.<br />אתי תעדכן אותך מתי הזמן.</div>
-              )}
+              <div style={{ fontWeight: 800, fontSize: 18, color: '#374151', marginBottom: 8 }}>המסע עומד להתחיל</div>
+              <div style={{ fontSize: 14, color: '#9ca3af', lineHeight: 1.6 }}>
+                {journeyScheduled ? <>השאלון הראשון ייפתח<br /><strong style={{ color: '#7c3aed' }}>{new Date(journeyUnlockAt).toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</strong></> : 'אתי תפתח את השאלונים בקצב שמתאים לתהליך'}
+              </div>
             </div>
           </div>
         )
+
         return (
-        <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px', direction: 'rtl' }}>
-          <div style={{ background: 'linear-gradient(135deg,#7c3aed,#9333ea)', borderRadius: 18, padding: '20px 20px', marginBottom: 16, color: '#fff' }}>
-            <div style={{ fontWeight: 900, fontSize: 18, marginBottom: 4 }}>🧭 מסע המטרה שלי</div>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>ענה בקול או הקלידי — התשובות יגיעו ישירות לאתי לפני הפגישה</div>
-          </div>
+          <div style={{ maxWidth: 520, margin: '0 auto', padding: '0 14px 80px', direction: 'rtl' }}>
+            <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}`}</style>
 
-          {[
-            { key: 'goal_reason', section: 'המטרה', q: 'מה הביא אותך לכאן?', hint: 'ספרי מה גרם לך להחליט שעכשיו הזמן' },
-            { key: 'goal_what', section: 'המטרה', q: 'מה את רוצה? איך ייראה השינוי עבורך?', hint: 'תארי בפרטים — גוף, אנרגיה, לבוש, תחושה' },
-            { key: 'goal_why', section: 'המטרה', q: 'למה זה חשוב לך?', hint: 'מה יש מאחורי הרצון? מה תרגישי כשתגיעי?' },
-            { key: 'goal_proof', section: 'המטרה', q: 'איך תדעי שהגעת?', hint: 'מה תרגישי, תראי, תשמעי — ההוכחה שהשינוי קרה' },
-            { key: 'vision_see', section: 'החזון', q: 'כשתגיעי למטרה — מה תראי?', hint: 'תמונה ברורה — מה נמצא מסביבך?' },
-            { key: 'vision_hear', section: 'החזון', q: 'מה תשמעי?', hint: 'קולות, מילים, שירים — מה ישמע אחרת?' },
-            { key: 'vision_feel', section: 'החזון', q: 'מה תרגישי בגוף?', hint: 'כבדות, קלילות, חום, כוח — תארי את התחושה הפיזית' },
-            { key: 'ecology_keep', section: 'המשאבים', q: 'האם יש משהו שאת מפחדת לאבד אם תשתני?', hint: 'לפעמים השינוי מאיים על משהו שאוהבים — מה יכול להיות קשה?' },
-            { key: 'resources_has', section: 'המשאבים', q: 'מה כבר יש לך שיעזור לך?', hint: 'כוחות, תכונות, אנשים, ידע, ניסיון עבר' },
-            { key: 'resources_past', section: 'המשאבים', q: 'מה עזר לך בעבר כשהצלחת?', hint: 'רגע שבו התגברת על משהו — מה עזר שם?' },
-            { key: 'vaccine_moment', section: 'הצעד הראשון', q: 'מהו הרגע הכי קשה ביום עבורך עם אוכל?', hint: 'שעה, מצב, רגש — מה מפיל אותך?' },
-            { key: 'first_step', section: 'הצעד הראשון', q: 'מה הצעד הראשון שתעשי השבוע?', hint: 'משהו קטן וריאלי — לא כל התכנית, רק הצעד הבא' },
-          ].reduce((acc, item) => {
-            const last = acc[acc.length - 1]
-            if (!last || last.section !== item.section) acc.push({ section: item.section, items: [item] })
-            else last.items.push(item)
-            return acc
-          }, []).map(({ section, items }) => (
-            <div key={section} style={{ marginBottom: 18 }}>
-              <div style={{ fontWeight: 800, fontSize: 13, color: '#7c3aed', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10, paddingRight: 4 }}>{section}</div>
-              {items.map(({ key, q, hint }) => (
-                <div key={key} style={{ background: '#fff', borderRadius: 16, border: '1.5px solid ' + (recordingKey === key ? '#a855f7' : '#e5e7eb'), marginBottom: 10, overflow: 'hidden', transition: 'border-color 0.2s' }}>
-                  <div style={{ padding: '14px 16px 10px', borderBottom: '1px solid #f5f3ff' }}>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: '#111', marginBottom: 4 }}>{q}</div>
-                    <div style={{ fontSize: 12, color: '#9ca3af' }}>{hint}</div>
-                  </div>
-                  <div style={{ padding: '10px 14px' }}>
-                    <textarea
-                      value={journeyAnswers[key] || ''}
-                      onChange={e => updateJourneyAnswer(key, e.target.value)}
-                      placeholder={recordingKey === key ? '🔴 מקליטה...' : 'הקלידי כאן או השתמשי בהקלטה'}
-                      rows={3}
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid ' + (recordingKey === key ? '#c084fc' : '#e5e7eb'), fontSize: 14, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box', background: recordingKey === key ? '#fdf4ff' : '#fff', transition: 'all 0.2s', lineHeight: 1.6 }}
-                    />
-                    <div style={{ display: 'flex', gap: 8, marginTop: 8, justifyContent: 'flex-end' }}>
-                      {recordingKey === key ? (
-                        <button onClick={stopRecording} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, background: '#ef4444', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: '#fff', animation: 'pulse 1s infinite' }} />
-                          עצרי הקלטה
-                        </button>
-                      ) : (
-                        <button onClick={() => startRecording(key)} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, background: '#f5f3ff', color: '#7c3aed', border: '1.5px solid #c4b5fd', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                          🎙️ הקלטה
-                        </button>
-                      )}
-                    </div>
-                  </div>
+            {/* ── 🧭 מסע המטרה ── */}
+            {journeyOpen ? (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ background: 'linear-gradient(135deg,#7c3aed,#9333ea)', borderRadius: 16, padding: '16px 18px', marginBottom: 14, color: '#fff' }}>
+                  <div style={{ fontWeight: 900, fontSize: 16 }}>🧭 מסע המטרה</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>מטרה, חזון ומשאבים</div>
                 </div>
-              ))}
-            </div>
-          ))}
+                {[
+                  { key: 'goal_reason', section: 'המטרה', q: 'מה הביא אותך לכאן?', hint: 'מה גרם לך להחליט שעכשיו הזמן' },
+                  { key: 'goal_what', section: 'המטרה', q: 'מה את רוצה? איך ייראה השינוי עבורך?', hint: 'גוף, אנרגיה, לבוש, תחושה' },
+                  { key: 'goal_why', section: 'המטרה', q: 'למה זה חשוב לך?', hint: 'מה יש מאחורי הרצון?' },
+                  { key: 'goal_proof', section: 'המטרה', q: 'איך תדעי שהגעת?', hint: 'מה תרגישי, תראי, תשמעי' },
+                  { key: 'vision_see', section: 'החזון', q: 'כשתגיעי למטרה — מה תראי?', hint: 'מה נמצא מסביבך?' },
+                  { key: 'vision_hear', section: 'החזון', q: 'מה תשמעי?', hint: 'קולות, מילים' },
+                  { key: 'vision_feel', section: 'החזון', q: 'מה תרגישי בגוף?', hint: 'קלילות, חום, כוח' },
+                  { key: 'ecology_keep', section: 'משאבים', q: 'האם יש משהו שאת מפחדת לאבד?', hint: 'לפעמים השינוי מאיים — מה יכול להיות קשה?' },
+                  { key: 'resources_has', section: 'משאבים', q: 'מה כבר יש לך שיעזור לך?', hint: 'כוחות, תכונות, אנשים' },
+                  { key: 'resources_past', section: 'משאבים', q: 'מה עזר לך בעבר כשהצלחת?', hint: 'רגע שבו התגברת' },
+                  { key: 'vaccine_moment', section: 'הצעד', q: 'מהו הרגע הכי קשה ביום?', hint: 'שעה, מצב, רגש' },
+                  { key: 'first_step', section: 'הצעד', q: 'מה הצעד הראשון שתעשי השבוע?', hint: 'קטן וריאלי' },
+                ].reduce((acc, item) => { const last = acc[acc.length-1]; if (!last || last.s !== item.section) acc.push({ s: item.section, items: [item] }); else last.items.push(item); return acc }, []).map(({ s, items }) => (
+                  <div key={s} style={{ marginBottom: 14 }}>
+                    <div style={{ fontWeight: 800, fontSize: 11, color: '#7c3aed', letterSpacing: 1, marginBottom: 8, paddingRight: 2 }}>{s.toUpperCase()}</div>
+                    {items.map(({ key, q, hint }) => <QuestionBlock key={key} qKey={key} q={q} hint={hint} accentColor="#a855f7" />)}
+                  </div>
+                ))}
+              </div>
+            ) : <LockedBadge label="🧭 מסע המטרה" unlockAt={journeyUnlockAt} color="#7c3aed" />}
 
-          <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
+            {/* ── 🌱 ירושה רגשית ── */}
+            {rootsOpen ? (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ background: 'linear-gradient(135deg,#14532d,#16a34a)', borderRadius: 16, padding: '16px 18px', marginBottom: 14, color: '#fff' }}>
+                  <div style={{ fontWeight: 900, fontSize: 16 }}>🌱 ירושה רגשית</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>הבית שגדלת בו ומה עובר הלאה</div>
+                </div>
+                {[
+                  { key: 'roots_home', q: 'ספרי על האוכל בבית שגדלת בו', hint: 'מה הוגש, מה היה אסור, מה האווירה בשולחן?' },
+                  { key: 'roots_identity', q: 'איך הרגשת בגוף שלך בתוך המשפחה?', hint: 'היה מישהו שנראה אחרת ממך? משפט שנשאר?' },
+                  { key: 'roots_patterns', q: 'מה מזהה בעצמך שמגיע מהבית?', hint: 'משהו שנשבעת שלא תעשי — ועדיין עושה?' },
+                  { key: 'roots_passing', q: 'מה את רואה עוברת הלאה לילדים שלך?', hint: 'מה מקווה שהילד לא ייקח? איך הילד מדבר על גוף?' },
+                  { key: 'roots_beliefs', q: 'מה קורה בך אחרי שבועיים-שלושה של תהליך?', hint: 'מה מוציא אותך מהמסלול? מה קורה אחרי כישלון?' },
+                  { key: 'roots_resources', q: 'מה כבר עושה טוב עם אוכל?', hint: 'מתי הצלחת ומה עזר?' },
+                ].map(({ key, q, hint }) => <QuestionBlock key={key} qKey={key} q={q} hint={hint} accentColor="#16a34a" />)}
+              </div>
+            ) : (rootsUnlockAt || journeyOpen) && <LockedBadge label="🌱 ירושה רגשית" unlockAt={rootsUnlockAt} color="#16a34a" />}
 
-          <button onClick={saveJourneyAnswers} disabled={journeySaving} style={{ width: '100%', padding: 16, borderRadius: 16, background: journeySaved ? '#16a34a' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 17, marginTop: 4 }}>
-            {journeySaving ? 'שומרת...' : journeySaved ? '✅ נשמר! אתי תראה את התשובות' : '💜 שלחי לאתי'}
-          </button>
-        </div>
+            {/* ── 🩺 הגוף מדבר ── */}
+            {bodyOpen ? (
+              <div style={{ marginBottom: 24 }}>
+                <div style={{ background: 'linear-gradient(135deg,#075985,#0284c7)', borderRadius: 16, padding: '16px 18px', marginBottom: 14, color: '#fff' }}>
+                  <div style={{ fontWeight: 900, fontSize: 16 }}>🩺 הגוף מדבר</div>
+                  <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>תחושות גוף, שינה ורעב</div>
+                </div>
+                {[
+                  { key: 'body_complaint', q: 'מה הגוף אומר לך כרגע?', hint: 'איך את מתארת את מה שאת מרגישה פיזית?' },
+                  { key: 'body_signals', q: 'אילו סימנים מופיעים בגוף שלך?', hint: 'עייפות, כאבים, נפיחות, כבדות...' },
+                  { key: 'body_history', q: 'היה זמן שהגוף שלך הרגיש אחרת?', hint: 'מה השתנה מאז?' },
+                  { key: 'body_emotion', q: 'איפה בגוף את מרגישה רגשות?', hint: 'לחץ, פחד, עצב — איפה זה נוחת?' },
+                  { key: 'body_energy', q: 'ספרי על השינה ועל האנרגיה שלך', hint: 'מה קורה ומתי ביום?' },
+                  { key: 'body_hunger', q: 'איך את יודעת שאת רעבה? איך את יודעת שאת שבעה?', hint: 'האם תמיד זה ברור?' },
+                  { key: 'body_knows', q: 'מה את כבר יודעת על הגוף שלך?', hint: 'משהו חשוב שחשוב שאדע' },
+                ].map(({ key, q, hint }) => <QuestionBlock key={key} qKey={key} q={q} hint={hint} accentColor="#0284c7" />)}
+              </div>
+            ) : (bodyUnlockAt || rootsOpen) && <LockedBadge label="🩺 הגוף מדבר" unlockAt={bodyUnlockAt} color="#0284c7" />}
+
+            <button onClick={saveJourneyAnswers} disabled={journeySaving} style={{ width: '100%', padding: 16, borderRadius: 16, background: journeySaved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 17 }}>
+              {journeySaving ? 'שומרת...' : journeySaved ? '✅ נשמר! אתי תראה את התשובות' : '💜 שלחי לאתי'}
+            </button>
+          </div>
         )
       })()}
 

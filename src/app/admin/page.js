@@ -611,6 +611,10 @@ export default function AdminPage() {
   const [journeyUnlockInput, setJourneyUnlockInput] = useState('')
   const [journeyUnlockSaving, setJourneyUnlockSaving] = useState(false)
   const [journeyMode, setJourneyMode] = useState('together')
+  const [rootsUnlockAt, setRootsUnlockAt] = useState(null)
+  const [rootsUnlockInput, setRootsUnlockInput] = useState('')
+  const [bodyUnlockAt, setBodyUnlockAt] = useState(null)
+  const [bodyUnlockInput, setBodyUnlockInput] = useState('')
   const [sessionNotes, setSessionNotes] = useState('')
   const [journeyDocLoading, setJourneyDocLoading] = useState(false)
   const [journeyDocSent, setJourneyDocSent] = useState(false)
@@ -1369,13 +1373,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     const jA = (data?.journey_answers && Object.keys(data.journey_answers).length > 0) ? data.journey_answers : (sd.journey_answers || lsLoad('journey_answers', true))
     if (jA) {
       setJourneyAnswers(prev => ({ ...prev, ...jA }))
-      if (jA.__journey_unlock_at) {
-        setJourneyUnlockAt(jA.__journey_unlock_at)
-        setJourneyUnlockInput(jA.__journey_unlock_at.slice(0, 16))
-      } else {
-        setJourneyUnlockAt(null)
-        setJourneyUnlockInput('')
-      }
+      if (jA.__journey_unlock_at) { setJourneyUnlockAt(jA.__journey_unlock_at); setJourneyUnlockInput(jA.__journey_unlock_at.slice(0, 16)) } else { setJourneyUnlockAt(null); setJourneyUnlockInput('') }
+      if (jA.__roots_unlock_at) { setRootsUnlockAt(jA.__roots_unlock_at); setRootsUnlockInput(jA.__roots_unlock_at.slice(0, 16)) } else { setRootsUnlockAt(null); setRootsUnlockInput('') }
+      if (jA.__body_unlock_at) { setBodyUnlockAt(jA.__body_unlock_at); setBodyUnlockInput(jA.__body_unlock_at.slice(0, 16)) } else { setBodyUnlockAt(null); setBodyUnlockInput('') }
     }
     const jAn = (data?.journey_analysis && data.journey_analysis.length > 0) ? data.journey_analysis : (sd.journey_analysis || lsLoad('journey_analysis', false)); if (jAn) setJourneyAnalysis(jAn)
     const sN = sd.session_notes || lsLoad('session_notes', false); if (sN) setSessionNotes(sN)
@@ -2936,49 +2936,47 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   </div>
                 </div>
 
-                {/* ── 🔒 פתיחת שאלון מסע המטרה ── */}
+                {/* ── 🔒 פתיחת שאלונים — מצב "שלחי לה" ── */}
                 {journeyMode === 'alone' && (() => {
-                  const isUnlocked = journeyUnlockAt && new Date(journeyUnlockAt) <= new Date()
-                  const isScheduled = journeyUnlockAt && new Date(journeyUnlockAt) > new Date()
-                  async function setUnlock(isoDate) {
+                  const questionnaires = [
+                    { label: '🧭 מסע המטרה', sub: 'שאלות על מטרה, חזון ומשאבים', unlockAt: journeyUnlockAt, setUnlockAt: setJourneyUnlockAt, inputVal: journeyUnlockInput, setInput: setJourneyUnlockInput, metaKey: '__journey_unlock_at', color: '#7c3aed' },
+                    { label: '🌱 ירושה רגשית', sub: 'שאלות על הבית שגדלת בו ודפוסים', unlockAt: rootsUnlockAt, setUnlockAt: setRootsUnlockAt, inputVal: rootsUnlockInput, setInput: setRootsUnlockInput, metaKey: '__roots_unlock_at', color: '#16a34a' },
+                    { label: '🩺 הגוף מדבר', sub: 'שאלות על תחושות גוף, שינה ורעב', unlockAt: bodyUnlockAt, setUnlockAt: setBodyUnlockAt, inputVal: bodyUnlockInput, setInput: setBodyUnlockInput, metaKey: '__body_unlock_at', color: '#0284c7' },
+                  ]
+                  async function setUnlock(metaKey, setUnlockAt, isoDate) {
                     setJourneyUnlockSaving(true)
-                    const updated = { ...journeyAnswersRef.current, __journey_unlock_at: isoDate }
+                    const updated = { ...journeyAnswersRef.current, [metaKey]: isoDate }
                     journeyAnswersRef.current = updated
-                    setJourneyUnlockAt(isoDate)
+                    setUnlockAt(isoDate)
                     await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, journey_answers: updated }, { onConflict: 'client_password' })
                     setJourneyUnlockSaving(false)
                   }
                   return (
-                    <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '2px solid ' + (isUnlocked ? '#16a34a' : isScheduled ? '#f97316' : '#e5e7eb') }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                        <span style={{ fontSize: 22 }}>{isUnlocked ? '🔓' : isScheduled ? '⏰' : '🔒'}</span>
-                        <div>
-                          <div style={{ fontWeight: 800, fontSize: 14, color: isUnlocked ? '#15803d' : isScheduled ? '#c2410c' : '#374151' }}>
-                            שאלון מסע המטרה — {isUnlocked ? 'פתוח ללקוחה' : isScheduled ? 'מתוזמן לפתיחה' : 'נעול'}
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10, textAlign: 'right' }}>כל שאלון שתפתחי יצטרף לאפליקציה שלה — הקודמים נשארים פתוחים</div>
+                      {questionnaires.map(({ label, sub, unlockAt, setUnlockAt, inputVal, setInput, metaKey, color }) => {
+                        const isOpen = unlockAt && new Date(unlockAt) <= new Date()
+                        const isScheduled = unlockAt && new Date(unlockAt) > new Date()
+                        return (
+                          <div key={metaKey} style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 10, border: '2px solid ' + (isOpen ? color : isScheduled ? '#f97316' : '#e5e7eb') }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                              <span style={{ fontSize: 20 }}>{isOpen ? '🔓' : isScheduled ? '⏰' : '🔒'}</span>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: 800, fontSize: 14, color: isOpen ? color : '#374151' }}>{label}</div>
+                                <div style={{ fontSize: 11, color: isOpen ? '#9ca3af' : isScheduled ? '#f97316' : '#9ca3af' }}>
+                                  {isOpen ? 'פתוח · ' + new Date(unlockAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' }) : isScheduled ? 'ייפתח ' + new Date(unlockAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : sub}
+                                </div>
+                              </div>
+                              {!isOpen && <button onClick={() => setUnlock(metaKey, setUnlockAt, new Date().toISOString())} disabled={journeyUnlockSaving} style={{ padding: '7px 14px', borderRadius: 8, background: color, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap' }}>🔓 עכשיו</button>}
+                              {isOpen && <button onClick={() => { if (window.confirm('לנעול שוב?')) setUnlock(metaKey, setUnlockAt, new Date(Date.now() + 100 * 365 * 24 * 3600000).toISOString()) }} style={{ padding: '7px 12px', borderRadius: 8, background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>🔒</button>}
+                            </div>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <input type="datetime-local" value={inputVal} onChange={e => setInput(e.target.value)} style={{ flex: 1, padding: '7px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 12, outline: 'none' }} />
+                              <button onClick={() => { if (inputVal) setUnlock(metaKey, setUnlockAt, new Date(inputVal).toISOString()) }} disabled={!inputVal || journeyUnlockSaving} style={{ padding: '7px 12px', borderRadius: 8, background: inputVal ? '#f97316' : '#f3f4f6', color: inputVal ? '#fff' : '#9ca3af', border: 'none', cursor: inputVal ? 'pointer' : 'default', fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap' }}>⏰ תזמני</button>
+                            </div>
                           </div>
-                          {isUnlocked && <div style={{ fontSize: 11, color: '#9ca3af' }}>נפתח {new Date(journeyUnlockAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>}
-                          {isScheduled && <div style={{ fontSize: 11, color: '#f97316' }}>ייפתח {new Date(journeyUnlockAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>}
-                          {!journeyUnlockAt && <div style={{ fontSize: 11, color: '#9ca3af' }}>הלקוחה לא רואה את השאלון עד שתפתחי</div>}
-                        </div>
-                      </div>
-                      <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-                        {!isUnlocked && (
-                          <button onClick={() => setUnlock(new Date().toISOString())} disabled={journeyUnlockSaving} style={{ padding: '9px 16px', borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                            {journeyUnlockSaving ? '...' : '🔓 פתחי עכשיו'}
-                          </button>
-                        )}
-                        {isUnlocked && (
-                          <button onClick={() => { if (window.confirm('לנעול את השאלון שוב?')) setUnlock(new Date(Date.now() + 100 * 365 * 24 * 3600000).toISOString()) }} style={{ padding: '9px 16px', borderRadius: 10, background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                            🔒 נעלי שוב
-                          </button>
-                        )}
-                        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flex: 1 }}>
-                          <input type="datetime-local" value={journeyUnlockInput} onChange={e => setJourneyUnlockInput(e.target.value)} style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, outline: 'none', minWidth: 0 }} />
-                          <button onClick={() => { if (journeyUnlockInput) setUnlock(new Date(journeyUnlockInput).toISOString()) }} disabled={!journeyUnlockInput || journeyUnlockSaving} style={{ padding: '9px 12px', borderRadius: 10, background: journeyUnlockInput ? '#f97316' : '#f3f4f6', color: journeyUnlockInput ? '#fff' : '#9ca3af', border: 'none', cursor: journeyUnlockInput ? 'pointer' : 'default', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap' }}>
-                            ⏰ תזמני
-                          </button>
-                        </div>
-                      </div>
+                        )
+                      })}
                     </div>
                   )
                 })()}
