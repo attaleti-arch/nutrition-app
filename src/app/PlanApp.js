@@ -1272,6 +1272,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const [userMood, setUserMood] = useState(null)
   const [eatReasons, setEatReasons] = useState([])
   const [streak, setStreak] = useState(0)
+  const [totalDaysLogged, setTotalDaysLogged] = useState(0)
   const [plateSplit, setPlateSplit] = useState(null)
   const [weeklyDays, setWeeklyDays] = useState(0)
   const [weekDates, setWeekDates] = useState([])
@@ -1414,6 +1415,10 @@ export default function PlanApp({ clientName, userPassword }) {
         setStressLevel(0); setFatigueLevel(0); setHungerLevel(0); setUserMood(null); setEatReasons([])
         setDailyLogLoaded(true)
       }
+
+      // ✅ סה"כ ימים בתהליך — ספירה מצטברת שלא מתאפסת, לצד "ימים ברצף" שכן מתאפס אחרי פספוס
+      var { count: totalDaysCount } = await supabase.from('daily_logs').select('log_date', { count: 'exact', head: true }).eq('client_name', dbKey)
+      setTotalDaysLogged(totalDaysCount || 0)
 
       // חישוב רצף, שבוע, וממוצע צעדים
       var { data: recentLogs } = await supabase.from('daily_logs').select('log_date, steps').eq('client_name', dbKey).order('log_date', { ascending: false }).limit(90)
@@ -2487,6 +2492,11 @@ export default function PlanApp({ clientName, userPassword }) {
         {/* ✅ כרטיס רצף ושבוע */}
         {weekDates.length > 0 && (
           <div style={{ background: 'linear-gradient(135deg,#fff7ed,#fef3c7)', borderRadius: 18, padding: '14px 18px', marginBottom: 14, border: '1.5px solid #fed7aa' }}>
+            {totalDaysLogged > 0 && (
+              <div style={{ textAlign: 'center', fontSize: 11, fontWeight: 700, color: '#b45309', marginBottom: 8, opacity: 0.85 }}>
+                🌱 {totalDaysLogged} ימים בתהליך שלך עד עכשיו
+              </div>
+            )}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {streak >= 2 ? (

@@ -1525,6 +1525,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <option value="בת">בת</option>
                 </select>
               </div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                <select value={selectedClient.activity || ''} onChange={async e => { await updateClientData('activity', e.target.value); setSelectedClient(c => ({...c, activity: e.target.value})) }} style={{ flex: 1, minWidth: 90, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, outline: 'none' }}>
+                  <option value="">רמת פעילות</option>
+                  <option value="יושבני">יושבני</option>
+                  <option value="קל">קל</option>
+                  <option value="בינוני">בינוני</option>
+                  <option value="פעיל">פעיל</option>
+                  <option value="מאוד פעיל">מאוד פעיל</option>
+                </select>
+                <select value={selectedClient.goal || ''} onChange={async e => { await updateClientData('goal', e.target.value); setSelectedClient(c => ({...c, goal: e.target.value})) }} style={{ flex: 1, minWidth: 110, padding: '6px 8px', borderRadius: 8, border: '1.5px solid #fca5a5', fontSize: 13, outline: 'none' }}>
+                  <option value="">מטרה</option>
+                  <option value="ירידה במשקל">ירידה במשקל</option>
+                  <option value="חיטוב">חיטוב</option>
+                  <option value="שמירה על משקל">שמירה על משקל</option>
+                  <option value="עלייה במסה">עלייה במסה</option>
+                </select>
+              </div>
             </div>
             <div style={{ background: '#fff', borderRadius: 18, padding: '14px 18px', marginBottom: 16, border: '1.5px solid #f0f0f0', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 180 }}>
