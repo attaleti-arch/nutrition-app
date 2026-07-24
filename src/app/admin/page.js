@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../supabase'
+import { createClient } from '@supabase/supabase-js'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import WelcomeDocument from '../WelcomeDocument'
 
@@ -606,6 +607,14 @@ export default function AdminPage() {
   const [journeySaving, setJourneySaving] = useState(false)
   const [journeySaved, setJourneySaved] = useState(false)
   const journeyAnswersRef = useRef({})
+  const [journeyUnlockAt, setJourneyUnlockAt] = useState(null)
+  const [journeyUnlockInput, setJourneyUnlockInput] = useState('')
+  const [journeyUnlockSaving, setJourneyUnlockSaving] = useState(false)
+  const [journeyMode, setJourneyMode] = useState('together')
+  const [rootsUnlockAt, setRootsUnlockAt] = useState(null)
+  const [rootsUnlockInput, setRootsUnlockInput] = useState('')
+  const [bodyUnlockAt, setBodyUnlockAt] = useState(null)
+  const [bodyUnlockInput, setBodyUnlockInput] = useState('')
   const [sessionNotes, setSessionNotes] = useState('')
   const [journeyDocLoading, setJourneyDocLoading] = useState(false)
   const [journeyDocSent, setJourneyDocSent] = useState(false)
@@ -685,6 +694,332 @@ export default function AdminPage() {
   // ── ✅ Plate Calculator state ──
   const [calculatingPlate, setCalculatingPlate] = useState(false)
   const [plateResult, setPlateResult] = useState(null)
+
+  // ── ✨ AI Vision state ──
+  const [visionLocation, setVisionLocation] = useState('beach')
+  const [visionLocationCustom, setVisionLocationCustom] = useState('')
+  const [visionClothing, setVisionClothing] = useState('jeans')
+  const [visionClothingCustom, setVisionClothingCustom] = useState('')
+  const [visionSeeText, setVisionSeeText] = useState('')
+  const [visionHearText, setVisionHearText] = useState('')
+  const [visionFeelText, setVisionFeelText] = useState('')
+  const [visionCurrentWeight, setVisionCurrentWeight] = useState('')
+  const [visionTargetWeight, setVisionTargetWeight] = useState('')
+  const [visionPhotoBase64, setVisionPhotoBase64] = useState(null)
+  const [visionPhotoPreview, setVisionPhotoPreview] = useState(null)
+  const [visionParagraph, setVisionParagraph] = useState('')
+  const [visionImageUrl, setVisionImageUrl] = useState(null)
+  const [visionError, setVisionError] = useState('')
+  const [visionSaved, setVisionSaved] = useState(false)
+  const [visionSaving, setVisionSaving] = useState(false)
+  const [generatingVisionText, setGeneratingVisionText] = useState(false)
+  const [generatingVision, setGeneratingVision] = useState(false)
+  const [uploadingAltImage, setUploadingAltImage] = useState(false)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [generatingAudio, setGeneratingAudio] = useState(false)
+  const [visionAudioUrl, setVisionAudioUrl] = useState(null)
+  const [audioPlaying, setAudioPlaying] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const [recordingSeconds, setRecordingSeconds] = useState(0)
+  const [uploadingRecording, setUploadingRecording] = useState(false)
+  const [recordingSaved, setRecordingSaved] = useState(false)
+  const [pendingAudioUrl, setPendingAudioUrl] = useState(null)
+  const [adminRecordingKey, setAdminRecordingKey] = useState(null)
+  const pendingAudioBlobRef = useRef(null)
+  const pendingAudioMimeRef = useRef(null)
+  const audioRef = useRef(null)
+  const mediaRecorderRef = useRef(null)
+  const recordingChunksRef = useRef([])
+  const recordingIntervalRef = useRef(null)
+  const adminRecognitionRef = useRef(null)
+
+  async function handleVisionPhotoUpload(file) {
+    if (!file) return
+    setUploadingPhoto(true)
+    const reader = new FileReader()
+    reader.onload = async e => {
+      const dataUrl = e.target.result
+      const base64 = dataUrl.split(',')[1]
+      setVisionPhotoPreview(dataUrl)
+      setVisionPhotoBase64(base64)
+
+      // Upload via server-side API (uses service role key to bypass RLS)
+      try {
+        const res = await fetch('/api/upload-vision-photo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64, clientId: selectedClient?.id, mimeType: file.type || 'image/jpeg' })
+        })
+        const data = await res.json()
+        if (data.url) {
+          setVisionImageUrl(data.url)
+          setSelectedClient(prev => ({ ...prev, vision_image_url: data.url }))
+        } else {
+          console.error('Photo upload failed:', data.error)
+        }
+      } catch(e) { console.error('Photo upload failed:', e.message) }
+      setUploadingPhoto(false)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  async function generateVisionText() {
+    if (!selectedClient?.id) return
+    setGeneratingVisionText(true)
+    setVisionError('')
+    try {
+      const res = await fetch('/api/generate-vision-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientName: selectedClient.name,
+          location: visionLocation === 'other' ? (visionLocationCustom || 'other') : visionLocation,
+          clothing: visionClothing === 'other' ? (visionClothingCustom || 'other') : visionClothing,
+          seeText: visionSeeText,
+          hearText: visionHearText,
+          feelText: visionFeelText,
+          currentWeight: visionCurrentWeight,
+          targetWeight: visionTargetWeight,
+        })
+      })
+      const data = await res.json()
+      if (data.error) { setVisionError(data.error); return }
+      setVisionParagraph(data.paragraph)
+    } catch(e) { setVisionError('שגיאה: ' + e.message) }
+    setGeneratingVisionText(false)
+  }
+
+  async function generateVision() {
+    if (!selectedClient?.id) return
+    setGeneratingVision(true)
+    setVisionError('')
+    try {
+      const res = await fetch('/api/generate-vision', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientId: selectedClient.id,
+          clientName: selectedClient.name,
+          location: visionLocation === 'other' ? (visionLocationCustom || 'other') : visionLocation,
+          clothing: visionClothing === 'other' ? (visionClothingCustom || 'other') : visionClothing,
+          seeText: visionSeeText,
+          hearText: visionHearText,
+          feelText: visionFeelText,
+          currentWeight: visionCurrentWeight,
+          targetWeight: visionTargetWeight,
+          photoBase64: visionPhotoBase64,
+        })
+      })
+      const data = await res.json()
+      if (data.error) { setVisionError(data.error); return }
+      setVisionImageUrl(data.imageUrl)
+      setSelectedClient(prev => ({ ...prev, vision_image_url: data.imageUrl }))
+      if (data.warning) setVisionError('⚠️ ' + data.warning)
+    } catch(e) { setVisionError('שגיאה: ' + e.message) }
+    setGeneratingVision(false)
+  }
+
+  async function handleAltImageUpload(file) {
+    if (!file || !selectedClient?.id) return
+    setUploadingAltImage(true)
+    setVisionError('')
+    try {
+      const arrayBuf = await file.arrayBuffer()
+      const fileName = `vision_${selectedClient.id}_alt_${Date.now()}.png`
+      const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+      const { error } = await sb.storage.from('vision-images').upload(fileName, arrayBuf, { contentType: file.type || 'image/png', upsert: false })
+      let url
+      if (error) {
+        // fallback: show local preview
+        url = URL.createObjectURL(file)
+        setVisionError('⚠️ Storage לא זמין — התמונה זמנית בלבד. צרי bucket vision-images בסופאבייס.')
+      } else {
+        const { data: pub } = sb.storage.from('vision-images').getPublicUrl(fileName)
+        url = pub.publicUrl
+      }
+      setVisionImageUrl(url)
+      await supabase.from('clients').update({ vision_image_url: url }).eq('id', selectedClient.id)
+      setSelectedClient(prev => ({ ...prev, vision_image_url: url }))
+    } catch(e) { setVisionError('שגיאה בהעלאה: ' + e.message) }
+    setUploadingAltImage(false)
+  }
+
+  async function generateVisionAudio() {
+    if (!visionParagraph) return
+    setGeneratingAudio(true)
+    setVisionAudioUrl(null)
+    try {
+      const res = await fetch('/api/generate-vision-audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paragraph: visionParagraph, clientId: selectedClient?.id })
+      })
+      if (!res.ok) { setVisionError('שגיאה ביצירת אודיו'); setGeneratingAudio(false); return }
+      // Use permanent Supabase URL if available, else blob URL for the player
+      const permanentUrl = res.headers.get('X-Audio-Url')
+      if (permanentUrl) {
+        setVisionAudioUrl(permanentUrl)
+      } else {
+        const blob = await res.blob()
+        setVisionAudioUrl(URL.createObjectURL(blob))
+      }
+      setAudioPlaying(false)
+    } catch(e) { setVisionError('שגיאה: ' + e.message) }
+    setGeneratingAudio(false)
+  }
+
+  function toggleAudio() {
+    if (!audioRef.current) return
+    if (audioPlaying) { audioRef.current.pause(); setAudioPlaying(false) }
+    else { audioRef.current.play(); setAudioPlaying(true) }
+  }
+
+  async function startRecording() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      mediaRecorderRef.current = mr
+      recordingChunksRef.current = []
+      mr.ondataavailable = e => { if (e.data.size > 0) recordingChunksRef.current.push(e.data) }
+      mr.onstop = () => {
+        stream.getTracks().forEach(t => t.stop())
+        const mimeType = mr.mimeType || 'audio/webm'
+        const blob = new Blob(recordingChunksRef.current, { type: mimeType })
+        pendingAudioBlobRef.current = blob
+        pendingAudioMimeRef.current = mimeType
+        if (pendingAudioUrl) URL.revokeObjectURL(pendingAudioUrl)
+        setPendingAudioUrl(URL.createObjectURL(blob))
+      }
+      mr.start()
+      setIsRecording(true)
+      setRecordingSeconds(0)
+      recordingIntervalRef.current = setInterval(() => {
+        setRecordingSeconds(s => s + 1)
+      }, 1000)
+    } catch(e) {
+      alert('לא ניתן לגשת למיקרופון: ' + e.message)
+    }
+  }
+
+  function stopRecording() {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop()
+    }
+    setIsRecording(false)
+    setRecordingSeconds(0)
+    if (recordingIntervalRef.current) {
+      clearInterval(recordingIntervalRef.current)
+      recordingIntervalRef.current = null
+    }
+  }
+
+  function startAdminSpeech(key, onTranscript) {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
+    if (!SR) { alert('הדפדפן שלך אינו תומך בהקלטה. נסי ב-Chrome.'); return }
+    if (adminRecognitionRef.current) { adminRecognitionRef.current.stop(); adminRecognitionRef.current = null }
+    const r = new SR()
+    r.lang = 'he-IL'; r.continuous = true; r.interimResults = true
+    r.onresult = e => { let t = ''; for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript; onTranscript(t) }
+    r.onend = () => { setAdminRecordingKey(null); adminRecognitionRef.current = null }
+    r.onerror = () => { setAdminRecordingKey(null); adminRecognitionRef.current = null }
+    r.start(); adminRecognitionRef.current = r; setAdminRecordingKey(key)
+  }
+
+  function stopAdminSpeech() {
+    if (adminRecognitionRef.current) { adminRecognitionRef.current.stop(); adminRecognitionRef.current = null }
+    setAdminRecordingKey(null)
+  }
+
+  async function approveRecording() {
+    const blob = pendingAudioBlobRef.current
+    const mimeType = pendingAudioMimeRef.current || 'audio/webm'
+    if (!blob || !selectedClient?.id) return
+    setUploadingRecording(true)
+    const reader = new FileReader()
+    reader.onload = async ev => {
+      const base64 = ev.target.result.split(',')[1]
+      try {
+        const res = await fetch('/api/upload-voice-recording', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64, clientId: selectedClient.id, mimeType })
+        })
+        const data = await res.json()
+        if (data.url) {
+          if (pendingAudioUrl) URL.revokeObjectURL(pendingAudioUrl)
+          setPendingAudioUrl(null)
+          pendingAudioBlobRef.current = null
+          setVisionAudioUrl(data.url)
+          setSelectedClient(prev => ({ ...prev, vision_audio_url: data.url }))
+          setRecordingSaved(true)
+          setTimeout(() => setRecordingSaved(false), 3000)
+        } else {
+          alert('שגיאה בשמירת ההקלטה: ' + (data.error || 'נסי שוב'))
+        }
+      } catch(e) {
+        alert('שגיאה: ' + e.message)
+      }
+      setUploadingRecording(false)
+    }
+    reader.readAsDataURL(blob)
+  }
+
+  async function saveVision() {
+    if (!selectedClient?.id) return
+    setVisionSaving(true)
+    let imageUrl = visionImageUrl
+
+    // If no AI image but user uploaded a photo — upload it to storage
+    if (!imageUrl && visionPhotoBase64) {
+      try {
+        const byteString = atob(visionPhotoBase64)
+        const bytes = new Uint8Array(byteString.length)
+        for (let i = 0; i < byteString.length; i++) bytes[i] = byteString.charCodeAt(i)
+        const fileName = `vision_${selectedClient.id}_photo_${Date.now()}.jpg`
+        const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+        const { error } = await sb.storage.from('vision-images').upload(fileName, bytes.buffer, { contentType: 'image/jpeg', upsert: false })
+        if (!error) {
+          const { data: pub } = sb.storage.from('vision-images').getPublicUrl(fileName)
+          imageUrl = pub.publicUrl
+          setVisionImageUrl(imageUrl)
+        } else {
+          imageUrl = visionPhotoPreview
+        }
+      } catch(e) { console.error('Photo upload failed:', e.message) }
+    }
+
+    await supabase.from('clients').update({
+      vision_image_url: imageUrl,
+      vision_paragraph: visionParagraph,
+      vision_goal_text: visionTargetWeight || '',
+    }).eq('id', selectedClient.id)
+    setSelectedClient(prev => ({ ...prev, vision_image_url: imageUrl, vision_paragraph: visionParagraph, vision_goal_text: visionTargetWeight || '' }))
+    setVisionSaving(false)
+    setVisionSaved(true)
+    setTimeout(() => setVisionSaved(false), 3000)
+  }
+
+  async function persistVisionState(overrides = {}) {
+    if (!selectedClient?.id) return
+    try {
+      await supabase.from('clients').update({
+        vision_paragraph: overrides.paragraph ?? visionParagraph,
+        vision_goal_text: overrides.targetWeight ?? visionTargetWeight ?? '',
+        vision_answers: {
+          location: overrides.location ?? visionLocation,
+          locationCustom: overrides.locationCustom ?? visionLocationCustom,
+          clothing: overrides.clothing ?? visionClothing,
+          clothingCustom: overrides.clothingCustom ?? visionClothingCustom,
+          see: overrides.see ?? visionSeeText,
+          hear: overrides.hear ?? visionHearText,
+          feel: overrides.feel ?? visionFeelText,
+          currentWeight: overrides.currentWeight ?? visionCurrentWeight,
+          targetWeight: overrides.targetWeight ?? visionTargetWeight,
+        },
+        ...(visionImageUrl ? { vision_image_url: visionImageUrl } : {}),
+      }).eq('id', selectedClient.id)
+    } catch(e) { /* silent auto-save */ }
+  }
 
   async function calcPlate() {
     if (!selectedClient?.password) return
@@ -804,6 +1139,159 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     URL.revokeObjectURL(url)
   }
 
+  function printAnalysisHTML(titleHe, analysisText) {
+    if (!analysisText || !selectedClient) return
+    const innerHtml = renderMd(analysisText).__html
+    const clientName = selectedClient.name + (selectedClient.last_name ? ' ' + selectedClient.last_name : '')
+    const html = `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8"/>
+<title>${titleHe} — ${clientName}</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; direction: rtl; padding: 24px 28px; color: #1a1a1a; }
+h1,h2,h3 { margin: 16px 0 6px; }
+p,li { line-height: 1.85; margin-bottom: 6px; }
+strong { font-weight: 700; }
+.hdr { background: #0f4c2a; border-radius: 10px; padding: 16px 20px; color: #fff; margin-bottom: 20px; }
+.hdr h1 { font-size: 20px; font-weight: 900; margin: 0 0 2px; }
+.hdr .sub { font-size: 13px; color: #86efac; }
+@media print { body { padding: 0; } }
+</style>
+</head>
+<body>
+<div class="hdr"><h1>${titleHe}</h1><div class="sub">${clientName} · ${new Date().toLocaleDateString('he-IL')}</div></div>
+${innerHtml}
+<script>window.onload=()=>window.print()</script>
+</body></html>`
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close() }
+  }
+
+  function openVisionReportHTML() {
+    if (!selectedClient) return
+    const clientName = selectedClient.name + (selectedClient.last_name ? ' ' + selectedClient.last_name : '')
+    const imgSrc = visionImageUrl || (visionPhotoBase64 ? `data:image/jpeg;base64,${visionPhotoBase64}` : '')
+    const paragraph = visionParagraph || ''
+    const audioSrc = visionAudioUrl || ''
+    const targetW = visionTargetWeight || selectedClient.vision_goal_text || ''
+    const date = new Date().toLocaleDateString('he-IL', { year: 'numeric', month: 'long', day: 'numeric' })
+
+    const html = `<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>הויזואליזציה שלי — ${clientName}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;700;900&display=swap');
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Frank Ruhl Libre', Georgia, serif;
+  background: linear-gradient(160deg, #0f0c29, #1e1b4b 40%, #2d1b69 100%);
+  min-height: 100vh;
+  color: #e0e7ff;
+  direction: rtl;
+  padding: 0 0 60px;
+}
+.stars {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none; overflow: hidden; z-index: 0;
+}
+.star {
+  position: absolute; border-radius: 50%;
+  background: rgba(199,210,254,0.6);
+  animation: twinkle var(--d) ease-in-out infinite alternate;
+}
+@keyframes twinkle { from { opacity: 0.2; transform: scale(1); } to { opacity: 1; transform: scale(1.4); } }
+.wrap { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding: 40px 20px; }
+.header { text-align: center; margin-bottom: 32px; }
+.header .eyebrow { font-size: 12px; letter-spacing: 3px; color: #818cf8; text-transform: uppercase; margin-bottom: 10px; }
+.header h1 { font-size: 32px; font-weight: 900; color: #c7d2fe; line-height: 1.3; margin-bottom: 6px; }
+.header .date { font-size: 13px; color: #6366f1; }
+.divider { width: 60px; height: 2px; background: linear-gradient(90deg, transparent, #818cf8, transparent); margin: 20px auto; }
+.image-card {
+  border-radius: 24px;
+  overflow: hidden;
+  margin-bottom: 28px;
+  box-shadow: 0 0 60px rgba(99,102,241,0.4), 0 20px 40px rgba(0,0,0,0.5);
+  border: 1.5px solid rgba(129,140,248,0.3);
+}
+.image-card img { width: 100%; display: block; }
+.paragraph-card {
+  background: rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(129,140,248,0.25);
+  border-radius: 20px;
+  padding: 28px 24px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 4px 30px rgba(99,102,241,0.15);
+}
+.paragraph-card .label {
+  font-size: 11px; letter-spacing: 2px; color: #818cf8;
+  text-transform: uppercase; margin-bottom: 16px;
+}
+.paragraph-card p {
+  font-size: 18px; line-height: 2; color: #e0e7ff;
+  font-weight: 300;
+}
+.audio-card {
+  background: rgba(99,102,241,0.12);
+  border: 1.5px solid rgba(129,140,248,0.3);
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.audio-card .label { font-size: 12px; color: #a5b4fc; margin-bottom: 10px; letter-spacing: 1px; }
+.audio-card audio { width: 100%; border-radius: 8px; }
+.footer { text-align: center; margin-top: 32px; }
+.footer .name { font-size: 20px; font-weight: 700; color: #c7d2fe; margin-bottom: 4px; }
+.footer .target { font-size: 14px; color: #818cf8; }
+.glow { display: inline-block; filter: drop-shadow(0 0 12px rgba(167,139,250,0.7)); font-size: 28px; margin-bottom: 12px; }
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="wrap">
+  <div class="header">
+    <div class="glow">✨</div>
+    <div class="eyebrow">הויזואליזציה שלי</div>
+    <h1>${clientName}</h1>
+    <div class="date">${date}</div>
+  </div>
+  <div class="divider"></div>
+  ${imgSrc ? `<div class="image-card"><img src="${imgSrc}" alt="ויזואליזציה" /></div>` : ''}
+  ${paragraph ? `<div class="paragraph-card"><div class="label">דמיון מודרך 🔮</div><p>${paragraph.replace(/\n/g, '<br/>')}</p></div>` : ''}
+  ${audioSrc ? `<div class="audio-card"><div class="label">🎧 האזיני לדמיון המודרך</div><audio controls src="${audioSrc}"></audio></div>` : ''}
+  <div class="footer">
+    <div class="name">${clientName}</div>
+    ${targetW ? `<div class="target">🎯 יעד: ${targetW} ק״ג</div>` : ''}
+    <div style="margin-top:28px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <button onclick="window.print()" style="padding:12px 28px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#4338ca);color:#fff;border:none;cursor:pointer;font-size:15px;font-weight:700;font-family:inherit;">🖨️ הדפס / שמור PDF</button>
+      <button onclick="window.close()" style="padding:12px 20px;border-radius:14px;background:rgba(255,255,255,0.08);color:#c7d2fe;border:1.5px solid rgba(129,140,248,0.3);cursor:pointer;font-size:15px;font-weight:700;font-family:inherit;">✕ סגרי</button>
+    </div>
+  </div>
+</div>
+<script>
+const s = document.getElementById('stars')
+for (let i = 0; i < 60; i++) {
+  const el = document.createElement('div')
+  el.className = 'star'
+  const size = Math.random() * 2.5 + 0.5
+  el.style.cssText = 'width:'+size+'px;height:'+size+'px;top:'+Math.random()*100+'%;left:'+Math.random()*100+'%;--d:'+(2+Math.random()*4)+'s;animation-delay:'+(Math.random()*5)+'s'
+  s.appendChild(el)
+}
+</script>
+</body>
+</html>`
+
+    const w = window.open('', '_blank')
+    if (w) { w.document.write(html); w.document.close() }
+  }
+
   function downloadPantryHTML() {
     if (!selectedClient?.pantry_notes) return
     const clientName = selectedClient.name + (selectedClient.last_name ? ' ' + selectedClient.last_name : '')
@@ -862,6 +1350,23 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     const activeClient = freshClient || client
     setSelectedClient(activeClient)
     setAgentInstructions(activeClient.agent_instructions || '')
+    setVisionImageUrl(activeClient.vision_image_url || null)
+    setVisionAudioUrl(activeClient.vision_audio_url || null)
+    setVisionParagraph(activeClient.vision_paragraph || '')
+    setVisionTargetWeight(activeClient.vision_goal_text || '')
+    const va = activeClient.vision_answers || {}
+    setVisionLocation(va.location || 'beach')
+    setVisionLocationCustom(va.locationCustom || '')
+    setVisionClothing(va.clothing || 'jeans')
+    setVisionClothingCustom(va.clothingCustom || '')
+    setVisionSeeText(va.see || '')
+    setVisionHearText(va.hear || '')
+    setVisionFeelText(va.feel || '')
+    setVisionCurrentWeight(va.currentWeight || '')
+    setVisionPhotoBase64(null)
+    setVisionPhotoPreview(null)
+    setVisionSaved(false)
+    setVisionError('')
 
     let { data } = await supabase.from('client_profiles').select('*').eq('client_password', client.password).maybeSingle()
     if (!data) {
@@ -884,7 +1389,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     sessionDataRef.current = sd
     const lsLoad = (key, isJson) => { try { const v = localStorage.getItem('sd_' + key + '_' + pw); return v ? (isJson ? JSON.parse(v) : v) : null } catch(e) { return null } }
     // journey — עמודות ייעודיות (עדיפות), fallback ל-sessions_data ול-localStorage
-    const jA = (data?.journey_answers && Object.keys(data.journey_answers).length > 0) ? data.journey_answers : (sd.journey_answers || lsLoad('journey_answers', true)); if (jA) setJourneyAnswers(prev => ({ ...prev, ...jA }))
+    const jA = (data?.journey_answers && Object.keys(data.journey_answers).length > 0) ? data.journey_answers : (sd.journey_answers || lsLoad('journey_answers', true))
+    if (jA) {
+      setJourneyAnswers(prev => ({ ...prev, ...jA }))
+      if (jA.__journey_unlock_at) { setJourneyUnlockAt(jA.__journey_unlock_at); setJourneyUnlockInput(jA.__journey_unlock_at.slice(0, 16)) } else { setJourneyUnlockAt(null); setJourneyUnlockInput('') }
+      if (jA.__roots_unlock_at) { setRootsUnlockAt(jA.__roots_unlock_at); setRootsUnlockInput(jA.__roots_unlock_at.slice(0, 16)) } else { setRootsUnlockAt(null); setRootsUnlockInput('') }
+      if (jA.__body_unlock_at) { setBodyUnlockAt(jA.__body_unlock_at); setBodyUnlockInput(jA.__body_unlock_at.slice(0, 16)) } else { setBodyUnlockAt(null); setBodyUnlockInput('') }
+    }
     const jAn = (data?.journey_analysis && data.journey_analysis.length > 0) ? data.journey_analysis : (sd.journey_analysis || lsLoad('journey_analysis', false)); if (jAn) setJourneyAnalysis(jAn)
     const sN = sd.session_notes || lsLoad('session_notes', false); if (sN) setSessionNotes(sN)
     const rN = sd.roots_notes || lsLoad('roots_notes', true); if (rN) setRootsNotes(n => ({ ...n, ...rN }))
@@ -1585,8 +2096,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                 <div style={{ fontSize: 10, fontWeight: 700, color: '#9ca3af', marginBottom: 4, paddingRight: 4 }}>🧠 מפגשים</div>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
                   {[
-                    { k: 'ai', l: '🧠 AI' },
+                    { k: 'ai', l: '🧠 דו״ח פתיחה' },
                     { k: 'journey', l: '🧭 מטרה' },
+                    { k: 'vision', l: '🔮 ויז׳ן' },
                     { k: 'roots', l: '🌱 שורשים' },
                     { k: 'body', l: '🩺 גוף מדבר' },
                     ...(selectedClient?.client_track === 'child' || selectedClient?.client_track === 'both' ? [{ k: 'child', l: '👨‍👩‍👧 הורה-ילד' }] : [])
@@ -2150,8 +2662,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     </>
                   ) : (
                     <>
-                      <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>🧠 ניתוח AI מקיף</div>
-                      <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>משלב: שאלון 360 + בדיקות דם + NLP + ימי אכילה</div>
+                      <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 4 }}>🧠 דו״ח פתיחה מקיף</div>
+                      <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 16 }}>משלב: שאלון פתיחה + תזונה נוכחית + מדדי דם</div>
                       <textarea value={foodDiary} onChange={e => setFoodDiary(e.target.value)} placeholder='3 ימי אכילה אופייניים...' rows={8} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
                     </>
                   )}
@@ -2164,6 +2676,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 4, color: '#0f4c2a' }}>✏️ ערכי לפני שליחה</div>
                     <textarea value={editableAnalysis} onChange={e => setEditableAnalysis(e.target.value)} rows={20} style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8 }} />
                     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <button onClick={() => printAnalysisHTML('ניתוח מקיף', editableAnalysis)} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>🖨️ הדפס</button>
                       <button onClick={() => window.open('/report?client=' + selectedClient.password + '&preview=true', '_blank')} style={{ flex: 1, padding: 14, borderRadius: 12, background: '#c4956a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה</button>
                       <button onClick={sendAnalysisToClient} disabled={sendingToClient} style={{ flex: 2, padding: 14, borderRadius: 12, background: sentToClient ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
                         {sendingToClient ? '⏳ שולחת...' : sentToClient ? '✅ נשמר!' : '📤 שמרי ואשרי'}
@@ -2191,7 +2704,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <div style={{ textAlign: 'center', padding: 40, color: '#9ca3af' }}>
                     <div style={{ fontSize: 40, marginBottom: 12 }}>🧠</div>
                     <div>עדיין לא הופק ניתוח AI</div>
-                    <button onClick={() => setTab('ai')} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}>עברי לטאב AI</button>
+                    <button onClick={() => setTab('ai')} style={{ marginTop: 16, padding: '10px 24px', borderRadius: 12, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}>עברי לדוח פתיחה</button>
                   </div>
                 )}
               </div>
@@ -2413,6 +2926,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
             {tab === 'journey' && (
               <div style={{ direction: 'rtl' }}>
 
+                {/* ── בחירת מצב מילוי ── */}
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16, background: '#f9fafb', borderRadius: 14, padding: 6 }}>
+                  <button onClick={() => setJourneyMode('together')} style={{ flex: 1, padding: '10px 8px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: journeyMode === 'together' ? '#7c3aed' : 'transparent', color: journeyMode === 'together' ? '#fff' : '#6b7280', transition: 'all 0.15s' }}>
+                    🤝 מלאי איתה בפגישה
+                  </button>
+                  <button onClick={() => setJourneyMode('alone')} style={{ flex: 1, padding: '10px 8px', borderRadius: 10, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: journeyMode === 'alone' ? '#7c3aed' : 'transparent', color: journeyMode === 'alone' ? '#fff' : '#6b7280', transition: 'all 0.15s' }}>
+                    📱 שלחי לה למלא לבד
+                  </button>
+                </div>
+
                 {/* ── ✅ פאנל הנחיות Agent — בראש הטאב ── */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: 18, marginBottom: 16, border: '2px solid #4a9b8e' }}>
                   <div style={{ fontWeight: 900, fontSize: 15, color: '#3a7a6e', marginBottom: 4 }}>
@@ -2450,12 +2973,57 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   </div>
                 </div>
 
-                <div style={{ background: 'linear-gradient(135deg,#7c3aed15,#faf5ff)', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
+                {/* ── 🔒 פתיחת שאלונים — מצב "שלחי לה" ── */}
+                {journeyMode === 'alone' && (() => {
+                  const questionnaires = [
+                    { label: '🧭 מסע המטרה', sub: 'שאלות על מטרה, חזון ומשאבים', unlockAt: journeyUnlockAt, setUnlockAt: setJourneyUnlockAt, inputVal: journeyUnlockInput, setInput: setJourneyUnlockInput, metaKey: '__journey_unlock_at', color: '#7c3aed' },
+                    { label: '🌱 ירושה רגשית', sub: 'שאלות על הבית שגדלת בו ודפוסים', unlockAt: rootsUnlockAt, setUnlockAt: setRootsUnlockAt, inputVal: rootsUnlockInput, setInput: setRootsUnlockInput, metaKey: '__roots_unlock_at', color: '#16a34a' },
+                    { label: '🩺 הגוף מדבר', sub: 'שאלות על תחושות גוף, שינה ורעב', unlockAt: bodyUnlockAt, setUnlockAt: setBodyUnlockAt, inputVal: bodyUnlockInput, setInput: setBodyUnlockInput, metaKey: '__body_unlock_at', color: '#0284c7' },
+                  ]
+                  async function setUnlock(metaKey, setUnlockAt, isoDate) {
+                    setJourneyUnlockSaving(true)
+                    const updated = { ...journeyAnswersRef.current, [metaKey]: isoDate }
+                    journeyAnswersRef.current = updated
+                    setUnlockAt(isoDate)
+                    await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, journey_answers: updated }, { onConflict: 'client_password' })
+                    setJourneyUnlockSaving(false)
+                  }
+                  return (
+                    <div style={{ marginBottom: 16 }}>
+                      <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 10, textAlign: 'right' }}>כל שאלון שתפתחי יצטרף לאפליקציה שלה — הקודמים נשארים פתוחים</div>
+                      {questionnaires.map(({ label, sub, unlockAt, setUnlockAt, inputVal, setInput, metaKey, color }) => {
+                        const isOpen = unlockAt && new Date(unlockAt) <= new Date()
+                        const isScheduled = unlockAt && new Date(unlockAt) > new Date()
+                        return (
+                          <div key={metaKey} style={{ background: '#fff', borderRadius: 16, padding: '14px 16px', marginBottom: 10, border: '2px solid ' + (isOpen ? color : isScheduled ? '#f97316' : '#e5e7eb') }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+                              <span style={{ fontSize: 20 }}>{isOpen ? '🔓' : isScheduled ? '⏰' : '🔒'}</span>
+                              <div style={{ flex: 1 }}>
+                                <div style={{ fontWeight: 800, fontSize: 14, color: isOpen ? color : '#374151' }}>{label}</div>
+                                <div style={{ fontSize: 11, color: isOpen ? '#9ca3af' : isScheduled ? '#f97316' : '#9ca3af' }}>
+                                  {isOpen ? 'פתוח · ' + new Date(unlockAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'short' }) : isScheduled ? 'ייפתח ' + new Date(unlockAt).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : sub}
+                                </div>
+                              </div>
+                              {!isOpen && <button onClick={() => setUnlock(metaKey, setUnlockAt, new Date().toISOString())} disabled={journeyUnlockSaving} style={{ padding: '7px 14px', borderRadius: 8, background: color, color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap' }}>🔓 עכשיו</button>}
+                              {isOpen && <button onClick={() => { if (window.confirm('לנעול שוב?')) setUnlock(metaKey, setUnlockAt, new Date(Date.now() + 100 * 365 * 24 * 3600000).toISOString()) }} style={{ padding: '7px 12px', borderRadius: 8, background: '#fef2f2', color: '#dc2626', border: '1.5px solid #fca5a5', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>🔒</button>}
+                            </div>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                              <input type="datetime-local" value={inputVal} onChange={e => setInput(e.target.value)} style={{ flex: 1, padding: '7px 10px', borderRadius: 8, border: '1.5px solid #e5e7eb', fontSize: 12, outline: 'none' }} />
+                              <button onClick={() => { if (inputVal) setUnlock(metaKey, setUnlockAt, new Date(inputVal).toISOString()) }} disabled={!inputVal || journeyUnlockSaving} style={{ padding: '7px 12px', borderRadius: 8, background: inputVal ? '#f97316' : '#f3f4f6', color: inputVal ? '#fff' : '#9ca3af', border: 'none', cursor: inputVal ? 'pointer' : 'default', fontWeight: 700, fontSize: 12, whiteSpace: 'nowrap' }}>⏰ תזמני</button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })()}
+
+                {journeyMode === 'together' && <div style={{ background: 'linear-gradient(135deg,#7c3aed15,#faf5ff)', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #e9d5ff' }}>
                   <div style={{ fontWeight: 900, fontSize: 16, color: '#7c3aed', marginBottom: 4 }}>🧭 מסע המטרה</div>
                   <div style={{ fontSize: 12, color: '#9ca3af' }}>מלאי יחד עם הלקוחה בפגישה הראשונה</div>
-                </div>
+                </div>}
 
-                {/* ── 🧮 חישוב הרכב צלחת ── */}
+                {journeyMode === 'together' && <>{/* ── 🧮 חישוב הרכב צלחת ── */}
                 <div style={{ background: '#fff', borderRadius: 18, padding: 18, marginBottom: 16, border: '2px solid #f97316' }}>
                   <div style={{ fontWeight: 900, fontSize: 15, color: '#c2410c', marginBottom: 4 }}>
                     🧮 הרכב צלחת אישי — {selectedClient?.name}
@@ -2515,7 +3083,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2531,7 +3102,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#0284c7', marginBottom: 4, fontStyle: 'italic' }}>💙 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2547,7 +3121,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#0d9488', marginBottom: 4, fontStyle: 'italic' }}>💚 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2562,7 +3139,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#dc2626', marginBottom: 4, fontStyle: 'italic' }}>❤️ {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2576,7 +3156,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#d97706', marginBottom: 4, fontStyle: 'italic' }}>🧡 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2592,7 +3175,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div key={q.key} style={{ marginBottom: 14 }}>
                       <div style={{ fontSize: 13, color: '#222', marginBottom: 2, fontWeight: 700 }}>{q.label}</div>
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
-                      <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -2611,12 +3197,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
                 <button onClick={async () => {
                   setJourneyLoading(true); setJourneyAnalysis('')
-                  const profileSummary = `מחלות: ${profile.medical_history || 'לא צוין'} | תרופות: ${profile.medications || 'לא צוין'} | אכילה רגשית: ${profile.emotional_eating || 'לא צוין'} | מה מעכב: ${profile.goal_obstacles || 'לא צוין'}`
-                  const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, clientProfile: profileSummary, outputType: 'analysis' }) })
-                  const data = await res.json()
-                  const jResult = data.result || ''
-                  setJourneyAnalysis(jResult)
-                  saveJourney(journeyAnswers, jResult)
+                  try {
+                    const profileSummary = `מחלות: ${profile.medical_history || 'לא צוין'} | תרופות: ${profile.medications || 'לא צוין'} | אכילה רגשית: ${profile.emotional_eating || 'לא צוין'} | מה מעכב: ${profile.goal_obstacles || 'לא צוין'}`
+                    const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, clientProfile: profileSummary, outputType: 'analysis' }) })
+                    const data = await res.json()
+                    const jResult = data.result || ''
+                    setJourneyAnalysis(jResult)
+                    saveJourney(journeyAnswers, jResult)
+                  } catch(e) {
+                    alert('הניתוח נכשל — נסי שוב. אם הבעיה חוזרת, רעננו את הדף.')
+                  }
                   setJourneyLoading(false)
                 }} disabled={journeyLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyLoading ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, marginBottom: 8 }}>
                   {journeyLoading ? '⏳ מנתח... (עד דקה וחצי)' : '🔍 הפק ניתוח לפגישה (לעיניך בלבד)'}
@@ -2627,7 +3217,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
                 {journeyAnalysis && (
                   <div style={{ background: '#fff', borderRadius: 18, padding: '18px', marginBottom: 16, border: '2px solid #7c3aed' }}>
-                    <div style={{ fontWeight: 800, fontSize: 15, color: '#7c3aed', marginBottom: 12 }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <div style={{ fontWeight: 800, fontSize: 15, color: '#7c3aed' }}>🔍 ניתוח לפגישה — לעיניך בלבד</div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button onClick={() => printAnalysisHTML('ניתוח מטרה', journeyAnalysis)} style={{ padding: '6px 14px', borderRadius: 8, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>🖨️ הדפס</button>
+                        <button onClick={() => downloadAnalysisHTML('ניתוח מטרה', journeyAnalysis)} style={{ padding: '6px 14px', borderRadius: 8, background: '#f0fdf4', color: '#15803d', border: '1.5px solid #86efac', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>⬇️ HTML</button>
+                      </div>
+                    </div>
                     <div style={{ fontSize: 13, color: '#333', lineHeight: 1.9, textAlign: 'right', direction: 'rtl' }} dangerouslySetInnerHTML={renderMd(journeyAnalysis)} />
                   </div>
                 )}
@@ -2636,7 +3232,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <div style={{ background: '#fff', borderRadius: 18, padding: '18px', border: '1.5px solid #e9d5ff' }}>
                     <div style={{ fontWeight: 800, fontSize: 14, color: '#7c3aed', marginBottom: 8 }}>📝 מה גילינו בפגישה 2</div>
                     <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 8 }}>הוסיפי בקצרה מה השתנה, מה פירקנו, מה האמונה החדשה</div>
-                    <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} onBlur={() => saveSessionKey('session_notes', sessionNotes)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, marginBottom: 12 }} />
+                    <div style={{ position: 'relative', marginBottom: 12 }}>
+                      <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} onBlur={() => saveSessionKey('session_notes', sessionNotes)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid ' + (adminRecordingKey === 'session_notes' ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7 }} />
+                      <button onClick={() => adminRecordingKey === 'session_notes' ? stopAdminSpeech() : startAdminSpeech('session_notes', t => setSessionNotes(t))} style={{ position: 'absolute', left: 8, bottom: 8, padding: '4px 10px', borderRadius: 8, border: 'none', background: adminRecordingKey === 'session_notes' ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === 'session_notes' ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{adminRecordingKey === 'session_notes' ? '⏹ עצרי' : '🎙 הקלטה'}</button>
+                    </div>
                     <button onClick={async () => {
                       setJourneyDocLoading(true)
                       setJourneyClientDocPreview('')
@@ -2657,7 +3256,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                         <div style={{ padding: 16, maxHeight: 400, overflowY: 'auto', background: '#faf5ff' }}>
                           <textarea value={journeyClientDocPreview} onChange={e => setJourneyClientDocPreview(e.target.value)} rows={16} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
                         </div>
-                        <div style={{ padding: '12px 16px', display: 'flex', gap: 8 }}>
+                        <div style={{ padding: '12px 16px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           <button onClick={async () => {
                             setJourneyDocApproving(true)
                             await supabase.from('clients').update({ outcome_doc: journeyClientDocPreview }).eq('id', selectedClient.id)
@@ -2666,10 +3265,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                             setJourneyClientDocPreview('')
                             setJourneyDocApproving(false)
                             setTimeout(() => setJourneyDocSent(false), 4000)
-                          }} disabled={journeyDocApproving} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#16a34a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                          }} disabled={journeyDocApproving} style={{ flex: 2, minWidth: 120, padding: 12, borderRadius: 10, background: '#16a34a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                             {journeyDocApproving ? '⏳...' : '✅ אשרי ושלחי אליה'}
                           </button>
-                          <button onClick={() => setJourneyClientDocPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                          <button onClick={() => printAnalysisHTML('מסמך מסע המטרה', journeyClientDocPreview)} style={{ flex: 1, minWidth: 80, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                            🖨️ הדפס
+                          </button>
+                          <button onClick={() => downloadAnalysisHTML('מסמך מסע המטרה', journeyClientDocPreview)} style={{ flex: 1, minWidth: 80, padding: 12, borderRadius: 10, background: '#f0fdf4', color: '#15803d', border: '1.5px solid #86efac', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                            ⬇️ HTML
+                          </button>
+                          <button onClick={() => setJourneyClientDocPreview('')} style={{ flex: 1, minWidth: 60, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                             ✕ בטלי
                           </button>
                         </div>
@@ -2678,6 +3283,227 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     )}
                   </div>
                 )}
+                </>}
+
+              </div>
+            )}
+
+            {tab === 'vision' && (
+              <div style={{ direction: 'rtl' }}>
+                <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', borderRadius: 18, padding: '18px 20px', marginBottom: 16 }}>
+                  <div style={{ fontWeight: 900, fontSize: 16, color: '#c7d2fe', marginBottom: 2 }}>🔮 ויזואליזציה של העתיד שלך</div>
+                  <div style={{ fontSize: 12, color: '#818cf8' }}>מלאי יחד עם הלקוחה במפגש המטרה 🫶🏻</div>
+                </div>
+
+                {/* תמונה */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #e9d5ff' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#312e81', marginBottom: 10 }}>📸 תמונה של הלקוחה</div>
+                  {visionPhotoPreview ? (
+                    <div style={{ marginBottom: 10 }}>
+                      <img src={visionPhotoPreview} alt="תמונה" style={{ width: '100%', borderRadius: 12 }} />
+                      <button onClick={() => { setVisionPhotoBase64(null); setVisionPhotoPreview(null) }} style={{ marginTop: 6, padding: '6px 14px', borderRadius: 8, background: '#fef2f2', color: '#ef4444', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>✕ הסירי תמונה</button>
+                    </div>
+                  ) : (
+                    <label style={{ display: 'block', padding: '20px', borderRadius: 12, border: '2px dashed #c4b5fd', textAlign: 'center', cursor: uploadingPhoto ? 'default' : 'pointer', color: '#7c3aed', fontWeight: 700, fontSize: 13, opacity: uploadingPhoto ? 0.6 : 1 }}>
+                      {uploadingPhoto ? '⏳ מעלה ושומרת...' : '📸 לחצי להעלאת תמונה'}
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleVisionPhotoUpload(e.target.files[0])} disabled={uploadingPhoto} />
+                    </label>
+                  )}
+                </div>
+
+                {/* מיקום ולבוש */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#312e81', marginBottom: 12 }}>🌍 סצנה</div>
+                  <div style={{ marginBottom: 12 }}>
+                    <div style={{ fontSize: 12, color: '#555', marginBottom: 6, fontWeight: 700 }}>📍 מיקום</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {[{ k: 'beach', l: '🏖️ חוף ים' }, { k: 'park', l: '🌳 פרדס' }, { k: 'city', l: '🏙️ עיר' }, { k: 'other', l: '✏️ אחר' }].map(o => (
+                        <button key={o.k} onClick={() => { setVisionLocation(o.k); persistVisionState({ location: o.k }) }} style={{ padding: '8px 14px', borderRadius: 20, border: '2px solid ' + (visionLocation === o.k ? '#7c3aed' : '#e5e7eb'), background: visionLocation === o.k ? '#f3e8ff' : '#fff', color: visionLocation === o.k ? '#7c3aed' : '#555', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{o.l}</button>
+                      ))}
+                    </div>
+                    {visionLocation === 'other' && (
+                      <input value={visionLocationCustom} onChange={e => setVisionLocationCustom(e.target.value)} onBlur={() => persistVisionState()} placeholder="תארי את המיקום..." style={{ marginTop: 8, width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #7c3aed', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    )}
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 12, color: '#555', marginBottom: 6, fontWeight: 700 }}>👗 לבוש</div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {[{ k: 'jeans', l: "👖 ג'ינס" }, { k: 'dress', l: '👗 שמלה' }, { k: 'professional', l: '🧥 מקצועי' }, { k: 'other', l: '✏️ אחר' }].map(o => (
+                        <button key={o.k} onClick={() => { setVisionClothing(o.k); persistVisionState({ clothing: o.k }) }} style={{ padding: '8px 14px', borderRadius: 20, border: '2px solid ' + (visionClothing === o.k ? '#7c3aed' : '#e5e7eb'), background: visionClothing === o.k ? '#f3e8ff' : '#fff', color: visionClothing === o.k ? '#7c3aed' : '#555', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>{o.l}</button>
+                      ))}
+                    </div>
+                    {visionClothing === 'other' && (
+                      <input value={visionClothingCustom} onChange={e => setVisionClothingCustom(e.target.value)} onBlur={() => persistVisionState()} placeholder="תארי את הלבוש..." style={{ marginTop: 8, width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #7c3aed', fontSize: 13, outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                    )}
+                  </div>
+                </div>
+
+                {/* חושים */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#312e81', marginBottom: 12 }}>✨ החוויה החושית</div>
+                  {[
+                    { key: 'see', label: '👁️ מה את רואה?', val: visionSeeText, set: setVisionSeeText, ph: 'הים, הצבעים, האנשים סביבך...' },
+                    { key: 'hear', label: '👂 מה את שומעת?', val: visionHearText, set: setVisionHearText, ph: 'רעש הגלים, מוזיקה, מה אומרים לך...' },
+                    { key: 'feel', label: '💫 מה את מרגישה?', val: visionFeelText, set: setVisionFeelText, ph: 'קלילות, שמחה, ביטחון, שלווה...' },
+                  ].map(f => (
+                    <div key={f.key} style={{ marginBottom: 12 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#222', marginBottom: 4 }}>{f.label}</div>
+                      <div style={{ position: 'relative' }}>
+                        <textarea value={f.val} onChange={e => f.set(e.target.value)} onBlur={() => persistVisionState()} rows={2} placeholder={f.ph} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === 'vision_' + f.key ? '#312e81' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
+                        <button onClick={() => adminRecordingKey === 'vision_' + f.key ? stopAdminSpeech() : startAdminSpeech('vision_' + f.key, t => { f.set(t); persistVisionState() })} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === 'vision_' + f.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === 'vision_' + f.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === 'vision_' + f.key ? '⏹ עצרי' : '🎙'}</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* משקל */}
+                <div style={{ background: '#fff', borderRadius: 18, padding: '16px 18px', marginBottom: 16, border: '1.5px solid #f0f0f0' }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#312e81', marginBottom: 10 }}>⚖️ משקל</div>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>משקל נוכחי (ק״ג)</div>
+                      <input type="number" value={visionCurrentWeight} onChange={e => setVisionCurrentWeight(e.target.value)} onBlur={() => persistVisionState()} placeholder="70" style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 15, outline: 'none', textAlign: 'center', boxSizing: 'border-box', fontWeight: 700 }} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 4 }}>משקל יעד (ק״ג)</div>
+                      <input type="number" value={visionTargetWeight} onChange={e => setVisionTargetWeight(e.target.value)} onBlur={e => persistVisionState({ targetWeight: e.target.value })} placeholder="55" style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #7c3aed', fontSize: 15, outline: 'none', textAlign: 'center', boxSizing: 'border-box', fontWeight: 700, color: '#7c3aed' }} />
+                    </div>
+                  </div>
+                  {visionCurrentWeight && visionTargetWeight && (
+                    <div style={{ marginTop: 8, textAlign: 'center', fontSize: 13, color: '#16a34a', fontWeight: 700 }}>
+                      מינוס {Math.round(Math.abs(parseFloat(visionCurrentWeight) - parseFloat(visionTargetWeight)))} ק״ג
+                    </div>
+                  )}
+                </div>
+
+                {visionError && <div style={{ background: '#fef2f2', borderRadius: 10, padding: '10px 14px', marginBottom: 12, color: '#ef4444', fontSize: 13, border: '1px solid #fecaca' }}>{visionError}</div>}
+
+                {/* כפתור פסקה */}
+                <button onClick={generateVisionText} disabled={generatingVisionText} style={{ width: '100%', padding: 13, borderRadius: 12, background: generatingVisionText ? '#9ca3af' : 'linear-gradient(135deg,#7c3aed,#9333ea)', color: '#fff', border: 'none', cursor: generatingVisionText ? 'default' : 'pointer', fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
+                  {generatingVisionText ? '⏳ כותבת פסקה...' : '✍️ צרי פסקת ויזואליזציה'}
+                </button>
+
+                {/* פסקה — ניתנת לעריכה */}
+                {(visionParagraph || generatingVisionText) && (
+                  <div style={{ background: '#faf5ff', borderRadius: 16, padding: '14px 16px', marginBottom: 12, border: '1.5px solid #e9d5ff' }}>
+                    <div style={{ fontWeight: 700, fontSize: 13, color: '#7c3aed', marginBottom: 8 }}>✍️ פסקת הויזואליזציה — ניתנת לעריכה</div>
+                    <textarea
+                      value={visionParagraph}
+                      onChange={e => setVisionParagraph(e.target.value)}
+                      onBlur={e => persistVisionState({ paragraph: e.target.value })}
+                      rows={6}
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }}
+                    />
+                  </div>
+                )}
+
+                {/* 🎙️ הקלטת קול */}
+                <div style={{ marginBottom: 12 }}>
+                  <style>{`
+                    @keyframes wave { from { height: 4px } to { height: 28px } }
+                    @keyframes pulse-red { 0%,100% { opacity:1 } 50% { opacity:0.4 } }
+                  `}</style>
+
+                  {uploadingRecording ? (
+                    <div style={{ width: '100%', padding: 13, borderRadius: 12, background: '#9ca3af', color: '#fff', fontWeight: 700, fontSize: 14, textAlign: 'center' }}>
+                      ⏳ שומרת הקלטה...
+                    </div>
+                  ) : isRecording ? (
+                    <button onClick={stopRecording} style={{ width: '100%', padding: 13, borderRadius: 12, background: 'linear-gradient(135deg,#ef4444,#b91c1c)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+                      <span style={{ animation: 'pulse-red 1s ease-in-out infinite', display: 'inline-block', width: 12, height: 12, borderRadius: '50%', background: '#fff' }} />
+                      ⏹ עצרי • {String(Math.floor(recordingSeconds/60)).padStart(2,'0')}:{String(recordingSeconds%60).padStart(2,'0')}
+                    </button>
+                  ) : (
+                    <button onClick={startRecording} style={{ width: '100%', padding: 13, borderRadius: 12, background: visionAudioUrl ? 'linear-gradient(135deg,#6b7280,#4b5563)' : 'linear-gradient(135deg,#ec4899,#be185d)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 14 }}>
+                      {visionAudioUrl ? '🔄 הקלטה חדשה' : '🎙️ הקליטי הודעה ללקוחה'}
+                    </button>
+                  )}
+
+                  {/* preview לפני אישור */}
+                  {pendingAudioUrl && !isRecording && (
+                    <div style={{ background: 'rgba(251,191,36,0.08)', border: '1.5px solid #fbbf24', borderRadius: 16, padding: '14px 16px', marginTop: 10 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, color: '#fbbf24', marginBottom: 10, textAlign: 'center' }}>👂 האזיני — זו הגרסה הנוכחית</div>
+                      <audio controls src={pendingAudioUrl} style={{ width: '100%', marginBottom: 10, borderRadius: 8 }} />
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => { setPendingAudioUrl(null); pendingAudioBlobRef.current = null }} style={{ flex: 1, padding: '10px 0', borderRadius: 10, background: 'rgba(255,255,255,0.08)', color: '#e0e7ff', border: '1px solid #6b7280', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                          🔄 הקלטה חדשה
+                        </button>
+                        <button onClick={approveRecording} disabled={uploadingRecording} style={{ flex: 2, padding: '10px 0', borderRadius: 10, background: uploadingRecording ? '#9ca3af' : 'linear-gradient(135deg,#16a34a,#15803d)', color: '#fff', border: 'none', cursor: uploadingRecording ? 'default' : 'pointer', fontWeight: 800, fontSize: 14 }}>
+                          {uploadingRecording ? '⏳ שומרת...' : '✅ אשרי ושמרי סופית'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* הקלטה מאושרת ושמורה */}
+                  {visionAudioUrl && !isRecording && !pendingAudioUrl && (
+                    <div style={{ background: 'linear-gradient(135deg,#1e1b4b,#312e81)', borderRadius: 18, padding: '16px 18px', direction: 'rtl', marginTop: 10 }}>
+                      <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 12, textAlign: 'center', color: recordingSaved ? '#4ade80' : '#c7d2fe' }}>
+                        {recordingSaved ? '✅ ההקלטה נשמרה!' : '🎧 ההקלטה הסופית המאושרת'}
+                      </div>
+                      <audio controls src={visionAudioUrl} style={{ width: '100%', marginBottom: 12, borderRadius: 8 }} />
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {visionAudioUrl.startsWith('https://') && (
+                          <a href={visionAudioUrl} download="vision-audio.webm" style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: '#4338ca', color: '#e0e7ff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
+                            ⬇️ הורידי
+                          </a>
+                        )}
+                        {visionAudioUrl.startsWith('https://') && (
+                          <a href={`https://wa.me/${selectedClient?.phone ? selectedClient.phone.replace(/\D/g,'') : ''}?text=${encodeURIComponent('🎧 הקלטה אישית בשבילך 💜\n' + visionAudioUrl)}`} target="_blank" rel="noopener noreferrer" style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: '#25d366', color: '#fff', fontWeight: 700, fontSize: 13, textDecoration: 'none', textAlign: 'center' }}>
+                            📱 שלחי בוואטסאפ
+                          </a>
+                        )}
+                        {!visionAudioUrl.startsWith('https://') && (
+                          <div style={{ flex: 1, padding: '10px 0', borderRadius: 12, background: 'rgba(255,255,255,0.1)', color: '#9ca3af', fontWeight: 700, fontSize: 12, textAlign: 'center' }}>
+                            ⚠️ הקלטה לא נשמרה בשרת — הקליטי שוב
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* כפתור תמונה */}
+                <button onClick={generateVision} disabled={generatingVision} style={{ width: '100%', padding: 13, borderRadius: 12, background: generatingVision ? '#9ca3af' : 'linear-gradient(135deg,#6366f1,#4338ca)', color: '#fff', border: 'none', cursor: generatingVision ? 'default' : 'pointer', fontWeight: 700, fontSize: 14, marginBottom: 12 }}>
+                  {generatingVision ? '⏳ יוצרת תמונה... (~20 שניות)' : visionImageUrl ? '🔄 צרי תמונה חדשה' : '🎨 צרי תמונה'}
+                </button>
+
+                {/* תצוגת תמונה + העלאת חלופה */}
+                {visionImageUrl && (
+                  <div style={{ marginBottom: 12 }}>
+                    <img src={visionImageUrl} alt="vision" style={{ width: '100%', borderRadius: 14, border: '2px solid #818cf8', marginBottom: 8 }} />
+                    <label style={{ display: 'block', padding: '10px', borderRadius: 10, background: '#f5f3ff', color: '#7c3aed', border: '1.5px solid #c4b5fd', textAlign: 'center', cursor: 'pointer', fontWeight: 700, fontSize: 13, marginBottom: 6 }}>
+                      {uploadingAltImage ? '⏳ מעלה...' : '📤 העלי תמונה חלופה (מכלי AI אחר)'}
+                      <input type="file" accept="image/*" style={{ display: 'none' }} onChange={e => handleAltImageUpload(e.target.files[0])} disabled={uploadingAltImage} />
+                    </label>
+                  </div>
+                )}
+
+                {/* שמרי ושלחי לה + דוח יפה */}
+                {(visionParagraph || visionImageUrl || visionPhotoPreview) && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      <button onClick={saveVision} disabled={visionSaving} style={{ flex: 2, padding: 14, borderRadius: 12, background: visionSaved ? '#16a34a' : visionSaving ? '#9ca3af' : '#0f4c2a', color: '#fff', border: 'none', cursor: visionSaving ? 'default' : 'pointer', fontWeight: 800, fontSize: 15 }}>
+                        {visionSaving ? '⏳ שומרת...' : visionSaved ? '✅ נשמר!' : '💾 שמרי'}
+                      </button>
+                      <button onClick={() => window.open(`/vision/${selectedClient?.id}`, '_blank')} style={{ flex: 1, padding: 14, borderRadius: 12, background: 'linear-gradient(135deg,#1e1b4b,#312e81)', color: '#c7d2fe', border: '1.5px solid #4338ca', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                        🌟 דוח יפה
+                      </button>
+                    </div>
+                    {selectedClient?.id && (
+                      <a
+                        href={`https://wa.me/${selectedClient?.phone ? selectedClient.phone.replace(/\D/g,'') : ''}?text=${encodeURIComponent(`✨ הויזואליזציה שלך מוכנה!\nפתחי כאן לדוח יפה עם תמונה, פסקה והקלטה 💜\n${typeof window !== 'undefined' ? window.location.origin : ''}/vision/${selectedClient.id}`)}`}
+                        target="_blank" rel="noopener noreferrer"
+                        style={{ display: 'block', padding: 14, borderRadius: 12, background: '#25d366', color: '#fff', fontWeight: 800, fontSize: 15, textDecoration: 'none', textAlign: 'center' }}
+                      >
+                        📱 שלחי לה בוואטסאפ
+                      </a>
+                    )}
+                  </div>
+                )}
+
+                {visionSaved && <div style={{ textAlign: 'center', fontSize: 12, color: '#16a34a', fontWeight: 600 }}>הויזואליזציה נשמרה ✨</div>}
+
               </div>
             )}
 
@@ -2816,14 +3642,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>מלאי אחרי הפגישה הפיזית → הפיקי סיכום ללקוחה</div>
                   </div>
                   <div style={{ padding: 16 }}>
-                    <textarea
-                      value={rootsSessionNotes}
-                      onChange={e => setRootsSessionNotes(e.target.value)}
-                      onBlur={() => saveSessionKey('roots_session_notes', rootsSessionNotes)}
-                      placeholder="מה עלה בפגישה? אמונות שנגעתם, רגעים ספציפיים, מה הלקוחה גילתה..."
-                      rows={5}
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <textarea
+                        value={rootsSessionNotes}
+                        onChange={e => setRootsSessionNotes(e.target.value)}
+                        onBlur={() => saveSessionKey('roots_session_notes', rootsSessionNotes)}
+                        placeholder="מה עלה בפגישה? אמונות שנגעתם, רגעים ספציפיים, מה הלקוחה גילתה..."
+                        rows={5}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === 'roots_session_notes' ? '#c4956a' : '#e5e7eb'), fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                      />
+                      <button onClick={() => adminRecordingKey === 'roots_session_notes' ? stopAdminSpeech() : startAdminSpeech('roots_session_notes', t => setRootsSessionNotes(t))} style={{ position: 'absolute', left: 8, bottom: 8, padding: '4px 10px', borderRadius: 8, border: 'none', background: adminRecordingKey === 'roots_session_notes' ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === 'roots_session_notes' ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{adminRecordingKey === 'roots_session_notes' ? '⏹ עצרי' : '🎙 הקלטה'}</button>
+                    </div>
                   </div>
                   <div style={{ padding: '0 16px 16px' }}>
                     <button onClick={async () => {
@@ -3057,14 +3886,17 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>מלאי אחרי הפגישה הפיזית → הפיקי סיכום ללקוחה</div>
                   </div>
                   <div style={{ padding: 16 }}>
-                    <textarea
-                      value={bodySessionNotes}
-                      onChange={e => setBodySessionNotes(e.target.value)}
-                      onBlur={() => saveSessionKey('body_session_notes', bodySessionNotes)}
-                      placeholder="מה עלה בפגישה? סימפטומים שזוהו, מנגנונים שהסתברו, מה הלקוחה חיברה..."
-                      rows={5}
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
-                    />
+                    <div style={{ position: 'relative' }}>
+                      <textarea
+                        value={bodySessionNotes}
+                        onChange={e => setBodySessionNotes(e.target.value)}
+                        onBlur={() => saveSessionKey('body_session_notes', bodySessionNotes)}
+                        placeholder="מה עלה בפגישה? סימפטומים שזוהו, מנגנונים שהסתברו, מה הלקוחה חיברה..."
+                        rows={5}
+                        style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === 'body_session_notes' ? '#0d9488' : '#e5e7eb'), fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, fontFamily: 'sans-serif' }}
+                      />
+                      <button onClick={() => adminRecordingKey === 'body_session_notes' ? stopAdminSpeech() : startAdminSpeech('body_session_notes', t => setBodySessionNotes(t))} style={{ position: 'absolute', left: 8, bottom: 8, padding: '4px 10px', borderRadius: 8, border: 'none', background: adminRecordingKey === 'body_session_notes' ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === 'body_session_notes' ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{adminRecordingKey === 'body_session_notes' ? '⏹ עצרי' : '🎙 הקלטה'}</button>
+                    </div>
                   </div>
                   <div style={{ padding: '0 16px 16px' }}>
                     <button onClick={async () => {
