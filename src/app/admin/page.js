@@ -1661,11 +1661,18 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
   async function saveFeedback(log) {
     setSavingFeedback(log.id)
-    const text = feedback[log.id] != null ? feedback[log.id] : (log.trainer_feedback || '')
-    await supabase.from('daily_logs').update({ trainer_feedback: text, report_approved: true }).eq('id', log.id)
-    setSavingFeedback(null); setSentFeedback(log.id); setTimeout(() => setSentFeedback(null), 4000)
-    const { data } = await supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).order('log_date', { ascending: false }).limit(30)
-    setLogs(data || [])
+    try {
+      const text = feedback[log.id] != null ? feedback[log.id] : (log.trainer_feedback || '')
+      const { error } = await supabase.from('daily_logs').update({ trainer_feedback: text, report_approved: true }).eq('id', log.id)
+      if (error) throw error
+      setSentFeedback(log.id); setTimeout(() => setSentFeedback(null), 4000)
+      const { data } = await supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).order('log_date', { ascending: false }).limit(30)
+      setLogs(data || [])
+    } catch (e) {
+      alert('שמירת המשוב נכשלה: ' + (e.message || 'שגיאה לא ידועה') + '\nנסי שוב, ואם זה קורה שוב תגידי לי בדיוק את השגיאה.')
+    } finally {
+      setSavingFeedback(null)
+    }
   }
 
   function openWhatsApp(log) {
