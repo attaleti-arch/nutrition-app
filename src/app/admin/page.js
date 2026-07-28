@@ -1807,20 +1807,25 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
   async function sendDailyFeedback() {
     if (!dailyPreview) return
     setSendingDaily(true)
-    // שמור ב-client_profiles כדי שהלקוחה תראה תמיד
-    await supabase.from('client_profiles').update({
-      ai_report: dailyPreview,
-      report_sent_at: new Date().toISOString()
-    }).eq('client_password', selectedClient.password)
-    // גם שמור על הלוג הספציפי אם קיים
-    if (dailyTargetLog) {
-      await supabase.from('daily_logs').update({ trainer_feedback: dailyPreview, report_approved: true }).eq('id', dailyTargetLog.id)
+    try {
+      const { error } = await supabase.from('client_profiles').upsert({
+        client_password: selectedClient.password,
+        ai_report: dailyPreview,
+        report_sent_at: new Date().toISOString()
+      }, { onConflict: 'client_password' })
+      if (error) throw error
+      if (dailyTargetLog) {
+        await supabase.from('daily_logs').update({ trainer_feedback: dailyPreview, report_approved: true }).eq('id', dailyTargetLog.id)
+      }
+    } catch (err) {
+      alert('שגיאה בשמירה: ' + (err?.message || 'בדקי חיבור ונסי שוב'))
+      setSendingDaily(false)
+      return
     }
     setSendingDaily(false); setSentDaily('done'); setDailyEditing(false)
     setTimeout(() => setSentDaily(null), 4000)
     const { data } = await supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).order('log_date', { ascending: false }).limit(30)
     setLogs(data || [])
-    // פתח וואטסאפ אוטומטית
     if (selectedClient.phone) {
       var phone = selectedClient.phone.replace(/^0/, '972')
       var msg = 'היי ' + selectedClient.name + '! 🌿\n\nהדוח שלך מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
