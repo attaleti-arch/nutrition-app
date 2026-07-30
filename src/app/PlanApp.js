@@ -1042,7 +1042,6 @@ function FridgeScanner({ gender }) {
   }
 
   async function getRecipe() {
-    if (!selectedIngredients.length && !manualInput.trim()) return
     var ings = [...selectedIngredients]
     if (manualInput.trim()) ings = [...new Set([...ings, ...manualInput.split(',').map(s => s.trim()).filter(Boolean)])]
     setLoadingRecipe(true); setRecipe(null); setStep('recipe')
@@ -1091,10 +1090,15 @@ function FridgeScanner({ gender }) {
         {step === 'ingredients' && (open || true) && (
           <div style={{ padding: '0 16px 16px' }}>
             {/* Photo scan */}
+            <div style={{ fontSize: 12, color: '#065f46', fontWeight: 700, marginBottom: 8 }}>
+              {['בשר','עוף','דג'].includes(mealType)
+                ? (mealType + ' יגיע מהפריזר/טרי — ' + (fem ? 'צלמי את המקרר' : 'צלם את המקרר') + ' לירקות, ביצים וכו\'')
+                : (fem ? 'צלמי את המקרר לזיהוי מה יש' : 'צלם את המקרר לזיהוי מה יש')}
+            </div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
               <button onClick={() => inputRef.current?.click()} disabled={scanning}
                 style={{ flex: 1, padding: '9px', borderRadius: 10, background: scanning ? '#9ca3af' : '#fff', border: '1.5px dashed #6ee7b7', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: scanning ? '#fff' : '#065f46' }}>
-                {scanning ? '⏳ סורק מקרר...' : (fem ? '📷 צלמי את המקרר לזיהוי אוטומטי' : '📷 צלם את המקרר לזיהוי אוטומטי')}
+                {scanning ? '⏳ סורק...' : '📷 ' + (fem ? 'צלמי את המקרר' : 'צלם את המקרר')}
               </button>
             </div>
 
@@ -1135,8 +1139,8 @@ function FridgeScanner({ gender }) {
               </div>
             )}
 
-            <button onClick={getRecipe} disabled={!selectedIngredients.length && !manualInput.trim()}
-              style={{ width: '100%', padding: '12px', borderRadius: 12, background: (selectedIngredients.length || manualInput.trim()) ? '#059669' : '#d1d5db', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+            <button onClick={getRecipe}
+              style={{ width: '100%', padding: '12px', borderRadius: 12, background: '#059669', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
               👨‍🍳 {fem ? 'קבלי מתכון' : 'קבל מתכון'}
             </button>
           </div>
