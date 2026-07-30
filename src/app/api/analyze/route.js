@@ -220,24 +220,45 @@ export async function POST(request) {
       }
     }
 
-    // ── סריקת מקרר ──
+    // ── סריקת מקרר — זיהוי מרכיבים מתמונה ──
     if (mode === 'scanFridge' && body.imageBase64) {
-      const profileCtx = body.clientProfile
-        ? '\nפרופיל הלקוחה: ' + String(body.clientProfile).substring(0, 300)
-        : ''
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
-        max_tokens: 900,
+        max_tokens: 400,
         messages: [{ role: 'user', content: [
           { type: 'image', source: { type: 'base64', media_type: body.mediaType || 'image/jpeg', data: body.imageBase64 } },
-          { type: 'text', text: 'זוהי תמונה של מקרר. זהה רק מה שנראה בבירור בתמונה — אל תמציא מצרכים שאינם גלויים.\n\nחוקי כשרות מחייבים — חובה לשמור:\n- אסור בהחלט לשלב בשר/עוף עם מוצרי חלב (גבינה, חמאה, שמנת, יוגורט, חלב) באותה ארוחה.\n- כל ארוחה חייבת להיות: בשרית בלבד, חלבית בלבד, או פרווה (ביצים/ירקות/דגנים).\n- ביצים הן פרווה — מותרות עם חלבי ועם בשרי בנפרד.' + profileCtx + '\n\nהצע 3 ארוחות שניתן להכין מהמצרכים הנראים בתמונה.\nהחזר JSON בלבד:\n{\n  "ingredients": ["מצרך1","מצרך2"],\n  "suggestions": [\n    {"name":"שם הארוחה","description":"תיאור קצר בעברית","approxCalories":400,"protein":25,"tips":"טיפ אחד קצר"},\n    {"name":"...","description":"...","approxCalories":0,"protein":0,"tips":"..."},\n    {"name":"...","description":"...","approxCalories":0,"protein":0,"tips":"..."}\n  ]\n}' }
+          { type: 'text', text: 'זוהי תמונה של מקרר. פרט רק את המצרכים הנראים בבירור. אל תמציא.\nהחזר JSON בלבד:\n{"ingredients":["מצרך1","מצרך2"]}' }
         ]}]
       })
       try {
         const parsed = JSON.parse(msg.content[0].text.replace(/```json|```/g,'').trim())
         return Response.json({ result: parsed })
       } catch(e) {
-        return Response.json({ result: { ingredients: [], suggestions: [] } })
+        return Response.json({ result: { ingredients: [] } })
+      }
+    }
+
+    // ── מתכון לפי מרכיבים וסוג ארוחה ──
+    if (mode === 'fridgeRecipe' && body.ingredients && body.mealType) {
+      const mealType = String(body.mealType)
+      const ingredients = (body.ingredients || []).slice(0, 20).join(', ')
+      const kashrut = mealType === 'בשר' || mealType === 'עוף'
+        ? 'ארוחה בשרית — אסור לכלול כל מוצר חלב (גבינה/חמאה/שמנת/יוגורט/חלב).'
+        : mealType === 'דג'
+        ? 'ארוחת דגים — פרווה. ניתן להוסיף לימון, שמן זית, ירקות.'
+        : mealType === 'ארוחת בוקר'
+        ? 'ארוחת בוקר — חלבית או פרווה. אסור לכלול בשר/עוף.'
+        : 'ארוחה קלה — ללא בשר. ירקות, ביצים, גבינה, קטניות.'
+      const msg = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 700,
+        messages: [{ role: 'user', content: 'צור מתכון אחד לארוחת ' + mealType + '.\n' + kashrut + '\nמרכיבים זמינים: ' + ingredients + '\nניתן להוסיף תבלינים בסיסיים (מלח, פלפל, שמן זית, לימון).\nהחזר JSON בלבד:\n{\n  "name": "שם המנה",\n  "duration": "זמן הכנה בדקות",\n  "approxCalories": 0,\n  "protein": 0,\n  "ingredients": ["כמות + מרכיב"],\n  "steps": ["שלב 1","שלב 2","שלב 3"]\n}' }]
+      })
+      try {
+        const parsed = JSON.parse(msg.content[0].text.replace(/```json|```/g,'').trim())
+        return Response.json({ result: parsed })
+      } catch(e) {
+        return Response.json({ result: null })
       }
     }
 

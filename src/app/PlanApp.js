@@ -991,78 +991,186 @@ function MealScanner({ gender, onAdd, joinedDate }) {
   )
 }
 
-function FridgeScanner({ gender, targets, restrictions, dietType, userGoal }) {
+const MEAL_TYPES = [
+  { key: 'בשר', label: 'בשר', emoji: '🥩' },
+  { key: 'עוף', label: 'עוף', emoji: '🍗' },
+  { key: 'דג', label: 'דג', emoji: '🐟' },
+  { key: 'ארוחה קלה', label: 'ארוחה קלה', emoji: '🥗' },
+  { key: 'ארוחת בוקר', label: 'בוקר', emoji: '🌅' },
+]
+
+function FridgeScanner({ gender }) {
+  const [step, setStep] = useState('type') // type → ingredients → recipe
+  const [mealType, setMealType] = useState(null)
   const [scanning, setScanning] = useState(false)
-  const [result, setResult] = useState(null)
+  const [loadingRecipe, setLoadingRecipe] = useState(false)
+  const [detectedIngredients, setDetectedIngredients] = useState([])
+  const [selectedIngredients, setSelectedIngredients] = useState([])
+  const [manualInput, setManualInput] = useState('')
+  const [recipe, setRecipe] = useState(null)
   const [open, setOpen] = useState(false)
   const inputRef = useRef(null)
   const fem = gender !== 'זכר'
 
-  async function handleFile(file) {
+  function reset() {
+    setStep('type'); setMealType(null); setDetectedIngredients([])
+    setSelectedIngredients([]); setManualInput(''); setRecipe(null); setOpen(false)
+  }
+
+  async function handleFridgePhoto(file) {
     if (!file) return
-    setScanning(true); setResult(null); setOpen(true)
+    setScanning(true)
     try {
       var base64 = await new Promise(function(res, rej) { var r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = () => rej(new Error('שגיאה')); r.readAsDataURL(file) })
-      var profile = []
-      if (userGoal) profile.push('מטרה: ' + userGoal)
-      if (targets && targets.calories) profile.push('יעד קלורי: ' + targets.calories + ' קל')
-      if (dietType && dietType !== 'רגיל') profile.push('תזונה: ' + dietType)
-      if (restrictions) { var rKeys = Object.keys(restrictions).filter(k => restrictions[k]); if (rKeys.length) profile.push('הגבלות: ' + rKeys.join(', ')) }
-      var res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'scanFridge', imageBase64: base64, mediaType: file.type, clientProfile: profile.join(' | ') }) })
+      var res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'scanFridge', imageBase64: base64, mediaType: file.type }) })
       var data = await res.json()
-      setResult(data.result)
-    } catch(e) { alert('שגיאה בסריקת המקרר') }
+      var ings = (data.result && data.result.ingredients) || []
+      setDetectedIngredients(ings); setSelectedIngredients(ings)
+    } catch(e) { alert('שגיאה בסריקה') }
     setScanning(false)
+  }
+
+  function addManualIngredient() {
+    var parts = manualInput.split(',').map(s => s.trim()).filter(Boolean)
+    if (!parts.length) return
+    setSelectedIngredients(prev => [...new Set([...prev, ...parts])])
+    setManualInput('')
+  }
+
+  function toggleIngredient(ing) {
+    setSelectedIngredients(prev => prev.includes(ing) ? prev.filter(i => i !== ing) : [...prev, ing])
+  }
+
+  async function getRecipe() {
+    if (!selectedIngredients.length && !manualInput.trim()) return
+    var ings = [...selectedIngredients]
+    if (manualInput.trim()) ings = [...new Set([...ings, ...manualInput.split(',').map(s => s.trim()).filter(Boolean)])]
+    setLoadingRecipe(true); setRecipe(null); setStep('recipe')
+    try {
+      var res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'fridgeRecipe', mealType, ingredients: ings }) })
+      var data = await res.json()
+      setRecipe(data.result)
+    } catch(e) { alert('שגיאה בקבלת מתכון') }
+    setLoadingRecipe(false)
   }
 
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ background: 'linear-gradient(135deg,#ecfdf5,#d1fae5)', borderRadius: 18, border: '1.5px solid #6ee7b7', overflow: 'hidden' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', cursor: 'pointer' }} onClick={() => { if (!scanning && !result) { inputRef.current?.click() } else { setOpen(o => !o) } }}>
+        {/* Header */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', cursor: recipe || step !== 'type' ? 'pointer' : 'default' }} onClick={() => { if (recipe || step !== 'type') setOpen(o => !o) }}>
           <span style={{ fontSize: 26 }}>🧊</span>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 900, fontSize: 14, color: '#065f46' }}>מה יש במקרר?</div>
-            <div style={{ fontSize: 11, color: '#047857', marginTop: 1 }}>{fem ? 'צלמי תמונה — AI ימליץ מה לאכול' : 'צלם תמונה — AI ימליץ מה לאכול'}</div>
+            <div style={{ fontSize: 11, color: '#047857', marginTop: 1 }}>
+              {step === 'type' && (fem ? 'בחרי סוג ארוחה' : 'בחר סוג ארוחה')}
+              {step === 'ingredients' && (mealType + ' · ' + (fem ? 'בחרי מרכיבים' : 'בחר מרכיבים'))}
+              {step === 'recipe' && (recipe ? recipe.name : 'מכין מתכון...')}
+            </div>
           </div>
-          {result && !scanning && (
-            <span style={{ fontSize: 12, color: '#059669', fontWeight: 700, cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setResult(null); setOpen(false) }}>✕ נקה</span>
-          )}
-          {!result && !scanning && (
-            <button onClick={e => { e.stopPropagation(); inputRef.current?.click() }} style={{ padding: '7px 14px', borderRadius: 10, background: '#059669', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>
-              📷 צלם
-            </button>
-          )}
-          {scanning && <span style={{ fontSize: 12, color: '#059669', fontWeight: 700 }}>⏳ סורק...</span>}
+          {(step !== 'type') && <span style={{ fontSize: 12, color: '#dc2626', fontWeight: 700, cursor: 'pointer' }} onClick={e => { e.stopPropagation(); reset() }}>✕ התחל מחדש</span>}
         </div>
-        <input type="file" accept="image/*" capture="environment" ref={inputRef} style={{ display: 'none' }} onChange={e => e.target.files[0] && handleFile(e.target.files[0])} />
-        {result && open && (
-          <div style={{ padding: '0 18px 16px' }}>
-            {result.ingredients && result.ingredients.length > 0 && (
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#065f46', marginBottom: 6 }}>🛒 מה AI זיהה במקרר:</div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
-                  {result.ingredients.map((ing, i) => (
-                    <span key={i} style={{ fontSize: 11, background: '#fff', border: '1px solid #6ee7b7', borderRadius: 99, padding: '3px 10px', color: '#065f46', fontWeight: 600 }}>{ing}</span>
-                  ))}
+
+        <input type="file" accept="image/*" capture="environment" ref={inputRef} style={{ display: 'none' }} onChange={e => e.target.files[0] && handleFridgePhoto(e.target.files[0])} />
+
+        {/* Step 1 — choose meal type */}
+        {step === 'type' && (
+          <div style={{ padding: '0 16px 16px' }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {MEAL_TYPES.map(t => (
+                <button key={t.key} onClick={() => { setMealType(t.key); setStep('ingredients'); setOpen(true) }}
+                  style={{ padding: '8px 14px', borderRadius: 10, background: '#fff', border: '1.5px solid #6ee7b7', cursor: 'pointer', fontWeight: 700, fontSize: 13, color: '#065f46', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span>{t.emoji}</span>{t.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Step 2 — ingredients */}
+        {step === 'ingredients' && (open || true) && (
+          <div style={{ padding: '0 16px 16px' }}>
+            {/* Photo scan */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <button onClick={() => inputRef.current?.click()} disabled={scanning}
+                style={{ flex: 1, padding: '9px', borderRadius: 10, background: scanning ? '#9ca3af' : '#fff', border: '1.5px dashed #6ee7b7', cursor: 'pointer', fontWeight: 700, fontSize: 12, color: scanning ? '#fff' : '#065f46' }}>
+                {scanning ? '⏳ סורק מקרר...' : (fem ? '📷 צלמי את המקרר לזיהוי אוטומטי' : '📷 צלם את המקרר לזיהוי אוטומטי')}
+              </button>
+            </div>
+
+            {/* Detected ingredients as toggleable chips */}
+            {detectedIngredients.length > 0 && (
+              <div style={{ marginBottom: 10 }}>
+                <div style={{ fontSize: 11, color: '#6b7280', marginBottom: 6, fontWeight: 600 }}>AI זיהה — {fem ? 'הסירי' : 'הסר'} מה שאין:</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {detectedIngredients.map((ing, i) => {
+                    var selected = selectedIngredients.includes(ing)
+                    return (
+                      <button key={i} onClick={() => toggleIngredient(ing)}
+                        style={{ padding: '4px 12px', borderRadius: 99, border: '1.5px solid ' + (selected ? '#059669' : '#d1d5db'), background: selected ? '#d1fae5' : '#f9fafb', cursor: 'pointer', fontSize: 12, fontWeight: 600, color: selected ? '#065f46' : '#9ca3af', textDecoration: selected ? 'none' : 'line-through' }}>
+                        {ing}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             )}
-            {result.suggestions && result.suggestions.length > 0 && (
+
+            {/* Manual entry */}
+            <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+              <input
+                value={manualInput}
+                onChange={e => setManualInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && addManualIngredient()}
+                placeholder={fem ? 'הוסיפי מרכיב (מופרד בפסיק)' : 'הוסף מרכיב (מופרד בפסיק)'}
+                style={{ flex: 1, padding: '8px 12px', borderRadius: 10, border: '1.5px solid #6ee7b7', fontSize: 13, textAlign: 'right', boxSizing: 'border-box', outline: 'none' }}
+              />
+              <button onClick={addManualIngredient} style={{ padding: '8px 12px', borderRadius: 10, background: '#059669', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>+</button>
+            </div>
+
+            {/* Selected summary */}
+            {selectedIngredients.length > 0 && (
+              <div style={{ fontSize: 11, color: '#065f46', marginBottom: 10, fontWeight: 600 }}>
+                נבחרו: {selectedIngredients.join(', ')}
+              </div>
+            )}
+
+            <button onClick={getRecipe} disabled={!selectedIngredients.length && !manualInput.trim()}
+              style={{ width: '100%', padding: '12px', borderRadius: 12, background: (selectedIngredients.length || manualInput.trim()) ? '#059669' : '#d1d5db', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
+              👨‍🍳 {fem ? 'קבלי מתכון' : 'קבל מתכון'}
+            </button>
+          </div>
+        )}
+
+        {/* Step 3 — recipe */}
+        {step === 'recipe' && (
+          <div style={{ padding: '0 16px 16px' }}>
+            {loadingRecipe && <div style={{ textAlign: 'center', padding: '20px 0', color: '#059669', fontWeight: 700, fontSize: 13 }}>⏳ מכין מתכון...</div>}
+            {recipe && (
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#065f46', marginBottom: 8 }}>🍽️ הצעות ארוחות:</div>
-                {result.suggestions.map((s, i) => (
-                  <div key={i} style={{ background: '#fff', borderRadius: 12, padding: '10px 12px', marginBottom: 8, border: '1px solid #a7f3d0' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-                      <div style={{ fontWeight: 800, fontSize: 13, color: '#065f46' }}>{s.name}</div>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        {s.approxCalories > 0 && <span style={{ fontSize: 10, background: '#ecfdf5', color: '#065f46', borderRadius: 99, padding: '2px 7px', fontWeight: 700 }}>🔥 {s.approxCalories}</span>}
-                        {s.protein > 0 && <span style={{ fontSize: 10, background: '#eff6ff', color: '#1d4ed8', borderRadius: 99, padding: '2px 7px', fontWeight: 700 }}>💪 {s.protein}g</span>}
-                      </div>
-                    </div>
-                    <div style={{ fontSize: 12, color: '#374151', marginBottom: s.tips ? 4 : 0 }}>{s.description}</div>
-                    {s.tips && <div style={{ fontSize: 11, color: '#6b7280', fontStyle: 'italic' }}>💡 {s.tips}</div>}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ fontWeight: 900, fontSize: 16, color: '#065f46' }}>{recipe.name}</div>
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    {recipe.duration && <span style={{ fontSize: 11, background: '#fff', border: '1px solid #6ee7b7', borderRadius: 99, padding: '3px 9px', color: '#065f46', fontWeight: 700 }}>⏱ {recipe.duration}</span>}
+                    {recipe.approxCalories > 0 && <span style={{ fontSize: 11, background: '#ecfdf5', borderRadius: 99, padding: '3px 9px', color: '#065f46', fontWeight: 700 }}>🔥 {recipe.approxCalories}</span>}
+                    {recipe.protein > 0 && <span style={{ fontSize: 11, background: '#eff6ff', borderRadius: 99, padding: '3px 9px', color: '#1d4ed8', fontWeight: 700 }}>💪 {recipe.protein}g</span>}
                   </div>
-                ))}
+                </div>
+                {recipe.ingredients && recipe.ingredients.length > 0 && (
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '10px 14px', marginBottom: 10, border: '1px solid #a7f3d0' }}>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: '#065f46', marginBottom: 6 }}>מרכיבים:</div>
+                    {recipe.ingredients.map((ing, i) => <div key={i} style={{ fontSize: 13, color: '#374151', marginBottom: 2 }}>• {ing}</div>)}
+                  </div>
+                )}
+                {recipe.steps && recipe.steps.length > 0 && (
+                  <div style={{ background: '#fff', borderRadius: 12, padding: '10px 14px', border: '1px solid #a7f3d0' }}>
+                    <div style={{ fontWeight: 700, fontSize: 12, color: '#065f46', marginBottom: 6 }}>אופן הכנה:</div>
+                    {recipe.steps.map((s, i) => <div key={i} style={{ fontSize: 13, color: '#374151', marginBottom: 6, display: 'flex', gap: 8 }}><span style={{ fontWeight: 800, color: '#059669', flexShrink: 0 }}>{i+1}.</span><span>{s}</span></div>)}
+                  </div>
+                )}
+                <button onClick={() => { setStep('ingredients'); setRecipe(null) }} style={{ marginTop: 10, width: '100%', padding: '10px', borderRadius: 12, background: '#fff', color: '#059669', border: '1.5px solid #6ee7b7', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                  🔄 {fem ? 'רוצי מתכון אחר' : 'רוצה מתכון אחר'}
+                </button>
               </div>
             )}
           </div>
@@ -2807,7 +2915,7 @@ export default function PlanApp({ clientName, userPassword }) {
         )}
 
         {/* ✅ סריקת מקרר */}
-        {profileDone && <FridgeScanner gender={userGender} targets={targets} restrictions={restrictions} dietType={dietType} userGoal={userGoal} />}
+        {profileDone && <FridgeScanner gender={userGender} />}
 
         {/* ✅ כרטיס רצף ושבוע */}
         {weekDates.length > 0 && (
