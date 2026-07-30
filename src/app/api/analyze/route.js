@@ -230,7 +230,7 @@ export async function POST(request) {
         max_tokens: 900,
         messages: [{ role: 'user', content: [
           { type: 'image', source: { type: 'base64', media_type: body.mediaType || 'image/jpeg', data: body.imageBase64 } },
-          { type: 'text', text: 'זוהי תמונה של מקרר. זהה מה יש בו והצע 3 ארוחות שניתן להכין מהמצרכים האלו.' + profileCtx + '\nהחזר JSON בלבד:\n{\n  "ingredients": ["מצרך1","מצרך2"],\n  "suggestions": [\n    {"name":"שם הארוחה","description":"תיאור קצר בעברית","approxCalories":400,"protein":25,"tips":"טיפ אחד קצר"},\n    {"name":"...","description":"...","approxCalories":0,"protein":0,"tips":"..."},\n    {"name":"...","description":"...","approxCalories":0,"protein":0,"tips":"..."}\n  ]\n}' }
+          { type: 'text', text: 'זוהי תמונה של מקרר. זהה רק מה שנראה בבירור בתמונה — אל תמציא מצרכים שאינם גלויים.\n\nחוקי כשרות מחייבים — חובה לשמור:\n- אסור בהחלט לשלב בשר/עוף עם מוצרי חלב (גבינה, חמאה, שמנת, יוגורט, חלב) באותה ארוחה.\n- כל ארוחה חייבת להיות: בשרית בלבד, חלבית בלבד, או פרווה (ביצים/ירקות/דגנים).\n- ביצים הן פרווה — מותרות עם חלבי ועם בשרי בנפרד.' + profileCtx + '\n\nהצע 3 ארוחות שניתן להכין מהמצרכים הנראים בתמונה.\nהחזר JSON בלבד:\n{\n  "ingredients": ["מצרך1","מצרך2"],\n  "suggestions": [\n    {"name":"שם הארוחה","description":"תיאור קצר בעברית","approxCalories":400,"protein":25,"tips":"טיפ אחד קצר"},\n    {"name":"...","description":"...","approxCalories":0,"protein":0,"tips":"..."},\n    {"name":"...","description":"...","approxCalories":0,"protein":0,"tips":"..."}\n  ]\n}' }
         ]}]
       })
       try {
