@@ -991,6 +991,87 @@ function MealScanner({ gender, onAdd, joinedDate }) {
   )
 }
 
+function FridgeScanner({ gender, targets, restrictions, dietType, userGoal }) {
+  const [scanning, setScanning] = useState(false)
+  const [result, setResult] = useState(null)
+  const [open, setOpen] = useState(false)
+  const inputRef = useRef(null)
+  const fem = gender !== 'זכר'
+
+  async function handleFile(file) {
+    if (!file) return
+    setScanning(true); setResult(null); setOpen(true)
+    try {
+      var base64 = await new Promise(function(res, rej) { var r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = () => rej(new Error('שגיאה')); r.readAsDataURL(file) })
+      var profile = []
+      if (userGoal) profile.push('מטרה: ' + userGoal)
+      if (targets && targets.calories) profile.push('יעד קלורי: ' + targets.calories + ' קל')
+      if (dietType && dietType !== 'רגיל') profile.push('תזונה: ' + dietType)
+      if (restrictions) { var rKeys = Object.keys(restrictions).filter(k => restrictions[k]); if (rKeys.length) profile.push('הגבלות: ' + rKeys.join(', ')) }
+      var res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'scanFridge', imageBase64: base64, mediaType: file.type, clientProfile: profile.join(' | ') }) })
+      var data = await res.json()
+      setResult(data.result)
+    } catch(e) { alert('שגיאה בסריקת המקרר') }
+    setScanning(false)
+  }
+
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <div style={{ background: 'linear-gradient(135deg,#ecfdf5,#d1fae5)', borderRadius: 18, border: '1.5px solid #6ee7b7', overflow: 'hidden' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px', cursor: 'pointer' }} onClick={() => { if (!scanning && !result) { inputRef.current?.click() } else { setOpen(o => !o) } }}>
+          <span style={{ fontSize: 26 }}>🧊</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontWeight: 900, fontSize: 14, color: '#065f46' }}>מה יש במקרר?</div>
+            <div style={{ fontSize: 11, color: '#047857', marginTop: 1 }}>{fem ? 'צלמי תמונה — AI ימליץ מה לאכול' : 'צלם תמונה — AI ימליץ מה לאכול'}</div>
+          </div>
+          {result && !scanning && (
+            <span style={{ fontSize: 12, color: '#059669', fontWeight: 700, cursor: 'pointer' }} onClick={e => { e.stopPropagation(); setResult(null); setOpen(false) }}>✕ נקה</span>
+          )}
+          {!result && !scanning && (
+            <button onClick={e => { e.stopPropagation(); inputRef.current?.click() }} style={{ padding: '7px 14px', borderRadius: 10, background: '#059669', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>
+              📷 צלם
+            </button>
+          )}
+          {scanning && <span style={{ fontSize: 12, color: '#059669', fontWeight: 700 }}>⏳ סורק...</span>}
+        </div>
+        <input type="file" accept="image/*" capture="environment" ref={inputRef} style={{ display: 'none' }} onChange={e => e.target.files[0] && handleFile(e.target.files[0])} />
+        {result && open && (
+          <div style={{ padding: '0 18px 16px' }}>
+            {result.ingredients && result.ingredients.length > 0 && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#065f46', marginBottom: 6 }}>🛒 מה AI זיהה במקרר:</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                  {result.ingredients.map((ing, i) => (
+                    <span key={i} style={{ fontSize: 11, background: '#fff', border: '1px solid #6ee7b7', borderRadius: 99, padding: '3px 10px', color: '#065f46', fontWeight: 600 }}>{ing}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {result.suggestions && result.suggestions.length > 0 && (
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 700, color: '#065f46', marginBottom: 8 }}>🍽️ הצעות ארוחות:</div>
+                {result.suggestions.map((s, i) => (
+                  <div key={i} style={{ background: '#fff', borderRadius: 12, padding: '10px 12px', marginBottom: 8, border: '1px solid #a7f3d0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                      <div style={{ fontWeight: 800, fontSize: 13, color: '#065f46' }}>{s.name}</div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        {s.approxCalories > 0 && <span style={{ fontSize: 10, background: '#ecfdf5', color: '#065f46', borderRadius: 99, padding: '2px 7px', fontWeight: 700 }}>🔥 {s.approxCalories}</span>}
+                        {s.protein > 0 && <span style={{ fontSize: 10, background: '#eff6ff', color: '#1d4ed8', borderRadius: 99, padding: '2px 7px', fontWeight: 700 }}>💪 {s.protein}g</span>}
+                      </div>
+                    </div>
+                    <div style={{ fontSize: 12, color: '#374151', marginBottom: s.tips ? 4 : 0 }}>{s.description}</div>
+                    {s.tips && <div style={{ fontSize: 11, color: '#6b7280', fontStyle: 'italic' }}>💡 {s.tips}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function Section({ title, icon, accent, light, children, defaultOpen, badge, isLocked, lockMessage, cardBg, cardBorder }) {
   const [open, setOpen] = useState(defaultOpen || false)
   if (isLocked) return (
@@ -2724,6 +2805,9 @@ export default function PlanApp({ clientName, userPassword }) {
         {targets && (
           <CravingHelper remainingCal={targets.calories - eatenCalories} remainingProt={targets.protein - eatenProtein} gfn={gf} />
         )}
+
+        {/* ✅ סריקת מקרר */}
+        {profileDone && <FridgeScanner gender={userGender} targets={targets} restrictions={restrictions} dietType={dietType} userGoal={userGoal} />}
 
         {/* ✅ כרטיס רצף ושבוע */}
         {weekDates.length > 0 && (
