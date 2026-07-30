@@ -220,6 +220,27 @@ export async function POST(request) {
       }
     }
 
+    // ── סריקת מקרר ──
+    if (mode === 'scanFridge' && body.imageBase64) {
+      const profileCtx = body.clientProfile
+        ? '\nפרופיל הלקוחה: ' + String(body.clientProfile).substring(0, 300)
+        : ''
+      const msg = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 900,
+        messages: [{ role: 'user', content: [
+          { type: 'image', source: { type: 'base64', media_type: body.mediaType || 'image/jpeg', data: body.imageBase64 } },
+          { type: 'text', text: 'זוהי תמונה של מקרר. זהה מה יש בו והצע 3 ארוחות שניתן להכין מהמצרכים האלו.' + profileCtx + '\nהחזר JSON בלבד:\n{\n  "ingredients": ["מצרך1","מצרך2"],\n  "suggestions": [\n    {"name":"שם הארוחה","description":"תיאור קצר בעברית","approxCalories":400,"protein":25,"tips":"טיפ אחד קצר"},\n    {"name":"...","description":"...","approxCalories":0,"protein":0,"tips":"..."},\n    {"name":"...","description":"...","approxCalories":0,"protein":0,"tips":"..."}\n  ]\n}' }
+        ]}]
+      })
+      try {
+        const parsed = JSON.parse(msg.content[0].text.replace(/```json|```/g,'').trim())
+        return Response.json({ result: parsed })
+      } catch(e) {
+        return Response.json({ result: { ingredients: [], suggestions: [] } })
+      }
+    }
+
     // ── Agent חירום 24/7 ──
     if (mode === 'agent') {
       const messages = body.messages || []
