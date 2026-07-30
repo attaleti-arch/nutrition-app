@@ -239,20 +239,27 @@ export async function POST(request) {
     }
 
     // ── מתכון לפי מרכיבים וסוג ארוחה ──
-    if (mode === 'fridgeRecipe' && body.ingredients && body.mealType) {
+    if (mode === 'fridgeRecipe' && body.mealType) {
       const mealType = String(body.mealType)
-      const ingredients = (body.ingredients || []).slice(0, 20).join(', ')
+      const fridgeItems = (body.ingredients || []).slice(0, 20).join(', ')
+      const isLight = mealType === 'ארוחה קלה' || mealType === 'ארוחת בוקר'
+      const proteinLine = isLight
+        ? ''
+        : 'החלבון הראשי הוא ' + mealType + ' (נמצא בפריזר/קונים טרי — אל תחפש אותו במרכיבי המקרר).\n'
       const kashrut = mealType === 'בשר' || mealType === 'עוף'
-        ? 'ארוחה בשרית — אסור לכלול כל מוצר חלב (גבינה/חמאה/שמנת/יוגורט/חלב).'
+        ? 'כשרות — בשרית: אסור לשלב כל מוצר חלב (גבינה/חמאה/שמנת/יוגורט/חלב).'
         : mealType === 'דג'
-        ? 'ארוחת דגים — פרווה. ניתן להוסיף לימון, שמן זית, ירקות.'
+        ? 'כשרות — פרווה: ניתן לשלב עם ירקות, לימון, שמן זית. אסור לכלול בשר/עוף.'
         : mealType === 'ארוחת בוקר'
-        ? 'ארוחת בוקר — חלבית או פרווה. אסור לכלול בשר/עוף.'
-        : 'ארוחה קלה — ללא בשר. ירקות, ביצים, גבינה, קטניות.'
+        ? 'כשרות — חלבית או פרווה: אסור לכלול בשר/עוף.'
+        : 'ארוחה קלה — פרווה או חלבית: אין בשר.'
+      const fridgeLine = fridgeItems
+        ? 'מרכיבים זמינים מהמקרר (ירקות/ביצים/גבינות/רטבים): ' + fridgeItems + '\n'
+        : 'השתמש בירקות עונתיים ותבלינים בסיסיים.\n'
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 700,
-        messages: [{ role: 'user', content: 'צור מתכון אחד לארוחת ' + mealType + '.\n' + kashrut + '\nמרכיבים זמינים: ' + ingredients + '\nניתן להוסיף תבלינים בסיסיים (מלח, פלפל, שמן זית, לימון).\nהחזר JSON בלבד:\n{\n  "name": "שם המנה",\n  "duration": "זמן הכנה בדקות",\n  "approxCalories": 0,\n  "protein": 0,\n  "ingredients": ["כמות + מרכיב"],\n  "steps": ["שלב 1","שלב 2","שלב 3"]\n}' }]
+        messages: [{ role: 'user', content: 'צור מתכון אחד.\n' + proteinLine + kashrut + '\n' + fridgeLine + 'ניתן להוסיף תבלינים בסיסיים (מלח, פלפל, שמן זית, לימון, שום).\nהחזר JSON בלבד:\n{\n  "name": "שם המנה",\n  "duration": "זמן הכנה בדקות",\n  "approxCalories": 0,\n  "protein": 0,\n  "ingredients": ["כמות + מרכיב"],\n  "steps": ["שלב 1","שלב 2","שלב 3"]\n}' }]
       })
       try {
         const parsed = JSON.parse(msg.content[0].text.replace(/```json|```/g,'').trim())
