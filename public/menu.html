@@ -224,30 +224,31 @@
   /* ---------- bridge ---------- */
   .bridge{
     margin-top:34px;padding:38px 40px 42px;
-    background:var(--olive-deep);border-radius:10px;text-align:center;
+    background:#66754a;border-radius:10px;text-align:center;
     position:relative;overflow:hidden;
   }
   .bridge::after{
     content:"";position:absolute;inset-block-end:-60px;inset-inline-end:-50px;
-    width:190px;height:190px;border-radius:99px;background:rgba(184,147,63,.1);
+    width:190px;height:190px;border-radius:99px;background:rgba(255,255,255,.07);
   }
-  .bridge .display{font-size:26px;color:#fff;margin:0 0 12px;position:relative;}
-  .bridge > p{margin:0 auto 24px;max-width:50ch;color:#dfdcc9;font-size:16px;position:relative;}
+  .bridge .display{font-size:26px;color:#fff;margin:0 0 14px;position:relative;}
+  .bridge > p{margin:0 auto 16px;max-width:52ch;color:#f0eee4;font-size:16px;position:relative;}
+  .bridge > p:last-of-type{margin-bottom:26px;}
   .bridge a.more{
-    position:relative;display:inline-block;color:var(--gold);font-weight:700;font-size:16px;
-    text-decoration:none;border-bottom:1px solid rgba(184,147,63,.45);padding-bottom:2px;
+    position:relative;display:inline-block;color:#fff;font-weight:700;font-size:16px;
+    text-decoration:none;border-bottom:1px solid rgba(255,255,255,.55);padding-bottom:3px;
   }
-  .bridge a.more:hover{color:#dcb75f;border-bottom-color:#dcb75f;}
+  .bridge a.more:hover{border-bottom-color:#fff;}
 
   .lead{
     position:relative;margin-top:30px;padding-top:28px;
-    border-top:1px solid rgba(255,255,255,.14);
+    border-top:1px solid rgba(255,255,255,.22);
   }
   .lead-title{
     font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:20px;
     color:#fff;margin:0 0 6px;
   }
-  .lead-sub{font-size:14.5px;color:#b9b6a4;margin:0 0 20px;}
+  .lead-sub{font-size:14.5px;color:#e2e0d2;margin:0 0 20px;}
   form.lead-form{max-width:390px;margin:0 auto;display:flex;flex-direction:column;gap:11px;}
   form.lead-form input,form.lead-form textarea{
     width:100%;padding:13px 16px;border-radius:7px;border:none;
@@ -300,12 +301,11 @@
 <div class="sheet">
 
   <header class="cover">
-    <img class="cover-logo" src="/logo-full-transparent.png" alt="בין הראש לצלחת">
+    <img class="cover-logo" src="/logo-mark.png" alt="בין הראש לצלחת">
     <p class="eyebrow">תפריט לדוגמה</p>
     <h1>חלבון בכל ארוחה</h1>
     <p class="sub">לצמחוניות ולכל מי שמדלגת על בשר</p>
     <div class="ornament"><i></i><b></b><i></i></div>
-    <p class="brandline">יועצת בריאות ותזונה התנהגותית · מאסטרית NLP</p>
   </header>
 
   <div class="pad">
@@ -543,13 +543,18 @@
     <div class="bridge no-print">
       <p class="display">זה תפריט לדוגמה.</p>
       <p>
-        הוא בנוי על מבנה, לא על המדדים שלך. בתוכנית עצמה בונים אחד שמתאים
-        לשעות שלך, למשפחה שלך ולמה שכבר ניסית — ומלווים אותו יום־יום.
+        בתהליך אמיתי בונים תוכנית שמותאמת אישית — למדדים שלך, למצב הבריאותי,
+        להעדפות ולשגרה שלך.
+      </p>
+      <p>
+        אבל תפריט הוא אף פעם לא כל הסיפור. אני לא כותבת תפריטים —
+        אני מלווה נשים בירידה במשקל ובאכילה רגשית, בתהליך עמוק שמשלב NLP
+        ועבודה על הדפוסים שחוזרים שוב ושוב.
       </p>
       <a class="more" href="/landing.html">איך התהליך עובד ←</a>
 
       <div class="lead">
-        <p class="lead-title">רוצה תפריט שמותאם אלייך?</p>
+        <p class="lead-title">רוצה לשמוע עוד על התהליך?</p>
         <p class="lead-sub">השאירי פרטים ואחזור אלייך.</p>
         <form class="lead-form" id="leadForm">
           <input type="text" id="leadName" placeholder="שם מלא" required autocomplete="name">
