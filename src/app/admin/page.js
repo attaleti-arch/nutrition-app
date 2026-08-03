@@ -1870,7 +1870,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
   var targets = selectedClient ? calcTargets(selectedClient) : null
 
   return (
-    <div style={{ minHeight: '100vh', background: '#f8fafc', direction: 'rtl' }}>
+    <div style={{ minHeight: '100vh', background: '#f8fafc', direction: 'rtl', overflowX: 'hidden' }}>
 
       {previewDoc && selectedClient && (
         <div style={{ position: 'fixed', inset: 0, background: '#f8fafc', zIndex: 9999, overflowY: 'auto' }}>
@@ -1951,15 +1951,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
               return (
                 <div key={parent.id}>
                   <button onClick={() => loadProfile(parent)} style={{ width: '100%', padding: '10px 16px', borderRadius: 10, border: '2px solid ' + (selectedClient?.id === parent.id ? '#0f4c2a' : '#e5e7eb'), background: selectedClient?.id === parent.id ? '#dcfce7' : '#fff', cursor: 'pointer', fontWeight: 600, fontSize: 14, color: selectedClient?.id === parent.id ? '#0f4c2a' : '#333', textAlign: 'right', display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <span>{parent.client_track === 'child' ? '👤' : parent.client_track === 'both' ? '👨‍👩‍👧' : '👤'}</span>
-                    <span>{parent.name} {parent.last_name || ''}</span>
-                    {parent.client_track && <span style={{ fontSize: 11, color: '#9ca3af', marginRight: 'auto' }}>{parent.client_track === 'self' ? 'עצמי' : parent.client_track === 'child' ? 'עבור ילד' : 'שניהם'}</span>}
+                    <span style={{ flexShrink: 0 }}>{parent.client_track === 'child' ? '👤' : parent.client_track === 'both' ? '👨‍👩‍👧' : '👤'}</span>
+                    {/* שם ארוך חייב להתקצר ולא להרחיב את השורה — אחרת כל העמוד גולש הצידה בנייד */}
+                    <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{parent.name} {parent.last_name || ''}</span>
+                    {parent.client_track && <span style={{ fontSize: 11, color: '#9ca3af', marginRight: 'auto', flexShrink: 0 }}>{parent.client_track === 'self' ? 'עצמי' : parent.client_track === 'child' ? 'עבור ילד' : 'שניהם'}</span>}
                   </button>
                   {children.length > 0 && children.map(ch => (
                     <button key={ch.id} onClick={() => loadProfile(ch)} style={{ width: '100%', padding: '8px 16px 8px 32px', borderRadius: 10, border: '2px solid ' + (selectedClient?.id === ch.id ? '#7c3aed' : '#e9d5ff'), background: selectedClient?.id === ch.id ? '#faf5ff' : '#fdfbff', cursor: 'pointer', fontWeight: 600, fontSize: 13, color: selectedClient?.id === ch.id ? '#7c3aed' : '#7c3aed', textAlign: 'right', display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, marginRight: 16 }}>
-                      <span>└ 👶</span>
-                      <span>{ch.name}</span>
-                      <span style={{ fontSize: 11, color: '#a78bfa', marginRight: 'auto' }}>גיל {ch.age || '?'}</span>
+                      <span style={{ flexShrink: 0 }}>└ 👶</span>
+                      <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ch.name}</span>
+                      <span style={{ fontSize: 11, color: '#a78bfa', marginRight: 'auto', flexShrink: 0 }}>גיל {ch.age || '?'}</span>
                     </button>
                   ))}
                 </div>
