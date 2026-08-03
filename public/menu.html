@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>חלבון בכל ארוחה — תפריט לדוגמה | בין הראש לצלחת</title>
+<meta name="description" content="תפריט לדוגמה לצמחוניות, טבעוניות ולכל מי שמדלגת על בשר — 3 ימים, מגבירי חלבון, חלופות לכל ארוחה ושלוש המלכודות הנפוצות.">
+<meta property="og:title" content="חלבון בכל ארוחה — תפריט לדוגמה">
+<meta property="og:description" content="3 ימים לדוגמה, מגבירי חלבון, וחלופות להרכיב בעצמך.">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#f6f0de;
+    --paper:#fbf8ee;
+    --olive:#5c6b3c;
+    --olive-deep:#3d4728;
+    --olive-soft:#8c9a6b;
+    --gold:#b8933f;
+    --ink:#2a2a24;
+    --rule:#ded4b8;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    margin:0;
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'Assistant',sans-serif;
+    font-size:16px;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .sheet{
+    max-width:820px;
+    margin:0 auto;
+    background:var(--paper);
+    padding:64px 56px 72px;
+  }
+
+  h1,h2,h3,.display{font-family:'Frank Ruhl Libre',serif;font-weight:900;line-height:1.2;}
+
+  /* ---------- cover ---------- */
+  .cover{text-align:center;padding-bottom:48px;border-bottom:1px solid var(--rule);}
+  .eyebrow{
+    font-size:13px;letter-spacing:.22em;font-weight:600;
+    color:var(--olive-soft);text-transform:none;margin-bottom:20px;
+  }
+  h1{font-size:52px;margin:0 0 14px;color:var(--olive-deep);}
+  .cover .sub{font-size:19px;color:var(--olive);font-weight:400;margin:0;}
+  .brandline{
+    margin-top:34px;font-size:14px;color:var(--olive-soft);
+    font-weight:600;letter-spacing:.06em;
+  }
+
+  /* ---------- sections ---------- */
+  section{margin-top:52px;}
+  h2{
+    font-size:27px;margin:0 0 6px;color:var(--olive-deep);
+    display:flex;align-items:baseline;gap:14px;
+  }
+  h2::after{
+    content:"";flex:1;height:1px;background:var(--rule);
+  }
+  .lede{margin:0 0 22px;color:#4a4a40;}
+
+  .note{
+    background:rgba(184,147,63,.09);
+    border-inline-start:3px solid var(--gold);
+    padding:16px 20px;border-radius:3px;margin:22px 0;
+    font-size:15px;
+  }
+  .note strong{color:var(--olive-deep);}
+
+  .rule-box{
+    background:var(--olive-deep);color:#f4f1e2;
+    padding:26px 30px;border-radius:4px;margin:28px 0;
+  }
+  .rule-box .display{font-size:24px;margin:0 0 8px;color:#fff;}
+  .rule-box p{margin:0;font-size:15.5px;opacity:.9;}
+
+  /* ---------- days ---------- */
+  .day{
+    margin:0 0 26px;padding:24px 26px;
+    background:#fff;border:1px solid var(--rule);border-radius:4px;
+    page-break-inside:avoid;break-inside:avoid;
+  }
+  .day-head{
+    font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:20px;
+    color:var(--olive);margin:0 0 16px;
+  }
+  .meal{
+    display:flex;gap:16px;padding:12px 0;
+    border-top:1px solid #efe9d6;
+  }
+  .meal:first-of-type{border-top:none;}
+  .meal-when{
+    flex:0 0 74px;font-weight:700;font-size:14px;color:var(--olive-soft);
+    padding-top:2px;
+  }
+  .meal-what{flex:1;font-size:16px;}
+  .meal-g{
+    flex:0 0 78px;text-align:end;font-weight:700;font-size:15px;
+    color:var(--olive);white-space:nowrap;
+  }
+
+  /* ---------- tables ---------- */
+  table{
+    width:100%;border-collapse:collapse;margin:14px 0 26px;
+    font-size:15.5px;page-break-inside:avoid;break-inside:avoid;
+  }
+  caption{
+    text-align:start;font-family:'Frank Ruhl Libre',serif;font-weight:700;
+    font-size:18px;color:var(--olive);padding-bottom:8px;
+  }
+  th{
+    text-align:start;font-weight:600;font-size:13px;letter-spacing:.06em;
+    color:var(--olive-soft);border-bottom:2px solid var(--rule);
+    padding:6px 10px;
+  }
+  th:last-child,td:last-child{text-align:end;}
+  td{padding:9px 10px;border-bottom:1px solid #efe9d6;}
+  tbody tr:nth-child(odd){background:rgba(140,154,107,.055);}
+  td:last-child{font-weight:700;color:var(--olive);white-space:nowrap;}
+
+  /* ---------- traps ---------- */
+  .trap{
+    padding:18px 0;border-top:1px solid var(--rule);
+    page-break-inside:avoid;break-inside:avoid;
+  }
+  .trap h3{
+    font-size:19px;margin:0 0 4px;color:var(--olive-deep);
+  }
+  .trap p{margin:0;color:#4a4a40;}
+
+  .swaps{
+    display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin:18px 0 8px;
+  }
+  .swap{
+    background:rgba(140,154,107,.1);border-radius:4px;padding:16px 18px;
+    font-size:15px;
+  }
+  .swap b{display:block;color:var(--olive-deep);font-size:15px;margin-bottom:6px;}
+
+  /* ---------- close ---------- */
+  .close{
+    margin-top:54px;padding-top:34px;border-top:2px solid var(--olive-deep);
+    text-align:center;
+  }
+  .close .display{font-size:25px;color:var(--olive-deep);margin:0 0 10px;}
+  .close p{margin:0 auto;max-width:52ch;color:#4a4a40;}
+  .sig{
+    margin-top:30px;font-size:14px;color:var(--olive-soft);
+    font-weight:600;letter-spacing:.05em;
+  }
+
+  /* ---------- bridge to the program (soft, after the value) ---------- */
+  .bridge{
+    margin-top:56px;padding:34px 34px 38px;
+    background:var(--olive-deep);border-radius:6px;text-align:center;
+  }
+  .bridge .display{font-size:26px;color:#fff;margin:0 0 12px;}
+  .bridge p{
+    margin:0 auto 22px;max-width:50ch;color:#e6e2cf;font-size:16px;
+  }
+  .bridge a.more{
+    display:inline-block;color:var(--gold);font-weight:700;font-size:16px;
+    text-decoration:none;border-bottom:1px solid rgba(184,147,63,.5);
+    padding-bottom:2px;
+  }
+  .bridge a.more:hover{color:#d8b45c;border-bottom-color:#d8b45c;}
+
+  .lead{
+    margin-top:26px;padding-top:26px;border-top:1px solid rgba(255,255,255,.15);
+  }
+  .lead-title{
+    font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:19px;
+    color:#fff;margin:0 0 6px;
+  }
+  .lead-sub{font-size:14.5px;color:#c9c5b2;margin:0 0 18px;}
+  form.lead-form{
+    max-width:380px;margin:0 auto;display:flex;flex-direction:column;gap:11px;
+  }
+  form.lead-form input,form.lead-form textarea{
+    width:100%;padding:13px 16px;border-radius:5px;border:none;
+    font-family:'Assistant',sans-serif;font-size:15px;
+    background:#fbf8ee;color:var(--ink);outline:none;
+  }
+  form.lead-form textarea{resize:vertical;min-height:72px;}
+  form.lead-form input:focus,form.lead-form textarea:focus{
+    box-shadow:0 0 0 2px var(--gold);
+  }
+  button.lead-btn{
+    background:var(--gold);color:#2a2a24;border:none;cursor:pointer;
+    font-family:'Assistant',sans-serif;font-weight:700;font-size:16px;
+    padding:14px 20px;border-radius:5px;transition:background .2s;
+  }
+  button.lead-btn:hover{background:#d8b45c;}
+  button.lead-btn:disabled{opacity:.6;cursor:default;}
+  .lead-status{font-size:14.5px;min-height:20px;margin-top:4px;}
+  .lead-status.ok{color:#bfe0b6;}
+  .lead-status.err{color:#f0b9b9;}
+
+  /* ---------- print ---------- */
+  @page{size:A4;margin:14mm;}
+  @media print{
+    body{background:#fff;}
+    .sheet{max-width:none;padding:0;background:#fff;}
+    .day,table,.trap{break-inside:avoid;}
+    section{break-inside:auto;}
+    h2{break-after:avoid;}
+    .no-print{display:none;}
+  }
+
+  @media (max-width:640px){
+    .sheet{padding:36px 22px 48px;}
+    h1{font-size:34px;}
+    h2{font-size:22px;}
+    .swaps{grid-template-columns:1fr;}
+    .meal{flex-wrap:wrap;gap:6px 12px;}
+    .meal-g{flex:0 0 auto;}
+    .bridge{padding:28px 20px 32px;}
+  }
+</style>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="cover">
+    <p class="eyebrow">תפריט לדוגמה</p>
+    <h1>חלבון בכל ארוחה</h1>
+    <p class="sub">לצמחוניות, טבעוניות ולכל מי שמדלגת על בשר</p>
+    <p class="brandline">בין הראש לצלחת · אתי עטל</p>
+  </header>
+
+  <section>
+    <h2>לפני שמתחילים</h2>
+    <p class="lede">
+      אצל רוב המבוגרים, צריכת חלבון של כ־1.0–1.5 גרם לק״ג משקל גוף היא טווח שימושי,
+      בהתאם לגיל, לרמת הפעילות, למטרה ולהרכב הגוף. בתזונה המבוססת בעיקר על הצומח
+      לעיתים כדאי לכוון מעט גבוה יותר, בגלל הבדלים באיכות החלבון ובזמינותו.
+    </p>
+
+    <div class="note">
+      <strong>המספר האישי שלך נקבע בהתאמה.</strong>
+      כאן את מקבלת מבנה, לא מרשם.
+    </div>
+
+    <div class="rule-box">
+      <p class="display">לא סופרים יום — סופרים ארוחה.</p>
+      <p>
+        כדאי שלכל ארוחה עיקרית יהיה עוגן חלבון משמעותי. אצל רוב האנשים זה אומר
+        בערך 25–30 גרם חלבון בארוחה. לא ערב אחד ענק.
+      </p>
+    </div>
+
+    <p class="lede">
+      <strong>מבחן העוגן:</strong> אם תוציאי מהצלחת את מקור החלבון — האם נשארה ארוחה?
+      אם לא, יש לך עוגן. אם כן, כנראה שהחלבון לא באמת היה מרכז הארוחה.
+    </p>
+  </section>
+
+  <section>
+    <h2>שלושה ימים לדוגמה</h2>
+
+    <div class="day">
+      <p class="day-head">יום ראשון</p>
+      <div class="meal">
+        <div class="meal-when">בוקר</div>
+        <div class="meal-what">יוגורט יווני (200 גרם) + 2 כפות זרעי המפ + פרי</div>
+        <div class="meal-g">≈ 26 גרם</div>
+      </div>
+      <div class="meal">
+        <div class="meal-when">צהריים</div>
+        <div class="meal-what">קערת עדשים (כוס) + קינואה (חצי כוס) + טחינה + ירקות</div>
+        <div class="meal-g">≈ 27 גרם</div>
+      </div>
+      <div class="meal">
+        <div class="meal-when">ערב</div>
+        <div class="meal-what">שקשוקה עם 2 ביצים + גרגרי חומוס + פרוסת לחם מלא</div>
+        <div class="meal-g">≈ 25 גרם</div>
+      </div>
+      <div class="meal">
+        <div class="meal-when">ביניים</div>
+        <div class="meal-what">חופן שקדים + יוגורט קטן</div>
+        <div class="meal-g"></div>
+      </div>
+    </div>
+
+    <div class="day">
+      <p class="day-head">יום שני</p>
+      <div class="meal">
+        <div class="meal-when">בוקר</div>
+        <div class="meal-what">טופו מפורר עם ירקות ובצל (150 גרם טופו) + פרוסת לחם מלא</div>
+        <div class="meal-g">≈ 25 גרם</div>
+      </div>
+      <div class="meal">
+        <div class="meal-when">צהריים</div>
+        <div class="meal-what">סלט גדול + כוס אדממה + ביצה קשה + זרעי דלעת</div>
+        <div class="meal-g">≈ 26 גרם</div>
+      </div>
+      <div class="meal">
+        <div class="meal-when">ערב</div>
+        <div class="meal-what">מרק עדשים כתומות סמיך (כ־2 כוסות) + טחינה מלאה + לחם מלא</div>
+        <div class="meal-g">≈ 24 גרם</div>
+      </div>
+      <div class="meal">
+        <div class="meal-when">ביניים</div>
+        <div class="meal-what">פרוסת לחם עם חמאת בוטנים</div>
+        <div class="meal-g"></div>
+      </div>
+    </div>
+
+    <div class="day">
+      <p class="day-head">יום שלישי</p>
+      <div class="meal">
+        <div class="meal-when">בוקר</div>
+        <div class="meal-what">שיבולת שועל (60 גרם) + חלב סויה (250 מ״ל) + 2 כפות חמאת בוטנים + 2 כפות צ׳יה</div>
+        <div class="meal-g">≈ 27 גרם</div>
+      </div>
+      <div class="meal">
+        <div class="meal-when">צהריים</div>
+        <div class="meal-what">טמפה מוקפצת (150 גרם) עם ירקות ואורז מלא</div>
+        <div class="meal-g">≈ 32 גרם</div>
+      </div>
+      <div class="meal">
+        <div class="meal-when">ערב</div>
+        <div class="meal-what">גבינה לבנה 5% + סלט עשיר + לחם מלא</div>
+        <div class="meal-g">≈ 24 גרם</div>
+      </div>
+      <div class="meal">
+        <div class="meal-when">ביניים</div>
+        <div class="meal-what">כוס חלב סויה + פרי</div>
+        <div class="meal-g"></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>מגבירי חלבון</h2>
+    <p class="lede">להוסיף לכל דבר, בלי לשנות את הארוחה.</p>
+    <table>
+      <thead><tr><th>מוסיפים</th><th>תוספת חלבון</th></tr></thead>
+      <tbody>
+        <tr><td>2 כפות זרעי המפ</td><td>6–7 גרם</td></tr>
+        <tr><td>כוס אדממה קלופה</td><td>17 גרם</td></tr>
+        <tr><td>חצי כוס קוטג׳ 5%</td><td>~12 גרם</td></tr>
+        <tr><td>כף חמאת בוטנים</td><td>4 גרם</td></tr>
+        <tr><td>כוס חלב סויה</td><td>7 גרם</td></tr>
+        <tr><td>מעבר מיוגורט רגיל ליווני</td><td>‎+8–10 גרם</td></tr>
+        <tr><td>2 כפות שמרים תזונתיים</td><td>4–5 גרם</td></tr>
+        <tr><td>מנת אבקת חלבון</td><td>20–25 גרם</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>חלופות — הרכיבי בעצמך</h2>
+
+    <table>
+      <caption>בוקר</caption>
+      <thead><tr><th>מנה</th><th>חלבון</th></tr></thead>
+      <tbody>
+        <tr><td>סקיר 200 גרם</td><td>~22 גרם</td></tr>
+        <tr><td>קוטג׳ 5% — 200 גרם</td><td>~22 גרם</td></tr>
+        <tr><td>שייק עם אבקת חלבון</td><td>20–25 גרם</td></tr>
+        <tr><td>יוגורט יווני 200 גרם</td><td>~20 גרם</td></tr>
+        <tr><td>טופו מפורר 150 גרם</td><td>~17 גרם</td></tr>
+        <tr><td>2 ביצים</td><td>~13 גרם</td></tr>
+        <tr><td>שיבולת שועל + כוס חלב סויה</td><td>~12 גרם</td></tr>
+      </tbody>
+    </table>
+
+    <table>
+      <caption>צהריים</caption>
+      <thead><tr><th>מנה</th><th>חלבון</th></tr></thead>
+      <tbody>
+        <tr><td>טמפה 150 גרם</td><td>~30 גרם</td></tr>
+        <tr><td>עדשים — כוס מבושלת</td><td>~18 גרם</td></tr>
+        <tr><td>אדממה — כוס</td><td>~17 גרם</td></tr>
+        <tr><td>שעועית לבנה — כוס</td><td>~17 גרם</td></tr>
+        <tr><td>טופו 150 גרם</td><td>~17 גרם</td></tr>
+        <tr><td>גרגרי חומוס — כוס</td><td>~15 גרם</td></tr>
+        <tr><td>קינואה — כוס מבושלת</td><td>~8 גרם</td></tr>
+      </tbody>
+    </table>
+
+    <table>
+      <caption>ערב</caption>
+      <thead><tr><th>מנה</th><th>חלבון</th></tr></thead>
+      <tbody>
+        <tr><td>גבינה לבנה 5% — 250 גרם</td><td>~25 גרם</td></tr>
+        <tr><td>שקשוקה — 2 ביצים + חומוס</td><td>~20 גרם</td></tr>
+        <tr><td>טופו בתנור 150 גרם</td><td>~17 גרם</td></tr>
+        <tr><td>מרק עדשים כתומות סמיך</td><td>~15 גרם</td></tr>
+        <tr><td>חומוס גרגרים חם</td><td>~15 גרם</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>שלוש מלכודות</h2>
+
+    <div class="trap">
+      <h3>הבוקר הריק</h3>
+      <p>הארוחה שהכי נופלת. קפה זה לא ארוחה.</p>
+    </div>
+
+    <div class="trap">
+      <h3>הסלט שאין בו כלום</h3>
+      <p>ירקות זה לא חלבון. טחינה מוסיפה חלבון, אבל לרוב היא לא מספיקה כדי להיות עוגן החלבון של הארוחה.</p>
+    </div>
+
+    <div class="trap">
+      <h3>הערב הענק</h3>
+      <p>פיזור החלבון לאורך היום יעיל יותר מאשר לרכז את רובו בארוחה אחת. מה שלא נוצל בארוחה לא מחכה לך.</p>
+    </div>
+  </section>
+
+  <div class="close">
+    <p class="display">איפה הפער שלך?</p>
+    <p>
+      הסתכלי על היום שלך ומצאי את הארוחה שלא עומדת בפני עצמה.
+      שם נמצא הפער — וכמעט תמיד מספיקה תוספת אחת כדי לסגור אותו.
+    </p>
+    <p class="sig">בין הראש לצלחת · eti-attal.com</p>
+  </div>
+
+  <!-- הגשר לתוכנית — מופיע רק אחרי שכל הערך נמסר, ולא מודפס -->
+  <div class="bridge no-print">
+    <p class="display">זה תפריט לדוגמה.</p>
+    <p>
+      הוא בנוי על מבנה, לא על המדדים שלך. בתוכנית עצמה בונים אחד שמתאים
+      לשעות שלך, למשפחה שלך ולמה שכבר ניסית — ומלווים אותו יום־יום.
+    </p>
+    <a class="more" href="/landing.html">איך התהליך עובד ←</a>
+
+    <div class="lead">
+      <p class="lead-title">רוצה תפריט שמותאם אלייך?</p>
+      <p class="lead-sub">השאירי פרטים ואחזור אלייך.</p>
+      <form class="lead-form" id="leadForm">
+        <input type="text" id="leadName" placeholder="שם מלא" required autocomplete="name">
+        <input type="tel" id="leadPhone" placeholder="טלפון" required autocomplete="tel">
+        <input type="email" id="leadEmail" placeholder="כתובת מייל (לא חובה)" autocomplete="email">
+        <textarea id="leadMessage" placeholder="מה הכי תקוע לך כרגע? (לא חובה)"></textarea>
+        <button type="submit" class="lead-btn" id="leadSubmit">שלחי פרטים</button>
+        <div class="lead-status" id="leadStatus"></div>
+      </form>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  (function(){
+    var form = document.getElementById('leadForm');
+    if (!form) return;
+
+    // מאיזו קרוסלה/סטורי הגיעו — נשמר בתוך ההודעה כדי לדעת מה עבד בפועל
+    function source(){
+      try {
+        var p = new URLSearchParams(window.location.search);
+        return p.get('from') || p.get('utm_source') || '';
+      } catch(e) { return ''; }
+    }
+
+    form.addEventListener('submit', function(e){
+      e.preventDefault();
+      var btn = document.getElementById('leadSubmit');
+      var status = document.getElementById('leadStatus');
+      var src = source();
+      var note = document.getElementById('leadMessage').value.trim();
+      var msg = 'מדף התפריט לדוגמה (חלבון בכל ארוחה)'
+              + (src ? ' · מקור: ' + src : '')
+              + (note ? '\n' + note : '');
+
+      btn.disabled = true;
+      btn.textContent = 'שולחת...';
+      status.textContent = '';
+      status.className = 'lead-status';
+
+      fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: document.getElementById('leadName').value,
+          phone: document.getElementById('leadPhone').value,
+          email: document.getElementById('leadEmail').value,
+          message: msg
+        })
+      })
+        .then(function(res){ return res.json().then(function(d){ return { ok: res.ok, data: d }; }); })
+        .then(function(r){
+          if (r.ok) {
+            status.textContent = 'תודה! קיבלתי את הפרטים ואחזור אלייך בקרוב.';
+            status.className = 'lead-status ok';
+            form.reset();
+          } else {
+            status.textContent = (r.data && r.data.error) || 'שגיאה בשליחה, נסי שוב';
+            status.className = 'lead-status err';
+          }
+        })
+        .catch(function(){
+          status.textContent = 'שגיאה בשליחה — נסי שוב, או כתבי לי בוואטסאפ.';
+          status.className = 'lead-status err';
+        })
+        .finally(function(){
+          btn.disabled = false;
+          btn.textContent = 'שלחי פרטים';
+        });
+    });
+  })();
+</script>
+</body>
+</html>
