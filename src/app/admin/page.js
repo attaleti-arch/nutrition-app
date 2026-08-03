@@ -541,6 +541,7 @@ function renderMd(text) {
 
 export default function AdminPage() {
   const [pin, setPin] = useState('')
+  const [loginError, setLoginError] = useState('')
   const [auth, setAuth] = useState(false)
   const [clients, setClients] = useState([])
   const [leads, setLeads] = useState([])
@@ -1037,7 +1038,11 @@ export default function AdminPage() {
     setCalculatingPlate(false)
   }
 
-  const login = () => { if (pin === 'Esterika26') setAuth(true) }
+  // מקלדות בנייד נוטות להוסיף רווח או אות גדולה בהתחלה — לא סיבה לחסום כניסה
+  const login = () => {
+    if (pin.trim() === 'Esterika26') { setAuth(true); setLoginError('') }
+    else setLoginError(pin.trim() ? 'סיסמה שגויה' : 'צריך להקליד סיסמה')
+  }
 
   useEffect(function() { journeyAnswersRef.current = journeyAnswers }, [journeyAnswers])
 
@@ -1855,7 +1860,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
       <div style={{ background: '#fff', borderRadius: 20, padding: 32, width: 300, textAlign: 'center', boxShadow: '0 8px 40px #0000000f' }}>
         <div style={{ fontSize: 32, marginBottom: 12 }}>⚙️</div>
         <div style={{ fontWeight: 700, fontSize: 18, marginBottom: 20 }}>הלקוחות שלי</div>
-        <input type="password" value={pin} onChange={e => setPin(e.target.value)} onKeyDown={e => e.key === 'Enter' && login()} placeholder="סיסמה..." style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 15, textAlign: 'center', outline: 'none', boxSizing: 'border-box', marginBottom: 10 }} />
+        <input type="password" value={pin} onChange={e => { setPin(e.target.value); if (loginError) setLoginError('') }} onKeyDown={e => e.key === 'Enter' && login()} placeholder="סיסמה..." autoCapitalize="none" autoCorrect="off" spellCheck={false} style={{ width: '100%', padding: '10px 14px', borderRadius: 10, border: '1.5px solid ' + (loginError ? '#fca5a5' : '#e5e7eb'), fontSize: 15, textAlign: 'center', outline: 'none', boxSizing: 'border-box', marginBottom: 10 }} />
+        {loginError && <div style={{ color: '#b91c1c', fontSize: 13, fontWeight: 600, marginBottom: 10 }}>{loginError}</div>}
         <button onClick={login} style={{ width: '100%', padding: 12, borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15 }}>כניסה</button>
       </div>
     </div>
