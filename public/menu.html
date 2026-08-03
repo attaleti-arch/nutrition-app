@@ -8,13 +8,16 @@
 <meta property="og:title" content="חלבון בכל ארוחה — תפריט לדוגמה">
 <meta property="og:description" content="3 ימים לדוגמה, מגבירי חלבון, וחלופות להרכיב בעצמך.">
 <meta property="og:type" content="article">
+<meta property="og:image" content="/logo-full.png">
+<link rel="icon" href="/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Assistant:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
     --cream:#f6f0de;
-    --paper:#fbf8ee;
+    /* זהה במדויק לרקע של logo-full.png, כדי שהלוגו יישב בלי ריבוע מסביבו */
+    --paper:#f8f5ee;
     --olive:#5c6b3c;
     --olive-deep:#3d4728;
     --olive-soft:#8c9a6b;
@@ -46,6 +49,9 @@
 
   /* ---------- cover ---------- */
   .cover{text-align:center;padding-bottom:48px;border-bottom:1px solid var(--rule);}
+  .cover-logo{
+    display:block;width:132px;height:auto;margin:0 auto 26px;
+  }
   .eyebrow{
     font-size:13px;letter-spacing:.22em;font-weight:600;
     color:var(--olive-soft);text-transform:none;margin-bottom:20px;
@@ -214,6 +220,8 @@
     section{break-inside:auto;}
     h2{break-after:avoid;}
     .no-print{display:none;}
+    .cover-logo{width:104px;}
+    .cover{break-after:avoid;}
   }
 
   @media (max-width:640px){
@@ -231,10 +239,11 @@
 <div class="sheet">
 
   <header class="cover">
+    <img class="cover-logo" src="/logo-full.png" alt="בין הראש לצלחת — אתי אטל">
     <p class="eyebrow">תפריט לדוגמה</p>
     <h1>חלבון בכל ארוחה</h1>
     <p class="sub">לצמחוניות, טבעוניות ולכל מי שמדלגת על בשר</p>
-    <p class="brandline">בין הראש לצלחת · אתי עטל</p>
+    <p class="brandline">יועצת בריאות ותזונה התנהגותית · מאסטרית NLP</p>
   </header>
 
   <section>
