@@ -3535,6 +3535,47 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <div style={{ fontSize: 12, color: '#86efac' }}>הזיני הערות מהזום המקדים לפי קבוצות השאלות</div>
                 </div>
 
+                {/* תשובות הלקוחה מהשאלון */}
+                {[
+                  { key: 'roots_home', q: 'ספרי על האוכל בבית שגדלת בו' },
+                  { key: 'roots_identity', q: 'איך הרגשת בגוף שלך בתוך המשפחה?' },
+                  { key: 'roots_patterns', q: 'מה מזהה בעצמך שמגיע מהבית?' },
+                  { key: 'roots_passing', q: 'מה את רואה עוברת הלאה לילדים שלך?' },
+                  { key: 'roots_beliefs', q: 'מה קורה בך אחרי שבועיים-שלושה של תהליך?' },
+                  { key: 'roots_resources', q: 'מה כבר עושה טוב עם אוכל?' },
+                  { key: 'roots_sentence', q: 'איזה משפט על אוכל או על הגוף שמעת בבית ועדיין מלווה אותך?' },
+                  { key: 'roots_trigger', q: 'מתי את מרגישה שהאוכל הופך ליותר מרעב?' },
+                  { key: 'roots_comfort', q: 'מה את מקבלת מהאוכל ברגעים האלה?' },
+                  { key: 'roots_generation', q: 'איזה הרגל סביב אוכל עובר אצלך מדור לדור?' },
+                  { key: 'roots_change', q: 'אם היית יכולה לשנות רק דבר אחד ביחסים שלך עם אוכל – מה הוא היה?' },
+                  { key: 'roots_fear', q: 'מה מפחיד אותך בתהליך הזה?' },
+                  { key: 'roots_hope', q: 'מה את מקווה שיקרה בחיים שלך כשהאוכל יפסיק לנהל אותך?' },
+                ].some(({ key }) => journeyAnswers[key]) && (
+                  <div style={{ background: '#f0fdf4', borderRadius: 16, padding: '14px 16px', marginBottom: 16, border: '1.5px solid #86efac' }}>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: '#0f4c2a', marginBottom: 12 }}>📋 תשובות הלקוחה מהשאלון</div>
+                    {[
+                      { key: 'roots_home', q: 'ספרי על האוכל בבית שגדלת בו' },
+                      { key: 'roots_identity', q: 'איך הרגשת בגוף שלך בתוך המשפחה?' },
+                      { key: 'roots_patterns', q: 'מה מזהה בעצמך שמגיע מהבית?' },
+                      { key: 'roots_passing', q: 'מה את רואה עוברת הלאה לילדים שלך?' },
+                      { key: 'roots_beliefs', q: 'מה קורה בך אחרי שבועיים-שלושה של תהליך?' },
+                      { key: 'roots_resources', q: 'מה כבר עושה טוב עם אוכל?' },
+                      { key: 'roots_sentence', q: 'איזה משפט על אוכל או על הגוף שמעת בבית ועדיין מלווה אותך?' },
+                      { key: 'roots_trigger', q: 'מתי את מרגישה שהאוכל הופך ליותר מרעב?' },
+                      { key: 'roots_comfort', q: 'מה את מקבלת מהאוכל ברגעים האלה?' },
+                      { key: 'roots_generation', q: 'איזה הרגל סביב אוכל עובר אצלך מדור לדור?' },
+                      { key: 'roots_change', q: 'אם היית יכולה לשנות רק דבר אחד ביחסים שלך עם אוכל – מה הוא היה?' },
+                      { key: 'roots_fear', q: 'מה מפחיד אותך בתהליך הזה?' },
+                      { key: 'roots_hope', q: 'מה את מקווה שיקרה בחיים שלך כשהאוכל יפסיק לנהל אותך?' },
+                    ].filter(({ key }) => journeyAnswers[key]).map(({ key, q }) => (
+                      <div key={key} style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, marginBottom: 3 }}>{q}</div>
+                        <div style={{ fontSize: 13, color: '#1a1a1a', background: '#fff', borderRadius: 8, padding: '8px 12px', lineHeight: 1.7, textAlign: 'right', border: '1px solid #d1fae5' }}>{journeyAnswers[key]}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {/* 6 קבוצות שאלות */}
                 {[
                   { key: 'home_background', icon: '🏠', title: 'הבית שגדלת בו', placeholder: 'מה היה האוכל בבית? כללים? אווירה בשולחן? מה נשאר?' },
