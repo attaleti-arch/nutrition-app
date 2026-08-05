@@ -1531,6 +1531,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const recognitionRef = useRef(null)
   const recordingActiveRef = useRef(null)
   const recordingBaseRef = useRef({})
+  const recordingSessionRef = useRef({})
   useEffect(() => {
     // ⚠️ dailyLogLoaded חייב להיות true לפני שמירה אוטומטית — בלעדיו אפשר "לשמור" מצב ריק/בררת-מחדל
     // מעל נתונים אמיתיים שכבר קיימים בשרת, אם טעינת היומן היומי עדיין באוויר או נכשלה
@@ -1596,6 +1597,7 @@ export default function PlanApp({ clientName, userPassword }) {
     if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null }
     recordingActiveRef.current = key
     recordingBaseRef.current[key] = journeyAnswersRef.current[key] || ''
+    recordingSessionRef.current[key] = ''
     setRecordingKey(key)
     launchRecognitionSession(key)
   }
@@ -1603,28 +1605,47 @@ export default function PlanApp({ clientName, userPassword }) {
   function launchRecognitionSession(key) {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR || recordingActiveRef.current !== key) return
+    recordingSessionRef.current[key] = ''
     const recognition = new SR()
     recognition.lang = 'he-IL'
     recognition.continuous = true
     recognition.interimResults = true
     recognition.onresult = (e) => {
-      let newText = ''
-      for (let i = 0; i < e.results.length; i++) newText += e.results[i][0].transcript
+      // צבור תוצאות סופיות בנפרד — מונע איבוד טקסט כשהדפדפן לא מצבר e.results
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          const phrase = e.results[i][0].transcript.trim()
+          if (phrase) {
+            const prev = recordingSessionRef.current[key] || ''
+            recordingSessionRef.current[key] = prev ? prev + ' ' + phrase : phrase
+          }
+        }
+      }
+      // טקסט ביניים (לא סופי עדיין)
+      let interim = ''
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (!e.results[i].isFinal) interim += e.results[i][0].transcript
+      }
       const base = recordingBaseRef.current[key] || ''
-      const full = (base + (base && newText ? ' ' : '') + newText).trim()
-      const updated = { ...journeyAnswersRef.current, [key]: full }
+      const finals = recordingSessionRef.current[key] || ''
+      const combined = [base, finals, interim.trim()].filter(Boolean).join(' ')
+      const updated = { ...journeyAnswersRef.current, [key]: combined }
       journeyAnswersRef.current = updated
       setJourneyAnswers({ ...updated })
     }
     recognition.onend = () => {
       recognitionRef.current = null
       if (recordingActiveRef.current === key) {
-        // נעצר אוטומטית (שקט/מובייל) — שמרי בסיס והמשיכי
-        recordingBaseRef.current[key] = journeyAnswersRef.current[key] || ''
+        // נעצר אוטומטית — העבר finals לbase והפעל מחדש
+        const base = recordingBaseRef.current[key] || ''
+        const finals = recordingSessionRef.current[key] || ''
+        recordingBaseRef.current[key] = [base, finals].filter(Boolean).join(' ')
+        recordingSessionRef.current[key] = ''
         setTimeout(() => launchRecognitionSession(key), 250)
       } else {
-        // עצירת משתמש — נקי base רק כאן, אחרי שonresult סיים
+        // עצירת משתמש
         delete recordingBaseRef.current[key]
+        delete recordingSessionRef.current[key]
         setRecordingKey(null)
       }
     }
@@ -1635,16 +1656,14 @@ export default function PlanApp({ clientName, userPassword }) {
         setRecordingKey(null)
         alert('אין הרשאת מיקרופון')
       }
-      // שגיאות אחרות (no-speech, network) — onend ידאג להפעיל מחדש
     }
     try { recognition.start(); recognitionRef.current = recognition } catch(e) { recognitionRef.current = null }
   }
 
   function stopRecording() {
-    recordingActiveRef.current = null  // מסמן עצירת משתמש — onend לא יפעיל מחדש
+    recordingActiveRef.current = null
     if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null }
     setRecordingKey(null)
-    // recordingBaseRef נמחק ב-onend, אחרי שonresult סיים לירות
   }
 
   function updateJourneyAnswer(key, value) {
