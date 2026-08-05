@@ -1636,14 +1636,17 @@ export default function PlanApp({ clientName, userPassword }) {
     recognition.onend = () => {
       recognitionRef.current = null
       if (recordingActiveRef.current === key) {
-        // נעצר אוטומטית — העבר finals לbase והפעל מחדש
+        // נעצר אוטומטית — העבר finals לbase, שמרי ל-Supabase, והפעל מחדש
         const base = recordingBaseRef.current[key] || ''
         const finals = recordingSessionRef.current[key] || ''
         recordingBaseRef.current[key] = [base, finals].filter(Boolean).join(' ')
         recordingSessionRef.current[key] = ''
+        // שמירה שקטה — הטקסט ישרוד שיחת טלפון / יציאה מהאפליקציה
+        supabase.from('client_profiles').upsert({ client_password: dbKey, journey_answers: journeyAnswersRef.current }, { onConflict: 'client_password' }).catch(() => {})
         setTimeout(() => launchRecognitionSession(key), 250)
       } else {
-        // עצירת משתמש
+        // עצירת משתמש — שמרי גם כאן
+        supabase.from('client_profiles').upsert({ client_password: dbKey, journey_answers: journeyAnswersRef.current }, { onConflict: 'client_password' }).catch(() => {})
         delete recordingBaseRef.current[key]
         delete recordingSessionRef.current[key]
         setRecordingKey(null)
