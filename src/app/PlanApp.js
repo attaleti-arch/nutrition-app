@@ -1381,13 +1381,18 @@ export default function PlanApp({ clientName, userPassword }) {
         if (profileRes.data?.child_feedback) {
           setChildFeedback(profileRes.data.child_feedback)
         }
-        if (profileRes.data?.journey_answers && Object.keys(profileRes.data.journey_answers).length > 0) {
-          const jA = profileRes.data.journey_answers
-          setJourneyAnswers(jA)
-          journeyAnswersRef.current = jA
-          if (jA.__journey_unlock_at) setJourneyUnlockAt(jA.__journey_unlock_at)
-          if (jA.__roots_unlock_at) setRootsUnlockAt(jA.__roots_unlock_at)
-          if (jA.__body_unlock_at) setBodyUnlockAt(jA.__body_unlock_at)
+        {
+          const supabaseJA = (profileRes.data?.journey_answers && Object.keys(profileRes.data.journey_answers).length > 0) ? profileRes.data.journey_answers : null
+          // מיזוג עם טיוטת הקלטה מ-localStorage (שורדת סגירת אפליקציה)
+          const localDraft = (() => { try { return JSON.parse(localStorage.getItem('rec_draft_' + dbKey) || 'null') } catch(e) { return null } })()
+          const jA = supabaseJA ? (localDraft ? { ...supabaseJA, ...localDraft } : supabaseJA) : (localDraft || null)
+          if (jA) {
+            setJourneyAnswers(jA)
+            journeyAnswersRef.current = jA
+            if (jA.__journey_unlock_at) setJourneyUnlockAt(jA.__journey_unlock_at)
+            if (jA.__roots_unlock_at) setRootsUnlockAt(jA.__roots_unlock_at)
+            if (jA.__body_unlock_at) setBodyUnlockAt(jA.__body_unlock_at)
+          }
         }
         if (d.weight) { setUserWeight(String(d.weight)); setProfileDone(true) }
         if (d.height) setUserHeight(String(d.height))
@@ -1532,6 +1537,16 @@ export default function PlanApp({ clientName, userPassword }) {
   const recordingActiveRef = useRef(null)
   const recordingBaseRef = useRef({})
   const recordingSessionRef = useRef({})
+
+  // שמירת טיוטת הקלטה ל-localStorage — סינכרוני, לא תלוי ברשת
+  function saveRecordingDraft() {
+    try { localStorage.setItem('rec_draft_' + dbKey, JSON.stringify(journeyAnswersRef.current)) } catch(e) {}
+  }
+
+  // שמירה ל-Supabase בשקט
+  function autoSaveToSupabase() {
+    supabase.from('client_profiles').upsert({ client_password: dbKey, journey_answers: journeyAnswersRef.current }, { onConflict: 'client_password' }).catch(() => {})
+  }
   useEffect(() => {
     // ⚠️ dailyLogLoaded חייב להיות true לפני שמירה אוטומטית — בלעדיו אפשר "לשמור" מצב ריק/בררת-מחדל
     // מעל נתונים אמיתיים שכבר קיימים בשרת, אם טעינת היומן היומי עדיין באוויר או נכשלה
@@ -1591,6 +1606,22 @@ export default function PlanApp({ clientName, userPassword }) {
     return () => window.removeEventListener('message', handleGuideClose)
   }, [])
 
+  // שמור כשהאפליקציה עוברת לרקע (שיחת טלפון, החלפת אפליקציה)
+  useEffect(() => {
+    function handleHide() {
+      if (recordingActiveRef.current) {
+        saveRecordingDraft()
+        autoSaveToSupabase()
+      }
+    }
+    document.addEventListener('visibilitychange', handleHide)
+    window.addEventListener('pagehide', handleHide)
+    return () => {
+      document.removeEventListener('visibilitychange', handleHide)
+      window.removeEventListener('pagehide', handleHide)
+    }
+  }, [])
+
   function startRecording(key) {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR) { alert('הדפדפן שלך אינו תומך בהקלטה. נסי בChrome.'); return }
@@ -1612,12 +1643,14 @@ export default function PlanApp({ clientName, userPassword }) {
     recognition.interimResults = true
     recognition.onresult = (e) => {
       // צבור תוצאות סופיות בנפרד — מונע איבוד טקסט כשהדפדפן לא מצבר e.results
+      let gotFinal = false
       for (let i = e.resultIndex; i < e.results.length; i++) {
         if (e.results[i].isFinal) {
           const phrase = e.results[i][0].transcript.trim()
           if (phrase) {
             const prev = recordingSessionRef.current[key] || ''
             recordingSessionRef.current[key] = prev ? prev + ' ' + phrase : phrase
+            gotFinal = true
           }
         }
       }
@@ -1632,21 +1665,23 @@ export default function PlanApp({ clientName, userPassword }) {
       const updated = { ...journeyAnswersRef.current, [key]: combined }
       journeyAnswersRef.current = updated
       setJourneyAnswers({ ...updated })
+      // שמור ל-localStorage מיד בכל ביטוי סופי — שורד סגירת אפליקציה
+      if (gotFinal) saveRecordingDraft()
     }
     recognition.onend = () => {
       recognitionRef.current = null
       if (recordingActiveRef.current === key) {
-        // נעצר אוטומטית — העבר finals לbase, שמרי ל-Supabase, והפעל מחדש
+        // נעצר אוטומטית — העבר finals לbase, שמרי, והפעל מחדש
         const base = recordingBaseRef.current[key] || ''
         const finals = recordingSessionRef.current[key] || ''
         recordingBaseRef.current[key] = [base, finals].filter(Boolean).join(' ')
         recordingSessionRef.current[key] = ''
-        // שמירה שקטה — הטקסט ישרוד שיחת טלפון / יציאה מהאפליקציה
-        supabase.from('client_profiles').upsert({ client_password: dbKey, journey_answers: journeyAnswersRef.current }, { onConflict: 'client_password' }).catch(() => {})
+        saveRecordingDraft()
+        autoSaveToSupabase()
         setTimeout(() => launchRecognitionSession(key), 250)
       } else {
-        // עצירת משתמש — שמרי גם כאן
-        supabase.from('client_profiles').upsert({ client_password: dbKey, journey_answers: journeyAnswersRef.current }, { onConflict: 'client_password' }).catch(() => {})
+        // עצירת משתמש
+        autoSaveToSupabase()
         delete recordingBaseRef.current[key]
         delete recordingSessionRef.current[key]
         setRecordingKey(null)
