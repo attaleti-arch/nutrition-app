@@ -1623,6 +1623,8 @@ export default function PlanApp({ clientName, userPassword }) {
         recordingBaseRef.current[key] = journeyAnswersRef.current[key] || ''
         setTimeout(() => launchRecognitionSession(key), 250)
       } else {
+        // עצירת משתמש — נקי base רק כאן, אחרי שonresult סיים
+        delete recordingBaseRef.current[key]
         setRecordingKey(null)
       }
     }
@@ -1639,11 +1641,10 @@ export default function PlanApp({ clientName, userPassword }) {
   }
 
   function stopRecording() {
-    const key = recordingActiveRef.current
-    recordingActiveRef.current = null
-    if (key) delete recordingBaseRef.current[key]
+    recordingActiveRef.current = null  // מסמן עצירת משתמש — onend לא יפעיל מחדש
     if (recognitionRef.current) { recognitionRef.current.stop(); recognitionRef.current = null }
     setRecordingKey(null)
+    // recordingBaseRef נמחק ב-onend, אחרי שonresult סיים לירות
   }
 
   function updateJourneyAnswer(key, value) {
