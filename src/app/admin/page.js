@@ -1438,7 +1438,15 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     }
   }
 
-  useEffect(function() { applyFilter(logs, filterMode, dateFrom, dateTo) }, [logs, filterMode, dateFrom, dateTo])
+  useEffect(function() {
+    if (filterMode === 'custom' && dateFrom && dateTo && selectedClient?.password) {
+      supabase.from('daily_logs').select('*').eq('client_name', selectedClient.password).gte('log_date', dateFrom).lte('log_date', dateTo).order('log_date', { ascending: false }).then(function({ data }) {
+        setFilteredLogs(data || [])
+      })
+    } else {
+      applyFilter(logs, filterMode, dateFrom, dateTo)
+    }
+  }, [logs, filterMode, dateFrom, dateTo, selectedClient?.password])
 
   // ✅ רענון תקופתי של היומנים — כדי שעדכונים שהלקוחה מבצעת בזמן שהאדמין פתוח לא יישארו "תקועים" על התצלום הישן
   useEffect(function() {
@@ -3788,6 +3796,41 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <div style={{ fontWeight: 900, fontSize: 16, marginBottom: 4 }}>🩺 הגוף מדבר — {selectedClient?.name}</div>
                   <div style={{ fontSize: 12, color: '#86efac' }}>הזיני הערות מהזום המקדים — AI יבנה ניתוח אישי מחובר לשאלון 360</div>
                 </div>
+
+                {/* תשובות הלקוחה מהשאלון */}
+                {[
+                  { key: 'body_complaint', q: 'מה הגוף אומר לך כרגע?' },
+                  { key: 'body_signals', q: 'אילו סימנים מופיעים בגוף שלך?' },
+                  { key: 'body_history', q: 'היה זמן שהגוף שלך הרגיש אחרת?' },
+                  { key: 'body_emotion', q: 'איפה בגוף את מרגישה רגשות?' },
+                  { key: 'body_energy', q: 'ספרי על השינה ועל האנרגיה שלך' },
+                  { key: 'body_hunger', q: 'איך את יודעת שאת רעבה? איך את יודעת שאת שבעה?' },
+                  { key: 'body_knows', q: 'מה את כבר יודעת על הגוף שלך?' },
+                  { key: 'body_limit', q: 'יש משהו שהגוף כאילו אומר לך: ״עד כאן״?' },
+                  { key: 'body_helps', q: 'מה עוזר לגוף שלך להרגיש טוב יותר?' },
+                  { key: 'body_request', q: 'אם הגוף שלך היה יכול לבקש ממך רק דבר אחד היום – מה הוא היה מבקש?' },
+                ].some(({ key }) => journeyAnswers[key]) && (
+                  <div style={{ background: '#eff6ff', borderRadius: 16, padding: '14px 16px', marginBottom: 16, border: '1.5px solid #bfdbfe' }}>
+                    <div style={{ fontWeight: 800, fontSize: 14, color: '#1d4ed8', marginBottom: 12 }}>📋 תשובות הלקוחה מהשאלון</div>
+                    {[
+                      { key: 'body_complaint', q: 'מה הגוף אומר לך כרגע?' },
+                      { key: 'body_signals', q: 'אילו סימנים מופיעים בגוף שלך?' },
+                      { key: 'body_history', q: 'היה זמן שהגוף שלך הרגיש אחרת?' },
+                      { key: 'body_emotion', q: 'איפה בגוף את מרגישה רגשות?' },
+                      { key: 'body_energy', q: 'ספרי על השינה ועל האנרגיה שלך' },
+                      { key: 'body_hunger', q: 'איך את יודעת שאת רעבה? איך את יודעת שאת שבעה?' },
+                      { key: 'body_knows', q: 'מה את כבר יודעת על הגוף שלך?' },
+                      { key: 'body_limit', q: 'יש משהו שהגוף כאילו אומר לך: ״עד כאן״?' },
+                      { key: 'body_helps', q: 'מה עוזר לגוף שלך להרגיש טוב יותר?' },
+                      { key: 'body_request', q: 'אם הגוף שלך היה יכול לבקש ממך רק דבר אחד היום – מה הוא היה מבקש?' },
+                    ].filter(({ key }) => journeyAnswers[key]).map(({ key, q }) => (
+                      <div key={key} style={{ marginBottom: 10 }}>
+                        <div style={{ fontSize: 11, color: '#2563eb', fontWeight: 700, marginBottom: 3 }}>{q}</div>
+                        <div style={{ fontSize: 13, color: '#1a1a1a', background: '#fff', borderRadius: 8, padding: '8px 12px', lineHeight: 1.7, textAlign: 'right', border: '1px solid #dbeafe' }}>{journeyAnswers[key]}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* שאלות הזום */}
                 {[
