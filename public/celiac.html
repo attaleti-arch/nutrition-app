@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>החודש הראשון אחרי האבחון — מדריך להורים | בין הראש לצלחת</title>
+<meta name="description" content="ארבעה שבועות. מה עושים בכל אחד — ובעיקר מה עוד לא. מדריך פרקטי להורים שקיבלו אבחון צליאק לילד.">
+<meta property="og:title" content="החודש הראשון אחרי האבחון — מדריך להורים">
+<meta property="og:description" content="ארבעה שבועות. מה עושים בכל אחד מהם — ובעיקר מה עוד לא.">
+<meta property="og:type" content="article">
+<meta property="og:image" content="/logo-full.png">
+<link rel="icon" href="/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Assistant:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #efe7d4;
+  --paper: #f8f5ee;
+  --olive: #5c6b3c;
+  --olive-deep: #3d4728;
+  --olive-soft: #8c9a6b;
+  --olive-tint: #eef1e4;
+  --gold: #b8933f;
+  --gold-tint: #f7efdc;
+  --ink: #2a2a24;
+  --muted: #6b6a5e;
+  --rule: #e2d9c2;
+  --do-bg: #eef1e4;
+  --dont-bg: #3d4728;
+  --dont-fg: #f8f5ee;
+  --note-bg: #e8f3f6;
+  --note-fg: #2a5c6a;
+  --note-rule: #b8d8e0;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+body {
+  background: var(--cream);
+  color: var(--ink);
+  font-family: 'Assistant', system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.7;
+  -webkit-font-smoothing: antialiased;
+}
+
+.sheet {
+  max-width: 800px;
+  margin: 0 auto;
+  background: var(--paper);
+  box-shadow: 0 1px 48px rgba(61,71,40,.09);
+  padding-bottom: 0;
+}
+.pad { padding-inline: 60px; }
+
+h1, h2, h3 {
+  font-family: 'Frank Ruhl Libre', serif;
+  line-height: 1.15;
+}
+
+/* ── COVER ── */
+.cover {
+  text-align: center;
+  padding: 60px 60px 52px;
+  background: linear-gradient(180deg, #f2efe4 0%, var(--paper) 100%);
+  border-bottom: 1px solid var(--rule);
+}
+.cover-logo {
+  display: block;
+  width: 120px;
+  height: auto;
+  margin: 0 auto 28px;
+}
+.cover-tag {
+  display: inline-block;
+  font-size: 11.5px;
+  letter-spacing: .24em;
+  font-weight: 700;
+  color: var(--gold);
+  background: var(--gold-tint);
+  border-radius: 99px;
+  padding: 6px 18px;
+  margin-bottom: 22px;
+}
+.cover h1 {
+  font-size: clamp(38px, 8vw, 58px);
+  font-weight: 900;
+  color: var(--olive-deep);
+  letter-spacing: -.01em;
+  margin-bottom: 14px;
+  text-wrap: balance;
+}
+.cover-sub {
+  font-size: 18px;
+  color: var(--olive);
+  font-weight: 400;
+  max-width: 36ch;
+  margin: 0 auto;
+}
+.cover-rule {
+  width: 40px;
+  height: 2px;
+  background: var(--gold);
+  border-radius: 99px;
+  margin: 28px auto 0;
+  opacity: .5;
+}
+
+/* ── INTRO ── */
+.intro {
+  padding: 34px 60px;
+  background: var(--olive-tint);
+  border-bottom: 1px solid var(--rule);
+}
+.intro-box {
+  background: var(--paper);
+  border-inline-start: 4px solid var(--gold);
+  border-radius: 0 8px 8px 0;
+  padding: 20px 24px;
+}
+.intro-lede {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--olive-deep);
+  line-height: 1.45;
+  margin-bottom: 12px;
+}
+.intro-box p {
+  font-size: 16px;
+  color: var(--ink);
+  line-height: 1.75;
+}
+.intro-legal {
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+
+/* ── SECTION HEAD ── */
+.sec-head {
+  padding: 50px 60px 22px;
+}
+.sec-eyebrow {
+  display: block;
+  font-size: 11px;
+  letter-spacing: .24em;
+  font-weight: 700;
+  color: var(--olive-soft);
+  margin-bottom: 6px;
+}
+.sec-head h2 {
+  font-size: 27px;
+  font-weight: 700;
+  color: var(--olive-deep);
+}
+.sec-head .hint {
+  font-size: 15px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.sec-divider {
+  height: 1px;
+  background: var(--rule);
+  margin: 0 60px;
+}
+
+/* ── WEEKS ── */
+.weeks { padding: 0 60px 48px; display: flex; flex-direction: column; gap: 20px; }
+
+.week {
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+}
+.week-head {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 24px;
+  background: var(--olive-deep);
+  color: var(--paper);
+}
+.week-num {
+  flex: 0 0 auto;
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 48px;
+  font-weight: 900;
+  line-height: 1;
+  color: transparent;
+  -webkit-text-stroke: 1.5px var(--gold);
+}
+.week-meta {}
+.week-kicker {
+  display: block;
+  font-size: 11px;
+  letter-spacing: .2em;
+  font-weight: 700;
+  color: rgba(248,245,238,.5);
+  margin-bottom: 4px;
+}
+.week-theme {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  text-wrap: balance;
+}
+
+.week-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.col-do {
+  background: var(--do-bg);
+  padding: 22px 24px;
+  border-left: 1px solid var(--rule);
+}
+.col-dont {
+  background: var(--dont-bg);
+  color: var(--dont-fg);
+  padding: 22px 24px;
+}
+.col-label {
+  font-size: 11px;
+  letter-spacing: .16em;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+.col-do .col-label { color: var(--olive-soft); }
+.col-dont .col-label { color: var(--gold); }
+
+.col-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.col-list li {
+  font-size: 15.5px;
+  line-height: 1.55;
+  padding-inline-start: 18px;
+  position: relative;
+}
+.col-do .col-list li::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 7px;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+}
+.col-dont .col-list li::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 1px;
+  top: 10px;
+  width: 9px; height: 0;
+  border-top: 1.5px solid rgba(248,245,238,.55);
+}
+
+.why-box {
+  padding: 14px 24px;
+  background: var(--gold-tint);
+  border-top: 1px solid var(--rule);
+  font-size: 14.5px;
+  color: var(--ink);
+  line-height: 1.7;
+}
+.why-box strong { color: var(--olive-deep); font-weight: 700; }
+
+.note-box {
+  padding: 14px 24px;
+  background: var(--note-bg);
+  border-top: 1px solid var(--note-rule);
+  font-size: 14.5px;
+  color: var(--note-fg);
+  line-height: 1.7;
+}
+.note-box strong { color: #1e4a55; font-weight: 700; }
+
+/* ── LISTS ── */
+.lists { padding: 0 60px 52px; display: flex; flex-direction: column; gap: 0; }
+
+.list-block {
+  padding: 22px 0 6px;
+  border-top: 1px solid var(--rule);
+}
+.list-block:first-child { border-top: none; padding-top: 0; }
+
+.list-block h3 {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--olive-deep);
+  margin-bottom: 4px;
+}
+.list-cap {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 14px;
+  line-height: 1.55;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  margin-bottom: 10px;
+}
+.chips li {
+  background: var(--olive-tint);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 7px 14px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.tip {
+  font-size: 14.5px;
+  color: var(--olive-deep);
+  background: var(--gold-tint);
+  border-inline-start: 3px solid var(--gold);
+  padding: 11px 15px;
+  margin-top: 10px;
+  line-height: 1.65;
+  border-radius: 0 4px 4px 0;
+}
+
+/* restaurant rows */
+.rest-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--rule);
+  font-size: 15.5px;
+  line-height: 1.6;
+}
+.rest-row:last-child { border-bottom: none; }
+.rest-icon { font-size: 18px; flex: 0 0 auto; margin-top: 2px; }
+.rest-row strong { display: block; color: var(--olive-deep); font-weight: 700; }
+
+/* ── CLOSING ── */
+.closing {
+  background: var(--olive-deep);
+  color: var(--paper);
+  padding: 56px 60px 52px;
+}
+.closing h2 {
+  font-size: clamp(26px, 5vw, 36px);
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 10px;
+  text-wrap: balance;
+}
+.closing .closing-sub {
+  font-size: 15px;
+  color: rgba(248,245,238,.6);
+  margin-bottom: 32px;
+}
+.tally {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  padding: 26px 0;
+  border-top: 1px solid rgba(248,245,238,.15);
+  border-bottom: 1px solid rgba(248,245,238,.15);
+  margin-bottom: 30px;
+}
+.tally-item { flex: 1 1 80px; }
+.tally-n {
+  display: block;
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 40px;
+  font-weight: 900;
+  color: var(--gold);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 6px;
+}
+.tally-l {
+  display: block;
+  font-size: 14px;
+  color: rgba(248,245,238,.75);
+  line-height: 1.35;
+}
+.closing-quote {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 19px;
+  font-weight: 700;
+  color: rgba(248,245,238,.9);
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+.closing-p {
+  font-size: 16.5px;
+  color: rgba(248,245,238,.75);
+  line-height: 1.7;
+  max-width: 52ch;
+}
+
+/* ── FOOTER ── */
+footer {
+  padding: 32px 60px 42px;
+  text-align: center;
+  border-top: 1px solid var(--rule);
+}
+footer .footer-name {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--olive-deep);
+  margin-bottom: 6px;
+}
+footer .footer-meta {
+  font-size: 13.5px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* ── REVEAL ── */
+.reveal { opacity: 0; transform: translateY(14px); transition: opacity .55s ease, transform .55s ease; }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } }
+
+/* ── RESPONSIVE ── */
+@media (max-width: 640px) {
+  .pad, .intro, .sec-head, .weeks, .lists, .closing, footer { padding-inline: 22px; }
+  .cover { padding: 44px 22px 40px; }
+  .sec-head { padding: 38px 22px 18px; }
+  .sec-divider { margin-inline: 22px; }
+  .week-cols { grid-template-columns: 1fr; }
+  .col-do { border-left: none; border-bottom: 1px solid var(--rule); }
+  .cover h1 { font-size: 36px; }
+  .week-num { font-size: 38px; }
+}
+
+/* ── PRINT ── */
+@media print {
+  body { background: #fff; font-size: 11pt; }
+  .sheet { max-width: none; box-shadow: none; }
+  .week, .list-block, .intro-box { break-inside: avoid; }
+  .reveal { opacity: 1; transform: none; }
+  .closing, .col-dont, .dont { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  @page { margin: 14mm; }
+}
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <!-- COVER -->
+  <header class="cover reveal">
+    <img src="/logo-full.png" alt="בין הראש לצלחת" class="cover-logo">
+    <p class="cover-tag">מדריך להורים</p>
+    <h1>החודש הראשון<br>אחרי האבחון</h1>
+    <p class="cover-sub">ארבעה שבועות. מה עושים בכל אחד מהם — ובעיקר מה עוד לא.</p>
+    <div class="cover-rule"></div>
+  </header>
+
+  <!-- INTRO -->
+  <div class="intro reveal">
+    <div class="intro-box">
+      <p class="intro-lede">הורים טריים לצליאק מנסים לעשות הכול בשבוע הראשון. זה בדיוק מה ששורף אותם — ומקבע לילד שצליאק זה אסון.</p>
+      <p>המדריך הזה מפרק את החודש לארבעה שבועות. בכל שבוע שלושה דברים לעשות, ורשימה של מה עוד לא. <strong>הרשימה השנייה חשובה יותר.</strong></p>
+    </div>
+    <p class="intro-legal">המדריך לא מחליף את ההנחיות של הרופא והדיאטנית המטפלת. הם מטפלים במחלה — אני מטפלת בבית. מוצרים ותוויות משתנים, ותמיד צריך לבדוק אישור על כל מוצר.</p>
+  </div>
+
+  <!-- WEEKS -->
+  <div class="sec-head reveal">
+    <span class="sec-eyebrow">ארבעת השבועות</span>
+    <h2>קראו את הטור הכהה קודם</h2>
+    <p class="hint">הוא אינפורמציה שתמנע ממכם טעויות נפוצות.</p>
+  </div>
+  <div class="sec-divider"></div>
+
+  <div class="weeks">
+
+    <!-- שבוע 1 -->
+    <div class="week reveal">
+      <div class="week-head">
+        <div class="week-num">1</div>
+        <div class="week-meta">
+          <span class="week-kicker">שבוע ראשון</span>
+          <div class="week-theme">לשרוד, לא לארגן</div>
+        </div>
+      </div>
+      <div class="week-cols">
+        <div class="col-do">
+          <div class="col-label">עושים השבוע</div>
+          <ul class="col-list">
+            <li>בוחרים 5 מנות שהילד כבר אוהב וממילא ללא גלוטן, וחוזרים עליהן. השבוע לא מגוונים.</li>
+            <li>מפרידים את מה שנוגע בלחם: טוסטר, קרש חיתוך פלסטיק נפרד, וממרחים בצנצנת נפרדת.</li>
+            <li>מעדכנים רק את מי שחייב לדעת עכשיו — הגן או בית הספר, ומבוגר אחד נוסף.</li>
+          </ul>
+        </div>
+        <div class="col-dont">
+          <div class="col-label">לא עושים עדיין</div>
+          <ul class="col-list">
+            <li>לא זורקים את הפנטרי</li>
+            <li>לא עושים קנייה גדולה של "מוצרי צליאק"</li>
+            <li>לא קוראים תוויות בסופר שעתיים</li>
+            <li>לא מודיעים לכל המשפחה המורחבת</li>
+          </ul>
+        </div>
+      </div>
+      <div class="why-box"><strong>למה:</strong> השבוע הראשון הוא שבוע של הלם, לא של מערכות. חזרתיות היא לא כישלון תזונתי — היא מה שמאפשר לכם לנשום.</div>
+      <div class="note-box"><strong>על זיהום צולב:</strong> קרשי עץ סופגים שאריות ולא מתנקים מספיק — מחליפים לפלסטיק נפרד. שמן טיגון שבו שקעו שניצלים עם פירורים גם הוא בעיה. לא צריך סיר ותבנית נפרדים — אלה שני הדברים שכן.</div>
+    </div>
+
+    <!-- שבוע 2 -->
+    <div class="week reveal">
+      <div class="week-head">
+        <div class="week-num">2</div>
+        <div class="week-meta">
+          <span class="week-kicker">שבוע שני</span>
+          <div class="week-theme">האוכל של המשפחה, לא של הילד</div>
+        </div>
+      </div>
+      <div class="week-cols">
+        <div class="col-do">
+          <div class="col-label">עושים השבוע</div>
+          <ul class="col-list">
+            <li>כותבים על המקרר 5 ארוחות משפחתיות שממילא מתאימות. אוכל של כולם.</li>
+            <li>ארוחת ערב אחת בשבוע שבה כולם אוכלים בדיוק אותו דבר.</li>
+            <li>קוראים תוויות של 10 מוצרים שאתם באמת קונים כל שבוע. עשרה, לא יותר.</li>
+          </ul>
+        </div>
+        <div class="col-dont">
+          <div class="col-label">לא עושים עדיין</div>
+          <ul class="col-list">
+            <li>לא מבשלים לילד בנפרד</li>
+            <li>לא נכנסים לאפייה ללא גלוטן</li>
+            <li>לא הופכים כל ארוחה לשיחה על צליאק</li>
+          </ul>
+        </div>
+      </div>
+      <div class="why-box"><strong>למה לא אופים עדיין:</strong> הניסיונות הראשונים כמעט תמיד יוצאים גרועים, והילד קובע לעצמו ש"ללא גלוטן = לא טעים". את ההחלטה הזאת קשה מאוד להפוך אחר כך.</div>
+      <div class="note-box"><strong>מה מחפשים בתווית:</strong> חיטה · שעורה · שיפון · כוסמין — כולם גלוטן. "מיוצר במפעל המייצר גם חיטה" שונה מ"עלול להכיל עקבות" — הראשון סיכון ממשי, השני פחות. מוצר שכתוב עליו "ללא גלוטן" עדיין צריך להיות מאושר — תמיד תבדקו עם הדיאטנית.</div>
+    </div>
+
+    <!-- שבוע 3 -->
+    <div class="week reveal">
+      <div class="week-head">
+        <div class="week-num">3</div>
+        <div class="week-meta">
+          <span class="week-kicker">שבוע שלישי</span>
+          <div class="week-theme">יוצאים מהבית</div>
+        </div>
+      </div>
+      <div class="week-cols">
+        <div class="col-do">
+          <div class="col-label">עושים השבוע</div>
+          <ul class="col-list">
+            <li>בוחרים 3 מקומות בטוחים באזור ושומרים אותם במועדפים בטלפון.</li>
+            <li>מכניסים 2 גיבויים קבועים לתיק — מאלה שהילד באמת היה בוחר בקיוסק.</li>
+            <li>מכינים 3 פתרונות במקפיא, במנות אישיות, לשעה שבע בערב.</li>
+          </ul>
+        </div>
+        <div class="col-dont">
+          <div class="col-label">לא עושים עדיין</div>
+          <ul class="col-list">
+            <li>לא מתחילים באירוע גדול — לא יום הולדת ולא טיול</li>
+            <li>לא שולחים אותו עם קופסה שנראית אחרת מכולם</li>
+            <li>לא מודיעים למסעדה בנוכחותו כאילו הוא מקרה רפואי</li>
+          </ul>
+        </div>
+      </div>
+      <div class="note-box"><strong>שימו לב:</strong> זמינות היא לא הזמנה. כשיש אוכל בתיק, ברכב ואצל סבתא, הילד לומד שאוכל הוא התשובה לכל פער. גיבוי נועד למצב שאין — לא למצב שמשעמם.</div>
+    </div>
+
+    <!-- שבוע 4 -->
+    <div class="week reveal">
+      <div class="week-head">
+        <div class="week-num">4</div>
+        <div class="week-meta">
+          <span class="week-kicker">שבוע רביעי</span>
+          <div class="week-theme">הילד עצמו</div>
+        </div>
+      </div>
+      <div class="week-cols">
+        <div class="col-do">
+          <div class="col-label">עושים השבוע</div>
+          <ul class="col-list">
+            <li>מלמדים אותו שני משפטים שהוא יכול להגיד בעצמו, בלי הסבר ארוך: "אני לא אוכל את זה, יש לי משהו אחר."</li>
+            <li>שיחה אחת: מה הכי מעצבן אותו בזה. לא מה קשה — מה מעצבן.</li>
+            <li>קובעים מעקב רפואי, ושואלים את הרופא לגבי בדיקות לבני משפחה מדרגה ראשונה.</li>
+          </ul>
+        </div>
+        <div class="col-dont">
+          <div class="col-label">לא עושים</div>
+          <ul class="col-list">
+            <li>לא שואלים כל יום "אכלת משהו שאסור?"</li>
+            <li>לא הופכים את זה לנושא הקבוע של ארוחת הערב</li>
+          </ul>
+        </div>
+      </div>
+      <div class="why-box"><strong>למה "מעצבן" ולא "קשה":</strong> ילדים לא יודעים לענות על "מה קשה לך" — זו שאלה של מבוגרים. על "מה מעצבן אותך" הם עונים מיד, ושם נמצא המידע האמיתי.</div>
+    </div>
+
+  </div>
+
+  <!-- LISTS -->
+  <div class="sec-head reveal" style="padding-top: 0;">
+    <span class="sec-eyebrow">הרשימות</span>
+    <h2>שלא תצטרכו להמציא אותן לבד</h2>
+  </div>
+  <div class="sec-divider"></div>
+
+  <div class="lists reveal">
+
+    <div class="list-block">
+      <h3>2 הגיבויים בתיק</h3>
+      <p class="list-cap">בלי קירור, שורדים שבועיים בתיק ולא נמעכים. בוחרים שניים — את אלה שהילד היה בוחר בעצמו בקיוסק.</p>
+      <ul class="chips">
+        <li>פריכיות אורז באריזה אישית</li>
+        <li>חטיף תמרים</li>
+        <li>פירות יבשים</li>
+        <li>חופן שקדים או אגוזים</li>
+        <li>פופקורן ביתי בשקית</li>
+        <li>חטיף שוקולד שהוגדר מראש כגיבוי</li>
+      </ul>
+      <p class="tip">אגוזים שלמים מתאימים מגיל שלוש ומעלה, ולא בנסיעה.</p>
+    </div>
+
+    <div class="list-block">
+      <h3>יציאה קצרה — עם צידנית קטנה</h3>
+      <ul class="chips">
+        <li>יוגורט או גבינה לבנה</li>
+        <li>קוביות גבינה צהובה</li>
+        <li>מקלות ירקות עם חומוס</li>
+        <li>פרי שלם</li>
+        <li>ביצה קשה</li>
+      </ul>
+    </div>
+
+    <div class="list-block">
+      <h3>יום ארוך מחוץ לבית</h3>
+      <p class="list-cap">בית ספר + חוג + ערב.</p>
+      <ul class="chips">
+        <li>פיתה ללא גלוטן עם מה שהוא אוהב</li>
+        <li>קופסת אורז עם עוף מאתמול</li>
+        <li>תירס או אדממה</li>
+        <li>שניצל קר</li>
+        <li>ביצה קשה + גיבוי מהרשימה הראשונה</li>
+      </ul>
+      <p class="tip">לא כל דבר בתיק צריך להיות "מוצר צליאק". הרבה מזונות רגילים הם ללא גלוטן מטבעם — גם זולים יותר וגם נראים כמו של כולם.</p>
+    </div>
+
+    <div class="list-block">
+      <h3>3 פתרונות במקפיא</h3>
+      <p class="list-cap">במנות אישיות, לא בסיר. מנה שצריך להפשיר בשלמותה היא לא אופציה בשבע בערב.</p>
+      <ul class="chips">
+        <li>קציצות בקר או עוף</li>
+        <li>פשטידת ירקות</li>
+        <li>מרק סמיך</li>
+        <li>פיתות ללא גלוטן, קפואות אחת-אחת</li>
+      </ul>
+    </div>
+
+    <div class="list-block">
+      <h3>5 ארוחות משפחתיות שממילא ללא גלוטן</h3>
+      <ul class="chips">
+        <li>עוף עם אורז או תפוחי אדמה, בתבשיל או בתנור</li>
+        <li>חזה עוף מוקפץ עם ירקות ואטריות אורז</li>
+        <li>דג בתנור</li>
+        <li>פרגיות ומג'דרה</li>
+        <li>קציצות עוף, בקר או הודו עם שעועית ירוקה</li>
+      </ul>
+      <p class="tip">בקציצות רק הפירורים משתנים — פירורים ללא גלוטן, ביצה בלבד, או קמח אורז. באטריות אורז: לוודא 100% אורז — יש מותגים שמוסיפים חיטה. אף אחת מהארוחות האלה היא לא "אוכל מיוחד". זו כל הנקודה.</p>
+    </div>
+
+    <div class="list-block">
+      <h3>3 המקומות הבטוחים — מה בודקים</h3>
+      <p class="list-cap">אחד לארוחה, אחד למשהו מהיר, אחד למתוק. את המקומות תבחרו לפי האזור שלכם.</p>
+      <div class="rest-row"><span class="rest-icon">✅</span><div><strong>גריל ופיצריות עם בצק ללא גלוטן</strong>הימור בטוח יותר — שואלים על משטח ההכנה ועל שמן טיגון משותף.</div></div>
+      <div class="rest-row"><span class="rest-icon">⚠️</span><div><strong>סושי — זהירות</strong>רוטב סויה רגיל מכיל גלוטן. לבקש סויה ללא גלוטן בנפרד.</div></div>
+      <div class="rest-row"><span class="rest-icon">💡</span><div><strong>הכלל</strong>"ללא גלוטן" בתפריט לא תמיד שווה "מיועד לצליאק". השאלה על המטבח חשובה יותר מהשאלה על המנה.</div></div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- CLOSING -->
+<section class="closing reveal">
+  <div style="max-width: 800px; margin: 0 auto;">
+    <h2>אחרי חודש<br>יש לכם את זה</h2>
+    <p class="closing-sub">לא שלמות. בסיס.</p>
+    <div class="tally">
+      <div class="tally-item"><span class="tally-n">5</span><span class="tally-l">מנות שהילד אוהב</span></div>
+      <div class="tally-item"><span class="tally-n">3</span><span class="tally-l">מקומות בטוחים</span></div>
+      <div class="tally-item"><span class="tally-n">2</span><span class="tally-l">גיבויים בתיק</span></div>
+      <div class="tally-item"><span class="tally-n">3</span><span class="tally-l">פתרונות במקפיא</span></div>
+      <div class="tally-item"><span class="tally-n">5</span><span class="tally-l">ארוחות משפחתיות</span></div>
+    </div>
+    <p class="closing-quote">הילד לא יזכור מה הוא אכל בשנה הראשונה.</p>
+    <p class="closing-p">הוא יזכור איך הרגיש סביב זה.</p>
+  </div>
+</section>
+
+<footer>
+  <p class="footer-name">בין הראש לצלחת</p>
+  <p class="footer-meta">אתי — יועצת התנהגותית ותזונה, מאסטר פרקטיקאית NLP<br>eti-zitun.com · @eti.rafaela.zitun</p>
+</footer>
+
+<script>
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    els.forEach(function(el){ el.classList.add('in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -6% 0px' });
+  els.forEach(function(el){ io.observe(el); });
+})();
+</script>
+
+</body>
+</html>
