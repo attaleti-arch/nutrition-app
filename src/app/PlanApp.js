@@ -2676,6 +2676,9 @@ export default function PlanApp({ clientName, userPassword }) {
                   { key: 'body_energy', q: 'ספרי על השינה ועל האנרגיה שלך', hint: 'מה קורה ומתי ביום?' },
                   { key: 'body_hunger', q: 'איך את יודעת שאת רעבה? איך את יודעת שאת שבעה?', hint: 'האם תמיד זה ברור?' },
                   { key: 'body_knows', q: 'מה את כבר יודעת על הגוף שלך?', hint: 'משהו חשוב שחשוב שאדע' },
+                  { key: 'body_limit', q: 'יש משהו שהגוף כאילו אומר לך: ״עד כאן״?', hint: 'תחושה, כאב, עייפות שחוזרים ואומרים לך לעצור.' },
+                  { key: 'body_helps', q: 'מה עוזר לגוף שלך להרגיש טוב יותר?', hint: 'תנועה? שינה? אוכל מסוים? שקט? משהו אחר?' },
+                  { key: 'body_request', q: 'אם הגוף שלך היה יכול לבקש ממך רק דבר אחד היום – מה הוא היה מבקש?', hint: 'תנוחי? תאכלי? תנועי? תשתי מים? תגעי בטבע?' },
                 ].map(({ key, q, hint }) => <QuestionBlock key={key} qKey={key} q={q} hint={hint} accentColor="#0284c7" />)}
               </div>
             ) : (bodyUnlockAt || rootsOpen) && <LockedBadge label="🩺 הגוף מדבר" unlockAt={bodyUnlockAt} color="#0284c7" />}
