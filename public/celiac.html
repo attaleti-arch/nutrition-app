@@ -285,6 +285,57 @@ h1, h2, h3 {
 }
 .note-box strong { color: #1e4a55; font-weight: 700; }
 
+.dark-box {
+  padding: 18px 24px;
+  background: var(--dont-bg);
+  border-top: 1px solid rgba(248,245,238,.12);
+  font-size: 14.5px;
+  color: var(--dont-fg);
+  line-height: 1.7;
+}
+.dark-box strong { color: var(--gold); font-weight: 700; display: block; margin-bottom: 10px; }
+.dark-box ul { list-style: none; display: flex; flex-direction: column; gap: 8px; padding: 0; margin: 0; }
+.dark-box ul li { padding-inline-start: 16px; position: relative; }
+.dark-box ul li::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 1px; top: 10px;
+  width: 9px; height: 0;
+  border-top: 1.5px solid rgba(248,245,238,.45);
+}
+.dark-box .dark-note {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(248,245,238,.12);
+  font-size: 13.5px;
+  color: rgba(248,245,238,.6);
+}
+
+.parents-note {
+  padding: 32px 60px 36px;
+  background: var(--olive-tint);
+  border-bottom: 1px solid var(--rule);
+}
+.parents-note-inner {
+  background: var(--paper);
+  border-inline-start: 4px solid var(--olive-soft);
+  border-radius: 0 8px 8px 0;
+  padding: 22px 26px;
+}
+.parents-note-title {
+  font-family: 'Frank Ruhl Libre', serif;
+  font-size: 18px; font-weight: 700;
+  color: var(--olive-deep);
+  margin-bottom: 12px;
+}
+.parents-note-inner p {
+  font-size: 16px; line-height: 1.8;
+  color: var(--ink);
+}
+@media (max-width: 640px) {
+  .parents-note { padding: 24px 22px 28px; }
+}
+
 /* ── LISTS ── */
 .lists { padding: 0 60px 52px; display: flex; flex-direction: column; gap: 0; }
 
@@ -513,7 +564,17 @@ footer .footer-meta {
         </div>
       </div>
       <div class="why-box"><strong>למה:</strong> השבוע הראשון הוא שבוע של הלם, לא של מערכות. חזרתיות היא לא כישלון תזונתי — היא מה שמאפשר לכם לנשום.</div>
-      <div class="note-box"><strong>על זיהום צולב:</strong> קרשי עץ סופגים שאריות ולא מתנקים מספיק — מחליפים לפלסטיק נפרד. שמן טיגון שבו שקעו שניצלים עם פירורים גם הוא בעיה. לא צריך סיר ותבנית נפרדים — אלה שני הדברים שכן.</div>
+      <div class="note-box"><strong>על זיהום צולב:</strong> קרשי עץ סופגים שאריות ולא מתנקים מספיק — מחליפים לפלסטיק נפרד. מסננת פסטה לוכדת שאריות ולא מתנקת — גם היא צריכה להיות נפרדת. שמן טיגון שבו שקעו שניצלים עם פירורים גם הוא בעיה. לא צריך סיר ותבנית נפרדים — אלה שלושת הדברים שכן.</div>
+      <div class="dark-box">
+        <strong>וכשקורית טעות</strong>
+        <ul>
+          <li>זה קורה כמעט לכולם בחודש הראשון</li>
+          <li>בדרך כלל מדובר באי־נוחות זמנית, לא בנזק קבוע</li>
+          <li>מה שכן עושים: לתעד מה ומתי, ולעדכן את הדיאטנית במעקב הבא</li>
+          <li>מה שלא עושים: לא חוקרים את הילד, לא מפחידים, לא הופכים את זה לשיחה על אחריות</li>
+        </ul>
+        <p class="dark-note">תמיד להתייעץ עם הצוות המטפל אם יש תסמינים חריגים או מתמשכים.</p>
+      </div>
     </div>
 
     <!-- שבוע 2 -->
@@ -544,7 +605,7 @@ footer .footer-meta {
         </div>
       </div>
       <div class="why-box"><strong>למה לא אופים עדיין:</strong> הניסיונות הראשונים כמעט תמיד יוצאים גרועים, והילד קובע לעצמו ש"ללא גלוטן = לא טעים". את ההחלטה הזאת קשה מאוד להפוך אחר כך.</div>
-      <div class="note-box"><strong>מה מחפשים בתווית:</strong> חיטה · שעורה · שיפון · כוסמין — כולם גלוטן. "מיוצר במפעל המייצר גם חיטה" שונה מ"עלול להכיל עקבות" — הראשון סיכון ממשי, השני פחות. מוצר שכתוב עליו "ללא גלוטן" עדיין צריך להיות מאושר — תמיד תבדקו עם הדיאטנית.</div>
+      <div class="note-box"><strong>מה מחפשים בתווית:</strong> חיטה · שעורה · שיפון · כוסמין — כולם גלוטן. שיבולת שועל — לא מכילה גלוטן מטבעה, אבל כמעט תמיד מזוהמת. רק אם כתוב במפורש "ללא גלוטן", ורק באישור הדיאטנית. "מיוצר במפעל המייצר גם חיטה" שונה מ"עלול להכיל עקבות" — הראשון סיכון ממשי, השני פחות. מוצר שכתוב עליו "ללא גלוטן" עדיין צריך להיות מאושר — תמיד תבדקו עם הדיאטנית.</div>
     </div>
 
     <!-- שבוע 3 -->
@@ -604,8 +665,17 @@ footer .footer-meta {
         </div>
       </div>
       <div class="why-box"><strong>למה "מעצבן" ולא "קשה":</strong> ילדים לא יודעים לענות על "מה קשה לך" — זו שאלה של מבוגרים. על "מה מעצבן אותך" הם עונים מיד, ושם נמצא המידע האמיתי.</div>
+      <div class="why-box" style="border-top: 1px solid var(--rule); font-style: italic; color: var(--muted);">החודש הבא: יום הולדת ראשון, ואפייה אחת. לא לפני.</div>
     </div>
 
+  </div>
+
+  <!-- ומשהו אליכם -->
+  <div class="parents-note reveal">
+    <div class="parents-note-inner">
+      <p class="parents-note-title">ומשהו אליכם</p>
+      <p>הרבה הורים מגלים אחרי האבחון שהם מחפשים אחורה סימנים שפספסו. זו תגובה כמעט אוניברסלית, והיא לא עוזרת לאף אחד. צליאק מתפתח בשקט, לפעמים שנים, ואף אחד לא היה מזהה אותו מוקדם יותר. הילד לא צריך שתתקנו את העבר — הוא צריך אתכם רגועים החודש.</p>
+    </div>
   </div>
 
   <!-- LISTS -->
@@ -696,14 +766,14 @@ footer .footer-meta {
     <h2>אחרי חודש<br>יש לכם את זה</h2>
     <p class="closing-sub">לא שלמות. בסיס.</p>
     <div class="tally">
-      <div class="tally-item"><span class="tally-n">5</span><span class="tally-l">מנות שהילד אוהב</span></div>
+      <div class="tally-item"><span class="tally-n">5</span><span class="tally-l">ארוחות שכל הבית אוכל</span></div>
       <div class="tally-item"><span class="tally-n">3</span><span class="tally-l">מקומות בטוחים</span></div>
       <div class="tally-item"><span class="tally-n">2</span><span class="tally-l">גיבויים בתיק</span></div>
       <div class="tally-item"><span class="tally-n">3</span><span class="tally-l">פתרונות במקפיא</span></div>
-      <div class="tally-item"><span class="tally-n">5</span><span class="tally-l">ארוחות משפחתיות</span></div>
     </div>
     <p class="closing-quote">הילד לא יזכור מה הוא אכל בשנה הראשונה.</p>
     <p class="closing-p">הוא יזכור איך הרגיש סביב זה.</p>
+    <p class="closing-p" style="margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(248,245,238,.15); color: rgba(248,245,238,.65);">והבית הוא לא רק צליאק. אם התהליך הזה עורר אצלכם עוד דברים סביב האוכל — <strong style="color: rgba(248,245,238,.85); font-weight: 600;">כתבי לי, נסתכל על זה יחד.</strong></p>
   </div>
 </section>
 
