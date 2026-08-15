@@ -204,172 +204,252 @@ const ZERO_FAT_VEGGIE_IDS = ['b_veggie1', 'v1', 'v3', 'v4', 'v6']
 // base=100 → קלוריות ל-100 גרם / base=1 → קלוריות ליחידה אחת
 const FOOD_DB = [
   // לחמים ופחמימות
-  { id:'fd_pita',        name:'פיתה לבנה',                cal:185, prot:5,    fat:1,    carbs:38,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_pita_k',      name:'פיתה כוסמין',              cal:170, prot:6,    fat:2,    carbs:34,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_pita_s',      name:'פיתה קטנה',                cal:110, prot:3,    fat:0.5,  carbs:23,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_bagel',       name:'בייגל',                    cal:270, prot:10,   fat:2,    carbs:55,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_baguette',    name:'בגט',                      cal:350, prot:12,   fat:2,    carbs:72,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_baguette_h',  name:'חצי בגט',                  cal:175, prot:6,    fat:1,    carbs:36,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_tortilla',    name:'טורטיה קמח',               cal:130, prot:3,    fat:3,    carbs:22,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_tortilla_w',  name:'טורטיה חיטה מלאה',         cal:120, prot:4,    fat:2.5,  carbs:20,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_lahmaniya',   name:'לחמנייה',                  cal:150, prot:5,    fat:2,    carbs:28,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_bread_w',     name:'לחם לבן — פרוסה',          cal:80,  prot:2.5,  fat:1,    carbs:15,  base:1,   unit:'פרוסה', dflt:1 },
-  { id:'fd_bread_wh',    name:'לחם מלא — פרוסה',          cal:75,  prot:3,    fat:1,    carbs:14,  base:1,   unit:'פרוסה', dflt:1 },
-  { id:'fd_bread_ry',    name:'לחם שיפון — פרוסה',        cal:78,  prot:3,    fat:0.7,  carbs:15,  base:1,   unit:'פרוסה', dflt:1 },
-  { id:'fd_bread_sc',    name:'לחם מחמצת — פרוסה',        cal:80,  prot:3,    fat:0.7,  carbs:15,  base:1,   unit:'פרוסה', dflt:1 },
-  { id:'fd_challah',     name:'חלה — פרוסה',              cal:90,  prot:3,    fat:2,    carbs:17,  base:1,   unit:'פרוסה', dflt:1 },
-  { id:'fd_croissant',   name:'קרואסון',                  cal:230, prot:4,    fat:12,   carbs:26,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_boureka_g',   name:'בורקה גבינה',              cal:220, prot:6,    fat:11,   carbs:25,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_boureka_p',   name:'בורקה תפוח אדמה',          cal:200, prot:4,    fat:9,    carbs:27,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_malaawach',   name:'מלאווח',                   cal:350, prot:7,    fat:20,   carbs:36,  base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_jachnun',     name:'ג\'חנון',                   cal:400, prot:8,    fat:28,   carbs:32,  base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_pasta_c',     name:'פסטה מבושלת',              cal:158, prot:6,    fat:1,    carbs:31,  base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_rice_w',      name:'אורז לבן מבושל',           cal:130, prot:2.7,  fat:0.3,  carbs:28,  base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_rice_br',     name:'אורז מלא מבושל',           cal:112, prot:2.6,  fat:0.9,  carbs:23,  base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_quinoa',      name:'קינואה מבושלת',            cal:120, prot:4.4,  fat:1.9,  carbs:22,  base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_couscous',    name:'קוסקוס מבושל',             cal:112, prot:3.8,  fat:0.2,  carbs:23,  base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_bulgur',      name:'בורגול מבושל',             cal:83,  prot:3,    fat:0.2,  carbs:18,  base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_oats',        name:'שיבולת שועל מבושלת',       cal:62,  prot:2.5,  fat:1,    carbs:11,  base:100, unit:'גרם',  dflt:200 },
-  { id:'fd_granola',     name:'גרנולה',                   cal:430, prot:8,    fat:15,   carbs:65,  base:100, unit:'גרם',  dflt:50 },
-  { id:'fd_cornflakes',  name:'קורנפלקס',                 cal:360, prot:7,    fat:0.7,  carbs:80,  base:100, unit:'גרם',  dflt:40 },
-  { id:'fd_crispbread',  name:'פריכית',                   cal:35,  prot:0.7,  fat:0.3,  carbs:7,   base:1,   unit:'יח\'', dflt:2 },
-  // בשר ועוף
-  { id:'fd_chicken_b',   name:'חזה עוף מבושל',            cal:165, prot:31,   fat:4,    carbs:0,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_chicken_th',  name:'ירך עוף ללא עור',          cal:177, prot:25,   fat:9,    carbs:0,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_chicken_w',   name:'כנפיים עוף',               cal:215, prot:22,   fat:14,   carbs:0,   base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_chicken_mball',name:'קציצות עוף',              cal:170, prot:19,   fat:9,    carbs:3,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_shawarma_c',  name:'שווארמה עוף',              cal:200, prot:23,   fat:11,   carbs:2,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_skewer_c',    name:'שיפוד עוף',                cal:200, prot:27,   fat:9,    carbs:1,   base:1,   unit:'יח\'', dflt:2 },
-  { id:'fd_turkey',      name:'פרגית הודו',               cal:135, prot:30,   fat:1.5,  carbs:0,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_turkey_slice',name:'פרוסת הודו',               cal:27,  prot:5.5,  fat:0.4,  carbs:0,   base:1,   unit:'פרוסה', dflt:3 },
-  { id:'fd_beef_file',   name:'פילה בקר',                 cal:220, prot:29,   fat:11,   carbs:0,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_beef_mball',  name:'קציצות בקר',               cal:250, prot:22,   fat:17,   carbs:2,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_burger',      name:'המבורגר בקר',              cal:300, prot:26,   fat:20,   carbs:2,   base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_kebab',       name:'קבב בקר',                  cal:200, prot:18,   fat:13,   carbs:3,   base:1,   unit:'יח\'', dflt:2 },
-  { id:'fd_shawarma_b',  name:'שווארמה בקר',              cal:220, prot:23,   fat:13,   carbs:2,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_chicken_liver',name:'כבד עוף',                 cal:167, prot:25,   fat:6,    carbs:1,   base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_sausage_c',   name:'נקניקיית עוף',             cal:120, prot:8,    fat:8,    carbs:4,   base:1,   unit:'יח\'', dflt:2 },
-  { id:'fd_sausage_b',   name:'נקניקיית בקר',             cal:150, prot:8,    fat:12,   carbs:3,   base:1,   unit:'יח\'', dflt:2 },
+  { id:'fd_pita',         name:'פיתה לבנה',                cal:185, prot:5,    fat:1,    carbs:38,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_pita_k',       name:'פיתה כוסמין',              cal:170, prot:6,    fat:2,    carbs:34,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_pita_s',       name:'פיתה קטנה',                cal:110, prot:3,    fat:0.5,  carbs:23,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_pita_m',       name:'פיתה מלאה',                cal:160, prot:6,    fat:1.5,  carbs:32,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_bagel',        name:'בייגל',                    cal:270, prot:10,   fat:2,    carbs:55,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_baguette',     name:'בגט שלם',                  cal:350, prot:12,   fat:2,    carbs:72,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_baguette_h',   name:'חצי בגט',                  cal:175, prot:6,    fat:1,    carbs:36,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_tortilla',     name:'טורטיה קמח',               cal:130, prot:3,    fat:3,    carbs:22,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_tortilla_w',   name:'טורטיה חיטה מלאה',         cal:120, prot:4,    fat:2.5,  carbs:20,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_lahmaniya',    name:'לחמנייה',                  cal:150, prot:5,    fat:2,    carbs:28,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_bread_w',      name:'לחם לבן — פרוסה',          cal:80,  prot:2.5,  fat:1,    carbs:15,  base:1,   unit:'פרוסה', dflt:2, cat:'bread' },
+  { id:'fd_bread_wh',     name:'לחם מלא — פרוסה',          cal:75,  prot:3,    fat:1,    carbs:14,  base:1,   unit:'פרוסה', dflt:2, cat:'bread' },
+  { id:'fd_bread_ry',     name:'לחם שיפון — פרוסה',        cal:78,  prot:3,    fat:0.7,  carbs:15,  base:1,   unit:'פרוסה', dflt:2, cat:'bread' },
+  { id:'fd_bread_ry2',    name:'לחם שיפון כהה — פרוסה',   cal:65,  prot:2.5,  fat:0.5,  carbs:13,  base:1,   unit:'פרוסה', dflt:2, cat:'bread' },
+  { id:'fd_bread_sc',     name:'לחם מחמצת — פרוסה',        cal:80,  prot:3,    fat:0.7,  carbs:15,  base:1,   unit:'פרוסה', dflt:2, cat:'bread' },
+  { id:'fd_bread_kos',    name:'לחם כוסמין — פרוסה',       cal:72,  prot:3.5,  fat:1,    carbs:13,  base:1,   unit:'פרוסה', dflt:2, cat:'bread' },
+  { id:'fd_challah',      name:'חלה — פרוסה',              cal:90,  prot:3,    fat:2,    carbs:17,  base:1,   unit:'פרוסה', dflt:2, cat:'bread' },
+  { id:'fd_croissant',    name:'קרואסון',                  cal:230, prot:4,    fat:12,   carbs:26,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_boureka_g',    name:'בורקה גבינה',              cal:220, prot:6,    fat:11,   carbs:25,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_boureka_p',    name:'בורקה תפוח אדמה',          cal:200, prot:4,    fat:9,    carbs:27,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_boureka_s',    name:'בורקה תרד וגבינה',         cal:210, prot:6,    fat:10,   carbs:24,  base:1,   unit:'יח\'', dflt:1,  cat:'bread' },
+  { id:'fd_malaawach',    name:'מלאווח',                   cal:350, prot:7,    fat:20,   carbs:36,  base:100, unit:'גרם',  dflt:100, cat:'bread' },
+  { id:'fd_jachnun',      name:'ג\'חנון',                   cal:400, prot:8,    fat:28,   carbs:32,  base:100, unit:'גרם',  dflt:100, cat:'bread' },
+  { id:'fd_pasta_c',      name:'פסטה מבושלת',              cal:158, prot:6,    fat:1,    carbs:31,  base:100, unit:'גרם',  dflt:150, cat:'bread' },
+  { id:'fd_spaghetti',    name:'ספגטי מבושל',              cal:158, prot:5.8,  fat:0.9,  carbs:31,  base:100, unit:'גרם',  dflt:150, cat:'bread' },
+  { id:'fd_rice_w',       name:'אורז לבן מבושל',           cal:130, prot:2.7,  fat:0.3,  carbs:28,  base:100, unit:'גרם',  dflt:150, cat:'bread' },
+  { id:'fd_rice_br',      name:'אורז מלא מבושל',           cal:112, prot:2.6,  fat:0.9,  carbs:23,  base:100, unit:'גרם',  dflt:150, cat:'bread' },
+  { id:'fd_quinoa',       name:'קינואה מבושלת',            cal:120, prot:4.4,  fat:1.9,  carbs:22,  base:100, unit:'גרם',  dflt:100, cat:'bread' },
+  { id:'fd_couscous',     name:'קוסקוס מבושל',             cal:112, prot:3.8,  fat:0.2,  carbs:23,  base:100, unit:'גרם',  dflt:150, cat:'bread' },
+  { id:'fd_bulgur',       name:'בורגול מבושל',             cal:83,  prot:3,    fat:0.2,  carbs:18,  base:100, unit:'גרם',  dflt:150, cat:'bread' },
+  { id:'fd_oats',         name:'שיבולת שועל מבושלת',       cal:62,  prot:2.5,  fat:1,    carbs:11,  base:100, unit:'גרם',  dflt:200, cat:'bread' },
+  { id:'fd_granola',      name:'גרנולה',                   cal:430, prot:8,    fat:15,   carbs:65,  base:100, unit:'גרם',  dflt:50,  cat:'bread' },
+  { id:'fd_cornflakes',   name:'קורנפלקס',                 cal:360, prot:7,    fat:0.7,  carbs:80,  base:100, unit:'גרם',  dflt:40,  cat:'bread' },
+  { id:'fd_crispbread',   name:'פריכית',                   cal:35,  prot:0.7,  fat:0.3,  carbs:7,   base:1,   unit:'יח\'', dflt:3,   cat:'bread' },
+  { id:'fd_muffin',       name:'מאפין בסיסי',              cal:310, prot:4,    fat:12,   carbs:48,  base:1,   unit:'יח\'', dflt:1,   cat:'bread' },
+  // עוף
+  { id:'fd_chicken_b',       name:'חזה עוף מבושל',         cal:165, prot:31,   fat:4,    carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'chicken' },
+  { id:'fd_chicken_b_grill', name:'חזה עוף על האש',        cal:155, prot:30,   fat:3.5,  carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'chicken' },
+  { id:'fd_chicken_th',      name:'ירך עוף ללא עור',       cal:177, prot:25,   fat:9,    carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'chicken' },
+  { id:'fd_chicken_th_s',    name:'ירך עוף עם עור',        cal:209, prot:24,   fat:13,   carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'chicken' },
+  { id:'fd_pargit',          name:'פרגית עוף',             cal:190, prot:26,   fat:9,    carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'chicken' },
+  { id:'fd_chicken_w',       name:'כנפיים עוף',            cal:215, prot:22,   fat:14,   carbs:0,   base:100, unit:'גרם',  dflt:100, cat:'chicken' },
+  { id:'fd_chicken_leg',     name:'כרעיים עוף בתנור',      cal:195, prot:26,   fat:10,   carbs:0,   base:100, unit:'גרם',  dflt:180, cat:'chicken' },
+  { id:'fd_chicken_whole',   name:'עוף שלם צלוי',          cal:215, prot:25,   fat:13,   carbs:0,   base:100, unit:'גרם',  dflt:200, cat:'chicken' },
+  { id:'fd_chicken_mball',   name:'קציצות עוף',            cal:170, prot:19,   fat:9,    carbs:3,   base:100, unit:'גרם',  dflt:150, cat:'chicken' },
+  { id:'fd_schnitzel_c',     name:'שניצל עוף מטוגן',       cal:245, prot:22,   fat:13,   carbs:10,  base:100, unit:'גרם',  dflt:150, cat:'chicken' },
+  { id:'fd_schnitzel_c_o',   name:'שניצל עוף בתנור',       cal:185, prot:24,   fat:7,    carbs:6,   base:100, unit:'גרם',  dflt:150, cat:'chicken' },
+  { id:'fd_shawarma_c',      name:'שווארמה עוף',           cal:200, prot:23,   fat:11,   carbs:2,   base:100, unit:'גרם',  dflt:150, cat:'chicken' },
+  { id:'fd_skewer_c',        name:'שיפוד עוף',             cal:200, prot:27,   fat:9,    carbs:1,   base:1,   unit:'יח\'', dflt:2,   cat:'chicken' },
+  { id:'fd_turkey',          name:'פרגית הודו',            cal:135, prot:30,   fat:1.5,  carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'chicken' },
+  { id:'fd_turkey_slice',    name:'פרוסת הודו',            cal:27,  prot:5.5,  fat:0.4,  carbs:0,   base:1,   unit:'פרוסה', dflt:4,  cat:'chicken' },
+  { id:'fd_chicken_liver',   name:'כבד עוף',               cal:167, prot:25,   fat:6,    carbs:1,   base:100, unit:'גרם',  dflt:100, cat:'chicken' },
+  { id:'fd_chicken_hearts',  name:'לבבות עוף',             cal:185, prot:26,   fat:9,    carbs:0,   base:100, unit:'גרם',  dflt:100, cat:'chicken' },
+  { id:'fd_sausage_c',       name:'נקניקיית עוף',          cal:120, prot:8,    fat:8,    carbs:4,   base:1,   unit:'יח\'', dflt:2,   cat:'chicken' },
+  { id:'fd_chicken_moroccan',name:'עוף מרוקאי',            cal:190, prot:24,   fat:9,    carbs:3,   base:100, unit:'גרם',  dflt:200, cat:'chicken' },
+  // בשר
+  { id:'fd_beef_file',    name:'פילה בקר',                 cal:220, prot:29,   fat:11,   carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'beef' },
+  { id:'fd_entrecote',    name:'אנטריקוט',                 cal:263, prot:25,   fat:17,   carbs:0,   base:100, unit:'גרם',  dflt:200, cat:'beef' },
+  { id:'fd_sirloin',      name:'סינטה',                    cal:241, prot:27,   fat:14,   carbs:0,   base:100, unit:'גרם',  dflt:200, cat:'beef' },
+  { id:'fd_ribeye',       name:'ריב איי',                  cal:290, prot:25,   fat:20,   carbs:0,   base:100, unit:'גרם',  dflt:200, cat:'beef' },
+  { id:'fd_beef_mball',   name:'קציצות בקר',               cal:250, prot:22,   fat:17,   carbs:2,   base:100, unit:'גרם',  dflt:150, cat:'beef' },
+  { id:'fd_burger',       name:'המבורגר בקר',              cal:300, prot:26,   fat:20,   carbs:2,   base:1,   unit:'יח\'', dflt:1,   cat:'beef' },
+  { id:'fd_kebab',        name:'קבב בקר',                  cal:200, prot:18,   fat:13,   carbs:3,   base:1,   unit:'יח\'', dflt:2,   cat:'beef' },
+  { id:'fd_shishlik',     name:'שישליק בקר',               cal:240, prot:26,   fat:14,   carbs:2,   base:100, unit:'גרם',  dflt:150, cat:'beef' },
+  { id:'fd_shawarma_b',   name:'שווארמה בקר',              cal:220, prot:23,   fat:13,   carbs:2,   base:100, unit:'גרם',  dflt:150, cat:'beef' },
+  { id:'fd_asado',        name:'אסאדו',                    cal:260, prot:22,   fat:18,   carbs:0,   base:100, unit:'גרם',  dflt:200, cat:'beef' },
+  { id:'fd_beef_goulash', name:'גולש בקר',                 cal:175, prot:18,   fat:8,    carbs:8,   base:100, unit:'גרם',  dflt:200, cat:'beef' },
+  { id:'fd_schnitzel_b',  name:'שניצל בקר',                cal:230, prot:22,   fat:13,   carbs:8,   base:100, unit:'גרם',  dflt:150, cat:'beef' },
+  { id:'fd_beef_mince',   name:'בשר טחון רזה',             cal:215, prot:26,   fat:12,   carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'beef' },
+  { id:'fd_pastrami',     name:'פסטרמה בקר',               cal:145, prot:18,   fat:7,    carbs:1,   base:100, unit:'גרם',  dflt:80,  cat:'beef' },
+  { id:'fd_sausage_b',    name:'נקניקיית בקר',             cal:150, prot:8,    fat:12,   carbs:3,   base:1,   unit:'יח\'', dflt:2,   cat:'beef' },
+  { id:'fd_bolognese',    name:'רוטב בולונז',              cal:145, prot:10,   fat:8,    carbs:8,   base:100, unit:'גרם',  dflt:150, cat:'beef' },
   // דגים
-  { id:'fd_amnon',       name:'פילה אמנון',               cal:90,  prot:19,   fat:2,    carbs:0,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_cod',         name:'בקלה',                     cal:82,  prot:18,   fat:0.7,  carbs:0,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_salmon',      name:'פילה סלמון',               cal:208, prot:20,   fat:13,   carbs:0,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_tuna_oil',    name:'טונה בשמן',                cal:190, prot:26,   fat:9,    carbs:0,   base:100, unit:'גרם',  dflt:130 },
-  { id:'fd_tuna_w',      name:'טונה במים',                cal:120, prot:26,   fat:1,    carbs:0,   base:100, unit:'גרם',  dflt:130 },
-  { id:'fd_mackerel',    name:'מקרל',                     cal:205, prot:19,   fat:13,   carbs:0,   base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_sea_bream',   name:'דניס',                     cal:97,  prot:20,   fat:2,    carbs:0,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_sea_bass',    name:'לוקוס',                    cal:97,  prot:20,   fat:2,    carbs:0,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_gefilte',     name:'גפילטע פיש',               cal:100, prot:11,   fat:4,    carbs:5,   base:100, unit:'גרם',  dflt:200 },
-  { id:'fd_fish_mball',  name:'קציצות דגים',              cal:115, prot:14,   fat:4,    carbs:7,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_sardines',    name:'סרדינים',                  cal:208, prot:25,   fat:11,   carbs:0,   base:100, unit:'גרם',  dflt:90 },
-  { id:'fd_trout',       name:'פורל',                     cal:148, prot:21,   fat:7,    carbs:0,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_amnon',        name:'פילה אמנון',               cal:90,  prot:19,   fat:2,    carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'fish' },
+  { id:'fd_cod',          name:'בקלה',                     cal:82,  prot:18,   fat:0.7,  carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'fish' },
+  { id:'fd_salmon',       name:'פילה סלמון',               cal:208, prot:20,   fat:13,   carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'fish' },
+  { id:'fd_salmon_smoke', name:'סלמון מעושן',              cal:165, prot:25,   fat:6,    carbs:0,   base:100, unit:'גרם',  dflt:80,  cat:'fish' },
+  { id:'fd_tuna_oil',     name:'טונה בשמן',                cal:190, prot:26,   fat:9,    carbs:0,   base:100, unit:'גרם',  dflt:130, cat:'fish' },
+  { id:'fd_tuna_w',       name:'טונה במים',                cal:120, prot:26,   fat:1,    carbs:0,   base:100, unit:'גרם',  dflt:130, cat:'fish' },
+  { id:'fd_tuna_spread',  name:'ממרח טונה',                cal:160, prot:15,   fat:9,    carbs:3,   base:100, unit:'גרם',  dflt:80,  cat:'fish' },
+  { id:'fd_mackerel',     name:'מקרל',                     cal:205, prot:19,   fat:13,   carbs:0,   base:100, unit:'גרם',  dflt:100, cat:'fish' },
+  { id:'fd_sea_bream',    name:'דניס',                     cal:97,  prot:20,   fat:2,    carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'fish' },
+  { id:'fd_sea_bass',     name:'לוקוס',                    cal:97,  prot:20,   fat:2,    carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'fish' },
+  { id:'fd_barramundi',   name:'ברמונדי',                  cal:97,  prot:19,   fat:2,    carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'fish' },
+  { id:'fd_pangasius',    name:'פנגסיוס',                  cal:90,  prot:17,   fat:2.5,  carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'fish' },
+  { id:'fd_nile_perch',   name:'נסיך הנילוס',              cal:95,  prot:19,   fat:2,    carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'fish' },
+  { id:'fd_mussel_sea',   name:'מוסר ים',                  cal:97,  prot:20,   fat:2,    carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'fish' },
+  { id:'fd_carp',         name:'קרפיון',                   cal:127, prot:18,   fat:6,    carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'fish' },
+  { id:'fd_gefilte',      name:'גפילטע פיש',               cal:100, prot:11,   fat:4,    carbs:5,   base:100, unit:'גרם',  dflt:200, cat:'fish' },
+  { id:'fd_fish_mball',   name:'קציצות דגים',              cal:115, prot:14,   fat:4,    carbs:7,   base:100, unit:'גרם',  dflt:150, cat:'fish' },
+  { id:'fd_sardines',     name:'סרדינים',                  cal:208, prot:25,   fat:11,   carbs:0,   base:100, unit:'גרם',  dflt:90,  cat:'fish' },
+  { id:'fd_trout',        name:'פורל',                     cal:148, prot:21,   fat:7,    carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'fish' },
+  { id:'fd_shrimp',       name:'שרימפס',                   cal:85,  prot:20,   fat:0.9,  carbs:0,   base:100, unit:'גרם',  dflt:100, cat:'fish' },
+  { id:'fd_calamari',     name:'קלמרי',                    cal:92,  prot:16,   fat:1.4,  carbs:3,   base:100, unit:'גרם',  dflt:100, cat:'fish' },
+  { id:'fd_moroccan_f',   name:'דג מרוקאי',                cal:120, prot:15,   fat:5,    carbs:5,   base:100, unit:'גרם',  dflt:150, cat:'fish' },
   // מוצרי חלב וביצים
-  { id:'fd_milk_3',      name:'חלב 3%',                   cal:61,  prot:3.2,  fat:3,    carbs:4.8, base:100, unit:'מ"ל', dflt:200 },
-  { id:'fd_milk_1',      name:'חלב 1%',                   cal:43,  prot:3.4,  fat:1,    carbs:5,   base:100, unit:'מ"ל', dflt:200 },
-  { id:'fd_yogurt_3',    name:'יוגורט 3%',                cal:59,  prot:5,    fat:3,    carbs:4,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_yogurt_0',    name:'יוגורט 0%',                cal:39,  prot:5.3,  fat:0,    carbs:5.4, base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_labaneh',     name:'לאבנה',                    cal:175, prot:8,    fat:14,   carbs:4,   base:100, unit:'גרם',  dflt:80 },
-  { id:'fd_gvina_l',     name:'גבינה לבנה 5%',            cal:98,  prot:9,    fat:5,    carbs:4.3, base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_gvina_l9',    name:'גבינה לבנה 9%',            cal:130, prot:8,    fat:9,    carbs:4,   base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_gvina_b',     name:'גבינה בולגרית 5%',         cal:130, prot:17,   fat:5,    carbs:1,   base:100, unit:'גרם',  dflt:80 },
-  { id:'fd_gvina_tz',    name:'גבינה צפתית 5%',           cal:125, prot:15,   fat:5,    carbs:5,   base:100, unit:'גרם',  dflt:80 },
-  { id:'fd_gvina_y',     name:'גבינה צהובה',              cal:350, prot:23,   fat:28,   carbs:1,   base:100, unit:'גרם',  dflt:30 },
-  { id:'fd_cottage',     name:'קוטג\' 5%',                 cal:102, prot:12,   fat:4,    carbs:3,   base:100, unit:'גרם',  dflt:200 },
-  { id:'fd_ricotta',     name:'גבינת ריקוטה',             cal:130, prot:11,   fat:8,    carbs:3,   base:100, unit:'גרם',  dflt:80 },
-  { id:'fd_mozzarella',  name:'גבינת מוצרלה',             cal:280, prot:18,   fat:22,   carbs:3,   base:100, unit:'גרם',  dflt:60 },
-  { id:'fd_sour_cream',  name:'שמנת חמוצה 9%',            cal:85,  prot:3,    fat:5,    carbs:6,   base:100, unit:'גרם',  dflt:50 },
-  { id:'fd_egg',         name:'ביצה שלמה',                cal:86,  prot:7,    fat:6,    carbs:0.6, base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_egg_hard',    name:'ביצה קשה',                 cal:78,  prot:6,    fat:5,    carbs:0.6, base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_egg_white',   name:'חלבון ביצה',               cal:17,  prot:3.5,  fat:0,    carbs:0.2, base:1,   unit:'יח\'', dflt:2 },
-  { id:'fd_omelette',    name:'חביתה מ-2 ביצים',          cal:185, prot:13,   fat:13,   carbs:1,   base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_shakshuka',   name:'שקשוקה (100 גרם)',         cal:95,  prot:6,    fat:6,    carbs:4,   base:100, unit:'גרם',  dflt:200 },
+  { id:'fd_milk_3',       name:'חלב 3%',                   cal:61,  prot:3.2,  fat:3,    carbs:4.8, base:100, unit:'מ"ל', dflt:200, cat:'dairy' },
+  { id:'fd_milk_1',       name:'חלב 1%',                   cal:43,  prot:3.4,  fat:1,    carbs:5,   base:100, unit:'מ"ל', dflt:200, cat:'dairy' },
+  { id:'fd_buttermilk',   name:'ריוויון',                  cal:40,  prot:3.3,  fat:1,    carbs:4.9, base:100, unit:'מ"ל', dflt:200, cat:'dairy' },
+  { id:'fd_yogurt_3',     name:'יוגורט 3%',                cal:59,  prot:5,    fat:3,    carbs:4,   base:100, unit:'גרם',  dflt:150, cat:'dairy' },
+  { id:'fd_yogurt_0',     name:'יוגורט 0%',                cal:39,  prot:5.3,  fat:0,    carbs:5.4, base:100, unit:'גרם',  dflt:150, cat:'dairy' },
+  { id:'fd_yogurt_gr',    name:'יוגורט יווני',             cal:97,  prot:9,    fat:5,    carbs:4,   base:100, unit:'גרם',  dflt:150, cat:'dairy' },
+  { id:'fd_yogurt_fr',    name:'יוגורט פרי',               cal:85,  prot:4,    fat:2,    carbs:13,  base:100, unit:'גרם',  dflt:125, cat:'dairy' },
+  { id:'fd_labaneh',      name:'לאבנה',                    cal:175, prot:8,    fat:14,   carbs:4,   base:100, unit:'גרם',  dflt:80,  cat:'dairy' },
+  { id:'fd_gvina_l',      name:'גבינה לבנה 5%',            cal:98,  prot:9,    fat:5,    carbs:4.3, base:100, unit:'גרם',  dflt:100, cat:'dairy' },
+  { id:'fd_gvina_l9',     name:'גבינה לבנה 9%',            cal:130, prot:8,    fat:9,    carbs:4,   base:100, unit:'גרם',  dflt:100, cat:'dairy' },
+  { id:'fd_gvina_b',      name:'גבינה בולגרית 5%',         cal:130, prot:17,   fat:5,    carbs:1,   base:100, unit:'גרם',  dflt:80,  cat:'dairy' },
+  { id:'fd_gvina_tz',     name:'גבינה צפתית 5%',           cal:125, prot:15,   fat:5,    carbs:5,   base:100, unit:'גרם',  dflt:80,  cat:'dairy' },
+  { id:'fd_gvina_y',      name:'גבינה צהובה',              cal:350, prot:23,   fat:28,   carbs:1,   base:100, unit:'גרם',  dflt:30,  cat:'dairy' },
+  { id:'fd_gvina_gouda',  name:'גבינת גאודה',              cal:356, prot:25,   fat:27,   carbs:2,   base:100, unit:'גרם',  dflt:30,  cat:'dairy' },
+  { id:'fd_gvina_cam',    name:'גבינת קממבר',              cal:300, prot:20,   fat:24,   carbs:0.5, base:100, unit:'גרם',  dflt:30,  cat:'dairy' },
+  { id:'fd_gvina_goat',   name:'גבינת עזים',               cal:264, prot:18,   fat:21,   carbs:0.1, base:100, unit:'גרם',  dflt:30,  cat:'dairy' },
+  { id:'fd_gvina_par',    name:'גבינת פרמזן',              cal:431, prot:38,   fat:29,   carbs:4,   base:100, unit:'גרם',  dflt:15,  cat:'dairy' },
+  { id:'fd_cottage',      name:'קוטג\' 5%',                 cal:102, prot:12,   fat:4,    carbs:3,   base:100, unit:'גרם',  dflt:200, cat:'dairy' },
+  { id:'fd_cottage_0',    name:'קוטג\' 0%',                 cal:72,  prot:12,   fat:0.2,  carbs:3.5, base:100, unit:'גרם',  dflt:200, cat:'dairy' },
+  { id:'fd_ricotta',      name:'גבינת ריקוטה',             cal:130, prot:11,   fat:8,    carbs:3,   base:100, unit:'גרם',  dflt:80,  cat:'dairy' },
+  { id:'fd_mozzarella',   name:'גבינת מוצרלה',             cal:280, prot:18,   fat:22,   carbs:3,   base:100, unit:'גרם',  dflt:60,  cat:'dairy' },
+  { id:'fd_sour_cream',   name:'שמנת חמוצה 9%',            cal:85,  prot:3,    fat:5,    carbs:6,   base:100, unit:'גרם',  dflt:50,  cat:'dairy' },
+  { id:'fd_cream_38',     name:'שמנת לבישול 38%',          cal:345, prot:2.3,  fat:36,   carbs:3,   base:100, unit:'מ"ל', dflt:30,  cat:'dairy' },
+  { id:'fd_egg',          name:'ביצה שלמה',                cal:86,  prot:7,    fat:6,    carbs:0.6, base:1,   unit:'יח\'', dflt:1,   cat:'dairy' },
+  { id:'fd_egg_hard',     name:'ביצה קשה',                 cal:78,  prot:6,    fat:5,    carbs:0.6, base:1,   unit:'יח\'', dflt:1,   cat:'dairy' },
+  { id:'fd_egg_white',    name:'חלבון ביצה',               cal:17,  prot:3.5,  fat:0,    carbs:0.2, base:1,   unit:'יח\'', dflt:3,   cat:'dairy' },
+  { id:'fd_omelette',     name:'חביתה מ-2 ביצים',          cal:185, prot:13,   fat:13,   carbs:1,   base:1,   unit:'יח\'', dflt:1,   cat:'dairy' },
+  { id:'fd_shakshuka',    name:'שקשוקה',                   cal:95,  prot:6,    fat:6,    carbs:4,   base:100, unit:'גרם',  dflt:200, cat:'dairy' },
   // ירקות
-  { id:'fd_tomato',      name:'עגבנייה',                  cal:18,  prot:0.9,  fat:0.2,  carbs:3.9, base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_cucumber',    name:'מלפפון',                   cal:15,  prot:0.6,  fat:0.1,  carbs:3.6, base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_pepper_r',    name:'פלפל אדום',                cal:31,  prot:1,    fat:0.3,  carbs:6,   base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_carrot',      name:'גזר',                      cal:41,  prot:0.9,  fat:0.2,  carbs:10,  base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_broccoli',    name:'ברוקולי',                  cal:34,  prot:2.8,  fat:0.4,  carbs:7,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_cauliflower', name:'כרובית',                   cal:25,  prot:2,    fat:0.3,  carbs:5,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_zucchini',    name:'זוקיני',                   cal:17,  prot:1.2,  fat:0.3,  carbs:3.1, base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_eggplant',    name:'חציל',                     cal:25,  prot:1,    fat:0.2,  carbs:6,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_spinach',     name:'תרד',                      cal:23,  prot:2.9,  fat:0.4,  carbs:3.6, base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_lettuce',     name:'חסה',                      cal:15,  prot:1.4,  fat:0.2,  carbs:2.9, base:100, unit:'גרם',  dflt:80 },
-  { id:'fd_cabbage',     name:'כרוב לבן',                 cal:25,  prot:1.3,  fat:0.1,  carbs:6,   base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_onion',       name:'בצל',                      cal:40,  prot:1.1,  fat:0.1,  carbs:9.3, base:100, unit:'גרם',  dflt:80 },
-  { id:'fd_corn',        name:'תירס מבושל',               cal:96,  prot:3.5,  fat:1.5,  carbs:19,  base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_sweet_p',     name:'בטטה מבושלת',              cal:86,  prot:1.6,  fat:0.1,  carbs:20,  base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_potato',      name:'תפוח אדמה מבושל',          cal:77,  prot:2,    fat:0.1,  carbs:17,  base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_avocado',     name:'אבוקדו',                   cal:160, prot:2,    fat:15,   carbs:9,   base:100, unit:'גרם',  dflt:80 },
-  { id:'fd_mushroom',    name:'פטריות',                   cal:22,  prot:3.1,  fat:0.3,  carbs:3.3, base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_leek',        name:'כרישה',                    cal:61,  prot:1.5,  fat:0.3,  carbs:14,  base:100, unit:'גרם',  dflt:80 },
-  { id:'fd_green_bean',  name:'שעועית ירוקה',             cal:31,  prot:1.8,  fat:0.1,  carbs:7,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_tomato',       name:'עגבנייה',                  cal:18,  prot:0.9,  fat:0.2,  carbs:3.9, base:100, unit:'גרם',  dflt:150, cat:'veg' },
+  { id:'fd_cucumber',     name:'מלפפון',                   cal:15,  prot:0.6,  fat:0.1,  carbs:3.6, base:100, unit:'גרם',  dflt:150, cat:'veg' },
+  { id:'fd_pepper_r',     name:'פלפל אדום',                cal:31,  prot:1,    fat:0.3,  carbs:6,   base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_pepper_g',     name:'פלפל ירוק',                cal:20,  prot:0.9,  fat:0.2,  carbs:4.6, base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_pepper_y',     name:'פלפל צהוב',                cal:27,  prot:1,    fat:0.2,  carbs:6.3, base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_carrot',       name:'גזר',                      cal:41,  prot:0.9,  fat:0.2,  carbs:10,  base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_broccoli',     name:'ברוקולי',                  cal:34,  prot:2.8,  fat:0.4,  carbs:7,   base:100, unit:'גרם',  dflt:150, cat:'veg' },
+  { id:'fd_cauliflower',  name:'כרובית',                   cal:25,  prot:2,    fat:0.3,  carbs:5,   base:100, unit:'גרם',  dflt:150, cat:'veg' },
+  { id:'fd_zucchini',     name:'זוקיני',                   cal:17,  prot:1.2,  fat:0.3,  carbs:3.1, base:100, unit:'גרם',  dflt:150, cat:'veg' },
+  { id:'fd_eggplant',     name:'חציל',                     cal:25,  prot:1,    fat:0.2,  carbs:6,   base:100, unit:'גרם',  dflt:150, cat:'veg' },
+  { id:'fd_spinach',      name:'תרד',                      cal:23,  prot:2.9,  fat:0.4,  carbs:3.6, base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_lettuce',      name:'חסה',                      cal:15,  prot:1.4,  fat:0.2,  carbs:2.9, base:100, unit:'גרם',  dflt:80,  cat:'veg' },
+  { id:'fd_cabbage',      name:'כרוב לבן',                 cal:25,  prot:1.3,  fat:0.1,  carbs:6,   base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_cabbage_p',    name:'כרוב סגול',                cal:31,  prot:1.4,  fat:0.2,  carbs:7,   base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_brussels',     name:'כרוב ניצנים',              cal:43,  prot:3.4,  fat:0.3,  carbs:9,   base:100, unit:'גרם',  dflt:150, cat:'veg' },
+  { id:'fd_onion',        name:'בצל',                      cal:40,  prot:1.1,  fat:0.1,  carbs:9.3, base:100, unit:'גרם',  dflt:80,  cat:'veg' },
+  { id:'fd_green_onion',  name:'בצל ירוק',                 cal:32,  prot:1.8,  fat:0.2,  carbs:7.3, base:100, unit:'גרם',  dflt:30,  cat:'veg' },
+  { id:'fd_garlic',       name:'שום',                      cal:149, prot:6.4,  fat:0.5,  carbs:33,  base:100, unit:'גרם',  dflt:5,   cat:'veg' },
+  { id:'fd_corn',         name:'תירס מבושל',               cal:96,  prot:3.5,  fat:1.5,  carbs:19,  base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_sweet_p',      name:'בטטה מבושלת',              cal:86,  prot:1.6,  fat:0.1,  carbs:20,  base:100, unit:'גרם',  dflt:150, cat:'veg' },
+  { id:'fd_potato',       name:'תפוח אדמה מבושל',          cal:77,  prot:2,    fat:0.1,  carbs:17,  base:100, unit:'גרם',  dflt:150, cat:'veg' },
+  { id:'fd_avocado',      name:'אבוקדו',                   cal:160, prot:2,    fat:15,   carbs:9,   base:100, unit:'גרם',  dflt:80,  cat:'veg' },
+  { id:'fd_mushroom',     name:'פטריות',                   cal:22,  prot:3.1,  fat:0.3,  carbs:3.3, base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_leek',         name:'כרישה',                    cal:61,  prot:1.5,  fat:0.3,  carbs:14,  base:100, unit:'גרם',  dflt:80,  cat:'veg' },
+  { id:'fd_green_bean',   name:'שעועית ירוקה',             cal:31,  prot:1.8,  fat:0.1,  carbs:7,   base:100, unit:'גרם',  dflt:150, cat:'veg' },
+  { id:'fd_asparagus',    name:'אספרגוס',                  cal:20,  prot:2.2,  fat:0.1,  carbs:3.9, base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_celery',       name:'סלרי',                     cal:16,  prot:0.7,  fat:0.2,  carbs:3,   base:100, unit:'גרם',  dflt:80,  cat:'veg' },
+  { id:'fd_celery_root',  name:'שורש סלרי',                cal:42,  prot:1.5,  fat:0.3,  carbs:9.2, base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_radish',       name:'צנון',                     cal:16,  prot:0.7,  fat:0.1,  carbs:3.4, base:100, unit:'גרם',  dflt:80,  cat:'veg' },
+  { id:'fd_fennel',       name:'שומר',                     cal:31,  prot:1.2,  fat:0.2,  carbs:7.3, base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_artichoke',    name:'ארטישוק',                  cal:47,  prot:3.3,  fat:0.2,  carbs:11,  base:100, unit:'גרם',  dflt:120, cat:'veg' },
+  { id:'fd_beet',         name:'סלק מבושל',                cal:44,  prot:1.7,  fat:0.2,  carbs:10,  base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_pumpkin',      name:'דלעת מבושלת',              cal:26,  prot:1,    fat:0.1,  carbs:6.5, base:100, unit:'גרם',  dflt:150, cat:'veg' },
+  { id:'fd_kale',         name:'קייל',                     cal:49,  prot:4.3,  fat:0.9,  carbs:9,   base:100, unit:'גרם',  dflt:80,  cat:'veg' },
   // קטניות
-  { id:'fd_lentils',     name:'עדשים מבושלות',            cal:116, prot:9,    fat:0.4,  carbs:20,  base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_chickpeas',   name:'חומוס מבושל',              cal:164, prot:9,    fat:2.6,  carbs:27,  base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_black_beans', name:'שעועית שחורה',             cal:132, prot:9,    fat:0.5,  carbs:24,  base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_white_beans', name:'שעועית לבנה',              cal:129, prot:9,    fat:0.5,  carbs:24,  base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_edamame',     name:'אדממה',                    cal:121, prot:11,   fat:5,    carbs:9,   base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_tofu',        name:'טופו',                     cal:76,  prot:8,    fat:4,    carbs:2,   base:100, unit:'גרם',  dflt:120 },
-  { id:'fd_tempeh',      name:'טמפה',                     cal:193, prot:19,   fat:11,   carbs:9,   base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_lentils',      name:'עדשים מבושלות',            cal:116, prot:9,    fat:0.4,  carbs:20,  base:100, unit:'גרם',  dflt:150, cat:'legume' },
+  { id:'fd_lentils_r',    name:'עדשים כתומות מבושלות',    cal:107, prot:7.6,  fat:0.4,  carbs:18,  base:100, unit:'גרם',  dflt:150, cat:'legume' },
+  { id:'fd_chickpeas',    name:'חומוס מבושל',              cal:164, prot:9,    fat:2.6,  carbs:27,  base:100, unit:'גרם',  dflt:100, cat:'legume' },
+  { id:'fd_black_beans',  name:'שעועית שחורה',             cal:132, prot:9,    fat:0.5,  carbs:24,  base:100, unit:'גרם',  dflt:100, cat:'legume' },
+  { id:'fd_white_beans',  name:'שעועית לבנה',              cal:129, prot:9,    fat:0.5,  carbs:24,  base:100, unit:'גרם',  dflt:100, cat:'legume' },
+  { id:'fd_kidney_beans', name:'שעועית אדומה',             cal:127, prot:8.7,  fat:0.5,  carbs:22,  base:100, unit:'גרם',  dflt:100, cat:'legume' },
+  { id:'fd_fava_beans',   name:'פול מבושל',                cal:110, prot:7.6,  fat:0.4,  carbs:20,  base:100, unit:'גרם',  dflt:100, cat:'legume' },
+  { id:'fd_peas',         name:'אפונה מבושלת',             cal:84,  prot:5.4,  fat:0.4,  carbs:15,  base:100, unit:'גרם',  dflt:100, cat:'legume' },
+  { id:'fd_edamame',      name:'אדממה',                    cal:121, prot:11,   fat:5,    carbs:9,   base:100, unit:'גרם',  dflt:100, cat:'legume' },
+  { id:'fd_tofu',         name:'טופו',                     cal:76,  prot:8,    fat:4,    carbs:2,   base:100, unit:'גרם',  dflt:120, cat:'legume' },
+  { id:'fd_tempeh',       name:'טמפה',                     cal:193, prot:19,   fat:11,   carbs:9,   base:100, unit:'גרם',  dflt:100, cat:'legume' },
   // רטבים וממרחים
-  { id:'fd_hummus_dip',  name:'חומוס (ממרח)',             cal:166, prot:8,    fat:10,   carbs:14,  base:100, unit:'גרם',  dflt:80 },
-  { id:'fd_tahini_raw',  name:'טחינה גולמית',             cal:570, prot:17,   fat:51,   carbs:16,  base:100, unit:'גרם',  dflt:15 },
-  { id:'fd_tahini_ready',name:'טחינה מוכנה',              cal:300, prot:8,    fat:26,   carbs:10,  base:100, unit:'גרם',  dflt:30 },
-  { id:'fd_olive_oil',   name:'שמן זית',                  cal:884, prot:0,    fat:100,  carbs:0,   base:100, unit:'מ"ל', dflt:10 },
-  { id:'fd_mayo',        name:'מיונז',                    cal:680, prot:1,    fat:75,   carbs:2,   base:100, unit:'גרם',  dflt:15 },
-  { id:'fd_mayo_light',  name:'מיונז קל',                 cal:350, prot:1,    fat:36,   carbs:6,   base:100, unit:'גרם',  dflt:15 },
-  { id:'fd_guac',        name:'גואקמולה',                 cal:150, prot:2,    fat:13,   carbs:8,   base:100, unit:'גרם',  dflt:50 },
-  { id:'fd_pesto',       name:'פסטו',                     cal:440, prot:6,    fat:43,   carbs:6,   base:100, unit:'גרם',  dflt:20 },
-  { id:'fd_ketchup',     name:'קטשופ',                    cal:100, prot:2,    fat:0.1,  carbs:25,  base:100, unit:'גרם',  dflt:20 },
-  { id:'fd_halvah',      name:'חלבה',                     cal:516, prot:13,   fat:31,   carbs:50,  base:100, unit:'גרם',  dflt:30 },
-  { id:'fd_jam',         name:'ריבה',                     cal:278, prot:0.4,  fat:0.1,  carbs:70,  base:100, unit:'גרם',  dflt:20 },
-  { id:'fd_honey',       name:'דבש',                      cal:304, prot:0.3,  fat:0,    carbs:82,  base:100, unit:'גרם',  dflt:15 },
+  { id:'fd_hummus_dip',   name:'חומוס (ממרח)',             cal:166, prot:8,    fat:10,   carbs:14,  base:100, unit:'גרם',  dflt:80,  cat:'sauce' },
+  { id:'fd_tahini_raw',   name:'טחינה גולמית',             cal:570, prot:17,   fat:51,   carbs:16,  base:100, unit:'גרם',  dflt:15,  cat:'sauce' },
+  { id:'fd_tahini_ready', name:'טחינה מוכנה',              cal:300, prot:8,    fat:26,   carbs:10,  base:100, unit:'גרם',  dflt:30,  cat:'sauce' },
+  { id:'fd_olive_oil',    name:'שמן זית',                  cal:884, prot:0,    fat:100,  carbs:0,   base:100, unit:'מ"ל', dflt:10,  cat:'sauce' },
+  { id:'fd_mayo',         name:'מיונז',                    cal:680, prot:1,    fat:75,   carbs:2,   base:100, unit:'גרם',  dflt:15,  cat:'sauce' },
+  { id:'fd_mayo_light',   name:'מיונז קל',                 cal:350, prot:1,    fat:36,   carbs:6,   base:100, unit:'גרם',  dflt:15,  cat:'sauce' },
+  { id:'fd_guac',         name:'גואקמולה',                 cal:150, prot:2,    fat:13,   carbs:8,   base:100, unit:'גרם',  dflt:50,  cat:'sauce' },
+  { id:'fd_pesto',        name:'פסטו',                     cal:440, prot:6,    fat:43,   carbs:6,   base:100, unit:'גרם',  dflt:20,  cat:'sauce' },
+  { id:'fd_ketchup',      name:'קטשופ',                    cal:100, prot:2,    fat:0.1,  carbs:25,  base:100, unit:'גרם',  dflt:20,  cat:'sauce' },
+  { id:'fd_mustard',      name:'חרדל',                     cal:70,  prot:4,    fat:4,    carbs:6,   base:100, unit:'גרם',  dflt:10,  cat:'sauce' },
+  { id:'fd_halvah',       name:'חלבה',                     cal:516, prot:13,   fat:31,   carbs:50,  base:100, unit:'גרם',  dflt:30,  cat:'sauce' },
+  { id:'fd_jam',          name:'ריבה',                     cal:278, prot:0.4,  fat:0.1,  carbs:70,  base:100, unit:'גרם',  dflt:20,  cat:'sauce' },
+  { id:'fd_honey',        name:'דבש',                      cal:304, prot:0.3,  fat:0,    carbs:82,  base:100, unit:'גרם',  dflt:15,  cat:'sauce' },
   // פירות
-  { id:'fd_apple',       name:'תפוח',                     cal:77,  prot:0.4,  fat:0.2,  carbs:20,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_pear',        name:'אגס',                      cal:96,  prot:0.6,  fat:0.2,  carbs:25,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_banana',      name:'בננה',                     cal:107, prot:1.3,  fat:0.4,  carbs:27,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_orange',      name:'תפוז',                     cal:62,  prot:1.2,  fat:0.2,  carbs:15,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_mango',       name:'מנגו',                     cal:60,  prot:0.8,  fat:0.4,  carbs:15,  base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_grapes',      name:'ענבים',                    cal:67,  prot:0.6,  fat:0.4,  carbs:17,  base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_strawberry',  name:'תות שדה',                  cal:32,  prot:0.7,  fat:0.3,  carbs:8,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_kiwi',        name:'קיווי',                    cal:42,  prot:0.8,  fat:0.4,  carbs:10,  base:1,   unit:'יח\'', dflt:2 },
-  { id:'fd_watermelon',  name:'אבטיח',                    cal:30,  prot:0.6,  fat:0.2,  carbs:8,   base:100, unit:'גרם',  dflt:200 },
-  { id:'fd_melon',       name:'מלון',                     cal:34,  prot:0.8,  fat:0.2,  carbs:8,   base:100, unit:'גרם',  dflt:200 },
-  { id:'fd_date',        name:'תמר',                      cal:68,  prot:0.4,  fat:0.1,  carbs:18,  base:1,   unit:'יח\'', dflt:2 },
-  { id:'fd_fig',         name:'תאנה טרייה',               cal:74,  prot:0.75, fat:0.3,  carbs:19,  base:100, unit:'גרם',  dflt:100 },
-  { id:'fd_pomegranate', name:'רימון',                    cal:83,  prot:1.7,  fat:1.2,  carbs:19,  base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_peach',       name:'אפרסק',                    cal:39,  prot:0.9,  fat:0.3,  carbs:9.5, base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_apple',        name:'תפוח',                     cal:77,  prot:0.4,  fat:0.2,  carbs:20,  base:1,   unit:'יח\'', dflt:1,   cat:'fruit' },
+  { id:'fd_pear',         name:'אגס',                      cal:96,  prot:0.6,  fat:0.2,  carbs:25,  base:1,   unit:'יח\'', dflt:1,   cat:'fruit' },
+  { id:'fd_banana',       name:'בננה',                     cal:107, prot:1.3,  fat:0.4,  carbs:27,  base:1,   unit:'יח\'', dflt:1,   cat:'fruit' },
+  { id:'fd_orange',       name:'תפוז',                     cal:62,  prot:1.2,  fat:0.2,  carbs:15,  base:1,   unit:'יח\'', dflt:1,   cat:'fruit' },
+  { id:'fd_mango',        name:'מנגו',                     cal:60,  prot:0.8,  fat:0.4,  carbs:15,  base:100, unit:'גרם',  dflt:150, cat:'fruit' },
+  { id:'fd_grapes',       name:'ענבים',                    cal:67,  prot:0.6,  fat:0.4,  carbs:17,  base:100, unit:'גרם',  dflt:100, cat:'fruit' },
+  { id:'fd_strawberry',   name:'תות שדה',                  cal:32,  prot:0.7,  fat:0.3,  carbs:8,   base:100, unit:'גרם',  dflt:150, cat:'fruit' },
+  { id:'fd_kiwi',         name:'קיווי',                    cal:42,  prot:0.8,  fat:0.4,  carbs:10,  base:1,   unit:'יח\'', dflt:2,   cat:'fruit' },
+  { id:'fd_watermelon',   name:'אבטיח',                    cal:30,  prot:0.6,  fat:0.2,  carbs:8,   base:100, unit:'גרם',  dflt:200, cat:'fruit' },
+  { id:'fd_melon',        name:'מלון',                     cal:34,  prot:0.8,  fat:0.2,  carbs:8,   base:100, unit:'גרם',  dflt:200, cat:'fruit' },
+  { id:'fd_date',         name:'תמר',                      cal:68,  prot:0.4,  fat:0.1,  carbs:18,  base:1,   unit:'יח\'', dflt:2,   cat:'fruit' },
+  { id:'fd_fig',          name:'תאנה טרייה',               cal:74,  prot:0.75, fat:0.3,  carbs:19,  base:100, unit:'גרם',  dflt:100, cat:'fruit' },
+  { id:'fd_pomegranate',  name:'רימון',                    cal:83,  prot:1.7,  fat:1.2,  carbs:19,  base:100, unit:'גרם',  dflt:150, cat:'fruit' },
+  { id:'fd_peach',        name:'אפרסק',                    cal:39,  prot:0.9,  fat:0.3,  carbs:9.5, base:100, unit:'גרם',  dflt:150, cat:'fruit' },
+  { id:'fd_plum',         name:'שזיף',                     cal:46,  prot:0.7,  fat:0.3,  carbs:11,  base:100, unit:'גרם',  dflt:100, cat:'fruit' },
+  { id:'fd_pineapple',    name:'אננס',                     cal:50,  prot:0.5,  fat:0.1,  carbs:13,  base:100, unit:'גרם',  dflt:150, cat:'fruit' },
+  { id:'fd_blueberry',    name:'אוכמניות',                 cal:57,  prot:0.7,  fat:0.3,  carbs:14,  base:100, unit:'גרם',  dflt:100, cat:'fruit' },
   // אגוזים וזרעים
-  { id:'fd_almonds',     name:'שקדים',                    cal:579, prot:21,   fat:50,   carbs:22,  base:100, unit:'גרם',  dflt:30 },
-  { id:'fd_walnuts',     name:'אגוזי מלך',                cal:654, prot:15,   fat:65,   carbs:14,  base:100, unit:'גרם',  dflt:30 },
-  { id:'fd_cashews',     name:'קשיו',                     cal:553, prot:18,   fat:44,   carbs:30,  base:100, unit:'גרם',  dflt:30 },
-  { id:'fd_peanuts',     name:'בוטנים',                   cal:567, prot:26,   fat:49,   carbs:16,  base:100, unit:'גרם',  dflt:30 },
-  { id:'fd_pb',          name:'חמאת בוטנים',              cal:598, prot:25,   fat:51,   carbs:20,  base:100, unit:'גרם',  dflt:20 },
-  { id:'fd_ab',          name:'חמאת שקדים',               cal:614, prot:21,   fat:56,   carbs:19,  base:100, unit:'גרם',  dflt:20 },
-  { id:'fd_chia',        name:'צ\'יה',                     cal:486, prot:17,   fat:31,   carbs:42,  base:100, unit:'גרם',  dflt:15 },
-  { id:'fd_sesame',      name:'שומשום',                   cal:573, prot:18,   fat:50,   carbs:23,  base:100, unit:'גרם',  dflt:10 },
+  { id:'fd_almonds',      name:'שקדים',                    cal:579, prot:21,   fat:50,   carbs:22,  base:100, unit:'גרם',  dflt:30,  cat:'nuts' },
+  { id:'fd_walnuts',      name:'אגוזי מלך',                cal:654, prot:15,   fat:65,   carbs:14,  base:100, unit:'גרם',  dflt:30,  cat:'nuts' },
+  { id:'fd_cashews',      name:'קשיו',                     cal:553, prot:18,   fat:44,   carbs:30,  base:100, unit:'גרם',  dflt:30,  cat:'nuts' },
+  { id:'fd_peanuts',      name:'בוטנים',                   cal:567, prot:26,   fat:49,   carbs:16,  base:100, unit:'גרם',  dflt:30,  cat:'nuts' },
+  { id:'fd_pistachios',   name:'פיסטוקים',                 cal:562, prot:20,   fat:45,   carbs:28,  base:100, unit:'גרם',  dflt:30,  cat:'nuts' },
+  { id:'fd_hazelnuts',    name:'אגוזי לוז',                cal:628, prot:15,   fat:61,   carbs:17,  base:100, unit:'גרם',  dflt:30,  cat:'nuts' },
+  { id:'fd_pb',           name:'חמאת בוטנים',              cal:598, prot:25,   fat:51,   carbs:20,  base:100, unit:'גרם',  dflt:20,  cat:'nuts' },
+  { id:'fd_ab',           name:'חמאת שקדים',               cal:614, prot:21,   fat:56,   carbs:19,  base:100, unit:'גרם',  dflt:20,  cat:'nuts' },
+  { id:'fd_chia',         name:'זרעי צ\'יה',                cal:486, prot:17,   fat:31,   carbs:42,  base:100, unit:'גרם',  dflt:15,  cat:'nuts' },
+  { id:'fd_sesame',       name:'שומשום',                   cal:573, prot:18,   fat:50,   carbs:23,  base:100, unit:'גרם',  dflt:10,  cat:'nuts' },
+  { id:'fd_sunflower',    name:'גרעיני חמנייה',            cal:584, prot:21,   fat:51,   carbs:20,  base:100, unit:'גרם',  dflt:20,  cat:'nuts' },
+  { id:'fd_pumpkin_s',    name:'גרעיני דלעת',              cal:559, prot:30,   fat:49,   carbs:11,  base:100, unit:'גרם',  dflt:20,  cat:'nuts' },
+  { id:'fd_flaxseed',     name:'זרעי פשתן',                cal:534, prot:18,   fat:42,   carbs:29,  base:100, unit:'גרם',  dflt:10,  cat:'nuts' },
   // מנות ישראליות
-  { id:'fd_falafel',     name:'פלאפל',                    cal:57,  prot:2,    fat:3,    carbs:6,   base:1,   unit:'כדור', dflt:5 },
-  { id:'fd_majadra',     name:'מג\'דרה',                   cal:130, prot:5,    fat:2,    carbs:24,  base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_lechem_arig', name:'לחמגין',                   cal:240, prot:12,   fat:10,   carbs:26,  base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_kubeh',       name:'קובה (1 יחידה)',           cal:190, prot:10,   fat:8,    carbs:22,  base:1,   unit:'יח\'', dflt:2 },
-  { id:'fd_chulent',     name:'צ\'ולנט',                   cal:180, prot:8,    fat:8,    carbs:18,  base:100, unit:'גרם',  dflt:200 },
-  { id:'fd_moroccan_f',  name:'דג מרוקאי',                cal:120, prot:15,   fat:5,    carbs:5,   base:100, unit:'גרם',  dflt:150 },
-  { id:'fd_shawarma_pita',name:'שווארמה בפיתה',           cal:480, prot:28,   fat:14,   carbs:58,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_sabich',      name:'סביח',                     cal:420, prot:15,   fat:18,   carbs:52,  base:1,   unit:'יח\'', dflt:1 },
-  { id:'fd_malabi',      name:'מלבי',                     cal:180, prot:4,    fat:6,    carbs:28,  base:100, unit:'גרם',  dflt:150 },
-  // משקאות צמחיים
-  { id:'fd_milk_alm',    name:'חלב שקדים',                cal:30,  prot:1,    fat:2,    carbs:2,   base:100, unit:'מ"ל', dflt:200 },
-  { id:'fd_milk_oat',    name:'חלב שיבולת שועל',          cal:45,  prot:1,    fat:1,    carbs:8,   base:100, unit:'מ"ל', dflt:200 },
-  { id:'fd_milk_soy',    name:'חלב סויה',                 cal:54,  prot:3.5,  fat:2,    carbs:5,   base:100, unit:'מ"ל', dflt:200 },
-  { id:'fd_oj',          name:'מיץ תפוז טרי',             cal:45,  prot:0.7,  fat:0.2,  carbs:10,  base:100, unit:'מ"ל', dflt:200 },
-  { id:'fd_protein_sh',  name:'שייק חלבון',               cal:120, prot:20,   fat:2,    carbs:6,   base:100, unit:'מ"ל', dflt:300 },
+  { id:'fd_falafel',      name:'פלאפל',                    cal:57,  prot:2,    fat:3,    carbs:6,   base:1,   unit:'כדור', dflt:5,   cat:'israeli' },
+  { id:'fd_falafel_pita', name:'פלאפל בפיתה',              cal:450, prot:14,   fat:15,   carbs:63,  base:1,   unit:'יח\'', dflt:1,   cat:'israeli' },
+  { id:'fd_majadra',      name:'מג\'דרה',                   cal:130, prot:5,    fat:2,    carbs:24,  base:100, unit:'גרם',  dflt:150, cat:'israeli' },
+  { id:'fd_kubeh',        name:'קובה',                     cal:190, prot:10,   fat:8,    carbs:22,  base:1,   unit:'יח\'', dflt:2,   cat:'israeli' },
+  { id:'fd_chulent',      name:'חמין / צ\'ולנט',           cal:180, prot:8,    fat:8,    carbs:18,  base:100, unit:'גרם',  dflt:200, cat:'israeli' },
+  { id:'fd_shawarma_pita',name:'שווארמה בפיתה',            cal:480, prot:28,   fat:14,   carbs:58,  base:1,   unit:'יח\'', dflt:1,   cat:'israeli' },
+  { id:'fd_sabich',       name:'סביח',                     cal:420, prot:15,   fat:18,   carbs:52,  base:1,   unit:'יח\'', dflt:1,   cat:'israeli' },
+  { id:'fd_lechem_arig',  name:'לחמגין',                   cal:240, prot:12,   fat:10,   carbs:26,  base:100, unit:'גרם',  dflt:150, cat:'israeli' },
+  { id:'fd_pizza_slice',  name:'פרוסת פיצה',               cal:270, prot:11,   fat:10,   carbs:36,  base:1,   unit:'פרוסה', dflt:2,  cat:'israeli' },
+  { id:'fd_msabbha',      name:'מסבחה',                    cal:175, prot:9,    fat:9,    carbs:17,  base:100, unit:'גרם',  dflt:200, cat:'israeli' },
+  { id:'fd_malabi',       name:'מלבי',                     cal:180, prot:4,    fat:6,    carbs:28,  base:100, unit:'גרם',  dflt:150, cat:'israeli' },
+  { id:'fd_spinach_pie',  name:'פשטידת תרד וגבינה',        cal:180, prot:9,    fat:10,   carbs:15,  base:100, unit:'גרם',  dflt:150, cat:'israeli' },
+  // משקאות
+  { id:'fd_milk_alm',     name:'חלב שקדים',                cal:30,  prot:1,    fat:2,    carbs:2,   base:100, unit:'מ"ל', dflt:200, cat:'drink' },
+  { id:'fd_milk_oat',     name:'חלב שיבולת שועל',          cal:45,  prot:1,    fat:1,    carbs:8,   base:100, unit:'מ"ל', dflt:200, cat:'drink' },
+  { id:'fd_milk_soy',     name:'חלב סויה',                 cal:54,  prot:3.5,  fat:2,    carbs:5,   base:100, unit:'מ"ל', dflt:200, cat:'drink' },
+  { id:'fd_oj',           name:'מיץ תפוז טרי',             cal:45,  prot:0.7,  fat:0.2,  carbs:10,  base:100, unit:'מ"ל', dflt:200, cat:'drink' },
+  { id:'fd_protein_sh',   name:'שייק חלבון',               cal:120, prot:20,   fat:2,    carbs:6,   base:100, unit:'מ"ל', dflt:300, cat:'drink' },
+  { id:'fd_smoothie',     name:'שייק פירות',               cal:85,  prot:1.5,  fat:0.5,  carbs:19,  base:100, unit:'מ"ל', dflt:250, cat:'drink' },
   // שונות
-  { id:'fd_butter',      name:'חמאה',                     cal:717, prot:0.9,  fat:81,   carbs:0.1, base:100, unit:'גרם',  dflt:10 },
-  { id:'fd_cream_ch',    name:'גבינת שמנת',               cal:350, prot:6,    fat:34,   carbs:4,   base:100, unit:'גרם',  dflt:30 },
-  { id:'fd_dark_choc',   name:'שוקולד מריר',              cal:546, prot:5,    fat:32,   carbs:60,  base:100, unit:'גרם',  dflt:20 },
-  { id:'fd_milk_choc',   name:'שוקולד חלב',               cal:535, prot:8,    fat:30,   carbs:59,  base:100, unit:'גרם',  dflt:20 },
-  { id:'fd_crackers',    name:'קרקרים',                   cal:430, prot:9,    fat:12,   carbs:70,  base:100, unit:'גרם',  dflt:30 },
+  { id:'fd_butter',       name:'חמאה',                     cal:717, prot:0.9,  fat:81,   carbs:0.1, base:100, unit:'גרם',  dflt:10,  cat:'other' },
+  { id:'fd_cream_ch',     name:'גבינת שמנת',               cal:350, prot:6,    fat:34,   carbs:4,   base:100, unit:'גרם',  dflt:30,  cat:'other' },
+  { id:'fd_dark_choc',    name:'שוקולד מריר',              cal:546, prot:5,    fat:32,   carbs:60,  base:100, unit:'גרם',  dflt:20,  cat:'other' },
+  { id:'fd_milk_choc',    name:'שוקולד חלב',               cal:535, prot:8,    fat:30,   carbs:59,  base:100, unit:'גרם',  dflt:20,  cat:'other' },
+  { id:'fd_crackers',     name:'קרקרים',                   cal:430, prot:9,    fat:12,   carbs:70,  base:100, unit:'גרם',  dflt:30,  cat:'other' },
+  { id:'fd_rice_cake',    name:'עוגת אורז',                cal:35,  prot:0.7,  fat:0.3,  carbs:7.5, base:1,   unit:'יח\'', dflt:2,   cat:'other' },
+  { id:'fd_popcorn',      name:'פופקורן',                  cal:387, prot:12,   fat:4.5,  carbs:78,  base:100, unit:'גרם',  dflt:30,  cat:'other' },
+  { id:'fd_protein_bar',  name:'חטיף חלבון',               cal:200, prot:20,   fat:6,    carbs:18,  base:1,   unit:'יח\'', dflt:1,   cat:'other' },
 ]
 
 // ✅ "המלצה חכמה לפי צלחת" — לכל פריט יש שני ערכים נפרדים שלא מתערבבים:
@@ -1333,8 +1413,25 @@ function YesNo({ value, onChange, labelYes, labelNo, accent }) {
   )
 }
 
+const FOOD_CATS = [
+  { key:'chicken', label:'עוף',     emoji:'🐔' },
+  { key:'beef',    label:'בשר',     emoji:'🥩' },
+  { key:'fish',    label:'דגים',    emoji:'🐟' },
+  { key:'bread',   label:'לחמים',   emoji:'🍞' },
+  { key:'dairy',   label:'חלב',     emoji:'🥛' },
+  { key:'veg',     label:'ירקות',   emoji:'🥦' },
+  { key:'fruit',   label:'פירות',   emoji:'🍎' },
+  { key:'legume',  label:'קטניות',  emoji:'🫘' },
+  { key:'sauce',   label:'רטבים',   emoji:'🫙' },
+  { key:'nuts',    label:'אגוזים',  emoji:'🥜' },
+  { key:'israeli', label:'מנות',    emoji:'🍽️' },
+  { key:'drink',   label:'שתייה',   emoji:'🥤' },
+  { key:'other',   label:'שונות',   emoji:'✨' },
+]
+
 function FoodOtherSearch({ items, onItemsChange, accent }) {
   const [query, setQuery] = useState('')
+  const [cat, setCat] = useState(null)
   const [suggestions, setSuggestions] = useState([])
   const [selected, setSelected] = useState(null)
   const [qty, setQty] = useState('')
@@ -1343,17 +1440,30 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
 
   useEffect(() => {
     const q = query.trim()
-    if (!q || selected) { setSuggestions([]); return }
-    const matches = FOOD_DB.filter(f => f.name.includes(q)).slice(0, 7)
-    setSuggestions(matches)
-  }, [query, selected])
+    if (selected) { setSuggestions([]); return }
+    if (q) {
+      setSuggestions(FOOD_DB.filter(f => f.name.includes(q)).slice(0, 10))
+    } else if (cat) {
+      setSuggestions(FOOD_DB.filter(f => f.cat === cat))
+    } else {
+      setSuggestions([])
+    }
+  }, [query, cat, selected])
+
+  function pickCat(key) {
+    const next = cat === key ? null : key
+    setCat(next)
+    setQuery('')
+    setSelected(null)
+    setOpen(!!next)
+  }
 
   function pick(food) {
     setSelected(food)
     setQuery(food.name)
     setQty(String(food.dflt))
     setSuggestions([])
-    setTimeout(() => inputRef.current && inputRef.current.blur(), 0)
+    setOpen(false)
   }
 
   function add() {
@@ -1365,29 +1475,43 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
     const fat = Math.round(selected.fat * ratio * 10) / 10
     const carbs = Math.round(selected.carbs * ratio * 10) / 10
     onItemsChange([...items, { foodId: selected.id, name: selected.name, qty: amount, unitLabel: selected.unit, cal, prot, fat, carbs }])
-    setSelected(null); setQuery(''); setQty('')
+    setSelected(null); setQuery(''); setQty(''); setCat(null); setOpen(false)
   }
 
   function remove(idx) { onItemsChange(items.filter((_, i) => i !== idx)) }
 
   const previewCal = selected && qty ? Math.round(selected.cal * (Number(qty) || selected.dflt) / selected.base) : null
   const totalCal = items.reduce((s, i) => s + i.cal, 0)
+  const showDropdown = open && suggestions.length > 0 && !selected
 
   return (
     <div style={{ marginTop: 10, borderTop: '2px dashed ' + accent + '55', paddingTop: 10 }}>
       <div style={{ fontSize: 12, fontWeight: 700, color: accent, marginBottom: 7, textAlign: 'right' }}>🔍 אחר — הוספה חופשית</div>
+
+      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginBottom: 8, justifyContent: 'flex-end' }}>
+        {FOOD_CATS.map(c => (
+          <button key={c.key} onMouseDown={() => pickCat(c.key)} style={{
+            padding: '4px 9px', borderRadius: 20,
+            border: '1.5px solid ' + (cat === c.key ? accent : '#e5e7eb'),
+            background: cat === c.key ? accent : '#f9fafb',
+            color: cat === c.key ? '#fff' : '#555',
+            fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap'
+          }}>{c.emoji} {c.label}</button>
+        ))}
+      </div>
+
       <div style={{ position: 'relative' }}>
         <input
           ref={inputRef}
           type="text"
           value={query}
-          onChange={e => { setQuery(e.target.value); setSelected(null) }}
-          onFocus={() => setOpen(true)}
+          onChange={e => { setQuery(e.target.value); setSelected(null); setCat(null); setOpen(true) }}
+          onFocus={() => { if (cat || query.trim()) setOpen(true) }}
           onBlur={() => setTimeout(() => setOpen(false), 180)}
           placeholder="חפשי מאכל בעברית..."
           style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1.5px solid ' + accent, fontSize: 14, outline: 'none', boxSizing: 'border-box', textAlign: 'right', direction: 'rtl' }}
         />
-        {open && suggestions.length > 0 && (
+        {showDropdown && (
           <div style={{ position: 'absolute', top: '100%', right: 0, left: 0, background: '#fff', border: '1.5px solid ' + accent, borderRadius: 10, zIndex: 200, boxShadow: '0 4px 20px rgba(0,0,0,0.13)', maxHeight: 260, overflowY: 'auto' }}>
             {suggestions.map(food => (
               <div key={food.id} onMouseDown={() => pick(food)} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', textAlign: 'right', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
