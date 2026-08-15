@@ -200,6 +200,178 @@ const NUTRITION_FALLBACK = {
 // (v2 קלויים בתנור, v5 מוקפץ בשמן, c5 אנטיפסטי קלוי) — אלה ממשיכים לפי הערך האמיתי בשרת.
 const ZERO_FAT_VEGGIE_IDS = ['b_veggie1', 'v1', 'v3', 'v4', 'v6']
 
+// מסד נתונים עברי — מאכלים ישראליים נפוצים
+// base=100 → קלוריות ל-100 גרם / base=1 → קלוריות ליחידה אחת
+const FOOD_DB = [
+  // לחמים ופחמימות
+  { id:'fd_pita',        name:'פיתה לבנה',                cal:185, prot:5,    fat:1,    carbs:38,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_pita_k',      name:'פיתה כוסמין',              cal:170, prot:6,    fat:2,    carbs:34,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_pita_s',      name:'פיתה קטנה',                cal:110, prot:3,    fat:0.5,  carbs:23,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_bagel',       name:'בייגל',                    cal:270, prot:10,   fat:2,    carbs:55,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_baguette',    name:'בגט',                      cal:350, prot:12,   fat:2,    carbs:72,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_baguette_h',  name:'חצי בגט',                  cal:175, prot:6,    fat:1,    carbs:36,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_tortilla',    name:'טורטיה קמח',               cal:130, prot:3,    fat:3,    carbs:22,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_tortilla_w',  name:'טורטיה חיטה מלאה',         cal:120, prot:4,    fat:2.5,  carbs:20,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_lahmaniya',   name:'לחמנייה',                  cal:150, prot:5,    fat:2,    carbs:28,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_bread_w',     name:'לחם לבן — פרוסה',          cal:80,  prot:2.5,  fat:1,    carbs:15,  base:1,   unit:'פרוסה', dflt:1 },
+  { id:'fd_bread_wh',    name:'לחם מלא — פרוסה',          cal:75,  prot:3,    fat:1,    carbs:14,  base:1,   unit:'פרוסה', dflt:1 },
+  { id:'fd_bread_ry',    name:'לחם שיפון — פרוסה',        cal:78,  prot:3,    fat:0.7,  carbs:15,  base:1,   unit:'פרוסה', dflt:1 },
+  { id:'fd_bread_sc',    name:'לחם מחמצת — פרוסה',        cal:80,  prot:3,    fat:0.7,  carbs:15,  base:1,   unit:'פרוסה', dflt:1 },
+  { id:'fd_challah',     name:'חלה — פרוסה',              cal:90,  prot:3,    fat:2,    carbs:17,  base:1,   unit:'פרוסה', dflt:1 },
+  { id:'fd_croissant',   name:'קרואסון',                  cal:230, prot:4,    fat:12,   carbs:26,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_boureka_g',   name:'בורקה גבינה',              cal:220, prot:6,    fat:11,   carbs:25,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_boureka_p',   name:'בורקה תפוח אדמה',          cal:200, prot:4,    fat:9,    carbs:27,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_malaawach',   name:'מלאווח',                   cal:350, prot:7,    fat:20,   carbs:36,  base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_jachnun',     name:'ג\'חנון',                   cal:400, prot:8,    fat:28,   carbs:32,  base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_pasta_c',     name:'פסטה מבושלת',              cal:158, prot:6,    fat:1,    carbs:31,  base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_rice_w',      name:'אורז לבן מבושל',           cal:130, prot:2.7,  fat:0.3,  carbs:28,  base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_rice_br',     name:'אורז מלא מבושל',           cal:112, prot:2.6,  fat:0.9,  carbs:23,  base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_quinoa',      name:'קינואה מבושלת',            cal:120, prot:4.4,  fat:1.9,  carbs:22,  base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_couscous',    name:'קוסקוס מבושל',             cal:112, prot:3.8,  fat:0.2,  carbs:23,  base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_bulgur',      name:'בורגול מבושל',             cal:83,  prot:3,    fat:0.2,  carbs:18,  base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_oats',        name:'שיבולת שועל מבושלת',       cal:62,  prot:2.5,  fat:1,    carbs:11,  base:100, unit:'גרם',  dflt:200 },
+  { id:'fd_granola',     name:'גרנולה',                   cal:430, prot:8,    fat:15,   carbs:65,  base:100, unit:'גרם',  dflt:50 },
+  { id:'fd_cornflakes',  name:'קורנפלקס',                 cal:360, prot:7,    fat:0.7,  carbs:80,  base:100, unit:'גרם',  dflt:40 },
+  { id:'fd_crispbread',  name:'פריכית',                   cal:35,  prot:0.7,  fat:0.3,  carbs:7,   base:1,   unit:'יח\'', dflt:2 },
+  // בשר ועוף
+  { id:'fd_chicken_b',   name:'חזה עוף מבושל',            cal:165, prot:31,   fat:4,    carbs:0,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_chicken_th',  name:'ירך עוף ללא עור',          cal:177, prot:25,   fat:9,    carbs:0,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_chicken_w',   name:'כנפיים עוף',               cal:215, prot:22,   fat:14,   carbs:0,   base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_chicken_mball',name:'קציצות עוף',              cal:170, prot:19,   fat:9,    carbs:3,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_shawarma_c',  name:'שווארמה עוף',              cal:200, prot:23,   fat:11,   carbs:2,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_skewer_c',    name:'שיפוד עוף',                cal:200, prot:27,   fat:9,    carbs:1,   base:1,   unit:'יח\'', dflt:2 },
+  { id:'fd_turkey',      name:'פרגית הודו',               cal:135, prot:30,   fat:1.5,  carbs:0,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_turkey_slice',name:'פרוסת הודו',               cal:27,  prot:5.5,  fat:0.4,  carbs:0,   base:1,   unit:'פרוסה', dflt:3 },
+  { id:'fd_beef_file',   name:'פילה בקר',                 cal:220, prot:29,   fat:11,   carbs:0,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_beef_mball',  name:'קציצות בקר',               cal:250, prot:22,   fat:17,   carbs:2,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_burger',      name:'המבורגר בקר',              cal:300, prot:26,   fat:20,   carbs:2,   base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_kebab',       name:'קבב בקר',                  cal:200, prot:18,   fat:13,   carbs:3,   base:1,   unit:'יח\'', dflt:2 },
+  { id:'fd_shawarma_b',  name:'שווארמה בקר',              cal:220, prot:23,   fat:13,   carbs:2,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_chicken_liver',name:'כבד עוף',                 cal:167, prot:25,   fat:6,    carbs:1,   base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_sausage_c',   name:'נקניקיית עוף',             cal:120, prot:8,    fat:8,    carbs:4,   base:1,   unit:'יח\'', dflt:2 },
+  { id:'fd_sausage_b',   name:'נקניקיית בקר',             cal:150, prot:8,    fat:12,   carbs:3,   base:1,   unit:'יח\'', dflt:2 },
+  // דגים
+  { id:'fd_amnon',       name:'פילה אמנון',               cal:90,  prot:19,   fat:2,    carbs:0,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_cod',         name:'בקלה',                     cal:82,  prot:18,   fat:0.7,  carbs:0,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_salmon',      name:'פילה סלמון',               cal:208, prot:20,   fat:13,   carbs:0,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_tuna_oil',    name:'טונה בשמן',                cal:190, prot:26,   fat:9,    carbs:0,   base:100, unit:'גרם',  dflt:130 },
+  { id:'fd_tuna_w',      name:'טונה במים',                cal:120, prot:26,   fat:1,    carbs:0,   base:100, unit:'גרם',  dflt:130 },
+  { id:'fd_mackerel',    name:'מקרל',                     cal:205, prot:19,   fat:13,   carbs:0,   base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_sea_bream',   name:'דניס',                     cal:97,  prot:20,   fat:2,    carbs:0,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_sea_bass',    name:'לוקוס',                    cal:97,  prot:20,   fat:2,    carbs:0,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_gefilte',     name:'גפילטע פיש',               cal:100, prot:11,   fat:4,    carbs:5,   base:100, unit:'גרם',  dflt:200 },
+  { id:'fd_fish_mball',  name:'קציצות דגים',              cal:115, prot:14,   fat:4,    carbs:7,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_sardines',    name:'סרדינים',                  cal:208, prot:25,   fat:11,   carbs:0,   base:100, unit:'גרם',  dflt:90 },
+  { id:'fd_trout',       name:'פורל',                     cal:148, prot:21,   fat:7,    carbs:0,   base:100, unit:'גרם',  dflt:150 },
+  // מוצרי חלב וביצים
+  { id:'fd_milk_3',      name:'חלב 3%',                   cal:61,  prot:3.2,  fat:3,    carbs:4.8, base:100, unit:'מ"ל', dflt:200 },
+  { id:'fd_milk_1',      name:'חלב 1%',                   cal:43,  prot:3.4,  fat:1,    carbs:5,   base:100, unit:'מ"ל', dflt:200 },
+  { id:'fd_yogurt_3',    name:'יוגורט 3%',                cal:59,  prot:5,    fat:3,    carbs:4,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_yogurt_0',    name:'יוגורט 0%',                cal:39,  prot:5.3,  fat:0,    carbs:5.4, base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_labaneh',     name:'לאבנה',                    cal:175, prot:8,    fat:14,   carbs:4,   base:100, unit:'גרם',  dflt:80 },
+  { id:'fd_gvina_l',     name:'גבינה לבנה 5%',            cal:98,  prot:9,    fat:5,    carbs:4.3, base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_gvina_l9',    name:'גבינה לבנה 9%',            cal:130, prot:8,    fat:9,    carbs:4,   base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_gvina_b',     name:'גבינה בולגרית 5%',         cal:130, prot:17,   fat:5,    carbs:1,   base:100, unit:'גרם',  dflt:80 },
+  { id:'fd_gvina_tz',    name:'גבינה צפתית 5%',           cal:125, prot:15,   fat:5,    carbs:5,   base:100, unit:'גרם',  dflt:80 },
+  { id:'fd_gvina_y',     name:'גבינה צהובה',              cal:350, prot:23,   fat:28,   carbs:1,   base:100, unit:'גרם',  dflt:30 },
+  { id:'fd_cottage',     name:'קוטג\' 5%',                 cal:102, prot:12,   fat:4,    carbs:3,   base:100, unit:'גרם',  dflt:200 },
+  { id:'fd_ricotta',     name:'גבינת ריקוטה',             cal:130, prot:11,   fat:8,    carbs:3,   base:100, unit:'גרם',  dflt:80 },
+  { id:'fd_mozzarella',  name:'גבינת מוצרלה',             cal:280, prot:18,   fat:22,   carbs:3,   base:100, unit:'גרם',  dflt:60 },
+  { id:'fd_sour_cream',  name:'שמנת חמוצה 9%',            cal:85,  prot:3,    fat:5,    carbs:6,   base:100, unit:'גרם',  dflt:50 },
+  { id:'fd_egg',         name:'ביצה שלמה',                cal:86,  prot:7,    fat:6,    carbs:0.6, base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_egg_hard',    name:'ביצה קשה',                 cal:78,  prot:6,    fat:5,    carbs:0.6, base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_egg_white',   name:'חלבון ביצה',               cal:17,  prot:3.5,  fat:0,    carbs:0.2, base:1,   unit:'יח\'', dflt:2 },
+  { id:'fd_omelette',    name:'חביתה מ-2 ביצים',          cal:185, prot:13,   fat:13,   carbs:1,   base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_shakshuka',   name:'שקשוקה (100 גרם)',         cal:95,  prot:6,    fat:6,    carbs:4,   base:100, unit:'גרם',  dflt:200 },
+  // ירקות
+  { id:'fd_tomato',      name:'עגבנייה',                  cal:18,  prot:0.9,  fat:0.2,  carbs:3.9, base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_cucumber',    name:'מלפפון',                   cal:15,  prot:0.6,  fat:0.1,  carbs:3.6, base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_pepper_r',    name:'פלפל אדום',                cal:31,  prot:1,    fat:0.3,  carbs:6,   base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_carrot',      name:'גזר',                      cal:41,  prot:0.9,  fat:0.2,  carbs:10,  base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_broccoli',    name:'ברוקולי',                  cal:34,  prot:2.8,  fat:0.4,  carbs:7,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_cauliflower', name:'כרובית',                   cal:25,  prot:2,    fat:0.3,  carbs:5,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_zucchini',    name:'זוקיני',                   cal:17,  prot:1.2,  fat:0.3,  carbs:3.1, base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_eggplant',    name:'חציל',                     cal:25,  prot:1,    fat:0.2,  carbs:6,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_spinach',     name:'תרד',                      cal:23,  prot:2.9,  fat:0.4,  carbs:3.6, base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_lettuce',     name:'חסה',                      cal:15,  prot:1.4,  fat:0.2,  carbs:2.9, base:100, unit:'גרם',  dflt:80 },
+  { id:'fd_cabbage',     name:'כרוב לבן',                 cal:25,  prot:1.3,  fat:0.1,  carbs:6,   base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_onion',       name:'בצל',                      cal:40,  prot:1.1,  fat:0.1,  carbs:9.3, base:100, unit:'גרם',  dflt:80 },
+  { id:'fd_corn',        name:'תירס מבושל',               cal:96,  prot:3.5,  fat:1.5,  carbs:19,  base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_sweet_p',     name:'בטטה מבושלת',              cal:86,  prot:1.6,  fat:0.1,  carbs:20,  base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_potato',      name:'תפוח אדמה מבושל',          cal:77,  prot:2,    fat:0.1,  carbs:17,  base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_avocado',     name:'אבוקדו',                   cal:160, prot:2,    fat:15,   carbs:9,   base:100, unit:'גרם',  dflt:80 },
+  { id:'fd_mushroom',    name:'פטריות',                   cal:22,  prot:3.1,  fat:0.3,  carbs:3.3, base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_leek',        name:'כרישה',                    cal:61,  prot:1.5,  fat:0.3,  carbs:14,  base:100, unit:'גרם',  dflt:80 },
+  { id:'fd_green_bean',  name:'שעועית ירוקה',             cal:31,  prot:1.8,  fat:0.1,  carbs:7,   base:100, unit:'גרם',  dflt:150 },
+  // קטניות
+  { id:'fd_lentils',     name:'עדשים מבושלות',            cal:116, prot:9,    fat:0.4,  carbs:20,  base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_chickpeas',   name:'חומוס מבושל',              cal:164, prot:9,    fat:2.6,  carbs:27,  base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_black_beans', name:'שעועית שחורה',             cal:132, prot:9,    fat:0.5,  carbs:24,  base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_white_beans', name:'שעועית לבנה',              cal:129, prot:9,    fat:0.5,  carbs:24,  base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_edamame',     name:'אדממה',                    cal:121, prot:11,   fat:5,    carbs:9,   base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_tofu',        name:'טופו',                     cal:76,  prot:8,    fat:4,    carbs:2,   base:100, unit:'גרם',  dflt:120 },
+  { id:'fd_tempeh',      name:'טמפה',                     cal:193, prot:19,   fat:11,   carbs:9,   base:100, unit:'גרם',  dflt:100 },
+  // רטבים וממרחים
+  { id:'fd_hummus_dip',  name:'חומוס (ממרח)',             cal:166, prot:8,    fat:10,   carbs:14,  base:100, unit:'גרם',  dflt:80 },
+  { id:'fd_tahini_raw',  name:'טחינה גולמית',             cal:570, prot:17,   fat:51,   carbs:16,  base:100, unit:'גרם',  dflt:15 },
+  { id:'fd_tahini_ready',name:'טחינה מוכנה',              cal:300, prot:8,    fat:26,   carbs:10,  base:100, unit:'גרם',  dflt:30 },
+  { id:'fd_olive_oil',   name:'שמן זית',                  cal:884, prot:0,    fat:100,  carbs:0,   base:100, unit:'מ"ל', dflt:10 },
+  { id:'fd_mayo',        name:'מיונז',                    cal:680, prot:1,    fat:75,   carbs:2,   base:100, unit:'גרם',  dflt:15 },
+  { id:'fd_mayo_light',  name:'מיונז קל',                 cal:350, prot:1,    fat:36,   carbs:6,   base:100, unit:'גרם',  dflt:15 },
+  { id:'fd_guac',        name:'גואקמולה',                 cal:150, prot:2,    fat:13,   carbs:8,   base:100, unit:'גרם',  dflt:50 },
+  { id:'fd_pesto',       name:'פסטו',                     cal:440, prot:6,    fat:43,   carbs:6,   base:100, unit:'גרם',  dflt:20 },
+  { id:'fd_ketchup',     name:'קטשופ',                    cal:100, prot:2,    fat:0.1,  carbs:25,  base:100, unit:'גרם',  dflt:20 },
+  { id:'fd_halvah',      name:'חלבה',                     cal:516, prot:13,   fat:31,   carbs:50,  base:100, unit:'גרם',  dflt:30 },
+  { id:'fd_jam',         name:'ריבה',                     cal:278, prot:0.4,  fat:0.1,  carbs:70,  base:100, unit:'גרם',  dflt:20 },
+  { id:'fd_honey',       name:'דבש',                      cal:304, prot:0.3,  fat:0,    carbs:82,  base:100, unit:'גרם',  dflt:15 },
+  // פירות
+  { id:'fd_apple',       name:'תפוח',                     cal:77,  prot:0.4,  fat:0.2,  carbs:20,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_pear',        name:'אגס',                      cal:96,  prot:0.6,  fat:0.2,  carbs:25,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_banana',      name:'בננה',                     cal:107, prot:1.3,  fat:0.4,  carbs:27,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_orange',      name:'תפוז',                     cal:62,  prot:1.2,  fat:0.2,  carbs:15,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_mango',       name:'מנגו',                     cal:60,  prot:0.8,  fat:0.4,  carbs:15,  base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_grapes',      name:'ענבים',                    cal:67,  prot:0.6,  fat:0.4,  carbs:17,  base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_strawberry',  name:'תות שדה',                  cal:32,  prot:0.7,  fat:0.3,  carbs:8,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_kiwi',        name:'קיווי',                    cal:42,  prot:0.8,  fat:0.4,  carbs:10,  base:1,   unit:'יח\'', dflt:2 },
+  { id:'fd_watermelon',  name:'אבטיח',                    cal:30,  prot:0.6,  fat:0.2,  carbs:8,   base:100, unit:'גרם',  dflt:200 },
+  { id:'fd_melon',       name:'מלון',                     cal:34,  prot:0.8,  fat:0.2,  carbs:8,   base:100, unit:'גרם',  dflt:200 },
+  { id:'fd_date',        name:'תמר',                      cal:68,  prot:0.4,  fat:0.1,  carbs:18,  base:1,   unit:'יח\'', dflt:2 },
+  { id:'fd_fig',         name:'תאנה טרייה',               cal:74,  prot:0.75, fat:0.3,  carbs:19,  base:100, unit:'גרם',  dflt:100 },
+  { id:'fd_pomegranate', name:'רימון',                    cal:83,  prot:1.7,  fat:1.2,  carbs:19,  base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_peach',       name:'אפרסק',                    cal:39,  prot:0.9,  fat:0.3,  carbs:9.5, base:100, unit:'גרם',  dflt:150 },
+  // אגוזים וזרעים
+  { id:'fd_almonds',     name:'שקדים',                    cal:579, prot:21,   fat:50,   carbs:22,  base:100, unit:'גרם',  dflt:30 },
+  { id:'fd_walnuts',     name:'אגוזי מלך',                cal:654, prot:15,   fat:65,   carbs:14,  base:100, unit:'גרם',  dflt:30 },
+  { id:'fd_cashews',     name:'קשיו',                     cal:553, prot:18,   fat:44,   carbs:30,  base:100, unit:'גרם',  dflt:30 },
+  { id:'fd_peanuts',     name:'בוטנים',                   cal:567, prot:26,   fat:49,   carbs:16,  base:100, unit:'גרם',  dflt:30 },
+  { id:'fd_pb',          name:'חמאת בוטנים',              cal:598, prot:25,   fat:51,   carbs:20,  base:100, unit:'גרם',  dflt:20 },
+  { id:'fd_ab',          name:'חמאת שקדים',               cal:614, prot:21,   fat:56,   carbs:19,  base:100, unit:'גרם',  dflt:20 },
+  { id:'fd_chia',        name:'צ\'יה',                     cal:486, prot:17,   fat:31,   carbs:42,  base:100, unit:'גרם',  dflt:15 },
+  { id:'fd_sesame',      name:'שומשום',                   cal:573, prot:18,   fat:50,   carbs:23,  base:100, unit:'גרם',  dflt:10 },
+  // מנות ישראליות
+  { id:'fd_falafel',     name:'פלאפל',                    cal:57,  prot:2,    fat:3,    carbs:6,   base:1,   unit:'כדור', dflt:5 },
+  { id:'fd_majadra',     name:'מג\'דרה',                   cal:130, prot:5,    fat:2,    carbs:24,  base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_lechem_arig', name:'לחמגין',                   cal:240, prot:12,   fat:10,   carbs:26,  base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_kubeh',       name:'קובה (1 יחידה)',           cal:190, prot:10,   fat:8,    carbs:22,  base:1,   unit:'יח\'', dflt:2 },
+  { id:'fd_chulent',     name:'צ\'ולנט',                   cal:180, prot:8,    fat:8,    carbs:18,  base:100, unit:'גרם',  dflt:200 },
+  { id:'fd_moroccan_f',  name:'דג מרוקאי',                cal:120, prot:15,   fat:5,    carbs:5,   base:100, unit:'גרם',  dflt:150 },
+  { id:'fd_shawarma_pita',name:'שווארמה בפיתה',           cal:480, prot:28,   fat:14,   carbs:58,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_sabich',      name:'סביח',                     cal:420, prot:15,   fat:18,   carbs:52,  base:1,   unit:'יח\'', dflt:1 },
+  { id:'fd_malabi',      name:'מלבי',                     cal:180, prot:4,    fat:6,    carbs:28,  base:100, unit:'גרם',  dflt:150 },
+  // משקאות צמחיים
+  { id:'fd_milk_alm',    name:'חלב שקדים',                cal:30,  prot:1,    fat:2,    carbs:2,   base:100, unit:'מ"ל', dflt:200 },
+  { id:'fd_milk_oat',    name:'חלב שיבולת שועל',          cal:45,  prot:1,    fat:1,    carbs:8,   base:100, unit:'מ"ל', dflt:200 },
+  { id:'fd_milk_soy',    name:'חלב סויה',                 cal:54,  prot:3.5,  fat:2,    carbs:5,   base:100, unit:'מ"ל', dflt:200 },
+  { id:'fd_oj',          name:'מיץ תפוז טרי',             cal:45,  prot:0.7,  fat:0.2,  carbs:10,  base:100, unit:'מ"ל', dflt:200 },
+  { id:'fd_protein_sh',  name:'שייק חלבון',               cal:120, prot:20,   fat:2,    carbs:6,   base:100, unit:'מ"ל', dflt:300 },
+  // שונות
+  { id:'fd_butter',      name:'חמאה',                     cal:717, prot:0.9,  fat:81,   carbs:0.1, base:100, unit:'גרם',  dflt:10 },
+  { id:'fd_cream_ch',    name:'גבינת שמנת',               cal:350, prot:6,    fat:34,   carbs:4,   base:100, unit:'גרם',  dflt:30 },
+  { id:'fd_dark_choc',   name:'שוקולד מריר',              cal:546, prot:5,    fat:32,   carbs:60,  base:100, unit:'גרם',  dflt:20 },
+  { id:'fd_milk_choc',   name:'שוקולד חלב',               cal:535, prot:8,    fat:30,   carbs:59,  base:100, unit:'גרם',  dflt:20 },
+  { id:'fd_crackers',    name:'קרקרים',                   cal:430, prot:9,    fat:12,   carbs:70,  base:100, unit:'גרם',  dflt:30 },
+]
+
 // ✅ "המלצה חכמה לפי צלחת" — לכל פריט יש שני ערכים נפרדים שלא מתערבבים:
 // recQty = ההמלצה המוצגת (מה שנותר מתקציב הגרמים של המאקרו הרלוונטי — חלבון/פחמימה — כדי להגיע ליעד, בלי קשר אם הפריט מסומן)
 // qty/calDisplay = מה שבאמת נחשב בפועל: הכמות שהוקלדה, ואם לא הוקלדה כמות — ברירת המחדל היא 100 גרם קבועים (לא ההמלצה!)
@@ -1161,6 +1333,107 @@ function YesNo({ value, onChange, labelYes, labelNo, accent }) {
   )
 }
 
+function FoodOtherSearch({ items, onItemsChange, accent }) {
+  const [query, setQuery] = useState('')
+  const [suggestions, setSuggestions] = useState([])
+  const [selected, setSelected] = useState(null)
+  const [qty, setQty] = useState('')
+  const [open, setOpen] = useState(false)
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    const q = query.trim()
+    if (!q || selected) { setSuggestions([]); return }
+    const matches = FOOD_DB.filter(f => f.name.includes(q)).slice(0, 7)
+    setSuggestions(matches)
+  }, [query, selected])
+
+  function pick(food) {
+    setSelected(food)
+    setQuery(food.name)
+    setQty(String(food.dflt))
+    setSuggestions([])
+    setTimeout(() => inputRef.current && inputRef.current.blur(), 0)
+  }
+
+  function add() {
+    if (!selected) return
+    const amount = Number(qty) || selected.dflt
+    const ratio = amount / selected.base
+    const cal = Math.round(selected.cal * ratio)
+    const prot = Math.round(selected.prot * ratio * 10) / 10
+    const fat = Math.round(selected.fat * ratio * 10) / 10
+    const carbs = Math.round(selected.carbs * ratio * 10) / 10
+    onItemsChange([...items, { foodId: selected.id, name: selected.name, qty: amount, unitLabel: selected.unit, cal, prot, fat, carbs }])
+    setSelected(null); setQuery(''); setQty('')
+  }
+
+  function remove(idx) { onItemsChange(items.filter((_, i) => i !== idx)) }
+
+  const previewCal = selected && qty ? Math.round(selected.cal * (Number(qty) || selected.dflt) / selected.base) : null
+  const totalCal = items.reduce((s, i) => s + i.cal, 0)
+
+  return (
+    <div style={{ marginTop: 10, borderTop: '2px dashed ' + accent + '55', paddingTop: 10 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: accent, marginBottom: 7, textAlign: 'right' }}>🔍 אחר — הוספה חופשית</div>
+      <div style={{ position: 'relative' }}>
+        <input
+          ref={inputRef}
+          type="text"
+          value={query}
+          onChange={e => { setQuery(e.target.value); setSelected(null) }}
+          onFocus={() => setOpen(true)}
+          onBlur={() => setTimeout(() => setOpen(false), 180)}
+          placeholder="חפשי מאכל בעברית..."
+          style={{ width: '100%', padding: '9px 12px', borderRadius: 10, border: '1.5px solid ' + accent, fontSize: 14, outline: 'none', boxSizing: 'border-box', textAlign: 'right', direction: 'rtl' }}
+        />
+        {open && suggestions.length > 0 && (
+          <div style={{ position: 'absolute', top: '100%', right: 0, left: 0, background: '#fff', border: '1.5px solid ' + accent, borderRadius: 10, zIndex: 200, boxShadow: '0 4px 20px rgba(0,0,0,0.13)', maxHeight: 260, overflowY: 'auto' }}>
+            {suggestions.map(food => (
+              <div key={food.id} onMouseDown={() => pick(food)} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', textAlign: 'right', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: 14, color: '#222' }}>{food.name}</span>
+                <span style={{ fontSize: 11, color: '#9ca3af', flexShrink: 0, marginRight: 8 }}>{food.cal} קל / {food.base === 1 ? food.unit : '100 ' + food.unit}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {selected && (
+        <div style={{ display: 'flex', gap: 6, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <button onMouseDown={add} style={{ flexShrink: 0, padding: '8px 14px', borderRadius: 10, background: accent, color: '#fff', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>+ הוסיפי</button>
+          <input
+            type="number"
+            value={qty}
+            onChange={e => setQty(e.target.value)}
+            style={{ width: 65, padding: '8px', borderRadius: 10, border: '1.5px solid ' + accent, fontSize: 13, textAlign: 'center', outline: 'none' }}
+          />
+          <span style={{ fontSize: 13, color: '#555', flexShrink: 0 }}>{selected.unit}</span>
+          {previewCal !== null && <span style={{ fontSize: 12, color: accent, fontWeight: 700 }}>≈ {previewCal} קל</span>}
+        </div>
+      )}
+
+      {items.length > 0 && (
+        <div style={{ marginTop: 8 }}>
+          {items.map((item, idx) => (
+            <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 0', borderBottom: '1px solid #f3f4f6' }}>
+              <button onClick={() => remove(idx)} style={{ padding: '2px 7px', borderRadius: 6, background: '#fee2e2', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: 11, fontWeight: 700, flexShrink: 0 }}>✕</button>
+              <span style={{ flex: 1, fontSize: 13, color: '#222', textAlign: 'right' }}>{item.name} <span style={{ color: '#9ca3af', fontSize: 12 }}>({item.qty} {item.unitLabel})</span></span>
+              <div style={{ flexShrink: 0, textAlign: 'left' }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: accent }}>{item.cal} קל</div>
+                <div style={{ fontSize: 10, color: '#9ca3af' }}>ח:{item.prot}  ש:{item.fat}  פ:{item.carbs}</div>
+              </div>
+            </div>
+          ))}
+          {items.length > 1 && (
+            <div style={{ fontSize: 12, fontWeight: 700, color: accent, textAlign: 'left', paddingTop: 6 }}>סה"כ אחר: {totalCal} קל</div>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function NlpSelector({ label, value, onChange, max, lowLabel, highLabel, accent }) {
   return (
     <div style={{ marginBottom: 14 }}>
@@ -1327,6 +1600,10 @@ export default function PlanApp({ clientName, userPassword }) {
   const [userGoal, setUserGoal] = useState('ירידה במשקל')
   const [userTargetWeight, setUserTargetWeight] = useState('')
   const [clientData, setClientData] = useState(null)
+  const [bokerOther, setBokerOther] = useState([])
+  const [lunchOther, setLunchOther] = useState([])
+  const [erevOther, setErevOther] = useState([])
+  const [benayimOther, setBenayimOther] = useState([])
 
   const fem = userGender !== 'זכר'
   const gf = (f, m) => fem ? f : m
@@ -1451,6 +1728,7 @@ export default function PlanApp({ clientName, userPassword }) {
         setScanProtein(t.scan_protein || 0); setScanFat(t.scan_fat || 0); setScanCarbs(t.scan_carbs || 0)
         setFeedback(t.trainer_feedback || null); setReportApproved(t.report_approved || false)
         if (t.nlp_metrics) { var m = t.nlp_metrics; setStressLevel(m.stress || 0); setFatigueLevel(m.fatigue || 0); setHungerLevel(m.hunger || 0); setUserMood(m.mood || null); setEatReasons(m.eat_reasons || []) }
+        setBokerOther(t.boker_other || []); setLunchOther(t.lunch_other || []); setErevOther(t.erev_other || []); setBenayimOther(t.benayim_other || [])
         setDailyLogLoaded(true)
       } else {
         // ✅ אין רשומה ליום הזה (כניסה ראשונה, או שהיום התגלגל לתאריך חדש באמצע הפעלה) — לוודא שלא נשאר מידע מהיום הקודם בזיכרון
@@ -1467,6 +1745,7 @@ export default function PlanApp({ clientName, userPassword }) {
         setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0)
         setFeedback(null); setReportApproved(false)
         setStressLevel(0); setFatigueLevel(0); setHungerLevel(0); setUserMood(null); setEatReasons([])
+        setBokerOther([]); setLunchOther([]); setErevOther([]); setBenayimOther([])
         setDailyLogLoaded(true)
       }
 
@@ -1564,6 +1843,7 @@ export default function PlanApp({ clientName, userPassword }) {
       scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
       diet_type: dietType, restrictions,
       nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood, eat_reasons: eatReasons },
+      boker_other: bokerOther, lunch_other: lunchOther, erev_other: erevOther, benayim_other: benayimOther,
       updated_at: new Date().toISOString(),
     }
     pendingSaveRef.current = payload
@@ -1573,7 +1853,7 @@ export default function PlanApp({ clientName, userPassword }) {
       pendingSaveRef.current = null
     }, 3000)
     return () => clearTimeout(autoSaveRef.current)
-  }, [checks, carbChecks, protChecks, carbQty, protQty, checksQty, fatSel, veggieChecks, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, eatReasons, drinkType, drinkCount, dailyLogLoaded, logDate])
+  }, [checks, carbChecks, protChecks, carbQty, protQty, checksQty, fatSel, veggieChecks, lunchOpt, benayimSel, water, steps, note, bokerFree, lunchFree, erevFree, bokerExtraCal, lunchExtraCal, erevExtraCal, hadSnack, hadBenayim, sportDoneToday, sportDaysThisWeek, scanCalories, scanDesc, scanProtein, scanFat, scanCarbs, stressLevel, fatigueLevel, hungerLevel, userMood, eatReasons, drinkType, drinkCount, bokerOther, lunchOther, erevOther, benayimOther, dailyLogLoaded, logDate])
 
   // ⚠️ אם המשתמשת עוזבת את הדף בתוך חלון ה-debounce (סוגרת טאב / עוברת אפליקציה בנייד / נועלת מסך) —
   // unmount של רכיב React לא בהכרח קורה (בדפדפן בנייד הדף פשוט מוקפא/נהרג בלי לקרוא ל-cleanup),
@@ -1754,6 +2034,7 @@ export default function PlanApp({ clientName, userPassword }) {
     Object.keys(veggieChecks).forEach(id => { if (veggieChecks[id]) add(id) })
     if (hadBenayim && benayimSel) add(benayimSel)
     total += (bokerExtraCal || 0) + (lunchExtraCal || 0) + (erevExtraCal || 0) + (scanCalories || 0)
+    ;[...bokerOther, ...lunchOther, ...erevOther, ...benayimOther].forEach(it => { total += it.cal || 0 })
     const DRINK_CALS = { wine: 120, beer: 150, cocktail: 200 }
     if (drinkType && drinkCount > 0) total += (DRINK_CALS[drinkType] || 0) * drinkCount
     return total
@@ -1792,6 +2073,7 @@ export default function PlanApp({ clientName, userPassword }) {
     total += calcExtraProt()
     total += (scanProtein || 0)
     if (hadSnack) addNP('snack')
+    ;[...bokerOther, ...lunchOther, ...erevOther, ...benayimOther].forEach(it => { total += it.prot || 0 })
     return total
   }
 
@@ -1812,6 +2094,7 @@ export default function PlanApp({ clientName, userPassword }) {
     Object.keys(veggieChecks).forEach(id => { if (veggieChecks[id]) add(id) })
     if (hadBenayim && benayimSel) add(benayimSel)
     total += (scanFat || 0)
+    ;[...bokerOther, ...lunchOther, ...erevOther, ...benayimOther].forEach(it => { total += it.fat || 0 })
     return total
   }
 
@@ -1836,6 +2119,7 @@ export default function PlanApp({ clientName, userPassword }) {
     Object.keys(veggieChecks).forEach(id => { if (veggieChecks[id]) add(id) })
     if (hadBenayim && benayimSel) add(benayimSel)
     total += (scanCarbs || 0)
+    ;[...bokerOther, ...lunchOther, ...erevOther, ...benayimOther].forEach(it => { total += it.carbs || 0 })
     return total
   }
 
@@ -1876,6 +2160,7 @@ export default function PlanApp({ clientName, userPassword }) {
     setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0)
     setStressLevel(0); setFatigueLevel(0); setHungerLevel(0); setUserMood(null); setEatReasons([])
     setFeedback(null); setReportApproved(false)
+    setBokerOther([]); setLunchOther([]); setErevOther([]); setBenayimOther([])
   }
 
   const handleSave = async function() {
@@ -1892,6 +2177,7 @@ export default function PlanApp({ clientName, userPassword }) {
       scan_calories: scanCalories || 0, scan_desc: scanDesc || '', scan_protein: scanProtein || 0, scan_fat: scanFat || 0, scan_carbs: scanCarbs || 0,
       diet_type: dietType, restrictions,
       nlp_metrics: { stress: stressLevel, fatigue: fatigueLevel, hunger: hungerLevel, mood: userMood, eat_reasons: eatReasons },
+      boker_other: bokerOther, lunch_other: lunchOther, erev_other: erevOther, benayim_other: benayimOther,
       updated_at: new Date().toISOString(),
     }
     const { error } = await supabase.from('daily_logs').upsert(payload, { onConflict: 'client_name,log_date' })
@@ -3021,6 +3307,7 @@ export default function PlanApp({ clientName, userPassword }) {
           <CheckRow id="b_veggie1_oil" text="+ כף שמן זית על הסלט" accent={C.teal} checked={!!checks['b_veggie1_oil']} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />
           <FreeText value={bokerFree} onChange={setBokerFree} placeholder="אכלתי גם / פרטים נוספים..." />
           <ExtraCal value={bokerExtraCal} onChange={setBokerExtraCal} valueProt={bokerExtraProt} onChangeProt={setBokerExtraProt} />
+          <FoodOtherSearch items={bokerOther} onItemsChange={setBokerOther} accent={C.orange} />
           <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
           <ScanCorrection desc={scanDesc} cal={scanCalories} onChangeCal={setScanCalories} prot={scanProtein} onChangeProt={setScanProtein} fat={scanFat} onChangeFat={setScanFat} carbs={scanCarbs} onChangeCarbs={setScanCarbs} onReset={() => { setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0) }} />
         </Section>
@@ -3147,6 +3434,7 @@ export default function PlanApp({ clientName, userPassword }) {
           {PLAN.veggieOptions.map(o => <CheckRow key={o.id} id={o.id} text={o.text} accent={C.teal} checked={!!veggieChecks[o.id]} onToggle={id => setVeggieChecks(v => ({ ...v, [id]: !v[id] }))} />)}
           <FreeText value={lunchFree} onChange={setLunchFree} placeholder="פרטים נוספים על הצהריים..." />
           <ExtraCal value={lunchExtraCal} onChange={setLunchExtraCal} valueProt={lunchExtraProt} onChangeProt={setLunchExtraProt} />
+          <FoodOtherSearch items={lunchOther} onItemsChange={setLunchOther} accent={C.greenMid} />
           <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
           <ScanCorrection desc={scanDesc} cal={scanCalories} onChangeCal={setScanCalories} prot={scanProtein} onChangeProt={setScanProtein} fat={scanFat} onChangeFat={setScanFat} carbs={scanCarbs} onChangeCarbs={setScanCarbs} onReset={() => { setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0) }} />
         </Section>
@@ -3154,6 +3442,7 @@ export default function PlanApp({ clientName, userPassword }) {
         <Section title="ביניים" icon="🌤" accent={C.blue} light={C.blueLight}>
           <div style={{ fontWeight: 700, fontSize: 12, color: C.blue, padding: '8px 0 4px', textAlign: 'right' }}>בחר/י:</div>
           {filteredBenayim.map(o => <RadioRow key={o.id} id={o.id} text={o.text} accent={C.blue} selected={benayimSel} onSelect={setBenayimSel} />)}
+          <FoodOtherSearch items={benayimOther} onItemsChange={setBenayimOther} accent={C.blue} />
           <YesNo value={hadBenayim} onChange={setHadBenayim} labelYes="✅ אכלתי" labelNo="❌ דילגתי" accent={C.blue} />
         </Section>
 
@@ -3206,6 +3495,7 @@ export default function PlanApp({ clientName, userPassword }) {
           <CheckRow id="b_veggie1_oil_erev" text="+ כף שמן זית על הסלט" accent={C.teal} checked={!!checks['b_veggie1_oil_erev']} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />
           <FreeText value={erevFree} onChange={setErevFree} placeholder="פרטים נוספים על הערב..." />
           <ExtraCal value={erevExtraCal} onChange={setErevExtraCal} valueProt={erevExtraProt} onChangeProt={setErevExtraProt} />
+          <FoodOtherSearch items={erevOther} onItemsChange={setErevOther} accent={C.purple} />
           <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
           <ScanCorrection desc={scanDesc} cal={scanCalories} onChangeCal={setScanCalories} prot={scanProtein} onChangeProt={setScanProtein} fat={scanFat} onChangeFat={setScanFat} carbs={scanCarbs} onChangeCarbs={setScanCarbs} onReset={() => { setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0) }} />
         </Section>
