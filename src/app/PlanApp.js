@@ -1449,6 +1449,12 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
   const [selected, setSelected] = useState(null)
   const [qty, setQty] = useState('')
   const [open, setOpen] = useState(false)
+  const [manual, setManual] = useState(false)
+  const [mName, setMName] = useState('')
+  const [mCal, setMCal] = useState('')
+  const [mProt, setMProt] = useState('')
+  const [mFat, setMFat] = useState('')
+  const [mCarbs, setMCarbs] = useState('')
   const inputRef = useRef(null)
 
   useEffect(() => {
@@ -1465,30 +1471,36 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
 
   function pickCat(key) {
     const next = cat === key ? null : key
-    setCat(next)
-    setQuery('')
-    setSelected(null)
-    setOpen(!!next)
+    setCat(next); setQuery(''); setSelected(null); setOpen(!!next); setManual(false)
   }
 
   function pick(food) {
-    setSelected(food)
-    setQuery(food.name)
-    setQty(String(food.dflt))
-    setSuggestions([])
-    setOpen(false)
+    setSelected(food); setQuery(food.name); setQty(String(food.dflt)); setSuggestions([]); setOpen(false)
   }
 
   function add() {
     if (!selected) return
     const amount = Number(qty) || selected.dflt
     const ratio = amount / selected.base
-    const cal = Math.round(selected.cal * ratio)
-    const prot = Math.round(selected.prot * ratio * 10) / 10
-    const fat = Math.round(selected.fat * ratio * 10) / 10
-    const carbs = Math.round(selected.carbs * ratio * 10) / 10
-    onItemsChange([...items, { foodId: selected.id, name: selected.name, qty: amount, unitLabel: selected.unit, cal, prot, fat, carbs }])
+    onItemsChange([...items, {
+      foodId: selected.id, name: selected.name, qty: amount, unitLabel: selected.unit,
+      cal: Math.round(selected.cal * ratio),
+      prot: Math.round(selected.prot * ratio * 10) / 10,
+      fat: Math.round(selected.fat * ratio * 10) / 10,
+      carbs: Math.round(selected.carbs * ratio * 10) / 10,
+    }])
     setSelected(null); setQuery(''); setQty(''); setCat(null); setOpen(false)
+  }
+
+  function addManual() {
+    const name = mName.trim()
+    const cal = Number(mCal)
+    if (!name || !cal) return
+    onItemsChange([...items, {
+      foodId: 'manual_' + Date.now(), name, qty: 1, unitLabel: 'מנה',
+      cal, prot: Number(mProt) || 0, fat: Number(mFat) || 0, carbs: Number(mCarbs) || 0,
+    }])
+    setMName(''); setMCal(''); setMProt(''); setMFat(''); setMCarbs(''); setManual(false)
   }
 
   function remove(idx) { onItemsChange(items.filter((_, i) => i !== idx)) }
@@ -1518,7 +1530,7 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
           ref={inputRef}
           type="text"
           value={query}
-          onChange={e => { setQuery(e.target.value); setSelected(null); setCat(null); setOpen(true) }}
+          onChange={e => { setQuery(e.target.value); setSelected(null); setCat(null); setOpen(true); setManual(false) }}
           onFocus={() => { if (cat || query.trim()) setOpen(true) }}
           onBlur={() => setTimeout(() => setOpen(false), 180)}
           placeholder="חפשי מאכל בעברית..."
@@ -1539,14 +1551,38 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
       {selected && (
         <div style={{ display: 'flex', gap: 6, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <button onMouseDown={add} style={{ flexShrink: 0, padding: '8px 14px', borderRadius: 10, background: accent, color: '#fff', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>+ הוסיפי</button>
-          <input
-            type="number"
-            value={qty}
-            onChange={e => setQty(e.target.value)}
-            style={{ width: 65, padding: '8px', borderRadius: 10, border: '1.5px solid ' + accent, fontSize: 13, textAlign: 'center', outline: 'none' }}
-          />
+          <input type="number" value={qty} onChange={e => setQty(e.target.value)}
+            style={{ width: 65, padding: '8px', borderRadius: 10, border: '1.5px solid ' + accent, fontSize: 13, textAlign: 'center', outline: 'none' }} />
           <span style={{ fontSize: 13, color: '#555', flexShrink: 0 }}>{selected.unit}</span>
           {previewCal !== null && <span style={{ fontSize: 12, color: accent, fontWeight: 700 }}>≈ {previewCal} קל</span>}
+        </div>
+      )}
+
+      <div style={{ marginTop: 8, textAlign: 'right' }}>
+        <button onClick={() => { setManual(m => !m); setSelected(null); setQuery(''); setCat(null) }}
+          style={{ fontSize: 11, color: manual ? accent : '#9ca3af', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 700, padding: 0 }}>
+          ✏️ {manual ? 'ביטול' : 'לא מצאת? הוסיפי ידנית'}
+        </button>
+      </div>
+
+      {manual && (
+        <div style={{ marginTop: 8, padding: '10px 12px', background: accent + '10', borderRadius: 10, border: '1px solid ' + accent + '33', direction: 'rtl' }}>
+          <input type="text" value={mName} onChange={e => setMName(e.target.value)} placeholder="שם המאכל *"
+            style={{ width: '100%', padding: '8px 10px', borderRadius: 8, border: '1.5px solid ' + accent, fontSize: 13, outline: 'none', boxSizing: 'border-box', textAlign: 'right', marginBottom: 6 }} />
+          <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+            <input type="number" value={mCal} onChange={e => setMCal(e.target.value)} placeholder="קל *"
+              style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1.5px solid ' + accent, fontSize: 13, outline: 'none', textAlign: 'center' }} />
+            <input type="number" value={mProt} onChange={e => setMProt(e.target.value)} placeholder="חלבון"
+              style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center' }} />
+            <input type="number" value={mFat} onChange={e => setMFat(e.target.value)} placeholder="שומן"
+              style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center' }} />
+            <input type="number" value={mCarbs} onChange={e => setMCarbs(e.target.value)} placeholder="פחמ'"
+              style={{ flex: 1, padding: '8px', borderRadius: 8, border: '1px solid #e5e7eb', fontSize: 13, outline: 'none', textAlign: 'center' }} />
+          </div>
+          <button onClick={addManual} disabled={!mName.trim() || !mCal}
+            style={{ padding: '8px 16px', borderRadius: 10, background: mName.trim() && mCal ? accent : '#e5e7eb', color: mName.trim() && mCal ? '#fff' : '#aaa', border: 'none', fontWeight: 700, fontSize: 13, cursor: mName.trim() && mCal ? 'pointer' : 'default' }}>
+            + הוסיפי
+          </button>
         </div>
       )}
 
