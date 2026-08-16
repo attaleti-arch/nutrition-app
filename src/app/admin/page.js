@@ -3644,8 +3644,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     const labels = { home_background: 'הבית שגדלה בו', family_identity: 'זהות וגוף במשפחה', today_patterns: 'דפוסים היום', forward_passing: 'מה עובר הלאה', beliefs_motivation: 'אמונות ומוטיבציה', resources: 'משאבים' }
                     return v.trim() ? labels[k] + ':\n' + v : ''
                   }).filter(Boolean).join('\n\n')
+                  const rootsQLabels = { roots_home: 'האוכל בבית שגדלה בו', roots_identity: 'איך הרגישה בגוף בתוך המשפחה', roots_patterns: 'מה מזהה מהבית', roots_passing: 'מה עובר הלאה לילדים', roots_beliefs: 'מה קורה אחרי שבועיים-שלושה', roots_resources: 'מה כבר עושה טוב עם אוכל', roots_sentence: 'משפט שמלווה אותה', roots_trigger: 'מתי האוכל הופך ליותר מרעב', roots_comfort: 'מה מקבלת מהאוכל ברגעים אלה', roots_generation: 'הרגל שעובר מדור לדור', roots_change: 'מה הייתה משנה', roots_fear: 'מה מפחיד בתהליך', roots_hope: 'מה מקווה שיקרה' }
+                  const clientRootsText = Object.entries(rootsQLabels).map(([k, label]) => journeyAnswers[k]?.trim() ? label + ':\n' + journeyAnswers[k] : '').filter(Boolean).join('\n\n')
                   const prompt = 'אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להתכונן לפגישת שורשים עם לקוחה.\n\n' +
-                    'הערות מהזום המקדים:\n' + notesText + '\n\n' +
+                    (clientRootsText ? 'תשובות הלקוחה לשאלון:\n' + clientRootsText + '\n\n' : '') +
+                    (notesText ? 'הערות מהזום המקדים:\n' + notesText + '\n\n' : '') +
                     'נתוני הלקוחה: ' + (selectedClient?.name||'') + ', גיל ' + (selectedClient?.age||'לא ידוע') + ', מטרה: ' + (selectedClient?.goal||'לא ידוע') + ', מסלול: ' + (selectedClient?.client_track === 'child' ? 'עבור ילד' : selectedClient?.client_track === 'both' ? 'שניהם' : 'עצמי') + '\n\n' +
                     'הפק ניתוח מעמיק לאתי לקראת הפגישה הפיזית. כתוב בעברית, גוף שלישי נקבה.\n\n' +
                     'דגשים חשובים לניתוח:\n' +
@@ -3676,7 +3679,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   } catch(e) { if (!rootsResult) alert('שגיאת רשת — נסי שוב') }
                   if (rootsResult) { saveSessionKey('roots_notes', rootsNotes); saveSessionKey('roots_analysis', rootsResult); setRootsAnalysisSaved(true) }
                   setRootsLoading(false)
-                }} disabled={rootsLoading || !Object.values(rootsNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: rootsLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
+                }} disabled={rootsLoading || (!Object.values(rootsNotes).some(v => v.trim()) && !['roots_home','roots_identity','roots_patterns','roots_passing','roots_beliefs','roots_resources','roots_sentence','roots_trigger','roots_comfort','roots_generation','roots_change','roots_fear','roots_hope'].some(k => journeyAnswers[k]?.trim()))} style={{ width: '100%', padding: 16, borderRadius: 14, background: rootsLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {rootsLoading ? '⏳ מנתח...' : '🌱 הפק ניתוח AI לפגישה'}
                 </button>
                 {!rootsLoading && rootsAnalysis && (
@@ -3885,6 +3888,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     const labels = { body_signals: 'מה הגוף אומר היום', body_history: 'היסטוריה של הגוף', emotion_body: 'קשר רגש-גוף', energy_sleep: 'אנרגיה ושינה', hunger_satiety: 'רעב ושובע', already_knows: 'מה היא כבר יודעת', main_complaint: 'מה הגוף שלה צועק עליו' }
                     return v.trim() ? labels[k] + ':\n' + v : ''
                   }).filter(Boolean).join('\n\n')
+                  const bodyQLabels = { body_complaint: 'מה הגוף אומר כרגע', body_signals: 'סימנים בגוף', body_history: 'היה זמן שהגוף הרגיש אחרת', body_emotion: 'איפה מרגישה רגשות בגוף', body_energy: 'שינה ואנרגיה', body_hunger: 'רעב ושובע', body_knows: 'מה כבר יודעת על הגוף', body_limit: 'מה הגוף אומר עד כאן', body_helps: 'מה עוזר לגוף להרגיש טוב', body_request: 'מה הגוף מבקש' }
+                  const clientBodyText = Object.entries(bodyQLabels).map(([k, label]) => journeyAnswers[k]?.trim() ? label + ':\n' + journeyAnswers[k] : '').filter(Boolean).join('\n\n')
 
                   const profile360 = selectedClient ? (
                     'שינה: ' + (selectedClient.sleep_quality||'לא ידוע') +
@@ -3917,7 +3922,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   const prompt = 'אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להכין ניתוח מעמיק לפגישת הגוף מדבר.\n\n' +
                     'שם הלקוחה: ' + (selectedClient?.name||'') + '\n\n' +
                     'נתוני שאלון 360:\n' + profile360 + '\n\n' +
-                    'הערות מהזום המקדים:\n' + notesText + '\n\n' +
+                    (clientBodyText ? 'תשובות הלקוחה לשאלון:\n' + clientBodyText + '\n\n' : '') +
+                    (notesText ? 'הערות מהזום המקדים:\n' + notesText + '\n\n' : '') +
                     TOPICS + '\n\n' +
                     'גישת הניתוח: הגוף אינו אויב — הוא שפה. כל סימפטום הוא הודעה, לא כשל. לכל דפוס שזיהית — שאל: מה הגוף שלה מנסה לשמור? על מה הוא מגן? הסבר תמיד מתחיל מ"הגוף עושה זאת כי..." ולא "יש לה בעיה עם...".\n\n' +
                     'הפק ניתוח מעמיק לאתי. כתוב בעברית, מקצועי וישיר. המבנה:\n\n' +
@@ -3956,7 +3962,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   } catch(e) { if (!bodyResult) alert('שגיאת רשת — נסי שוב') }
                   if (bodyResult) { saveSessionKey('body_notes', bodyNotes); saveSessionKey('body_analysis', bodyResult); setBodyAnalysisSaved(true) }
                   setBodyLoading(false)
-                }} disabled={bodyLoading || !Object.values(bodyNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: bodyLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
+                }} disabled={bodyLoading || (!Object.values(bodyNotes).some(v => v.trim()) && !['body_complaint','body_signals','body_history','body_emotion','body_energy','body_hunger','body_knows','body_limit','body_helps','body_request'].some(k => journeyAnswers[k]?.trim()))} style={{ width: '100%', padding: 16, borderRadius: 14, background: bodyLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {bodyLoading ? '⏳ מנתח...' : '🩺 הפק ניתוח AI לפגישה'}
                 </button>
                 {!bodyLoading && bodyAnalysis && (
