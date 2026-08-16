@@ -914,14 +914,33 @@ export default function AdminPage() {
     }
   }
 
-  function startAdminSpeech(key, onTranscript) {
+  function startAdminSpeech(key, onTranscript, existingText) {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR) { alert('הדפדפן שלך אינו תומך בהקלטה. נסי ב-Chrome.'); return }
     if (adminRecognitionRef.current) { adminRecognitionRef.current.stop(); adminRecognitionRef.current = null }
+    const base = existingText || ''
+    let sessionFinals = ''
+    let lastFinalIdx = 0
     const r = new SR()
     r.lang = 'he-IL'; r.continuous = true; r.interimResults = true
-    r.onresult = e => { let t = ''; for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript; onTranscript(t) }
-    r.onend = () => { setAdminRecordingKey(null); adminRecognitionRef.current = null }
+    r.onresult = e => {
+      for (let i = lastFinalIdx; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          const phrase = e.results[i][0].transcript.trim()
+          if (phrase) sessionFinals = sessionFinals ? sessionFinals + ' ' + phrase : phrase
+          lastFinalIdx = i + 1
+        }
+      }
+      let interim = ''
+      for (let i = lastFinalIdx; i < e.results.length; i++) {
+        if (!e.results[i].isFinal) interim += e.results[i][0].transcript
+      }
+      onTranscript([base, sessionFinals, interim.trim()].filter(Boolean).join(' '))
+    }
+    r.onend = () => {
+      onTranscript([base, sessionFinals].filter(Boolean).join(' '))
+      setAdminRecordingKey(null); adminRecognitionRef.current = null
+    }
     r.onerror = () => { setAdminRecordingKey(null); adminRecognitionRef.current = null }
     r.start(); adminRecognitionRef.current = r; setAdminRecordingKey(key)
   }
@@ -3112,7 +3131,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
                       <div style={{ position: 'relative' }}>
                         <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })), journeyAnswers[q.key])} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
                       </div>
                     </div>
                   ))}
@@ -3131,7 +3150,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       {q.hint && <div style={{ fontSize: 11, color: '#0284c7', marginBottom: 4, fontStyle: 'italic' }}>💙 {q.hint}</div>}
                       <div style={{ position: 'relative' }}>
                         <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })), journeyAnswers[q.key])} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
                       </div>
                     </div>
                   ))}
@@ -3150,7 +3169,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       {q.hint && <div style={{ fontSize: 11, color: '#0d9488', marginBottom: 4, fontStyle: 'italic' }}>💚 {q.hint}</div>}
                       <div style={{ position: 'relative' }}>
                         <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })), journeyAnswers[q.key])} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
                       </div>
                     </div>
                   ))}
@@ -3168,7 +3187,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       {q.hint && <div style={{ fontSize: 11, color: '#dc2626', marginBottom: 4, fontStyle: 'italic' }}>❤️ {q.hint}</div>}
                       <div style={{ position: 'relative' }}>
                         <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })), journeyAnswers[q.key])} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
                       </div>
                     </div>
                   ))}
@@ -3185,7 +3204,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       {q.hint && <div style={{ fontSize: 11, color: '#d97706', marginBottom: 4, fontStyle: 'italic' }}>🧡 {q.hint}</div>}
                       <div style={{ position: 'relative' }}>
                         <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })), journeyAnswers[q.key])} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
                       </div>
                     </div>
                   ))}
@@ -3204,7 +3223,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
                       <div style={{ position: 'relative' }}>
                         <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })), journeyAnswers[q.key])} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
                       </div>
                     </div>
                   ))}

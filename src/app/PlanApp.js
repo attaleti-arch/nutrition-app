@@ -2239,14 +2239,17 @@ export default function PlanApp({ clientName, userPassword }) {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR || recordingActiveRef.current !== key) return
     recordingSessionRef.current[key] = ''
+    // מעקב מקומי על הindex האחרון שכבר עובד — תיקון לבאג Chrome שבו
+    // e.resultIndex לא תמיד מתקדם ואותן תוצאות סופיות נספרות פעמיים
+    let lastFinalIdx = 0
     const recognition = new SR()
     recognition.lang = 'he-IL'
     recognition.continuous = true
     recognition.interimResults = true
     recognition.onresult = (e) => {
-      // צבור תוצאות סופיות בנפרד — מונע איבוד טקסט כשהדפדפן לא מצבר e.results
       let gotFinal = false
-      for (let i = e.resultIndex; i < e.results.length; i++) {
+      // עיבוד רק תוצאות סופיות חדשות — אחרי lastFinalIdx
+      for (let i = lastFinalIdx; i < e.results.length; i++) {
         if (e.results[i].isFinal) {
           const phrase = e.results[i][0].transcript.trim()
           if (phrase) {
@@ -2254,11 +2257,12 @@ export default function PlanApp({ clientName, userPassword }) {
             recordingSessionRef.current[key] = prev ? prev + ' ' + phrase : phrase
             gotFinal = true
           }
+          lastFinalIdx = i + 1
         }
       }
-      // טקסט ביניים (לא סופי עדיין)
+      // טקסט ביניים — רק מה שעדיין לא סופי
       let interim = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) {
+      for (let i = lastFinalIdx; i < e.results.length; i++) {
         if (!e.results[i].isFinal) interim += e.results[i][0].transcript
       }
       const base = recordingBaseRef.current[key] || ''
@@ -2267,13 +2271,11 @@ export default function PlanApp({ clientName, userPassword }) {
       const updated = { ...journeyAnswersRef.current, [key]: combined }
       journeyAnswersRef.current = updated
       setJourneyAnswers({ ...updated })
-      // שמור ל-localStorage מיד בכל ביטוי סופי — שורד סגירת אפליקציה
       if (gotFinal) saveRecordingDraft()
     }
     recognition.onend = () => {
       recognitionRef.current = null
       if (recordingActiveRef.current === key) {
-        // נעצר אוטומטית — העבר finals לbase, שמרי, והפעל מחדש
         const base = recordingBaseRef.current[key] || ''
         const finals = recordingSessionRef.current[key] || ''
         recordingBaseRef.current[key] = [base, finals].filter(Boolean).join(' ')
@@ -2282,7 +2284,6 @@ export default function PlanApp({ clientName, userPassword }) {
         autoSaveToSupabase()
         setTimeout(() => launchRecognitionSession(key), 250)
       } else {
-        // עצירת משתמש
         autoSaveToSupabase()
         delete recordingBaseRef.current[key]
         delete recordingSessionRef.current[key]
