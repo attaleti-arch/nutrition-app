@@ -1551,7 +1551,7 @@ const FOOD_CATS = [
   { key:'other',   label:'שונות',   emoji:'✨' },
 ]
 
-function FoodOtherSearch({ items, onItemsChange, accent }) {
+function FoodOtherSearch({ items, onItemsChange, accent, protRemain, carbRemain }) {
   const [query, setQuery] = useState('')
   const [cat, setCat] = useState(null)
   const [suggestions, setSuggestions] = useState([])
@@ -1583,8 +1583,25 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
     setCat(next); setQuery(''); setSelected(null); setOpen(!!next); setManual(false)
   }
 
+  function recQtyForFood(food) {
+    if (!food) return 0
+    const prot100 = food.base === 100 ? food.prot : (food.prot / (food.dflt || 1)) * 100
+    const carbs100 = food.base === 100 ? food.carbs : (food.carbs / (food.dflt || 1)) * 100
+    const isProtein = prot100 > carbs100
+    if (food.base === 1) {
+      if (isProtein && protRemain > 0 && food.prot > 0) return Math.max(1, Math.round(protRemain / food.prot))
+      if (!isProtein && carbRemain > 0 && food.carbs > 0) return Math.max(1, Math.round(carbRemain / food.carbs))
+      return food.dflt
+    } else {
+      if (isProtein && protRemain > 0 && prot100 > 0) return Math.min(300, Math.max(30, Math.round((protRemain / prot100) * 100)))
+      if (!isProtein && carbRemain > 0 && carbs100 > 0) return Math.min(300, Math.max(30, Math.round((carbRemain / carbs100) * 100)))
+      return food.dflt
+    }
+  }
+
   function pick(food) {
-    setSelected(food); setQuery(food.name); setQty(String(food.dflt)); setSuggestions([]); setOpen(false)
+    const rq = (protRemain > 0 || carbRemain > 0) ? recQtyForFood(food) : food.dflt
+    setSelected(food); setQuery(food.name); setQty(String(rq)); setSuggestions([]); setOpen(false)
   }
 
   function add() {
@@ -1615,6 +1632,10 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
   function remove(idx) { onItemsChange(items.filter((_, i) => i !== idx)) }
 
   const previewCal = selected && qty ? Math.round(selected.cal * (Number(qty) || selected.dflt) / selected.base) : null
+  const cal100display = selected ? (selected.base === 100 ? selected.cal : Math.round(selected.cal / (selected.dflt || 1) * 100)) : null
+  const prot100display = selected ? (selected.base === 100 ? selected.prot : Math.round(selected.prot / (selected.dflt || 1) * 100 * 10) / 10) : null
+  const carbs100display = selected ? (selected.base === 100 ? selected.carbs : Math.round(selected.carbs / (selected.dflt || 1) * 100 * 10) / 10) : null
+  const recQtyHint = selected && (protRemain > 0 || carbRemain > 0) ? recQtyForFood(selected) : null
   const totalCal = items.reduce((s, i) => s + i.cal, 0)
   const showDropdown = open && suggestions.length > 0 && !selected
 
@@ -1648,9 +1669,14 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
         {showDropdown && (
           <div style={{ position: 'absolute', top: '100%', right: 0, left: 0, background: '#fff', border: '1.5px solid ' + accent, borderRadius: 10, zIndex: 200, boxShadow: '0 4px 20px rgba(0,0,0,0.13)', maxHeight: 260, overflowY: 'auto' }}>
             {suggestions.map(food => (
-              <div key={food.id} onMouseDown={() => pick(food)} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', textAlign: 'right', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 14, color: '#222' }}>{food.name}</span>
-                <span style={{ fontSize: 11, color: '#9ca3af', flexShrink: 0, marginRight: 8 }}>{food.cal} קל / {food.base === 1 ? food.unit : '100 ' + food.unit}</span>
+              <div key={food.id} onMouseDown={() => pick(food)} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', textAlign: 'right' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 14, color: '#222' }}>{food.name}</span>
+                  <span style={{ fontSize: 11, color: '#9ca3af', flexShrink: 0, marginRight: 8 }}>{food.cal} קל / {food.base === 1 ? food.unit : '100 גרם'}</span>
+                </div>
+                <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>
+                  ח׳ {food.base === 100 ? food.prot : Math.round(food.prot / (food.dflt||1) * 100 * 10)/10}  שומן {food.base === 100 ? food.fat : Math.round(food.fat / (food.dflt||1) * 100 * 10)/10}  פחמ׳ {food.base === 100 ? food.carbs : Math.round(food.carbs / (food.dflt||1) * 100 * 10)/10} (ל-{food.base === 1 ? food.unit : '100 גרם'})
+                </div>
               </div>
             ))}
           </div>
@@ -1658,12 +1684,23 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
       </div>
 
       {selected && (
-        <div style={{ display: 'flex', gap: 6, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button onMouseDown={add} style={{ flexShrink: 0, padding: '8px 14px', borderRadius: 10, background: accent, color: '#fff', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>+ הוסיפי</button>
-          <input type="number" value={qty} onChange={e => setQty(e.target.value)}
-            style={{ width: 65, padding: '8px', borderRadius: 10, border: '1.5px solid ' + accent, fontSize: 13, textAlign: 'center', outline: 'none' }} />
-          <span style={{ fontSize: 13, color: '#555', flexShrink: 0 }}>{selected.unit}</span>
-          {previewCal !== null && <span style={{ fontSize: 12, color: accent, fontWeight: 700 }}>≈ {previewCal} קל</span>}
+        <div style={{ marginTop: 8 }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button onMouseDown={add} style={{ flexShrink: 0, padding: '8px 14px', borderRadius: 10, background: accent, color: '#fff', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>+ הוסיפי</button>
+            <input type="number" value={qty} onChange={e => setQty(e.target.value)}
+              style={{ width: 65, padding: '8px', borderRadius: 10, border: '1.5px solid ' + accent, fontSize: 13, textAlign: 'center', outline: 'none' }} />
+            <span style={{ fontSize: 13, color: '#555', flexShrink: 0 }}>{selected.unit}</span>
+            {previewCal !== null && <span style={{ fontSize: 12, color: accent, fontWeight: 700 }}>≈ {previewCal} קל</span>}
+          </div>
+          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, textAlign: 'right' }}>
+            {selected.base === 100
+              ? <>ל-100 גרם: {cal100display} קל | ח׳ {prot100display} | פחמ׳ {carbs100display}</>
+              : <>ל{selected.unit}: {selected.cal} קל | ח׳ {selected.prot} | פחמ׳ {selected.carbs}</>
+            }
+            {recQtyHint && recQtyHint !== Number(qty) && (
+              <span style={{ marginRight: 8, color: accent, fontWeight: 700 }}>  ← מומלץ {recQtyHint} {selected.unit} להשלמת יעד</span>
+            )}
+          </div>
         </div>
       )}
 
@@ -2536,6 +2573,10 @@ export default function PlanApp({ clientName, userPassword }) {
   const lunchCarbBudget = targets ? Math.round(targets.carbs / 2) : 0
   const lunchProtRows = buildBudgetRows(filteredProt, protChecks, protQty, protCheckOrder, lunchProtBudget, nutritionData, UNIT_PROTEIN_ITEMS, 'protein')
   const lunchCarbRows = buildBudgetRows(filteredCarbs, carbChecks, carbQty, carbCheckOrder, lunchCarbBudget, nutritionData, null, 'carbs')
+  const lunchProtActual = lunchProtRows.filter(r => r.isChecked).reduce((s, r) => s + r.macroDisplay, 0) + calcExtraProt() + lunchOther.reduce((s, it) => s + (it.prot || 0), 0)
+  const lunchCarbActual = lunchCarbRows.filter(r => r.isChecked).reduce((s, r) => s + r.macroDisplay, 0) + lunchOther.reduce((s, it) => s + (it.carbs || 0), 0)
+  const lunchProtRemain = Math.max(0, lunchProtBudget - lunchProtActual)
+  const lunchCarbRemain = Math.max(0, lunchCarbBudget - lunchCarbActual)
 
   if (!setupDone) {
     return (
@@ -3721,7 +3762,7 @@ export default function PlanApp({ clientName, userPassword }) {
           {PLAN.veggieOptions.map(o => <CheckRow key={o.id} id={o.id} text={o.text} accent={C.teal} checked={!!veggieChecks[o.id]} onToggle={id => setVeggieChecks(v => ({ ...v, [id]: !v[id] }))} />)}
           <FreeText value={lunchFree} onChange={setLunchFree} placeholder="פרטים נוספים על הצהריים..." />
           <ExtraCal value={lunchExtraCal} onChange={setLunchExtraCal} valueProt={lunchExtraProt} onChangeProt={setLunchExtraProt} />
-          <FoodOtherSearch items={lunchOther} onItemsChange={setLunchOther} accent={C.greenMid} />
+          <FoodOtherSearch items={lunchOther} onItemsChange={setLunchOther} accent={C.greenMid} protRemain={lunchProtRemain} carbRemain={lunchCarbRemain} />
           <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
           <ScanCorrection desc={scanDesc} cal={scanCalories} onChangeCal={setScanCalories} prot={scanProtein} onChangeProt={setScanProtein} fat={scanFat} onChangeFat={setScanFat} carbs={scanCarbs} onChangeCarbs={setScanCarbs} onReset={() => { setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0) }} />
         </Section>
