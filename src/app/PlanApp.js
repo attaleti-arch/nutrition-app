@@ -1886,6 +1886,9 @@ export default function PlanApp({ clientName, userPassword }) {
   const [lunchOther, setLunchOther] = useState([])
   const [erevOther, setErevOther] = useState([])
   const [benayimOther, setBenayimOther] = useState([])
+  const [bokerFilter, setBokerFilter] = useState('')
+  const [lunchFilter, setLunchFilter] = useState('')
+  const [erevFilter, setErevFilter] = useState('')
 
   const fem = userGender !== 'זכר'
   const gf = (f, m) => fem ? f : m
@@ -3560,28 +3563,29 @@ export default function PlanApp({ clientName, userPassword }) {
         <Section title="ארוחת בוקר" icon="☀️" accent={C.orange} light={C.orangeLight} defaultOpen={true} cardBg="#fffdf8" cardBorder="#fed7aa">
           <div style={{ fontSize: 12, color: '#9ca3af', padding: '8px 0 4px', textAlign: 'right' }}>{PLAN.bokerSnack}</div>
           <YesNo value={hadSnack} onChange={setHadSnack} labelYes="✅ אכלתי חטיף" labelNo="❌ דילגתי" accent={C.orange} />
-          {filteredBokerProtein.length > 0 && (
+          <input value={bokerFilter} onChange={e => setBokerFilter(e.target.value)} placeholder="🔍 סננ/י מאכל בתפריט הבוקר..." style={{ width: '100%', padding: '7px 12px', borderRadius: 10, border: '1.5px solid #fed7aa', fontSize: 13, outline: 'none', boxSizing: 'border-box', textAlign: 'right', direction: 'rtl', marginTop: 6, marginBottom: 2, background: bokerFilter ? '#fff7ed' : '#fafafa' }} />
+          {filteredBokerProtein.filter(i => !bokerFilter || i.text.includes(bokerFilter)).length > 0 && (
             <>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.orange, marginBottom: 4, marginTop: 4, textAlign: 'right' }}>🥛 חלבון</div>
-              {filteredBokerProtein.map(item => item.gramQty
+              {filteredBokerProtein.filter(i => !bokerFilter || i.text.includes(bokerFilter)).map(item => item.gramQty
                 ? <GramQtyCheckRow key={item.id} item={item} accent={C.orange} checked={!!checks[item.id]} qty={checksQty[item.id]} nutritionItem={nutritionData[nutritionId(item.id)]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setChecksQty(q => ({ ...q, [item.id]: v }))} />
                 : item.calPerSlice
                 ? <SliceQtyRow key={item.id} item={item} accent={C.orange} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
                 : <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
             </>
           )}
-          {filteredBokerCarbs.length > 0 && (
+          {filteredBokerCarbs.filter(i => !bokerFilter || i.text.includes(bokerFilter)).length > 0 && (
             <>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#d97706', marginBottom: 4, marginTop: 8, textAlign: 'right' }}>🍞 פחמימה</div>
-              {filteredBokerCarbs.map(item => item.calPerSlice
+              {filteredBokerCarbs.filter(i => !bokerFilter || i.text.includes(bokerFilter)).map(item => item.calPerSlice
                 ? <SliceQtyRow key={item.id} item={item} accent={C.orange} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
                 : <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
             </>
           )}
-          {filteredBokerExtra.length > 0 && (
+          {filteredBokerExtra.filter(i => !bokerFilter || i.text.includes(bokerFilter)).length > 0 && (
             <>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', marginBottom: 4, marginTop: 8, textAlign: 'right' }}>🌿 נוסף</div>
-              {filteredBokerExtra.map(item => <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
+              {filteredBokerExtra.filter(i => !bokerFilter || i.text.includes(bokerFilter)).map(item => <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
             </>
           )}
           <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות לבוקר:</div>
@@ -3637,8 +3641,9 @@ export default function PlanApp({ clientName, userPassword }) {
                 )
               })()}
 
+              <input value={lunchFilter} onChange={e => setLunchFilter(e.target.value)} placeholder="🔍 סננ/י מאכל בתפריט הצהריים..." style={{ width: '100%', padding: '7px 12px', borderRadius: 10, border: '1.5px solid #86efac', fontSize: 13, outline: 'none', boxSizing: 'border-box', textAlign: 'right', direction: 'rtl', marginBottom: 6, background: lunchFilter ? '#f0fdf4' : '#fafafa' }} />
               <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>פחמימה:</div>
-              {lunchCarbRows.map(({ o, isChecked, recQty, calDisplay }) => {
+              {lunchCarbRows.filter(({ o }) => !lunchFilter || o.text.includes(lunchFilter)).map(({ o, isChecked, recQty, calDisplay }) => {
                 return (
                   <div key={o.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -3671,7 +3676,7 @@ export default function PlanApp({ clientName, userPassword }) {
               })}
 
               <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '10px 0 2px', textAlign: 'right' }}>חלבון:</div>
-              {lunchProtRows.map(({ o, unitItem, isChecked, recQty, calDisplay }) => {
+              {lunchProtRows.filter(({ o }) => !lunchFilter || o.text.includes(lunchFilter)).map(({ o, unitItem, isChecked, recQty, calDisplay }) => {
                 return (
                   <div key={o.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -3767,7 +3772,8 @@ export default function PlanApp({ clientName, userPassword }) {
         </Section>
 
         <Section title="ארוחת ערב" icon="🌙" accent={C.purple} light={C.purpleLight} cardBg="#fffdf8" cardBorder="#fed7aa">
-          {filteredErev.map(item => item.gramQty
+          <input value={erevFilter} onChange={e => setErevFilter(e.target.value)} placeholder="🔍 סננ/י מאכל בתפריט הערב..." style={{ width: '100%', padding: '7px 12px', borderRadius: 10, border: '1.5px solid #d8b4fe', fontSize: 13, outline: 'none', boxSizing: 'border-box', textAlign: 'right', direction: 'rtl', marginBottom: 6, background: erevFilter ? '#faf5ff' : '#fafafa' }} />
+          {filteredErev.filter(i => !erevFilter || i.text.includes(erevFilter)).map(item => item.gramQty
             ? <GramQtyCheckRow key={item.id} item={item} accent={C.purple} checked={!!checks[item.id]} qty={checksQty[item.id]} nutritionItem={nutritionData[nutritionId(item.id)]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setChecksQty(q => ({ ...q, [item.id]: v }))} />
             : item.calPerSlice
             ? <SliceQtyRow key={item.id} item={item} accent={C.purple} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
