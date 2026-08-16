@@ -3578,7 +3578,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     ].filter(({ key }) => journeyAnswers[key]).map(({ key, q }) => (
                       <div key={key} style={{ marginBottom: 10 }}>
                         <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, marginBottom: 3 }}>{q}</div>
-                        <div style={{ fontSize: 13, color: '#1a1a1a', background: '#fff', borderRadius: 8, padding: '8px 12px', lineHeight: 1.7, textAlign: 'right', border: '1px solid #d1fae5' }}>{journeyAnswers[key]}</div>
+                        <textarea value={journeyAnswers[key] || ''} onChange={e => setJourneyAnswers(a => ({ ...a, [key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #d1fae5', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, background: '#fff', fontFamily: 'sans-serif' }} />
                       </div>
                     ))}
                   </div>
@@ -3826,7 +3826,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     ].filter(({ key }) => journeyAnswers[key]).map(({ key, q }) => (
                       <div key={key} style={{ marginBottom: 10 }}>
                         <div style={{ fontSize: 11, color: '#2563eb', fontWeight: 700, marginBottom: 3 }}>{q}</div>
-                        <div style={{ fontSize: 13, color: '#1a1a1a', background: '#fff', borderRadius: 8, padding: '8px 12px', lineHeight: 1.7, textAlign: 'right', border: '1px solid #dbeafe' }}>{journeyAnswers[key]}</div>
+                        <textarea value={journeyAnswers[key] || ''} onChange={e => setJourneyAnswers(a => ({ ...a, [key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #dbeafe', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, background: '#fff', fontFamily: 'sans-serif' }} />
                       </div>
                     ))}
                   </div>
