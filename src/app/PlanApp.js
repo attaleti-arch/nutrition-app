@@ -3227,18 +3227,25 @@ export default function PlanApp({ clientName, userPassword }) {
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>מטרה, חזון ומשאבים</div>
                 </div>
                 {[
-                  { key: 'goal_reason', section: 'המטרה', q: 'מה הביא אותך לכאן?', hint: 'מה גרם לך להחליט שעכשיו הזמן' },
-                  { key: 'goal_what', section: 'המטרה', q: 'מה את רוצה? איך ייראה השינוי עבורך?', hint: 'גוף, אנרגיה, לבוש, תחושה' },
-                  { key: 'goal_why', section: 'המטרה', q: 'למה זה חשוב לך?', hint: 'מה יש מאחורי הרצון?' },
-                  { key: 'goal_proof', section: 'המטרה', q: 'איך תדעי שהגעת?', hint: 'מה תרגישי, תראי, תשמעי' },
-                  { key: 'vision_see', section: 'החזון', q: 'כשתגיעי למטרה — מה תראי?', hint: 'מה נמצא מסביבך?' },
-                  { key: 'vision_hear', section: 'החזון', q: 'מה תשמעי?', hint: 'קולות, מילים' },
-                  { key: 'vision_feel', section: 'החזון', q: 'מה תרגישי בגוף?', hint: 'קלילות, חום, כוח' },
-                  { key: 'ecology_keep', section: 'משאבים', q: 'האם יש משהו שאת מפחדת לאבד?', hint: 'לפעמים השינוי מאיים — מה יכול להיות קשה?' },
-                  { key: 'resources_has', section: 'משאבים', q: 'מה כבר יש לך שיעזור לך?', hint: 'כוחות, תכונות, אנשים' },
-                  { key: 'resources_past', section: 'משאבים', q: 'מה עזר לך בעבר כשהצלחת?', hint: 'רגע שבו התגברת' },
-                  { key: 'vaccine_moment', section: 'הצעד', q: 'מהו הרגע הכי קשה ביום?', hint: 'שעה, מצב, רגש' },
-                  { key: 'first_step', section: 'הצעד', q: 'מה הצעד הראשון שתעשי השבוע?', hint: 'קטן וריאלי' },
+                  { key: 'goal_reason',    section: 'המטרה',    q: 'מה הביא אותך לכאן?',                             hint: 'מה גרם לך להחליט שעכשיו הזמן' },
+                  { key: 'goal_what',      section: 'המטרה',    q: 'מה את רוצה? איך ייראה השינוי עבורך?',           hint: 'גוף, אנרגיה, לבוש, תחושה' },
+                  { key: 'goal_context',   section: 'המטרה',    q: 'באיזה הקשר? מתי? עם מי? איפה?',                  hint: 'סיטואציות ספציפיות, שעות, אנשים' },
+                  { key: 'goal_why',       section: 'המטרה',    q: 'למה זה חשוב לך?',                               hint: 'מה יש מאחורי הרצון?' },
+                  { key: 'goal_proof',     section: 'המטרה',    q: 'איך תדעי שהגעת?',                               hint: 'מה תרגישי, תראי, תשמעי' },
+                  { key: 'vision_see',     section: 'החזון',    q: 'כשתגיעי למטרה — מה תראי?',                       hint: 'מה נמצא מסביבך?' },
+                  { key: 'vision_hear',    section: 'החזון',    q: 'מה תשמעי?',                                      hint: 'קולות, מילים' },
+                  { key: 'vision_feel',    section: 'החזון',    q: 'מה תרגישי בגוף?',                               hint: 'קלילות, חום, כוח' },
+                  { key: 'ecology_keep',   section: 'הרמוניה',  q: 'האם יש משהו שאת מפחדת לאבד?',                   hint: 'לפעמים השינוי מאיים — מה יכול להיות קשה?' },
+                  { key: 'ecology_harmony',section: 'הרמוניה',  q: 'איך תשמרי על מה שחשוב לך בתוך השינוי?',        hint: 'איך לשמור על מה שאהבת, גם תוך שינוי' },
+                  { key: 'ecology_who',    section: 'הרמוניה',  q: 'במי תלויה השגת המטרה?',                          hint: 'האם זה תלוי בך? במשפחה? בגורמים חיצוניים?' },
+                  { key: 'belief_hard',    section: 'אמונות',   q: 'מה גורם לך להרגיש שזה קשה או בלתי אפשרי?',     hint: 'מה המשפט שעולה לך כשאת חושבת על זה?' },
+                  { key: 'belief_when',    section: 'אמונות',   q: 'מתי החלטת שזה המצב?',                            hint: 'ייתכן שאירוע בעבר יצר את האמונה הזאת' },
+                  { key: 'resources_has',  section: 'משאבים',   q: 'מה כבר יש לך שיעזור לך?',                       hint: 'כוחות, תכונות, אנשים' },
+                  { key: 'resources_past', section: 'משאבים',   q: 'מה עזר לך בעבר כשהצלחת?',                       hint: 'רגע שבו התגברת' },
+                  { key: 'vaccine_moment', section: 'הצעד',     q: 'מהו הרגע הכי קשה ביום?',                        hint: 'שעה, מצב, רגש' },
+                  { key: 'vaccine_action', section: 'הצעד',     q: 'מה הפעולה הקטנה שתעשי גם ביום הכי קשה?',       hint: 'קטנה ומציאותית — גם כשאין כוח' },
+                  { key: 'vaccine_anchor', section: 'הצעד',     q: 'איזה משפט תגידי לעצמך ברגעים של עומס?',         hint: 'משפט שמרגיש אמיתי לך, לא סיסמה' },
+                  { key: 'first_step',     section: 'הצעד',     q: 'מה הצעד הראשון שתעשי השבוע?',                   hint: 'קטן וריאלי' },
                 ].reduce((acc, item) => { const last = acc[acc.length-1]; if (!last || last.s !== item.section) acc.push({ s: item.section, items: [item] }); else last.items.push(item); return acc }, []).map(({ s, items }) => (
                   <div key={s} style={{ marginBottom: 14 }}>
                     <div style={{ fontWeight: 800, fontSize: 11, color: '#7c3aed', letterSpacing: 1, marginBottom: 8, paddingRight: 2 }}>{s.toUpperCase()}</div>
