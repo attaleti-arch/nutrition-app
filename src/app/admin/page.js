@@ -3788,22 +3788,50 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <div style={{ padding: '0 16px 16px' }}>
                     <button onClick={async () => {
                       setRootsDocLoading(true); setRootsClientDocPreview('')
-                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. כתבי מסמך שיקוף אישי ל-' + (selectedClient?.name||'') + ' לאחר פגישת השורשים.\n\n' +
-                        (rootsAnalysis ? 'ניתוח שהכנת לפגישה:\n' + rootsAnalysis.substring(0,2000) + '\n\n' : '') +
-                        (rootsSessionNotes.trim() ? 'מה עלה בפגישה:\n' + rootsSessionNotes + '\n\n' : '') +
-                        'כתבי בעברית, גוף שני נקבה, חמה ואישית. מבנה קבוע — ללא הקדמה, ישר לתוכן:\n\n' +
-                        '---\n\n' +
-                        '🏠 **מה עלה מהבית שגדלת בו**\n[2-3 משפטים ספציפיים על מה שעלה]\n\n' +
-                        '---\n\n' +
-                        '🔄 **מה מועבר הלאה**\n[תארי את הדפוס הדורי הספציפי שזוהה]\n\n' +
-                        '---\n\n' +
-                        '💡 **האסימון שנפל**\n[רגע ספציפי שהתחבר, בשפתה]\n\n' +
-                        '---\n\n' +
-                        '🌱 **מה את לוקחת**\n[2-3 דברים קונקרטיים שלוקחת מהפגישה]\n\n' +
-                        '---\n\n' +
-                        '🚀 **קדימה במסע**\n[מה להמשיך לשים לב אליו]\n\n' +
-                        '---\n\n' +
-                        'ללא מבוא. ללא סיכום. ללא הסברים בסוגריים. רק התוכן עצמו — חם, ממוקד, שלה.'
+                      const rootsQA = [
+                        ['האוכל בבית שגדלת בו', journeyAnswers.roots_home],
+                        ['הרגשה בגוף בתוך המשפחה', journeyAnswers.roots_identity],
+                        ['מה מזהה שמגיע מהבית', journeyAnswers.roots_patterns],
+                        ['מה עוברת לילדים', journeyAnswers.roots_passing],
+                        ['מה קורה אחרי שבועיים-שלושה בתהליך', journeyAnswers.roots_beliefs],
+                        ['מה כבר עושה טוב עם אוכל', journeyAnswers.roots_resources],
+                        ['משפט מהבית שעדיין מלווה', journeyAnswers.roots_sentence],
+                        ['מתי האוכל הופך ליותר מרעב', journeyAnswers.roots_trigger],
+                        ['מה מקבלת מהאוכל ברגעים האלה', journeyAnswers.roots_comfort],
+                        ['הרגל שעובר מדור לדור', journeyAnswers.roots_generation],
+                        ['מה הייתה משנה ביחסים עם אוכל', journeyAnswers.roots_change],
+                        ['מה מפחיד בתהליך', journeyAnswers.roots_fear],
+                        ['מה מקווה שיקרה', journeyAnswers.roots_hope],
+                      ].filter(([,v]) => v?.trim()).map(([q,a]) => q + ':\n' + a).join('\n\n')
+                      const prompt = `אתה אתי אטל — יועצת בריאות ותזונה התנהגותית.
+
+כתבי מסמך שיקוף עמוק ואישי ל-${selectedClient?.name||''} אחרי פגישת השורשים.
+
+זה לא סיכום — זה ראי אישי שהיא תקרא שוב ושוב בין הפגישות. כתבי אותו כאילו אתי יושבת לידה ומדברת אליה ישירות. לא פסיכולוגיה. לא תיאוריה. אנושי, חם, ספציפי.
+
+**הכלל המרכזי:**
+על כל דפוס שמופיע — ספרי מאיפה הוא הגיע, מה הגוף שלה למד ומדוע זה הגיוני שנוצר. ואז הסבירי איך היא יכולה לבחור אחרת מתוך הבנה — לא מתוך כוח רצון. שם ההבדל בין תזונאית לבין מה שאנחנו עושות.
+
+תשובות הלקוחה מהשאלון:
+${rootsQA || '(לא מולא שאלון)'}
+
+${rootsAnalysis ? '---\nניתוח שהכנת לפגישה (השתמשי בתובנות שלו — לא בפורמט שלו):\n' + rootsAnalysis.substring(0,5000) + '\n---\n\n' : ''}${rootsSessionNotes.trim() ? 'מה גילינו בפגישה הפיזית — הערות אתי:\n' + rootsSessionNotes + '\n\n' : ''}
+---
+
+כתבי בעברית, גוף שני נקבה. ללא מבוא. ישר לתוכן.
+
+בחרי 5-7 נושאים שעלו, לפי מה שספציפי ומשמעותי לה. הפרידי בין חלק לחלק בשורה של --- בלבד.
+
+לכל חלק:
+- כותרת קצרה שמתארת מה הוא (לא קוד — שם אנושי)
+- 3-5 פסקאות של 4-6 משפטים כל אחת
+- ציטוטים מדברים שכתבה — בשפתה שלה
+- הסבר של המאחור: מה הגוף למד? מדוע הדפוס הגיוני? ממה הוא נוצר?
+- חיבור ישיר: ה'ילדה' שהייתה → האישה שהיא היום
+- כיצד לבחור אחרת: לא "תנסי יותר" — אלא "עכשיו שאת יודעת מאיפה זה בא, אפשר..."
+
+אל תמלאי תבנית — כתבי מסמך שחשוב לה לקרוא.
+ללא סוגריים הסבריים. ללא רשימות של מקפים. פסקאות רציפות, אישיות, נוגעות.`
                       let result = ''
                       try {
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
