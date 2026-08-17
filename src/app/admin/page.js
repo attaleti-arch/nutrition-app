@@ -3286,14 +3286,39 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     {selectedClient?.outcome_doc && !journeyClientDocPreview && (
                       <div style={{ border: '2px solid #16a34a', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
                         <div style={{ background: '#15803d', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>✅ המסמך שנשלח ללקוחה</div>
+                          <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>✅ המסמך שנשלח ללקוחה — תצוגה כמוה</div>
                           <div style={{ display: 'flex', gap: 6 }}>
                             <button onClick={() => printAnalysisHTML('מסמך מסע המטרה', selectedClient.outcome_doc)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>🖨️ הדפס</button>
                             <button onClick={() => setJourneyClientDocPreview(selectedClient.outcome_doc)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>✏️ ערכי</button>
                           </div>
                         </div>
-                        <div style={{ padding: '14px 16px', maxHeight: 320, overflowY: 'auto', background: '#f0fdf4', fontSize: 13, color: '#1a1a1a', lineHeight: 1.9, textAlign: 'right', direction: 'rtl', whiteSpace: 'pre-wrap', fontFamily: 'sans-serif' }}>
-                          {selectedClient.outcome_doc}
+                        <div style={{ padding: '12px 14px', maxHeight: 480, overflowY: 'auto', background: '#f8fafc', direction: 'rtl' }}>
+                          {(() => {
+                            const BG = ['#f0fdf4','#eff6ff','#fffbeb','#fef2f2','#faf5ff','#f0fdfa','#fff7ed']
+                            const BD = ['#16a34a','#2563eb','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
+                            const TC = ['#15803d','#1d4ed8','#b45309','#b91c1c','#6d28d9','#0f766e','#c2410c']
+                            const inl = s => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                            const renderLine = (line, accent, idx) => {
+                              if (line.startsWith('- ') || line.startsWith('• ')) return <div key={idx} style={{ display:'flex', gap:6, margin:'2px 0' }}><span style={{ color:accent, fontWeight:700, flexShrink:0 }}>•</span><span dangerouslySetInnerHTML={{ __html: inl(line.slice(2)) }} /></div>
+                              if (line.trim() === '') return <div key={idx} style={{ height:4 }} />
+                              return <div key={idx} style={{ margin:'2px 0', lineHeight:1.8 }} dangerouslySetInnerHTML={{ __html: inl(line) }} />
+                            }
+                            const sections = selectedClient.outcome_doc.split(/\n\s*---\s*\n/).filter(Boolean)
+                            if (sections.length <= 1) {
+                              return <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.9, whiteSpace: 'pre-wrap', fontFamily: 'sans-serif', textAlign: 'right' }}>{selectedClient.outcome_doc}</div>
+                            }
+                            return sections.map((section, i) => {
+                              const lines = section.trim().split('\n')
+                              const firstLine = lines[0].replace(/^#+\s*/, '').replace(/\*\*/g, '').trim()
+                              const rest = lines.slice(1)
+                              return (
+                                <div key={i} style={{ background: BG[i % BG.length], borderRadius: 14, padding: '14px 16px', marginBottom: 10, border: '1.5px solid ' + BD[i % BD.length] }}>
+                                  {firstLine && <div style={{ fontWeight: 800, fontSize: 14, color: TC[i % TC.length], marginBottom: 6 }}>{firstLine}</div>}
+                                  <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.8 }}>{rest.map((l, j) => renderLine(l, BD[i % BD.length], j))}</div>
+                                </div>
+                              )
+                            })
+                          })()}
                         </div>
                       </div>
                     )}
