@@ -3282,25 +3282,44 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} onBlur={() => saveSessionKey('session_notes', sessionNotes)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid ' + (adminRecordingKey === 'session_notes' ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7 }} />
                       <button onClick={() => adminRecordingKey === 'session_notes' ? stopAdminSpeech() : startAdminSpeech('session_notes', t => setSessionNotes(t))} style={{ position: 'absolute', left: 8, bottom: 8, padding: '4px 10px', borderRadius: 8, border: 'none', background: adminRecordingKey === 'session_notes' ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === 'session_notes' ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{adminRecordingKey === 'session_notes' ? '⏹ עצרי' : '🎙 הקלטה'}</button>
                     </div>
+                    {/* ── מסמך שנשלח כבר ── */}
+                    {selectedClient?.outcome_doc && !journeyClientDocPreview && (
+                      <div style={{ border: '2px solid #16a34a', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
+                        <div style={{ background: '#15803d', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>✅ המסמך שנשלח ללקוחה</div>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button onClick={() => printAnalysisHTML('מסמך מסע המטרה', selectedClient.outcome_doc)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>🖨️ הדפס</button>
+                            <button onClick={() => setJourneyClientDocPreview(selectedClient.outcome_doc)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>✏️ ערכי</button>
+                          </div>
+                        </div>
+                        <div style={{ padding: '14px 16px', maxHeight: 320, overflowY: 'auto', background: '#f0fdf4', fontSize: 13, color: '#1a1a1a', lineHeight: 1.9, textAlign: 'right', direction: 'rtl', whiteSpace: 'pre-wrap', fontFamily: 'sans-serif' }}>
+                          {selectedClient.outcome_doc}
+                        </div>
+                      </div>
+                    )}
+
                     <button onClick={async () => {
                       setJourneyDocLoading(true)
                       setJourneyClientDocPreview('')
+                      setJourneyDocSent(false)
                       const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, sessionNotes, outputType: 'clientDoc' }) })
                       const data = await res.json()
                       if (data.result) { setJourneyClientDocPreview(data.result); saveSessionKey('journey_client_doc_draft', data.result) }
                       setJourneyDocLoading(false)
                     }} disabled={journeyDocLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyDocLoading ? '#9ca3af' : '#7c3aed', color: '#fff', border: 'none', cursor: journeyDocLoading ? 'default' : 'pointer', fontWeight: 700, fontSize: 15, marginBottom: journeyClientDocPreview ? 12 : 0 }}>
-                      {journeyDocLoading ? '⏳ מפיק...' : '🧭 הפק מסמך ללקוחה (תצוגה מקדימה)'}
+                      {journeyDocLoading ? '⏳ מפיק...' : selectedClient?.outcome_doc ? '🔄 הפק מסמך חדש' : '🧭 הפק מסמך ללקוחה (תצוגה מקדימה)'}
                     </button>
 
                     {journeyClientDocPreview && (
-                      <div style={{ border: '2px solid #7c3aed', borderRadius: 14, overflow: 'hidden' }}>
-                        <div style={{ background: '#7c3aed', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה — לפני שליחה ללקוחה</div>
-                          <button onClick={() => setJourneyClientDocPreview('')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+                      <div style={{ border: '2px solid ' + (journeyDocSent ? '#16a34a' : '#7c3aed'), borderRadius: 14, overflow: 'hidden' }}>
+                        <div style={{ background: journeyDocSent ? '#15803d' : '#7c3aed', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>
+                            {journeyDocSent ? '✅ נשמר ונשלח אליה — ניתן לעדכן' : '👁️ תצוגה מקדימה — לפני שליחה ללקוחה'}
+                          </div>
+                          <button onClick={() => { setJourneyClientDocPreview(''); setJourneyDocSent(false) }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
                         </div>
-                        <div style={{ padding: 16, maxHeight: 400, overflowY: 'auto', background: '#faf5ff' }}>
-                          <textarea value={journeyClientDocPreview} onChange={e => setJourneyClientDocPreview(e.target.value)} rows={16} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                        <div style={{ padding: 16, maxHeight: 400, overflowY: 'auto', background: journeyDocSent ? '#f0fdf4' : '#faf5ff' }}>
+                          <textarea value={journeyClientDocPreview} onChange={e => setJourneyClientDocPreview(e.target.value)} rows={16} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid ' + (journeyDocSent ? '#86efac' : '#e5e7eb'), fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
                         </div>
                         <div style={{ padding: '12px 16px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           <button onClick={async () => {
@@ -3308,11 +3327,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                             await supabase.from('clients').update({ outcome_doc: journeyClientDocPreview }).eq('id', selectedClient.id)
                             setSelectedClient(prev => ({ ...prev, outcome_doc: journeyClientDocPreview }))
                             setJourneyDocSent(true)
-                            setJourneyClientDocPreview('')
                             setJourneyDocApproving(false)
-                            setTimeout(() => setJourneyDocSent(false), 4000)
                           }} disabled={journeyDocApproving} style={{ flex: 2, minWidth: 120, padding: 12, borderRadius: 10, background: '#16a34a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                            {journeyDocApproving ? '⏳...' : '✅ אשרי ושלחי אליה'}
+                            {journeyDocApproving ? '⏳...' : journeyDocSent ? '🔄 עדכני שוב' : '✅ אשרי ושלחי אליה'}
                           </button>
                           <button onClick={() => printAnalysisHTML('מסמך מסע המטרה', journeyClientDocPreview)} style={{ flex: 1, minWidth: 80, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                             🖨️ הדפס
@@ -3320,11 +3337,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                           <button onClick={() => downloadAnalysisHTML('מסמך מסע המטרה', journeyClientDocPreview)} style={{ flex: 1, minWidth: 80, padding: 12, borderRadius: 10, background: '#f0fdf4', color: '#15803d', border: '1.5px solid #86efac', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                             ⬇️ HTML
                           </button>
-                          <button onClick={() => setJourneyClientDocPreview('')} style={{ flex: 1, minWidth: 60, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                            ✕ בטלי
+                          <button onClick={() => { setJourneyClientDocPreview(''); setJourneyDocSent(false) }} style={{ flex: 1, minWidth: 60, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                            ✕ סגרי
                           </button>
                         </div>
-                        {journeyDocSent && <div style={{ textAlign: 'center', padding: '8px', color: '#16a34a', fontWeight: 700 }}>✅ נשמר אצלה!</div>}
                       </div>
                     )}
                   </div>
