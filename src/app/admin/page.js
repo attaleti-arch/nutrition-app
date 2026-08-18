@@ -680,6 +680,7 @@ export default function AdminPage() {
   const [rootsClientDocPreview, setRootsClientDocPreview] = useState('')
   const [bodyClientDocPreview, setBodyClientDocPreview] = useState('')
   const [childClientDocPreview, setChildClientDocPreview] = useState('')
+  const [atiVoice, setAtiVoice] = useState(() => { try { return localStorage.getItem('ati_voice') || '' } catch { return '' } })
   const [rootsDocLoading, setRootsDocLoading] = useState(false)
   const [bodyDocLoading, setBodyDocLoading] = useState(false)
   const [childDocLoading, setChildDocLoading] = useState(false)
@@ -3820,7 +3821,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 תשובות הלקוחה מהשאלון:
 ${rootsQA || '(לא מולא שאלון)'}
 
-${rootsAnalysis ? '---\nניתוח לפגישה (השתמשי בתובנות — לא בפורמט):\n' + rootsAnalysis.substring(0,5000) + '\n---\n\n' : ''}${rootsSessionNotes.trim() ? 'מה עלה בפגישה הפיזית:\n' + rootsSessionNotes + '\n\n' : ''}
+${rootsAnalysis ? '---\nניתוח לפגישה (השתמשי בתובנות — לא בפורמט):\n' + rootsAnalysis.substring(0,5000) + '\n---\n\n' : ''}${rootsSessionNotes.trim() ? 'מה עלה בפגישה הפיזית:\n' + rootsSessionNotes + '\n\n' : ''}${atiVoice.trim() ? '---\nדוגמאות לסגנון הכתיבה של אתי — כתבי בדיוק ככה:\n' + atiVoice.trim().substring(0, 3000) + '\n---\n\n' : ''}
 ---
 
 כתבי בעברית, גוף שני נקבה. ללא מבוא. ישר לתוכן.
@@ -4100,22 +4101,55 @@ ${rootsAnalysis ? '---\nניתוח לפגישה (השתמשי בתובנות —
                   <div style={{ padding: '0 16px 16px' }}>
                     <button onClick={async () => {
                       setBodyDocLoading(true); setBodyClientDocPreview('')
-                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. כתבי מסמך שיקוף אישי ל-' + (selectedClient?.name||'') + ' לאחר פגישת הגוף מדבר.\n\n' +
-                        (bodyAnalysis ? 'ניתוח שהכנת לפגישה:\n' + bodyAnalysis.substring(0,2000) + '\n\n' : '') +
-                        (bodySessionNotes.trim() ? 'מה עלה בפגישה:\n' + bodySessionNotes + '\n\n' : '') +
-                        'כתבי בעברית, גוף שני נקבה, חמה ואישית. מבנה קבוע — ללא הקדמה, ישר לתוכן:\n\n' +
-                        '---\n\n' +
-                        '🩺 **מה הגוף שלך אמר**\n[ההודעה הספציפית שזוהתה, בשפתה]\n\n' +
-                        '---\n\n' +
-                        '💔 **הקשר שגילינו**\n[רגש ← גוף — הקישור הספציפי]\n\n' +
-                        '---\n\n' +
-                        '🔬 **מנגנון שמעכשיו מובן**\n[משהו שהסתבר לה: סוכר / קורטיזול / שינה...]\n\n' +
-                        '---\n\n' +
-                        '🌿 **מה את לוקחת**\n[2-3 דברים קונקרטיים שלוקחת מהפגישה]\n\n' +
-                        '---\n\n' +
-                        '🚀 **קדימה במסע**\n[מה לשים לב אליו, מה לצפות]\n\n' +
-                        '---\n\n' +
-                        'ללא מבוא. ללא סיכום. ללא הסברים בסוגריים. רק התוכן עצמו — חם, ממוקד, שלה.'
+                      const bodyQA = [
+                        ['מה הגוף אומר לך כרגע', journeyAnswers.body_complaint],
+                        ['אילו סימנים מופיעים בגוף', journeyAnswers.body_signals],
+                        ['היה זמן שהגוף הרגיש אחרת', journeyAnswers.body_history],
+                        ['איפה בגוף את מרגישה רגשות', journeyAnswers.body_emotion],
+                        ['שינה ואנרגיה', journeyAnswers.body_energy],
+                        ['איך את יודעת שאת רעבה / שבעה', journeyAnswers.body_hunger],
+                        ['מה את כבר יודעת על הגוף שלך', journeyAnswers.body_knows],
+                        ['הגוף אומר: עד כאן', journeyAnswers.body_limit],
+                        ['מה עוזר לגוף להרגיש טוב', journeyAnswers.body_helps],
+                        ['מה הגוף היה מבקש ממך היום', journeyAnswers.body_request],
+                      ].filter(([,v]) => v?.trim()).map(([q,a]) => q + ':\n' + a).join('\n\n')
+                      const prompt = `את אתי אטל — יועצת בריאות ותזונה התנהגותית שיודעת לקרוא גוף ולדבר אליו בשפה שלו.
+
+שם הלקוחה: ${selectedClient?.name || ''}
+
+תשובות השאלון — קרי היטב:
+${bodyQA}
+${bodyAnalysis ? '\nהניתוח שהכנת לפגישה:\n' + bodyAnalysis.substring(0,5000) + '\n' : ''}${bodySessionNotes.trim() ? '\nמה עלה בפגישה:\n' + bodySessionNotes + '\n' : ''}
+המשימה שלך:
+כתבי מסמך אישי ל${selectedClient?.name || 'לקוחה'} שתחושתה תהיה "מישהי באמת הקשיבה לגוף שלי."
+
+לפני שמתחילה — זהי 2-3 רגעי האסימון המרכזיים: הרגעים שבהם ההודעה של הגוף הפכה ברורה. בני את כל המסמך סביבם.
+
+כתבי בעברית, גוף שני נקבה, ישירה וחמה. אל תתחילי עם "היי" או הקדמה — היכנסי ישר לתוכן. אל תכתבי הסברים בסוגריים.
+
+מבנה:
+---
+🩺 **ההודעה שהגוף שלך שלח**
+[לא סיכום — הקשבה עמוקה. מה הגוף מנסה לומר כבר הרבה זמן? כתבי כאילו את מתרגמת את שפתו. 3-5 משפטים, ספציפיים ונוגעים.]
+
+---
+💔 **הקישור שגילינו**
+[הרגש שמאחורי הסימפטום. לא "יש קשר בין X ל-Y" — אלא "כשאת חושבת ש... הגוף מגיב ב...". ספציפי לה.]
+
+---
+🔬 **מה שמעכשיו הגיוני**
+[הסבירי מנגנון אחד שהסתבר לה — ביולוגי, הורמונלי, עצבי — בשפה שהיא תוכל לקרוא לחברה בטלפון ולהסביר לה.]
+
+---
+🌿 **מה את לוקחת**
+[2-3 דברים קונקרטיים שהיא יוצאת איתם. לא "שתי מים" — דבר שמחובר למה שעלה.]
+
+---
+🚀 **מה הגוף מבקש ממך עכשיו**
+[לא הנחיה — הזמנה. דבר אחד שאם תעשי אותו השבוע, הגוף ירגיש שנשמע.]
+
+---
+${atiVoice.trim() ? '---\nדוגמאות לסגנון הכתיבה שלי — כתבי בדיוק ככה:\n' + atiVoice.trim().substring(0,3000) + '\n---\n\n' : ''}המסמך צריך לגרום לה להרגיש: הגוף שלי לא מתקלקל — הוא מדבר אליי.`
                       let result = ''
                       try {
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
@@ -4126,7 +4160,7 @@ ${rootsAnalysis ? '---\nניתוח לפגישה (השתמשי בתובנות —
                       if (result) saveSessionKey('body_session_notes', bodySessionNotes)
                       setBodyDocLoading(false)
                     }} disabled={bodyDocLoading} style={{ width: '100%', padding: 13, borderRadius: 12, background: bodyDocLoading ? '#9ca3af' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
-                      {bodyDocLoading ? '⏳ מפיקה...' : '← הפיקי סיכום ללקוחה'}
+                      {bodyDocLoading ? '⏳ מפיקה...' : bodyFeedback ? '🔄 הפק מסמך חדש' : '← הפיקי סיכום ללקוחה'}
                     </button>
                   </div>
                 </div>
@@ -4146,17 +4180,45 @@ ${rootsAnalysis ? '---\nניתוח לפגישה (השתמשי בתובנות —
                         setApprovingBodyDoc(true)
                         await supabase.from('client_profiles').update({ body_feedback: bodyClientDocPreview, body_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
                         saveSessionKey('body_session_notes', bodySessionNotes)
+                        setBodyFeedback(bodyClientDocPreview)
                         const phone = selectedClient.phone.replace(/^0/, '972')
                         const msg = 'היי ' + selectedClient.name + '! 🩺\n\nהסיכום האישי שלך מפגישת הגוף מדבר מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
                         window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                        setApprovingBodyDoc(false); setBodyDocSent(true); setBodyClientDocPreview('')
-                        setTimeout(() => setBodyDocSent(false), 4000)
+                        setApprovingBodyDoc(false); setBodyDocSent(true)
                       }} disabled={approvingBodyDoc} style={{ flex: 2, padding: 12, borderRadius: 10, background: bodyDocSent ? '#16a34a' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {approvingBodyDoc ? '⏳...' : bodyDocSent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
+                        {approvingBodyDoc ? '⏳...' : bodyDocSent ? '🔄 עדכני שוב' : '✅ אשרי ושלחי ללקוחה'}
                       </button>
                       <button onClick={() => setBodyClientDocPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         ✕ בטלי
                       </button>
+                    </div>
+                  </div>
+                )}
+
+                {bodyFeedback && !bodyClientDocPreview && (
+                  <div style={{ background: '#f0fdf4', borderRadius: 18, border: '2px solid #16a34a', overflow: 'hidden', marginBottom: 16 }}>
+                    <div style={{ background: 'linear-gradient(135deg,#15803d,#16a34a)', padding: '14px 18px', color: '#fff' }}>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>✅ המסמך שנשלח ללקוחה — תצוגה כמוה</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>הפיקי מסמך חדש כדי לעדכן</div>
+                    </div>
+                    <div style={{ padding: 16, direction: 'rtl' }}>
+                      {(() => {
+                        const BG = ['#f0fdf4','#eff6ff','#fffbeb','#fef2f2','#faf5ff','#f0fdfa','#fff7ed']
+                        const BD = ['#16a34a','#2563eb','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
+                        const TC = ['#15803d','#1d4ed8','#b45309','#b91c1c','#6d28d9','#0f766e','#c2410c']
+                        const inl = s => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        const sections = bodyFeedback.split(/\n\s*---\s*\n/).filter(Boolean)
+                        if (sections.length <= 1) return <div style={{ fontSize: 13, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{bodyFeedback}</div>
+                        return sections.map((section, i) => {
+                          const lines = section.trim().split('\n')
+                          const firstLine = lines[0].replace(/^#+\s*/, '').replace(/\*\*/g, '').trim()
+                          const rest = lines.slice(1)
+                          return <div key={i} style={{ background: BG[i%BG.length], borderRadius: 14, padding: '14px 16px', marginBottom: 10, border: '1.5px solid '+BD[i%BD.length] }}>
+                            <div style={{ fontWeight: 800, fontSize: 14, color: TC[i%TC.length], marginBottom: 8 }} dangerouslySetInnerHTML={{ __html: inl(firstLine) }} />
+                            {rest.map((line, j) => line.trim() ? <div key={j} style={{ fontSize: 13, lineHeight: 1.8, color: '#374151', marginBottom: 3 }} dangerouslySetInnerHTML={{ __html: inl(line) }} /> : <div key={j} style={{ height: 4 }} />)}
+                          </div>
+                        })
+                      })()}
                     </div>
                   </div>
                 )}
@@ -4822,6 +4884,33 @@ ${rootsAnalysis ? '---\nניתוח לפגישה (השתמשי בתובנות —
               <button onClick={() => setShowLessonMode(true)} style={{ padding: '10px 20px', borderRadius: 12, background: '#fff', color: '#0f4c2a', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
                 📺 הצגי שיעור ללקוחה
               </button>
+            </div>
+
+            {/* ── קול אתי ── */}
+            <div style={{ background: '#fff', borderRadius: 16, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
+              <div style={{ background: 'linear-gradient(135deg,#6d28d9,#7c3aed)', padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#fff' }}>✍️ קול אתי — סגנון הכתיבה שלי</div>
+                  <div style={{ fontSize: 11, color: '#e9d5ff', marginTop: 2 }}>דוגמאות שאכתבי כאן יוזרקו לכל מסמך ללקוחה שה-AI מפיק</div>
+                </div>
+                {atiVoice && <div style={{ fontSize: 11, color: '#86efac', fontWeight: 700 }}>✅ נשמר</div>}
+              </div>
+              <div style={{ padding: 16 }}>
+                <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 10, lineHeight: 1.6 }}>
+                  הדביקי כאן קטעים מסיכומים שכתבת וגאה בהם — ככל שיותר דוגמאות, כך ה-AI ילמד טוב יותר לחקות את הסגנון שלך. ניתן להוסיף משפטים שרוצה שיופיעו, ביטויים אופייניים, ומבנים שעובדים.
+                </div>
+                <textarea
+                  value={atiVoice}
+                  onChange={e => setAtiVoice(e.target.value)}
+                  onBlur={() => { try { localStorage.setItem('ati_voice', atiVoice) } catch {} }}
+                  rows={10}
+                  placeholder={'לדוגמה:\n\nהמפגש שלנו התחיל באוכל, אבל די מהר גילינו שהסיפור שלך הוא לא באמת רק על מה וכמה את אוכלת...\n\nוככה בתוך האמונות האלו גדלת להיות האישה המהממת שאת היום. אבל היום את כבר לא אותה ילדה...\n\nאנחנו לא מנסות להפוך אותך ליותר ממושמעת. יש לך מספיק משמעת. אנחנו מלמדות משהו אחר...'}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e9d5ff', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }}
+                />
+                <button onClick={() => { try { localStorage.setItem('ati_voice', atiVoice) } catch {} }} style={{ marginTop: 10, padding: '8px 20px', borderRadius: 10, background: '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                  💾 שמרי סגנון
+                </button>
+              </div>
             </div>
 
             {/* מטרה */}
