@@ -868,6 +868,9 @@ function calcTargets(weight, height, age, gender, activity, goal) {
     protein,
     carbs: Math.round(remainCal * (split.carbs / carbFatTotal) / 4),
     fat: Math.round(remainCal * (split.fat / carbFatTotal) / 9),
+    // ✅ סיבים לפי 14 גרם לכל 1000 קל' מהיעד האישי — אותו חישוב בדיוק כמו בפאנל המאמנת,
+    // כדי שהמספר שהלקוחה רואה בצלחת יהיה זהה למספר שאתי רואה בדוח שלה
+    fiber: Math.round(calories * 14 / 1000),
   }
 }
 
@@ -927,19 +930,33 @@ function FloatingPlateBars({ bars }) {
 // גדלים לפי החלוקה האישית (welcome_doc_json.plate) אם קיימת.
 // לפני אכילה המקטע לבן; הצבע מתקדם בתוך המקטע ביחס להתקדמות עד 100%;
 // חריגה מעל 100% מסומנת במקטע אדום יחסי לגודל החריגה + האחוז.
-function LivePlate({ bars, split }) {
+function LivePlate({ bars, split, macros }) {
   const get = k => (bars.find(b => b.label === k) || { pct: 0 }).pct
-  const CX = 110, CY = 102, R = 90
+  // ✅ מידות נבחרו כך שתווית הגרמים לא נחתכת בשפת הצלחת, לא נדרסת ע"י קערית השומן
+  // ולא מתנגשת בתווית שכנה — בכל חלוקת צלחת אפשרית (נבדק על חלוקות קיצון).
+  const CX = 124, CY = 112, R = 104
+  const PILL_W = 64, PILL_H = 30, LABEL_R = 0.62, BOWL_R = 26
+  const m = macros || {}
   const raw = {
     veggies: split && split.veggies > 0 ? split.veggies : 45,
     protein: split && split.protein > 0 ? split.protein : 30,
     carbs: split && split.carbs > 0 ? split.carbs : 25,
   }
   const sum = raw.veggies + raw.protein + raw.carbs
+  const g = n => Math.round(n)
+  // ✅ מקטין את הגופן אם המחרוזת ארוכה מרוחב התווית — כך שגם יעד תלת-ספרתי
+  // או חריגה גדולה לעולם לא ייחתכו בשפת התווית
+  const fit = (str, base, maxW) => {
+    const w = String(str).length * base * 0.54
+    return w <= maxW ? base : Math.max(7, base * maxW / w)
+  }
   const SECTORS = [
-    { key: 'protein', name: 'חלבונים', color: '#ef8b3a', emojis: ['🍗', '🐟', '🥚', '🥩'] },
-    { key: 'carbs', name: 'פחמימות', color: '#d9a83c', emojis: ['🍞', '🍚', '🥔', '🌽'] },
-    { key: 'veggies', name: 'ירקות', color: '#7cb342', emojis: ['🍅', '🥦', '🥒', '🥬', '🥕', '🫑'] },
+    { key: 'protein', name: '🍗 חלבון (ג׳)', color: '#ef8b3a',
+      value: m.protein ? `${g(m.protein.eaten)}/${m.protein.target}` : '', big: true },
+    { key: 'carbs', name: '🍞 פחמימות (ג׳)', color: '#d9a83c',
+      value: m.carbs ? `${g(m.carbs.eaten)}/${m.carbs.target}` : '', big: true },
+    { key: 'veggies', name: '🥦 ירקות', color: '#7cb342',
+      value: m.veggies ? `${m.veggies.eaten}/${m.veggies.target} ארוחות` : '', big: false },
   ]
   function slicePath(r, a0, a1) {
     const x0 = CX + r * Math.cos(a0), y0 = CY + r * Math.sin(a0)
@@ -960,24 +977,16 @@ function LivePlate({ bars, split }) {
     const fillEnd = a0 + span * Math.min(100, pct) / 100
     // חריגה: מקטע אדום מסוף המקטע אחורה, יחסי לגודל החריגה (100% חריגה = כל המקטע)
     const overFrac = pct > 100 ? Math.min(1, (pct - 100) / 100) : 0
-    const nSlots = sec.emojis.length
-    const eSpan = span * 0.72
-    const slots = sec.emojis.map((e, i) => {
-      const t = nSlots === 1 ? 0.5 : i / (nSlots - 1)
-      const a = mid - eSpan / 2 + eSpan * t
-      const r = i % 2 === 0 ? R * 0.52 : R * 0.72
-      return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a), e }
-    })
-    const count = pct <= 0 ? 0 : Math.max(1, Math.min(nSlots, Math.round(Math.min(110, pct) / 100 * nSlots)))
-    return { ...sec, a0, a1, span, mid, pct, fillEnd, overFrac, slots, count }
+    return { ...sec, a0, a1, span, mid, pct, fillEnd, overFrac }
   })
   const fatPct = get('fat')
   const fatOver = fatPct > 100
   const allDone = rendered.every(s => s.pct >= 95 && s.pct <= 110) && fatPct >= 95 && fatPct <= 110
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <svg width={224} height={206} viewBox="0 0 220 202">
-        <ellipse cx={CX} cy={193} rx={80} ry={7} fill="rgba(0,0,0,0.08)" />
+      <svg width="100%" viewBox="0 0 248 238" style={{ maxWidth: 268, display: 'block' }} role="img"
+        aria-label="הצלחת שלך היום — כמה גרם מכל אבות המזון נאכלו מתוך היעד היומי">
+        <ellipse cx={CX} cy={228} rx={90} ry={7} fill="rgba(0,0,0,0.08)" />
         <circle cx={CX} cy={CY} r={R + 4} fill="#fff" stroke="#e5e0d5" strokeWidth={2} />
         {/* שלב 1: בסיס לבן + מילוי צבע מתקדם לכל מקטע */}
         {rendered.map(sec => (
@@ -992,9 +1001,6 @@ function LivePlate({ bars, split }) {
             {sec.overFrac > 0 && (
               <path d={slicePath(R, sec.a1 - sec.span * sec.overFrac, sec.a1)} fill="#ef4444" />
             )}
-            {sec.slots.slice(0, sec.count).map((sl, i) => (
-              <text key={i} x={sl.x} y={sl.y + 6} textAnchor="middle" fontSize={19}>{sl.e}</text>
-            ))}
           </g>
         ))}
         {/* שלב 2: קווי מתאר צבעוניים עבים — החלוקה ברורה גם כשהמקטע ריק */}
@@ -1002,31 +1008,77 @@ function LivePlate({ bars, split }) {
           <path key={sec.key + '-outline'} d={slicePath(R, sec.a0, sec.a1)}
             fill="none" stroke={sec.color} strokeWidth={3.5} strokeLinejoin="round" />
         ))}
-        {/* שמות מקטעים + אחוז חריגה באדום כשקיימת */}
+        {/* ✅ תווית לכל מקטע: שם + כמה גרם נאכלו מתוך היעד — המספר הוא העיקר, לא האחוז */}
         {rendered.map(sec => {
-          const lx = CX + R * 0.86 * Math.cos(sec.mid)
-          const ly = CY + R * 0.86 * Math.sin(sec.mid)
+          const lx = CX + R * LABEL_R * Math.cos(sec.mid)
+          const ly = CY + R * LABEL_R * Math.sin(sec.mid)
+          const over = sec.pct > 110
           return (
             <g key={sec.key + '-label'}>
-              <rect x={lx - 27} y={ly - 9} width={54} height={17} rx={8.5}
-                fill={sec.pct > 110 ? '#dc2626' : sec.color} opacity={0.95} />
-              <text x={lx} y={ly + 3.5} textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#fff">
-                {sec.pct > 110 ? `+${sec.pct - 100}%` : sec.name}
+              <rect x={lx - PILL_W / 2} y={ly - PILL_H / 2} width={PILL_W} height={PILL_H} rx={9}
+                fill={over ? '#dc2626' : sec.color} stroke="#fff" strokeWidth={1.5} />
+              <text x={lx} y={ly - 4} textAnchor="middle" fontSize={fit(sec.name, 8.5, PILL_W - 8)}
+                fontWeight="700" fill="#fff" opacity={0.95}>
+                {sec.name}
+              </text>
+              <text x={lx} y={ly + 9.5} textAnchor="middle" fontSize={fit(sec.value, sec.big ? 12.5 : 9.5, PILL_W - 8)}
+                fontWeight="900" fill="#fff">
+                {sec.value}
               </text>
             </g>
           )
         })}
-        {/* שומנים — קערית במרכז */}
-        <circle cx={CX} cy={CY} r={24} fill="#fffdf5" stroke={fatOver ? '#ef4444' : '#e8d9a8'} strokeWidth={fatOver ? 2.5 : 2} />
-        <circle cx={CX} cy={CY} r={17 * Math.sqrt(Math.min(100, fatPct) / 100) || 0} fill="#f2d55c" opacity={0.85} />
-        <text x={CX} y={CY + 1} textAnchor="middle" fontSize="14">🫒</text>
-        <text x={CX} y={CY + 14} textAnchor="middle" fontSize="7.5" fontWeight="800" fill={fatOver ? '#dc2626' : '#8a6d1f'}>
-          {fatOver ? `+${Math.round(fatPct) - 100}%` : 'שומנים'}
+        {/* שומן — קערית במרכז, עם הגרמים בתוכה */}
+        <circle cx={CX} cy={CY} r={BOWL_R} fill="#fffdf5" stroke={fatOver ? '#ef4444' : '#e8d9a8'} strokeWidth={fatOver ? 2.5 : 2} />
+        <circle cx={CX} cy={CY} r={(BOWL_R - 4) * Math.sqrt(Math.min(100, fatPct) / 100) || 0} fill="#f2d55c" opacity={0.85} />
+        <text x={CX} y={CY - 6} textAnchor="middle" fontSize="12">🫒</text>
+        <text x={CX} y={CY + 7} textAnchor="middle" fontWeight="900" fill={fatOver ? '#dc2626' : '#6b5310'}
+          fontSize={m.fat ? fit(`${g(m.fat.eaten)}/${m.fat.target}`, 10.5, BOWL_R * 1.7) : 10.5}>
+          {m.fat ? `${g(m.fat.eaten)}/${m.fat.target}` : ''}
         </text>
-        {allDone && <text x={192} y={30} textAnchor="middle" fontSize="20">✨</text>}
+        <text x={CX} y={CY + 16.5} textAnchor="middle" fontSize="6.8" fontWeight="800" fill={fatOver ? '#dc2626' : '#8a6d1f'}>
+          שומן (ג׳)
+        </text>
+        {allDone && <text x={216} y={32} textAnchor="middle" fontSize="20">✨</text>}
       </svg>
+      {/* ✅ שורת המספרים — כמה גרם נאכלו מכל אב מזון מול היעד היומי.
+          סיבים מקבלים מקום כאן כי אין להם מקטע בצלחת, והם המדד שהכי קל לפספס. */}
+      {m.protein && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, width: '100%', marginTop: 8 }}>
+          {[
+            { k: 'protein', name: 'חלבון', emoji: '🍗', color: '#ef8b3a' },
+            { k: 'carbs', name: 'פחמימות', emoji: '🍞', color: '#d9a83c' },
+            { k: 'fat', name: 'שומן', emoji: '🫒', color: '#c9a227' },
+            { k: 'fiber', name: 'סיבים', emoji: '🌾', color: '#0284c7' },
+          ].map(it => {
+            const d = m[it.k] || { eaten: 0, target: 0, pct: 0 }
+            const over = d.pct > 110
+            const left = Math.max(0, Math.round(d.target - d.eaten))
+            return (
+              <div key={it.k} style={{ background: '#fafaf8', border: '1px solid #eceae4', borderRadius: 12, padding: '7px 4px 6px', textAlign: 'center' }}>
+                <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748b', whiteSpace: 'nowrap' }}>{it.emoji} {it.name}</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: over ? '#dc2626' : '#1e293b', lineHeight: 1.15, fontVariantNumeric: 'tabular-nums' }}>
+                  {Math.round(d.eaten)}
+                </div>
+                <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>מתוך {d.target} ג׳</div>
+                <div style={{ height: 4, background: '#e8e6df', borderRadius: 99, overflow: 'hidden', margin: '4px 2px 0' }}>
+                  <div style={{ width: Math.min(100, d.pct) + '%', height: '100%', background: over ? '#dc2626' : it.color, borderRadius: 99, transition: 'width 0.3s' }} />
+                </div>
+                <div style={{ fontSize: 8.5, fontWeight: 800, color: over ? '#dc2626' : left > 0 ? '#64748b' : '#15803d', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>
+                  {over ? `חריגה ${Math.round(d.eaten - d.target)} ג׳` : left > 0 ? `נשאר ${left} ג׳` : '✓ הושלם'}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      {m.fiber && m.fiber.eaten === 0 && m.protein && m.protein.eaten > 0 && (
+        <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 6, textAlign: 'center', lineHeight: 1.5 }}>
+          סיבים נספרים מהפריטים שסימנת. פריטים שנוספו דרך סריקת תמונה עדיין לא כוללים סיבים.
+        </div>
+      )}
       {allDone && (
-        <div style={{ fontSize: 12.5, color: '#15803d', fontWeight: 800, marginTop: 2 }}>הצלחת מאוזנת — הגוף קיבל הכל 💚</div>
+        <div style={{ fontSize: 12.5, color: '#15803d', fontWeight: 800, marginTop: 8 }}>הצלחת מאוזנת — הגוף קיבל הכל 💚</div>
       )}
     </div>
   )
@@ -2446,6 +2498,29 @@ export default function PlanApp({ clientName, userPassword }) {
     return total
   }
 
+  // ✅ סיבים — אותו מבנה סריקה בדיוק כמו פחמימות/שומן, מ-nutrition_data בלבד.
+  // פריטים שאין להם ערך fiber בטבלה תורמים 0 (ולא שוברים את הסכום).
+  // הערה: סריקת התמונה (scan) לא מחזירה כרגע סיבים, ולכן היא לא נספרת כאן.
+  function calcEatenFiber() {
+    var total = 0
+    function add(id, qtyOverride) {
+      var item = nutritionData[id]
+      if (item) {
+        if (qtyOverride && item.base_qty && item.base_qty > 0) total += (item.fiber || 0) * (qtyOverride / item.base_qty)
+        else total += item.fiber || 0
+      }
+    }
+    if (hadSnack) add('snack')
+    if (checks) Object.keys(checks).forEach(id => { if (checks[id] && !SLICE_ITEMS[id]) add(nutritionId(id), checksQty[id]) })
+    Object.keys(carbChecks).forEach(id => { if (carbChecks[id]) add(id, carbQty[id] || 100) })
+    Object.keys(protChecks).forEach(id => { if (protChecks[id] && !UNIT_PROTEIN_ITEMS[id]) add(id, protQty[id] || 100) })
+    if (fatSel) add(fatSel)
+    Object.keys(veggieChecks).forEach(id => { if (veggieChecks[id]) add(id) })
+    if (hadBenayim && benayimSel) add(benayimSel)
+    ;[...bokerOther, ...lunchOther, ...erevOther, ...benayimOther].forEach(it => { total += it.fiber || 0 })
+    return total
+  }
+
   function calcVeggieMealsCount() {
     var count = 0
     if (checks['b_veggie1']) count++
@@ -2521,6 +2596,7 @@ export default function PlanApp({ clientName, userPassword }) {
   const eatenProtein = calcEatenProtein()
   const eatenFat = calcEatenFat()
   const eatenCarbs = calcEatenCarbs()
+  const eatenFiber = calcEatenFiber()
   const veggieMealsCount = calcVeggieMealsCount()
   // ✅ כל פס = % מהיעד היומי האישי שנאכל בפועל (100% = הגעת ליעד, מעל 100% = חרגת)
   // ✅ clientPlate ("הצלחת החכמה") הוא חלוקת שטח צלחת לתצוגה ויזואלית בלבד (כולל "ירקות", שלא נספרות בקלוריות) —
@@ -2529,9 +2605,11 @@ export default function PlanApp({ clientName, userPassword }) {
   const targetProteinG = targets ? targets.protein : 0
   const targetCarbsG = targets ? targets.carbs : 0
   const targetFatG = targets ? targets.fat : 0
+  const targetFiberG = targets ? targets.fiber : 0
   const proteinTargetPct = targetProteinG > 0 ? Math.round((eatenProtein / targetProteinG) * 100) : 0
   const carbsTargetPct = targetCarbsG > 0 ? Math.round((eatenCarbs / targetCarbsG) * 100) : 0
   const fatTargetPct = targetFatG > 0 ? Math.round((eatenFat / targetFatG) * 100) : 0
+  const fiberTargetPct = targetFiberG > 0 ? Math.round((eatenFiber / targetFiberG) * 100) : 0
   const veggiesTargetPct = Math.round((veggieMealsCount / 3) * 100)
   const plateBars = [
     { label: 'protein', emoji: '💪', pct: proteinTargetPct, color: plateBarColor(proteinTargetPct) },
@@ -2539,6 +2617,14 @@ export default function PlanApp({ clientName, userPassword }) {
     { label: 'fat', emoji: '🫒', pct: fatTargetPct, color: plateBarColor(fatTargetPct) },
     { label: 'veggies', emoji: '🥦', pct: veggiesTargetPct, color: plateBarColor(veggiesTargetPct) },
   ]
+  // ✅ גרמים בפועל מול היעד — מה שהלקוחה צריכה לראות במספרים, לא רק כאחוז
+  const plateMacros = {
+    protein: { eaten: eatenProtein, target: targetProteinG, pct: proteinTargetPct },
+    carbs: { eaten: eatenCarbs, target: targetCarbsG, pct: carbsTargetPct },
+    fat: { eaten: eatenFat, target: targetFatG, pct: fatTargetPct },
+    fiber: { eaten: eatenFiber, target: targetFiberG, pct: fiberTargetPct },
+    veggies: { eaten: veggieMealsCount, target: 3, pct: veggiesTargetPct },
+  }
   // ✅ נקודות בדיקה לפי התקדמות קלורית — לא ברגע שמתחילים להזין (מעט מידי נתונים), אלא בשליש ובשני-שליש מהיעד הקלורי
   const calorieTargetPct = targets && targets.calories > 0 ? (eatenCalories / targets.calories) * 100 : 0
   const warnCheckpoint = calorieTargetPct >= 66 ? 66 : (calorieTargetPct >= 33 ? 33 : 0)
@@ -3435,7 +3521,7 @@ export default function PlanApp({ clientName, userPassword }) {
         {targets && (
           <div style={{ background: '#fff', borderRadius: 18, padding: '14px 18px 10px', marginBottom: 14, border: '1.5px solid #f0f0f0' }}>
             <div style={{ fontWeight: 900, fontSize: 14, color: '#1e293b', marginBottom: 4, textAlign: 'center' }}>🍽️ הצלחת שלך היום</div>
-            <LivePlate bars={plateBars} split={plateSplit} />
+            <LivePlate bars={plateBars} split={plateSplit} macros={plateMacros} />
           </div>
         )}
 
