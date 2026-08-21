@@ -868,9 +868,6 @@ function calcTargets(weight, height, age, gender, activity, goal) {
     protein,
     carbs: Math.round(remainCal * (split.carbs / carbFatTotal) / 4),
     fat: Math.round(remainCal * (split.fat / carbFatTotal) / 9),
-    // ✅ סיבים לפי 14 גרם לכל 1000 קל' מהיעד האישי — אותו חישוב בדיוק כמו בפאנל המאמנת,
-    // כדי שהמספר שהלקוחה רואה בצלחת יהיה זהה למספר שאתי רואה בדוח שלה
-    fiber: Math.round(calories * 14 / 1000),
   }
 }
 
@@ -1041,15 +1038,13 @@ function LivePlate({ bars, split, macros }) {
         </text>
         {allDone && <text x={216} y={32} textAnchor="middle" fontSize="20">✨</text>}
       </svg>
-      {/* ✅ שורת המספרים — כמה גרם נאכלו מכל אב מזון מול היעד היומי.
-          סיבים מקבלים מקום כאן כי אין להם מקטע בצלחת, והם המדד שהכי קל לפספס. */}
+      {/* ✅ שורת המספרים — כמה גרם נאכלו מכל אב מזון, וכמה עוד נשאר עד היעד היומי */}
       {m.protein && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6, width: '100%', marginTop: 8 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, width: '100%', marginTop: 8 }}>
           {[
             { k: 'protein', name: 'חלבון', emoji: '🍗', color: '#ef8b3a' },
             { k: 'carbs', name: 'פחמימות', emoji: '🍞', color: '#d9a83c' },
             { k: 'fat', name: 'שומן', emoji: '🫒', color: '#c9a227' },
-            { k: 'fiber', name: 'סיבים', emoji: '🌾', color: '#0284c7' },
           ].map(it => {
             const d = m[it.k] || { eaten: 0, target: 0, pct: 0 }
             const over = d.pct > 110
@@ -1070,11 +1065,6 @@ function LivePlate({ bars, split, macros }) {
               </div>
             )
           })}
-        </div>
-      )}
-      {m.fiber && m.fiber.eaten === 0 && m.protein && m.protein.eaten > 0 && (
-        <div style={{ fontSize: 10, color: '#94a3b8', marginTop: 6, textAlign: 'center', lineHeight: 1.5 }}>
-          סיבים נספרים מהפריטים שסימנת. פריטים שנוספו דרך סריקת תמונה עדיין לא כוללים סיבים.
         </div>
       )}
       {allDone && (
@@ -2498,29 +2488,6 @@ export default function PlanApp({ clientName, userPassword }) {
     return total
   }
 
-  // ✅ סיבים — אותו מבנה סריקה בדיוק כמו פחמימות/שומן, מ-nutrition_data בלבד.
-  // פריטים שאין להם ערך fiber בטבלה תורמים 0 (ולא שוברים את הסכום).
-  // הערה: סריקת התמונה (scan) לא מחזירה כרגע סיבים, ולכן היא לא נספרת כאן.
-  function calcEatenFiber() {
-    var total = 0
-    function add(id, qtyOverride) {
-      var item = nutritionData[id]
-      if (item) {
-        if (qtyOverride && item.base_qty && item.base_qty > 0) total += (item.fiber || 0) * (qtyOverride / item.base_qty)
-        else total += item.fiber || 0
-      }
-    }
-    if (hadSnack) add('snack')
-    if (checks) Object.keys(checks).forEach(id => { if (checks[id] && !SLICE_ITEMS[id]) add(nutritionId(id), checksQty[id]) })
-    Object.keys(carbChecks).forEach(id => { if (carbChecks[id]) add(id, carbQty[id] || 100) })
-    Object.keys(protChecks).forEach(id => { if (protChecks[id] && !UNIT_PROTEIN_ITEMS[id]) add(id, protQty[id] || 100) })
-    if (fatSel) add(fatSel)
-    Object.keys(veggieChecks).forEach(id => { if (veggieChecks[id]) add(id) })
-    if (hadBenayim && benayimSel) add(benayimSel)
-    ;[...bokerOther, ...lunchOther, ...erevOther, ...benayimOther].forEach(it => { total += it.fiber || 0 })
-    return total
-  }
-
   function calcVeggieMealsCount() {
     var count = 0
     if (checks['b_veggie1']) count++
@@ -2596,7 +2563,6 @@ export default function PlanApp({ clientName, userPassword }) {
   const eatenProtein = calcEatenProtein()
   const eatenFat = calcEatenFat()
   const eatenCarbs = calcEatenCarbs()
-  const eatenFiber = calcEatenFiber()
   const veggieMealsCount = calcVeggieMealsCount()
   // ✅ כל פס = % מהיעד היומי האישי שנאכל בפועל (100% = הגעת ליעד, מעל 100% = חרגת)
   // ✅ clientPlate ("הצלחת החכמה") הוא חלוקת שטח צלחת לתצוגה ויזואלית בלבד (כולל "ירקות", שלא נספרות בקלוריות) —
@@ -2605,11 +2571,9 @@ export default function PlanApp({ clientName, userPassword }) {
   const targetProteinG = targets ? targets.protein : 0
   const targetCarbsG = targets ? targets.carbs : 0
   const targetFatG = targets ? targets.fat : 0
-  const targetFiberG = targets ? targets.fiber : 0
   const proteinTargetPct = targetProteinG > 0 ? Math.round((eatenProtein / targetProteinG) * 100) : 0
   const carbsTargetPct = targetCarbsG > 0 ? Math.round((eatenCarbs / targetCarbsG) * 100) : 0
   const fatTargetPct = targetFatG > 0 ? Math.round((eatenFat / targetFatG) * 100) : 0
-  const fiberTargetPct = targetFiberG > 0 ? Math.round((eatenFiber / targetFiberG) * 100) : 0
   const veggiesTargetPct = Math.round((veggieMealsCount / 3) * 100)
   const plateBars = [
     { label: 'protein', emoji: '💪', pct: proteinTargetPct, color: plateBarColor(proteinTargetPct) },
@@ -2622,7 +2586,6 @@ export default function PlanApp({ clientName, userPassword }) {
     protein: { eaten: eatenProtein, target: targetProteinG, pct: proteinTargetPct },
     carbs: { eaten: eatenCarbs, target: targetCarbsG, pct: carbsTargetPct },
     fat: { eaten: eatenFat, target: targetFatG, pct: fatTargetPct },
-    fiber: { eaten: eatenFiber, target: targetFiberG, pct: fiberTargetPct },
     veggies: { eaten: veggieMealsCount, target: 3, pct: veggiesTargetPct },
   }
   // ✅ נקודות בדיקה לפי התקדמות קלורית — לא ברגע שמתחילים להזין (מעט מידי נתונים), אלא בשליש ובשני-שליש מהיעד הקלורי
