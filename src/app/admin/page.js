@@ -680,6 +680,7 @@ export default function AdminPage() {
   const [rootsClientDocPreview, setRootsClientDocPreview] = useState('')
   const [bodyClientDocPreview, setBodyClientDocPreview] = useState('')
   const [childClientDocPreview, setChildClientDocPreview] = useState('')
+  const [atiVoice, setAtiVoice] = useState(() => { try { return localStorage.getItem('ati_voice') || '' } catch { return '' } })
   const [rootsDocLoading, setRootsDocLoading] = useState(false)
   const [bodyDocLoading, setBodyDocLoading] = useState(false)
   const [childDocLoading, setChildDocLoading] = useState(false)
@@ -914,14 +915,33 @@ export default function AdminPage() {
     }
   }
 
-  function startAdminSpeech(key, onTranscript) {
+  function startAdminSpeech(key, onTranscript, existingText) {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR) { alert('הדפדפן שלך אינו תומך בהקלטה. נסי ב-Chrome.'); return }
     if (adminRecognitionRef.current) { adminRecognitionRef.current.stop(); adminRecognitionRef.current = null }
+    const base = existingText || ''
+    let sessionFinals = ''
+    let lastFinalIdx = 0
     const r = new SR()
     r.lang = 'he-IL'; r.continuous = true; r.interimResults = true
-    r.onresult = e => { let t = ''; for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript; onTranscript(t) }
-    r.onend = () => { setAdminRecordingKey(null); adminRecognitionRef.current = null }
+    r.onresult = e => {
+      for (let i = lastFinalIdx; i < e.results.length; i++) {
+        if (e.results[i].isFinal) {
+          const phrase = e.results[i][0].transcript.trim()
+          if (phrase) sessionFinals = sessionFinals ? sessionFinals + ' ' + phrase : phrase
+          lastFinalIdx = i + 1
+        }
+      }
+      let interim = ''
+      for (let i = lastFinalIdx; i < e.results.length; i++) {
+        if (!e.results[i].isFinal) interim += e.results[i][0].transcript
+      }
+      onTranscript([base, sessionFinals, interim.trim()].filter(Boolean).join(' '))
+    }
+    r.onend = () => {
+      onTranscript([base, sessionFinals].filter(Boolean).join(' '))
+      setAdminRecordingKey(null); adminRecognitionRef.current = null
+    }
     r.onerror = () => { setAdminRecordingKey(null); adminRecognitionRef.current = null }
     r.start(); adminRecognitionRef.current = r; setAdminRecordingKey(key)
   }
@@ -3112,7 +3132,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
                       <div style={{ position: 'relative' }}>
                         <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })), journeyAnswers[q.key])} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
                       </div>
                     </div>
                   ))}
@@ -3131,7 +3151,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       {q.hint && <div style={{ fontSize: 11, color: '#0284c7', marginBottom: 4, fontStyle: 'italic' }}>💙 {q.hint}</div>}
                       <div style={{ position: 'relative' }}>
                         <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })), journeyAnswers[q.key])} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
                       </div>
                     </div>
                   ))}
@@ -3150,7 +3170,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       {q.hint && <div style={{ fontSize: 11, color: '#0d9488', marginBottom: 4, fontStyle: 'italic' }}>💚 {q.hint}</div>}
                       <div style={{ position: 'relative' }}>
                         <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })), journeyAnswers[q.key])} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
                       </div>
                     </div>
                   ))}
@@ -3168,7 +3188,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       {q.hint && <div style={{ fontSize: 11, color: '#dc2626', marginBottom: 4, fontStyle: 'italic' }}>❤️ {q.hint}</div>}
                       <div style={{ position: 'relative' }}>
                         <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })), journeyAnswers[q.key])} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
                       </div>
                     </div>
                   ))}
@@ -3185,7 +3205,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       {q.hint && <div style={{ fontSize: 11, color: '#d97706', marginBottom: 4, fontStyle: 'italic' }}>🧡 {q.hint}</div>}
                       <div style={{ position: 'relative' }}>
                         <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })), journeyAnswers[q.key])} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
                       </div>
                     </div>
                   ))}
@@ -3204,7 +3224,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       {q.hint && <div style={{ fontSize: 11, color: '#7c3aed', marginBottom: 4, fontStyle: 'italic' }}>💜 {q.hint}</div>}
                       <div style={{ position: 'relative' }}>
                         <textarea value={journeyAnswers[q.key]} onChange={e => setJourneyAnswers(a => ({ ...a, [q.key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={2} style={{ width: '100%', padding: '8px 12px', paddingLeft: 70, borderRadius: 10, border: '1.5px solid ' + (adminRecordingKey === q.key ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
-                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })))} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
+                        <button onClick={() => adminRecordingKey === q.key ? stopAdminSpeech() : startAdminSpeech(q.key, t => setJourneyAnswers(a => ({ ...a, [q.key]: t })), journeyAnswers[q.key])} style={{ position: 'absolute', left: 6, top: '50%', transform: 'translateY(-50%)', padding: '4px 8px', borderRadius: 8, border: 'none', background: adminRecordingKey === q.key ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === q.key ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, whiteSpace: 'nowrap' }}>{adminRecordingKey === q.key ? '⏹ עצרי' : '🎙'}</button>
                       </div>
                     </div>
                   ))}
@@ -3263,25 +3283,69 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       <textarea value={sessionNotes} onChange={e => setSessionNotes(e.target.value)} onBlur={() => saveSessionKey('session_notes', sessionNotes)} rows={4} placeholder="לדוגמה: פירקנו את האמונה שאין לה כוח רצון. גילינו שהלופ קורה בערב אחרי שהילדים נרדמים. בחרנו יחד את משפט העוגן..." style={{ width: '100%', padding: '10px 12px', borderRadius: 12, border: '1.5px solid ' + (adminRecordingKey === 'session_notes' ? '#7c3aed' : '#e5e7eb'), fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7 }} />
                       <button onClick={() => adminRecordingKey === 'session_notes' ? stopAdminSpeech() : startAdminSpeech('session_notes', t => setSessionNotes(t))} style={{ position: 'absolute', left: 8, bottom: 8, padding: '4px 10px', borderRadius: 8, border: 'none', background: adminRecordingKey === 'session_notes' ? '#fde8e8' : '#f3f4f6', color: adminRecordingKey === 'session_notes' ? '#dc2626' : '#6b7280', cursor: 'pointer', fontSize: 12, fontWeight: 700 }}>{adminRecordingKey === 'session_notes' ? '⏹ עצרי' : '🎙 הקלטה'}</button>
                     </div>
+                    {/* ── מסמך שנשלח כבר ── */}
+                    {selectedClient?.outcome_doc && !journeyClientDocPreview && (
+                      <div style={{ border: '2px solid #16a34a', borderRadius: 14, overflow: 'hidden', marginBottom: 12 }}>
+                        <div style={{ background: '#15803d', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>✅ המסמך שנשלח ללקוחה — תצוגה כמוה</div>
+                          <div style={{ display: 'flex', gap: 6 }}>
+                            <button onClick={() => printAnalysisHTML('מסמך מסע המטרה', selectedClient.outcome_doc)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>🖨️ הדפס</button>
+                            <button onClick={() => setJourneyClientDocPreview(selectedClient.outcome_doc)} style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>✏️ ערכי</button>
+                          </div>
+                        </div>
+                        <div style={{ padding: '12px 14px', maxHeight: 480, overflowY: 'auto', background: '#f8fafc', direction: 'rtl' }}>
+                          {(() => {
+                            const BG = ['#f0fdf4','#eff6ff','#fffbeb','#fef2f2','#faf5ff','#f0fdfa','#fff7ed']
+                            const BD = ['#16a34a','#2563eb','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
+                            const TC = ['#15803d','#1d4ed8','#b45309','#b91c1c','#6d28d9','#0f766e','#c2410c']
+                            const inl = s => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                            const renderLine = (line, accent, idx) => {
+                              if (line.startsWith('- ') || line.startsWith('• ')) return <div key={idx} style={{ display:'flex', gap:6, margin:'2px 0' }}><span style={{ color:accent, fontWeight:700, flexShrink:0 }}>•</span><span dangerouslySetInnerHTML={{ __html: inl(line.slice(2)) }} /></div>
+                              if (line.trim() === '') return <div key={idx} style={{ height:4 }} />
+                              return <div key={idx} style={{ margin:'2px 0', lineHeight:1.8 }} dangerouslySetInnerHTML={{ __html: inl(line) }} />
+                            }
+                            const sections = selectedClient.outcome_doc.split(/\n\s*---\s*\n/).filter(Boolean)
+                            if (sections.length <= 1) {
+                              return <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.9, whiteSpace: 'pre-wrap', fontFamily: 'sans-serif', textAlign: 'right' }}>{selectedClient.outcome_doc}</div>
+                            }
+                            return sections.map((section, i) => {
+                              const lines = section.trim().split('\n')
+                              const firstLine = lines[0].replace(/^#+\s*/, '').replace(/\*\*/g, '').trim()
+                              const rest = lines.slice(1)
+                              return (
+                                <div key={i} style={{ background: BG[i % BG.length], borderRadius: 14, padding: '14px 16px', marginBottom: 10, border: '1.5px solid ' + BD[i % BD.length] }}>
+                                  {firstLine && <div style={{ fontWeight: 800, fontSize: 14, color: TC[i % TC.length], marginBottom: 6 }}>{firstLine}</div>}
+                                  <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.8 }}>{rest.map((l, j) => renderLine(l, BD[i % BD.length], j))}</div>
+                                </div>
+                              )
+                            })
+                          })()}
+                        </div>
+                      </div>
+                    )}
+
                     <button onClick={async () => {
                       setJourneyDocLoading(true)
                       setJourneyClientDocPreview('')
+                      setJourneyDocSent(false)
                       const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'outcomeDoc', answers: journeyAnswers, clientName: selectedClient.name, sessionNotes, outputType: 'clientDoc' }) })
                       const data = await res.json()
                       if (data.result) { setJourneyClientDocPreview(data.result); saveSessionKey('journey_client_doc_draft', data.result) }
                       setJourneyDocLoading(false)
                     }} disabled={journeyDocLoading} style={{ width: '100%', padding: 14, borderRadius: 12, background: journeyDocLoading ? '#9ca3af' : '#7c3aed', color: '#fff', border: 'none', cursor: journeyDocLoading ? 'default' : 'pointer', fontWeight: 700, fontSize: 15, marginBottom: journeyClientDocPreview ? 12 : 0 }}>
-                      {journeyDocLoading ? '⏳ מפיק...' : '🧭 הפק מסמך ללקוחה (תצוגה מקדימה)'}
+                      {journeyDocLoading ? '⏳ מפיק...' : selectedClient?.outcome_doc ? '🔄 הפק מסמך חדש' : '🧭 הפק מסמך ללקוחה (תצוגה מקדימה)'}
                     </button>
 
                     {journeyClientDocPreview && (
-                      <div style={{ border: '2px solid #7c3aed', borderRadius: 14, overflow: 'hidden' }}>
-                        <div style={{ background: '#7c3aed', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>👁️ תצוגה מקדימה — לפני שליחה ללקוחה</div>
-                          <button onClick={() => setJourneyClientDocPreview('')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
+                      <div style={{ border: '2px solid ' + (journeyDocSent ? '#16a34a' : '#7c3aed'), borderRadius: 14, overflow: 'hidden' }}>
+                        <div style={{ background: journeyDocSent ? '#15803d' : '#7c3aed', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <div style={{ color: '#fff', fontWeight: 700, fontSize: 14 }}>
+                            {journeyDocSent ? '✅ נשמר ונשלח אליה — ניתן לעדכן' : '👁️ תצוגה מקדימה — לפני שליחה ללקוחה'}
+                          </div>
+                          <button onClick={() => { setJourneyClientDocPreview(''); setJourneyDocSent(false) }} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', fontWeight: 700 }}>✕</button>
                         </div>
-                        <div style={{ padding: 16, maxHeight: 400, overflowY: 'auto', background: '#faf5ff' }}>
-                          <textarea value={journeyClientDocPreview} onChange={e => setJourneyClientDocPreview(e.target.value)} rows={16} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
+                        <div style={{ padding: 16, maxHeight: 400, overflowY: 'auto', background: journeyDocSent ? '#f0fdf4' : '#faf5ff' }}>
+                          <textarea value={journeyClientDocPreview} onChange={e => setJourneyClientDocPreview(e.target.value)} rows={16} style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid ' + (journeyDocSent ? '#86efac' : '#e5e7eb'), fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif' }} />
                         </div>
                         <div style={{ padding: '12px 16px', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                           <button onClick={async () => {
@@ -3289,11 +3353,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                             await supabase.from('clients').update({ outcome_doc: journeyClientDocPreview }).eq('id', selectedClient.id)
                             setSelectedClient(prev => ({ ...prev, outcome_doc: journeyClientDocPreview }))
                             setJourneyDocSent(true)
-                            setJourneyClientDocPreview('')
                             setJourneyDocApproving(false)
-                            setTimeout(() => setJourneyDocSent(false), 4000)
                           }} disabled={journeyDocApproving} style={{ flex: 2, minWidth: 120, padding: 12, borderRadius: 10, background: '#16a34a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                            {journeyDocApproving ? '⏳...' : '✅ אשרי ושלחי אליה'}
+                            {journeyDocApproving ? '⏳...' : journeyDocSent ? '🔄 עדכני שוב' : '✅ אשרי ושלחי אליה'}
                           </button>
                           <button onClick={() => printAnalysisHTML('מסמך מסע המטרה', journeyClientDocPreview)} style={{ flex: 1, minWidth: 80, padding: 12, borderRadius: 10, background: '#eff6ff', color: '#2563eb', border: '1.5px solid #bfdbfe', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                             🖨️ הדפס
@@ -3301,11 +3363,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                           <button onClick={() => downloadAnalysisHTML('מסמך מסע המטרה', journeyClientDocPreview)} style={{ flex: 1, minWidth: 80, padding: 12, borderRadius: 10, background: '#f0fdf4', color: '#15803d', border: '1.5px solid #86efac', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                             ⬇️ HTML
                           </button>
-                          <button onClick={() => setJourneyClientDocPreview('')} style={{ flex: 1, minWidth: 60, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                            ✕ בטלי
+                          <button onClick={() => { setJourneyClientDocPreview(''); setJourneyDocSent(false) }} style={{ flex: 1, minWidth: 60, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                            ✕ סגרי
                           </button>
                         </div>
-                        {journeyDocSent && <div style={{ textAlign: 'center', padding: '8px', color: '#16a34a', fontWeight: 700 }}>✅ נשמר אצלה!</div>}
                       </div>
                     )}
                   </div>
@@ -3578,7 +3639,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     ].filter(({ key }) => journeyAnswers[key]).map(({ key, q }) => (
                       <div key={key} style={{ marginBottom: 10 }}>
                         <div style={{ fontSize: 11, color: '#16a34a', fontWeight: 700, marginBottom: 3 }}>{q}</div>
-                        <div style={{ fontSize: 13, color: '#1a1a1a', background: '#fff', borderRadius: 8, padding: '8px 12px', lineHeight: 1.7, textAlign: 'right', border: '1px solid #d1fae5' }}>{journeyAnswers[key]}</div>
+                        <textarea value={journeyAnswers[key] || ''} onChange={e => setJourneyAnswers(a => ({ ...a, [key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #d1fae5', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, background: '#fff', fontFamily: 'sans-serif' }} />
                       </div>
                     ))}
                   </div>
@@ -3625,8 +3686,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     const labels = { home_background: 'הבית שגדלה בו', family_identity: 'זהות וגוף במשפחה', today_patterns: 'דפוסים היום', forward_passing: 'מה עובר הלאה', beliefs_motivation: 'אמונות ומוטיבציה', resources: 'משאבים' }
                     return v.trim() ? labels[k] + ':\n' + v : ''
                   }).filter(Boolean).join('\n\n')
+                  const rootsQLabels = { roots_home: 'האוכל בבית שגדלה בו', roots_identity: 'איך הרגישה בגוף בתוך המשפחה', roots_patterns: 'מה מזהה מהבית', roots_passing: 'מה עובר הלאה לילדים', roots_beliefs: 'מה קורה אחרי שבועיים-שלושה', roots_resources: 'מה כבר עושה טוב עם אוכל', roots_sentence: 'משפט שמלווה אותה', roots_trigger: 'מתי האוכל הופך ליותר מרעב', roots_comfort: 'מה מקבלת מהאוכל ברגעים אלה', roots_generation: 'הרגל שעובר מדור לדור', roots_change: 'מה הייתה משנה', roots_fear: 'מה מפחיד בתהליך', roots_hope: 'מה מקווה שיקרה' }
+                  const clientRootsText = Object.entries(rootsQLabels).map(([k, label]) => journeyAnswers[k]?.trim() ? label + ':\n' + journeyAnswers[k] : '').filter(Boolean).join('\n\n')
                   const prompt = 'אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להתכונן לפגישת שורשים עם לקוחה.\n\n' +
-                    'הערות מהזום המקדים:\n' + notesText + '\n\n' +
+                    (clientRootsText ? 'תשובות הלקוחה לשאלון:\n' + clientRootsText + '\n\n' : '') +
+                    (notesText ? 'הערות מהזום המקדים:\n' + notesText + '\n\n' : '') +
                     'נתוני הלקוחה: ' + (selectedClient?.name||'') + ', גיל ' + (selectedClient?.age||'לא ידוע') + ', מטרה: ' + (selectedClient?.goal||'לא ידוע') + ', מסלול: ' + (selectedClient?.client_track === 'child' ? 'עבור ילד' : selectedClient?.client_track === 'both' ? 'שניהם' : 'עצמי') + '\n\n' +
                     'הפק ניתוח מעמיק לאתי לקראת הפגישה הפיזית. כתוב בעברית, גוף שלישי נקבה.\n\n' +
                     'דגשים חשובים לניתוח:\n' +
@@ -3657,7 +3721,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   } catch(e) { if (!rootsResult) alert('שגיאת רשת — נסי שוב') }
                   if (rootsResult) { saveSessionKey('roots_notes', rootsNotes); saveSessionKey('roots_analysis', rootsResult); setRootsAnalysisSaved(true) }
                   setRootsLoading(false)
-                }} disabled={rootsLoading || !Object.values(rootsNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: rootsLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
+                }} disabled={rootsLoading || (!Object.values(rootsNotes).some(v => v.trim()) && !['roots_home','roots_identity','roots_patterns','roots_passing','roots_beliefs','roots_resources','roots_sentence','roots_trigger','roots_comfort','roots_generation','roots_change','roots_fear','roots_hope'].some(k => journeyAnswers[k]?.trim()))} style={{ width: '100%', padding: 16, borderRadius: 14, background: rootsLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {rootsLoading ? '⏳ מנתח...' : '🌱 הפק ניתוח AI לפגישה'}
                 </button>
                 {!rootsLoading && rootsAnalysis && (
@@ -3725,22 +3789,52 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <div style={{ padding: '0 16px 16px' }}>
                     <button onClick={async () => {
                       setRootsDocLoading(true); setRootsClientDocPreview('')
-                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. כתבי מסמך שיקוף אישי ל-' + (selectedClient?.name||'') + ' לאחר פגישת השורשים.\n\n' +
-                        (rootsAnalysis ? 'ניתוח שהכנת לפגישה:\n' + rootsAnalysis.substring(0,2000) + '\n\n' : '') +
-                        (rootsSessionNotes.trim() ? 'מה עלה בפגישה:\n' + rootsSessionNotes + '\n\n' : '') +
-                        'כתבי בעברית, גוף שני נקבה, חמה ואישית. מבנה קבוע — ללא הקדמה, ישר לתוכן:\n\n' +
-                        '---\n\n' +
-                        '🏠 **מה עלה מהבית שגדלת בו**\n[2-3 משפטים ספציפיים על מה שעלה]\n\n' +
-                        '---\n\n' +
-                        '🔄 **מה מועבר הלאה**\n[תארי את הדפוס הדורי הספציפי שזוהה]\n\n' +
-                        '---\n\n' +
-                        '💡 **האסימון שנפל**\n[רגע ספציפי שהתחבר, בשפתה]\n\n' +
-                        '---\n\n' +
-                        '🌱 **מה את לוקחת**\n[2-3 דברים קונקרטיים שלוקחת מהפגישה]\n\n' +
-                        '---\n\n' +
-                        '🚀 **קדימה במסע**\n[מה להמשיך לשים לב אליו]\n\n' +
-                        '---\n\n' +
-                        'ללא מבוא. ללא סיכום. ללא הסברים בסוגריים. רק התוכן עצמו — חם, ממוקד, שלה.'
+                      const rootsQA = [
+                        ['האוכל בבית שגדלת בו', journeyAnswers.roots_home],
+                        ['הרגשה בגוף בתוך המשפחה', journeyAnswers.roots_identity],
+                        ['מה מזהה שמגיע מהבית', journeyAnswers.roots_patterns],
+                        ['מה עוברת לילדים', journeyAnswers.roots_passing],
+                        ['מה קורה אחרי שבועיים-שלושה בתהליך', journeyAnswers.roots_beliefs],
+                        ['מה כבר עושה טוב עם אוכל', journeyAnswers.roots_resources],
+                        ['משפט מהבית שעדיין מלווה', journeyAnswers.roots_sentence],
+                        ['מתי האוכל הופך ליותר מרעב', journeyAnswers.roots_trigger],
+                        ['מה מקבלת מהאוכל ברגעים האלה', journeyAnswers.roots_comfort],
+                        ['הרגל שעובר מדור לדור', journeyAnswers.roots_generation],
+                        ['מה הייתה משנה ביחסים עם אוכל', journeyAnswers.roots_change],
+                        ['מה מפחיד בתהליך', journeyAnswers.roots_fear],
+                        ['מה מקווה שיקרה', journeyAnswers.roots_hope],
+                      ].filter(([,v]) => v?.trim()).map(([q,a]) => q + ':\n' + a).join('\n\n')
+                      const prompt = `אתה אתי אטל — יועצת בריאות ותזונה התנהגותית.
+
+כתבי מסמך שיקוף אישי עמוק ל-${selectedClient?.name||''} אחרי פגישת השורשים.
+
+**מהו המסמך הזה:**
+זה לא סיכום ולא דו"ח. זה ראי — היא תקרא אותו ותגיד "כן, זה בדיוק אני, ולא ידעתי שמישהי ראתה את זה."
+כתבי אותו כאילו אתי יושבת לידה ומדברת אליה. חם. ספציפי. אנושי. בשפתה שלה.
+
+**הצעד הראשון לפני כתיבה:**
+זהי 2-3 אסימונים מרכזיים שרצית שיפלו לה — הרגעים שבהם משהו שהיה עמום הפך ברור. בני את המסמך כולו סביבם. כל שאר החלקים משרתים אותם.
+
+**הכלל:**
+על כל דפוס — ספרי מאיפה הגיע ומדוע הגיוני שנוצר. לא שיפוט, לא פסיכולוגיה — הסבר אנושי שמשחרר. ואז: איך לבחור אחרת מתוך הבנה. לא כוח רצון. הבנה.
+
+תשובות הלקוחה מהשאלון:
+${rootsQA || '(לא מולא שאלון)'}
+
+${rootsAnalysis ? '---\nניתוח לפגישה (השתמשי בתובנות — לא בפורמט):\n' + rootsAnalysis.substring(0,5000) + '\n---\n\n' : ''}${rootsSessionNotes.trim() ? 'מה עלה בפגישה הפיזית:\n' + rootsSessionNotes + '\n\n' : ''}${atiVoice.trim() ? '---\nדוגמאות לסגנון הכתיבה של אתי — כתבי בדיוק ככה:\n' + atiVoice.trim().substring(0, 3000) + '\n---\n\n' : ''}
+---
+
+כתבי בעברית, גוף שני נקבה. ללא מבוא. ישר לתוכן.
+הפרדה בין חלקים: שורה עם --- בלבד.
+
+כל חלק — 3-5 פסקאות רציפות, 4-6 משפטים כל אחת. לא נקודות. לא רשימות.
+- ציטטי ממה שכתבה — בשפתה המדויקת
+- הסבירי את המאחור: מה למד הגוף? מדוע נוצר הדפוס?
+- חברי אותה לעצמה: הילדה שהייתה → האישה שהיא היום
+- הראי נתיב: "עכשיו שאת יודעת מאיפה זה בא — אפשר..."
+
+המסמך צריך לגרום לה להרגיש: מישהי ראתה אותי. לא רק הבינה — ראתה.
+ללא הסברים בסוגריים. ללא כותרות כלליות. רק טקסט שנוגע.`
                       let result = ''
                       try {
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
@@ -3826,7 +3920,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     ].filter(({ key }) => journeyAnswers[key]).map(({ key, q }) => (
                       <div key={key} style={{ marginBottom: 10 }}>
                         <div style={{ fontSize: 11, color: '#2563eb', fontWeight: 700, marginBottom: 3 }}>{q}</div>
-                        <div style={{ fontSize: 13, color: '#1a1a1a', background: '#fff', borderRadius: 8, padding: '8px 12px', lineHeight: 1.7, textAlign: 'right', border: '1px solid #dbeafe' }}>{journeyAnswers[key]}</div>
+                        <textarea value={journeyAnswers[key] || ''} onChange={e => setJourneyAnswers(a => ({ ...a, [key]: e.target.value }))} onBlur={() => saveJourney(journeyAnswers, undefined)} rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 8, border: '1px solid #dbeafe', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.7, background: '#fff', fontFamily: 'sans-serif' }} />
                       </div>
                     ))}
                   </div>
@@ -3866,6 +3960,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                     const labels = { body_signals: 'מה הגוף אומר היום', body_history: 'היסטוריה של הגוף', emotion_body: 'קשר רגש-גוף', energy_sleep: 'אנרגיה ושינה', hunger_satiety: 'רעב ושובע', already_knows: 'מה היא כבר יודעת', main_complaint: 'מה הגוף שלה צועק עליו' }
                     return v.trim() ? labels[k] + ':\n' + v : ''
                   }).filter(Boolean).join('\n\n')
+                  const bodyQLabels = { body_complaint: 'מה הגוף אומר כרגע', body_signals: 'סימנים בגוף', body_history: 'היה זמן שהגוף הרגיש אחרת', body_emotion: 'איפה מרגישה רגשות בגוף', body_energy: 'שינה ואנרגיה', body_hunger: 'רעב ושובע', body_knows: 'מה כבר יודעת על הגוף', body_limit: 'מה הגוף אומר עד כאן', body_helps: 'מה עוזר לגוף להרגיש טוב', body_request: 'מה הגוף מבקש' }
+                  const clientBodyText = Object.entries(bodyQLabels).map(([k, label]) => journeyAnswers[k]?.trim() ? label + ':\n' + journeyAnswers[k] : '').filter(Boolean).join('\n\n')
 
                   const profile360 = selectedClient ? (
                     'שינה: ' + (selectedClient.sleep_quality||'לא ידוע') +
@@ -3898,7 +3994,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   const prompt = 'אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להכין ניתוח מעמיק לפגישת הגוף מדבר.\n\n' +
                     'שם הלקוחה: ' + (selectedClient?.name||'') + '\n\n' +
                     'נתוני שאלון 360:\n' + profile360 + '\n\n' +
-                    'הערות מהזום המקדים:\n' + notesText + '\n\n' +
+                    (clientBodyText ? 'תשובות הלקוחה לשאלון:\n' + clientBodyText + '\n\n' : '') +
+                    (notesText ? 'הערות מהזום המקדים:\n' + notesText + '\n\n' : '') +
                     TOPICS + '\n\n' +
                     'גישת הניתוח: הגוף אינו אויב — הוא שפה. כל סימפטום הוא הודעה, לא כשל. לכל דפוס שזיהית — שאל: מה הגוף שלה מנסה לשמור? על מה הוא מגן? הסבר תמיד מתחיל מ"הגוף עושה זאת כי..." ולא "יש לה בעיה עם...".\n\n' +
                     'הפק ניתוח מעמיק לאתי. כתוב בעברית, מקצועי וישיר. המבנה:\n\n' +
@@ -3937,7 +4034,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   } catch(e) { if (!bodyResult) alert('שגיאת רשת — נסי שוב') }
                   if (bodyResult) { saveSessionKey('body_notes', bodyNotes); saveSessionKey('body_analysis', bodyResult); setBodyAnalysisSaved(true) }
                   setBodyLoading(false)
-                }} disabled={bodyLoading || !Object.values(bodyNotes).some(v => v.trim())} style={{ width: '100%', padding: 16, borderRadius: 14, background: bodyLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
+                }} disabled={bodyLoading || (!Object.values(bodyNotes).some(v => v.trim()) && !['body_complaint','body_signals','body_history','body_emotion','body_energy','body_hunger','body_knows','body_limit','body_helps','body_request'].some(k => journeyAnswers[k]?.trim()))} style={{ width: '100%', padding: 16, borderRadius: 14, background: bodyLoading ? '#9ca3af' : 'linear-gradient(135deg,#0f4c2a,#16a34a)', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 15, marginBottom: 16 }}>
                   {bodyLoading ? '⏳ מנתח...' : '🩺 הפק ניתוח AI לפגישה'}
                 </button>
                 {!bodyLoading && bodyAnalysis && (
@@ -4004,22 +4101,55 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <div style={{ padding: '0 16px 16px' }}>
                     <button onClick={async () => {
                       setBodyDocLoading(true); setBodyClientDocPreview('')
-                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. כתבי מסמך שיקוף אישי ל-' + (selectedClient?.name||'') + ' לאחר פגישת הגוף מדבר.\n\n' +
-                        (bodyAnalysis ? 'ניתוח שהכנת לפגישה:\n' + bodyAnalysis.substring(0,2000) + '\n\n' : '') +
-                        (bodySessionNotes.trim() ? 'מה עלה בפגישה:\n' + bodySessionNotes + '\n\n' : '') +
-                        'כתבי בעברית, גוף שני נקבה, חמה ואישית. מבנה קבוע — ללא הקדמה, ישר לתוכן:\n\n' +
-                        '---\n\n' +
-                        '🩺 **מה הגוף שלך אמר**\n[ההודעה הספציפית שזוהתה, בשפתה]\n\n' +
-                        '---\n\n' +
-                        '💔 **הקשר שגילינו**\n[רגש ← גוף — הקישור הספציפי]\n\n' +
-                        '---\n\n' +
-                        '🔬 **מנגנון שמעכשיו מובן**\n[משהו שהסתבר לה: סוכר / קורטיזול / שינה...]\n\n' +
-                        '---\n\n' +
-                        '🌿 **מה את לוקחת**\n[2-3 דברים קונקרטיים שלוקחת מהפגישה]\n\n' +
-                        '---\n\n' +
-                        '🚀 **קדימה במסע**\n[מה לשים לב אליו, מה לצפות]\n\n' +
-                        '---\n\n' +
-                        'ללא מבוא. ללא סיכום. ללא הסברים בסוגריים. רק התוכן עצמו — חם, ממוקד, שלה.'
+                      const bodyQA = [
+                        ['מה הגוף אומר לך כרגע', journeyAnswers.body_complaint],
+                        ['אילו סימנים מופיעים בגוף', journeyAnswers.body_signals],
+                        ['היה זמן שהגוף הרגיש אחרת', journeyAnswers.body_history],
+                        ['איפה בגוף את מרגישה רגשות', journeyAnswers.body_emotion],
+                        ['שינה ואנרגיה', journeyAnswers.body_energy],
+                        ['איך את יודעת שאת רעבה / שבעה', journeyAnswers.body_hunger],
+                        ['מה את כבר יודעת על הגוף שלך', journeyAnswers.body_knows],
+                        ['הגוף אומר: עד כאן', journeyAnswers.body_limit],
+                        ['מה עוזר לגוף להרגיש טוב', journeyAnswers.body_helps],
+                        ['מה הגוף היה מבקש ממך היום', journeyAnswers.body_request],
+                      ].filter(([,v]) => v?.trim()).map(([q,a]) => q + ':\n' + a).join('\n\n')
+                      const prompt = `את אתי אטל — יועצת בריאות ותזונה התנהגותית שיודעת לקרוא גוף ולדבר אליו בשפה שלו.
+
+שם הלקוחה: ${selectedClient?.name || ''}
+
+תשובות השאלון — קרי היטב:
+${bodyQA}
+${bodyAnalysis ? '\nהניתוח שהכנת לפגישה:\n' + bodyAnalysis.substring(0,5000) + '\n' : ''}${bodySessionNotes.trim() ? '\nמה עלה בפגישה:\n' + bodySessionNotes + '\n' : ''}
+המשימה שלך:
+כתבי מסמך אישי ל${selectedClient?.name || 'לקוחה'} שתחושתה תהיה "מישהי באמת הקשיבה לגוף שלי."
+
+לפני שמתחילה — זהי 2-3 רגעי האסימון המרכזיים: הרגעים שבהם ההודעה של הגוף הפכה ברורה. בני את כל המסמך סביבם.
+
+כתבי בעברית, גוף שני נקבה, ישירה וחמה. אל תתחילי עם "היי" או הקדמה — היכנסי ישר לתוכן. אל תכתבי הסברים בסוגריים.
+
+מבנה:
+---
+🩺 **ההודעה שהגוף שלך שלח**
+[לא סיכום — הקשבה עמוקה. מה הגוף מנסה לומר כבר הרבה זמן? כתבי כאילו את מתרגמת את שפתו. 3-5 משפטים, ספציפיים ונוגעים.]
+
+---
+💔 **הקישור שגילינו**
+[הרגש שמאחורי הסימפטום. לא "יש קשר בין X ל-Y" — אלא "כשאת חושבת ש... הגוף מגיב ב...". ספציפי לה.]
+
+---
+🔬 **מה שמעכשיו הגיוני**
+[הסבירי מנגנון אחד שהסתבר לה — ביולוגי, הורמונלי, עצבי — בשפה שהיא תוכל לקרוא לחברה בטלפון ולהסביר לה.]
+
+---
+🌿 **מה את לוקחת**
+[2-3 דברים קונקרטיים שהיא יוצאת איתם. לא "שתי מים" — דבר שמחובר למה שעלה.]
+
+---
+🚀 **מה הגוף מבקש ממך עכשיו**
+[לא הנחיה — הזמנה. דבר אחד שאם תעשי אותו השבוע, הגוף ירגיש שנשמע.]
+
+---
+${atiVoice.trim() ? '---\nדוגמאות לסגנון הכתיבה שלי — כתבי בדיוק ככה:\n' + atiVoice.trim().substring(0,3000) + '\n---\n\n' : ''}המסמך צריך לגרום לה להרגיש: הגוף שלי לא מתקלקל — הוא מדבר אליי.`
                       let result = ''
                       try {
                         const res = await fetch('/api/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode: 'rootsAnalysis', prompt, name: selectedClient?.name }) })
@@ -4030,7 +4160,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       if (result) saveSessionKey('body_session_notes', bodySessionNotes)
                       setBodyDocLoading(false)
                     }} disabled={bodyDocLoading} style={{ width: '100%', padding: 13, borderRadius: 12, background: bodyDocLoading ? '#9ca3af' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
-                      {bodyDocLoading ? '⏳ מפיקה...' : '← הפיקי סיכום ללקוחה'}
+                      {bodyDocLoading ? '⏳ מפיקה...' : bodyFeedback ? '🔄 הפק מסמך חדש' : '← הפיקי סיכום ללקוחה'}
                     </button>
                   </div>
                 </div>
@@ -4050,17 +4180,45 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                         setApprovingBodyDoc(true)
                         await supabase.from('client_profiles').update({ body_feedback: bodyClientDocPreview, body_feedback_at: new Date().toISOString() }).eq('client_password', selectedClient.password)
                         saveSessionKey('body_session_notes', bodySessionNotes)
+                        setBodyFeedback(bodyClientDocPreview)
                         const phone = selectedClient.phone.replace(/^0/, '972')
                         const msg = 'היי ' + selectedClient.name + '! 🩺\n\nהסיכום האישי שלך מפגישת הגוף מדבר מוכן — היכנסי לאפליקציה לצפייה 💚\nhttps://project-l990h.vercel.app'
                         window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank')
-                        setApprovingBodyDoc(false); setBodyDocSent(true); setBodyClientDocPreview('')
-                        setTimeout(() => setBodyDocSent(false), 4000)
+                        setApprovingBodyDoc(false); setBodyDocSent(true)
                       }} disabled={approvingBodyDoc} style={{ flex: 2, padding: 12, borderRadius: 10, background: bodyDocSent ? '#16a34a' : '#0d9488', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-                        {approvingBodyDoc ? '⏳...' : bodyDocSent ? '✅ נשלח!' : '✅ אשרי ושלחי ללקוחה'}
+                        {approvingBodyDoc ? '⏳...' : bodyDocSent ? '🔄 עדכני שוב' : '✅ אשרי ושלחי ללקוחה'}
                       </button>
                       <button onClick={() => setBodyClientDocPreview('')} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f3f4f6', color: '#374151', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
                         ✕ בטלי
                       </button>
+                    </div>
+                  </div>
+                )}
+
+                {bodyFeedback && !bodyClientDocPreview && (
+                  <div style={{ background: '#f0fdf4', borderRadius: 18, border: '2px solid #16a34a', overflow: 'hidden', marginBottom: 16 }}>
+                    <div style={{ background: 'linear-gradient(135deg,#15803d,#16a34a)', padding: '14px 18px', color: '#fff' }}>
+                      <div style={{ fontWeight: 800, fontSize: 14 }}>✅ המסמך שנשלח ללקוחה — תצוגה כמוה</div>
+                      <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>הפיקי מסמך חדש כדי לעדכן</div>
+                    </div>
+                    <div style={{ padding: 16, direction: 'rtl' }}>
+                      {(() => {
+                        const BG = ['#f0fdf4','#eff6ff','#fffbeb','#fef2f2','#faf5ff','#f0fdfa','#fff7ed']
+                        const BD = ['#16a34a','#2563eb','#d97706','#dc2626','#7c3aed','#0d9488','#f97316']
+                        const TC = ['#15803d','#1d4ed8','#b45309','#b91c1c','#6d28d9','#0f766e','#c2410c']
+                        const inl = s => s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                        const sections = bodyFeedback.split(/\n\s*---\s*\n/).filter(Boolean)
+                        if (sections.length <= 1) return <div style={{ fontSize: 13, lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{bodyFeedback}</div>
+                        return sections.map((section, i) => {
+                          const lines = section.trim().split('\n')
+                          const firstLine = lines[0].replace(/^#+\s*/, '').replace(/\*\*/g, '').trim()
+                          const rest = lines.slice(1)
+                          return <div key={i} style={{ background: BG[i%BG.length], borderRadius: 14, padding: '14px 16px', marginBottom: 10, border: '1.5px solid '+BD[i%BD.length] }}>
+                            <div style={{ fontWeight: 800, fontSize: 14, color: TC[i%TC.length], marginBottom: 8 }} dangerouslySetInnerHTML={{ __html: inl(firstLine) }} />
+                            {rest.map((line, j) => line.trim() ? <div key={j} style={{ fontSize: 13, lineHeight: 1.8, color: '#374151', marginBottom: 3 }} dangerouslySetInnerHTML={{ __html: inl(line) }} /> : <div key={j} style={{ height: 4 }} />)}
+                          </div>
+                        })
+                      })()}
                     </div>
                   </div>
                 )}
@@ -4726,6 +4884,33 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
               <button onClick={() => setShowLessonMode(true)} style={{ padding: '10px 20px', borderRadius: 12, background: '#fff', color: '#0f4c2a', border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 14 }}>
                 📺 הצגי שיעור ללקוחה
               </button>
+            </div>
+
+            {/* ── קול אתי ── */}
+            <div style={{ background: '#fff', borderRadius: 16, border: '2px solid #7c3aed', overflow: 'hidden', marginBottom: 16 }}>
+              <div style={{ background: 'linear-gradient(135deg,#6d28d9,#7c3aed)', padding: '12px 18px', display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: 14, color: '#fff' }}>✍️ קול אתי — סגנון הכתיבה שלי</div>
+                  <div style={{ fontSize: 11, color: '#e9d5ff', marginTop: 2 }}>דוגמאות שאכתבי כאן יוזרקו לכל מסמך ללקוחה שה-AI מפיק</div>
+                </div>
+                {atiVoice && <div style={{ fontSize: 11, color: '#86efac', fontWeight: 700 }}>✅ נשמר</div>}
+              </div>
+              <div style={{ padding: 16 }}>
+                <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 10, lineHeight: 1.6 }}>
+                  הדביקי כאן קטעים מסיכומים שכתבת וגאה בהם — ככל שיותר דוגמאות, כך ה-AI ילמד טוב יותר לחקות את הסגנון שלך. ניתן להוסיף משפטים שרוצה שיופיעו, ביטויים אופייניים, ומבנים שעובדים.
+                </div>
+                <textarea
+                  value={atiVoice}
+                  onChange={e => setAtiVoice(e.target.value)}
+                  onBlur={() => { try { localStorage.setItem('ati_voice', atiVoice) } catch {} }}
+                  rows={10}
+                  placeholder={'לדוגמה:\n\nהמפגש שלנו התחיל באוכל, אבל די מהר גילינו שהסיפור שלך הוא לא באמת רק על מה וכמה את אוכלת...\n\nוככה בתוך האמונות האלו גדלת להיות האישה המהממת שאת היום. אבל היום את כבר לא אותה ילדה...\n\nאנחנו לא מנסות להפוך אותך ליותר ממושמעת. יש לך מספיק משמעת. אנחנו מלמדות משהו אחר...'}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid #e9d5ff', fontSize: 13, resize: 'vertical', outline: 'none', textAlign: 'right', boxSizing: 'border-box', lineHeight: 1.8, fontFamily: 'sans-serif', direction: 'rtl' }}
+                />
+                <button onClick={() => { try { localStorage.setItem('ati_voice', atiVoice) } catch {} }} style={{ marginTop: 10, padding: '8px 20px', borderRadius: 10, background: '#7c3aed', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
+                  💾 שמרי סגנון
+                </button>
+              </div>
             </div>
 
             {/* מטרה */}

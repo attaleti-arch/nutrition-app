@@ -463,6 +463,114 @@ const FOOD_DB = [
   { id:'fd_rice_cake',    name:'עוגת אורז',                cal:35,  prot:0.7,  fat:0.3,  carbs:7.5, base:1,   unit:'יח\'', dflt:2,   cat:'other' },
   { id:'fd_popcorn',      name:'פופקורן',                  cal:387, prot:12,   fat:4.5,  carbs:78,  base:100, unit:'גרם',  dflt:30,  cat:'other' },
   { id:'fd_protein_bar',  name:'חטיף חלבון',               cal:200, prot:20,   fat:6,    carbs:18,  base:1,   unit:'יח\'', dflt:1,   cat:'other' },
+
+  // חטיפים וממתקים
+  { id:'fd_bamba',        name:'במבה',                     cal:515, prot:11,   fat:27,   carbs:57,  base:100, unit:'גרם',  dflt:30,  cat:'snack' },
+  { id:'fd_bisli',        name:'ביסלי',                    cal:450, prot:7,    fat:16,   carbs:70,  base:100, unit:'גרם',  dflt:30,  cat:'snack' },
+  { id:'fd_chips',        name:"צ'יפס תפוחי אדמה",         cal:536, prot:7,    fat:35,   carbs:52,  base:100, unit:'גרם',  dflt:30,  cat:'snack' },
+  { id:'fd_doritos',      name:'דורנטוס',                  cal:520, prot:7,    fat:27,   carbs:64,  base:100, unit:'גרם',  dflt:30,  cat:'snack' },
+  { id:'fd_pretzel',      name:'בייגלה / פרצל',            cal:355, prot:9,    fat:3,    carbs:74,  base:100, unit:'גרם',  dflt:30,  cat:'snack' },
+  { id:'fd_nutella',      name:'נוטלה / קרם אגוזים',       cal:539, prot:6,    fat:31,   carbs:58,  base:100, unit:'גרם',  dflt:20,  cat:'snack' },
+  { id:'fd_cookie_choc',  name:"עוגיית שוקולד צ'יפס",      cal:130, prot:1.5,  fat:6,    carbs:18,  base:1,   unit:"יח'", dflt:2,   cat:'snack' },
+  { id:'fd_cookie_plain', name:'עוגייה רגילה',             cal:70,  prot:1,    fat:3,    carbs:10,  base:1,   unit:"יח'", dflt:3,   cat:'snack' },
+  { id:'fd_wafer',        name:'וופל',                     cal:55,  prot:0.7,  fat:2.5,  carbs:7.5, base:1,   unit:"יח'", dflt:4,   cat:'snack' },
+  { id:'fd_candy_gummy',  name:'ממתק גומי (100 גרם)',      cal:340, prot:6,    fat:0.1,  carbs:77,  base:100, unit:'גרם',  dflt:30,  cat:'snack' },
+  { id:'fd_lollipop',     name:'סוכרייה',                  cal:60,  prot:0,    fat:0,    carbs:15,  base:1,   unit:"יח'", dflt:1,   cat:'snack' },
+  { id:'fd_ice_cream',    name:'גלידת שמנת',               cal:207, prot:3.5,  fat:11,   carbs:24,  base:100, unit:'גרם',  dflt:100, cat:'snack' },
+  { id:'fd_popsicle',     name:'ארטיק מים',                cal:80,  prot:0,    fat:0,    carbs:20,  base:1,   unit:"יח'", dflt:1,   cat:'snack' },
+  { id:'fd_cheesecake',   name:'עוגת גבינה — פרוסה',       cal:350, prot:7,    fat:20,   carbs:36,  base:1,   unit:'פרוסה', dflt:1,  cat:'snack' },
+  { id:'fd_brownie',      name:'בראוניז',                  cal:240, prot:3,    fat:12,   carbs:31,  base:1,   unit:"יח'", dflt:1,   cat:'snack' },
+  { id:'fd_muffin_choc',  name:'מאפין שוקולד',             cal:340, prot:4,    fat:14,   carbs:50,  base:1,   unit:"יח'", dflt:1,   cat:'snack' },
+  { id:'fd_cake_slice',   name:'עוגה — פרוסה',             cal:310, prot:4,    fat:14,   carbs:43,  base:1,   unit:'פרוסה', dflt:1,  cat:'snack' },
+  { id:'fd_choc_cake',    name:'עוגת שוקולד — פרוסה',      cal:370, prot:5,    fat:18,   carbs:48,  base:1,   unit:'פרוסה', dflt:1,  cat:'snack' },
+  { id:'fd_bagelchip',    name:"ביגל צ'יפס",               cal:460, prot:10,   fat:18,   carbs:64,  base:100, unit:'גרם',  dflt:30,  cat:'snack' },
+  { id:'fd_energy_bar',   name:'חטיף אנרגיה',              cal:170, prot:4,    fat:5,    carbs:28,  base:1,   unit:"יח'", dflt:1,   cat:'snack' },
+  // שתייה
+  { id:'fd_coffee_black',  name:'קפה שחור / אספרסו',       cal:5,   prot:0.3,  fat:0,    carbs:0.5, base:100, unit:'מ"ל', dflt:30,  cat:'drink' },
+  { id:'fd_coffee_milk',   name:'קפה עם חלב',              cal:50,  prot:3,    fat:2,    carbs:5,   base:100, unit:'מ"ל', dflt:200, cat:'drink' },
+  { id:'fd_cappuccino',    name:"קפוצ'ינו",                cal:80,  prot:4,    fat:3,    carbs:9,   base:1,   unit:'כוס', dflt:1,   cat:'drink' },
+  { id:'fd_shoko',         name:'שוקו (חלב שוקולד)',        cal:85,  prot:3.5,  fat:3,    carbs:12,  base:100, unit:'מ"ל', dflt:250, cat:'drink' },
+  { id:'fd_cola',          name:'קולה / סודה ממותקת',      cal:42,  prot:0,    fat:0,    carbs:11,  base:100, unit:'מ"ל', dflt:330, cat:'drink' },
+  { id:'fd_cola_diet',     name:'קולה דיאט',               cal:1,   prot:0,    fat:0,    carbs:0.1, base:100, unit:'מ"ל', dflt:330, cat:'drink' },
+  { id:'fd_juice_apple',   name:'מיץ תפוחים',              cal:46,  prot:0.1,  fat:0.1,  carbs:11,  base:100, unit:'מ"ל', dflt:200, cat:'drink' },
+  { id:'fd_juice_grape',   name:'מיץ ענבים',               cal:60,  prot:0.4,  fat:0.1,  carbs:15,  base:100, unit:'מ"ל', dflt:200, cat:'drink' },
+  { id:'fd_juice_carrot',  name:'מיץ גזר',                 cal:40,  prot:0.9,  fat:0.2,  carbs:9,   base:100, unit:'מ"ל', dflt:200, cat:'drink' },
+  { id:'fd_beer',          name:'בירה',                    cal:43,  prot:0.5,  fat:0,    carbs:3.6, base:100, unit:'מ"ל', dflt:330, cat:'drink' },
+  { id:'fd_wine_red',      name:'יין אדום',                cal:85,  prot:0.1,  fat:0,    carbs:2.5, base:100, unit:'מ"ל', dflt:150, cat:'drink' },
+  { id:'fd_wine_white',    name:'יין לבן',                 cal:82,  prot:0.1,  fat:0,    carbs:2.6, base:100, unit:'מ"ל', dflt:150, cat:'drink' },
+  // מנות מוכנות / ארוחות שלמות
+  { id:'fd_schnitzel_bun', name:'שניצל בלחמנייה',          cal:460, prot:26,   fat:15,   carbs:52,  base:1,   unit:"יח'", dflt:1,   cat:'israeli' },
+  { id:'fd_sandwich_wh',   name:'כריך לחם מלא עם גבינה',   cal:220, prot:11,   fat:7,    carbs:28,  base:1,   unit:"יח'", dflt:1,   cat:'israeli' },
+  { id:'fd_sandwich_tuna', name:'כריך טונה',               cal:280, prot:20,   fat:8,    carbs:30,  base:1,   unit:"יח'", dflt:1,   cat:'israeli' },
+  { id:'fd_sandwich_egg',  name:'כריך ביצה',               cal:260, prot:12,   fat:10,   carbs:29,  base:1,   unit:"יח'", dflt:1,   cat:'israeli' },
+  { id:'fd_soup_chicken',  name:'מרק עוף',                 cal:32,  prot:3,    fat:1,    carbs:2,   base:100, unit:'מ"ל', dflt:250, cat:'israeli' },
+  { id:'fd_soup_veg',      name:'מרק ירקות',               cal:25,  prot:1,    fat:0.5,  carbs:4,   base:100, unit:'מ"ל', dflt:250, cat:'israeli' },
+  { id:'fd_soup_lentil',   name:'מרק עדשים',               cal:52,  prot:3.5,  fat:0.5,  carbs:9,   base:100, unit:'מ"ל', dflt:250, cat:'israeli' },
+  { id:'fd_soup_tomato',   name:'מרק עגבניות',             cal:40,  prot:1.5,  fat:1,    carbs:7,   base:100, unit:'מ"ל', dflt:250, cat:'israeli' },
+  { id:'fd_rice_chicken',  name:'מנת אורז עם עוף',         cal:420, prot:32,   fat:8,    carbs:52,  base:1,   unit:'מנה', dflt:1,   cat:'israeli' },
+  { id:'fd_pasta_tom',     name:'פסטה ברוטב עגבניות',      cal:380, prot:12,   fat:6,    carbs:68,  base:1,   unit:'מנה', dflt:1,   cat:'israeli' },
+  { id:'fd_pasta_olive',   name:'פסטה שמן זית ושום',       cal:440, prot:11,   fat:15,   carbs:64,  base:1,   unit:'מנה', dflt:1,   cat:'israeli' },
+  { id:'fd_stir_fry_veg',  name:'ירקות מוקפצים (מנה)',     cal:120, prot:4,    fat:5,    carbs:14,  base:1,   unit:'מנה', dflt:1,   cat:'israeli' },
+  { id:'fd_omrice',        name:'אורז מטוגן עם ביצה',      cal:360, prot:9,    fat:10,   carbs:56,  base:1,   unit:'מנה', dflt:1,   cat:'israeli' },
+  { id:'fd_shakshuka_full',name:'שקשוקה + לחם (ארוחה)',    cal:390, prot:18,   fat:18,   carbs:38,  base:1,   unit:'מנה', dflt:1,   cat:'israeli' },
+  { id:'fd_toast_avoc',    name:'טוסט אבוקדו',             cal:290, prot:7,    fat:15,   carbs:30,  base:1,   unit:"יח'", dflt:1,   cat:'israeli' },
+  // סלטים
+  { id:'fd_salad_isr',     name:'סלט ירקות ישראלי',        cal:35,  prot:1.5,  fat:1.5,  carbs:4.5, base:100, unit:'גרם',  dflt:200, cat:'veg' },
+  { id:'fd_salad_greek',   name:'סלט יווני',               cal:95,  prot:3,    fat:7,    carbs:5,   base:100, unit:'גרם',  dflt:200, cat:'veg' },
+  { id:'fd_salad_caesar',  name:'סלט קיסר',                cal:105, prot:5,    fat:7,    carbs:6,   base:100, unit:'גרם',  dflt:200, cat:'veg' },
+  { id:'fd_tabouleh',      name:'טבולה',                   cal:70,  prot:2.5,  fat:3,    carbs:9,   base:100, unit:'גרם',  dflt:150, cat:'veg' },
+  { id:'fd_coleslaw',      name:'קולסלאו',                 cal:120, prot:1,    fat:8,    carbs:11,  base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  // ממרחים נוספים
+  { id:'fd_eggplant_dip',  name:'ממרח חצילים שרופים',      cal:80,  prot:1.5,  fat:6,    carbs:5,   base:100, unit:'גרם',  dflt:80,  cat:'sauce' },
+  { id:'fd_matbucha',      name:'מטבוחה',                  cal:55,  prot:1.5,  fat:3,    carbs:6,   base:100, unit:'גרם',  dflt:80,  cat:'sauce' },
+  { id:'fd_techina_ful',   name:'ממרח פול ושמן זית',       cal:140, prot:7,    fat:8,    carbs:11,  base:100, unit:'גרם',  dflt:80,  cat:'sauce' },
+  { id:'fd_tzatziki',      name:"ציצי'קי",                 cal:75,  prot:4,    fat:4,    carbs:5,   base:100, unit:'גרם',  dflt:80,  cat:'sauce' },
+  { id:'fd_peanut_sauce',  name:'רוטב בוטנים',             cal:200, prot:7,    fat:14,   carbs:13,  base:100, unit:'גרם',  dflt:30,  cat:'sauce' },
+  // ירקות נוספים
+  { id:'fd_tomato_cherry', name:'עגבניות שרי',             cal:18,  prot:0.9,  fat:0.2,  carbs:3.9, base:100, unit:'גרם',  dflt:100, cat:'veg' },
+  { id:'fd_tomato_dried',  name:'עגבניות מיובשות',         cal:258, prot:14,   fat:3,    carbs:56,  base:100, unit:'גרם',  dflt:20,  cat:'veg' },
+  { id:'fd_pickle',        name:'מלפפון חמוץ',             cal:11,  prot:0.3,  fat:0.1,  carbs:2.5, base:1,   unit:"יח'", dflt:2,   cat:'veg' },
+  { id:'fd_olives_b',      name:'זיתים שחורים',            cal:115, prot:0.8,  fat:11,   carbs:6,   base:100, unit:'גרם',  dflt:30,  cat:'veg' },
+  { id:'fd_olives_g',      name:'זיתים ירוקים',            cal:145, prot:1,    fat:15,   carbs:4,   base:100, unit:'גרם',  dflt:30,  cat:'veg' },
+  { id:'fd_sauerkraut',    name:'כרוב כבוש',               cal:19,  prot:0.9,  fat:0.1,  carbs:4.3, base:100, unit:'גרם',  dflt:80,  cat:'veg' },
+  { id:'fd_watercress',    name:'גרגיר הנחל',              cal:22,  prot:2.3,  fat:0.7,  carbs:2,   base:100, unit:'גרם',  dflt:50,  cat:'veg' },
+  { id:'fd_parsley',       name:'פטרוזיליה',               cal:36,  prot:3,    fat:0.8,  carbs:6,   base:100, unit:'גרם',  dflt:20,  cat:'veg' },
+  { id:'fd_cilantro',      name:'כוסברה',                  cal:23,  prot:2.1,  fat:0.5,  carbs:3.7, base:100, unit:'גרם',  dflt:20,  cat:'veg' },
+  // מוצרי חלב נוספים
+  { id:'fd_leben',         name:'לֶבֶן (שתייה)',            cal:50,  prot:3.5,  fat:1.5,  carbs:5.5, base:100, unit:'מ"ל', dflt:250, cat:'dairy' },
+  { id:'fd_chocolate_milk',name:'שוקומילק',                cal:90,  prot:4,    fat:3.5,  carbs:12,  base:100, unit:'מ"ל', dflt:200, cat:'dairy' },
+  { id:'fd_pudding',       name:'פודינג שוקולד',           cal:130, prot:3,    fat:4,    carbs:20,  base:100, unit:'גרם',  dflt:120, cat:'dairy' },
+  { id:'fd_whipped_cream', name:'קצפת',                    cal:300, prot:2,    fat:29,   carbs:7,   base:100, unit:'גרם',  dflt:30,  cat:'dairy' },
+  // דגים נוספים
+  { id:'fd_anchovy',       name:'אנשובי',                  cal:131, prot:20,   fat:5,    carbs:0,   base:100, unit:'גרם',  dflt:20,  cat:'fish' },
+  { id:'fd_herring',       name:'הרינג',                   cal:158, prot:18,   fat:9,    carbs:0,   base:100, unit:'גרם',  dflt:80,  cat:'fish' },
+  { id:'fd_mackerel_oil',  name:'מקרל בשמן (קופסה)',       cal:220, prot:19,   fat:16,   carbs:0,   base:100, unit:'גרם',  dflt:100, cat:'fish' },
+  { id:'fd_fish_stick',    name:'מקלות דגים מטוגנים',      cal:200, prot:12,   fat:10,   carbs:16,  base:100, unit:'גרם',  dflt:100, cat:'fish' },
+  // עוף נוסף
+  { id:'fd_chicken_stuffed',name:'עוף ממולא (מנה)',        cal:380, prot:32,   fat:18,   carbs:14,  base:1,   unit:'מנה', dflt:1,   cat:'chicken' },
+  { id:'fd_chicken_curry', name:'קארי עוף',               cal:185, prot:22,   fat:9,    carbs:5,   base:100, unit:'גרם',  dflt:200, cat:'chicken' },
+  { id:'fd_chicken_soup',  name:'עוף מרק (ירך)',           cal:130, prot:20,   fat:5,    carbs:1,   base:100, unit:'גרם',  dflt:150, cat:'chicken' },
+  // בשר נוסף
+  { id:'fd_veal',          name:'עגל',                     cal:172, prot:26,   fat:7,    carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'beef' },
+  { id:'fd_lamb_chop',     name:'צלע כבש',                 cal:255, prot:22,   fat:18,   carbs:0,   base:100, unit:'גרם',  dflt:150, cat:'beef' },
+  { id:'fd_salami',        name:'סלאמי',                   cal:380, prot:20,   fat:33,   carbs:2,   base:100, unit:'גרם',  dflt:30,  cat:'beef' },
+  // קטניות נוספות
+  { id:'fd_hummus_full',   name:'מנת חומוס עם לחם',        cal:380, prot:14,   fat:14,   carbs:50,  base:1,   unit:'מנה', dflt:1,   cat:'legume' },
+  // פירות נוספים
+  { id:'fd_lychee',        name:"ליצ'י",                   cal:66,  prot:0.8,  fat:0.4,  carbs:17,  base:100, unit:'גרם',  dflt:100, cat:'fruit' },
+  { id:'fd_passion_fruit', name:'פסיפלורה',               cal:97,  prot:2.2,  fat:0.7,  carbs:23,  base:100, unit:'גרם',  dflt:80,  cat:'fruit' },
+  { id:'fd_guava',         name:'גויאבה',                  cal:68,  prot:2.6,  fat:1,    carbs:14,  base:100, unit:'גרם',  dflt:100, cat:'fruit' },
+  { id:'fd_dried_apricot', name:'משמש מיובש',              cal:241, prot:3.4,  fat:0.5,  carbs:63,  base:100, unit:'גרם',  dflt:30,  cat:'fruit' },
+  { id:'fd_raisin',        name:'צימוקים',                 cal:299, prot:3.1,  fat:0.5,  carbs:79,  base:100, unit:'גרם',  dflt:30,  cat:'fruit' },
+  // לחמים נוספים
+  { id:'fd_laffa',         name:'לאפה',                    cal:290, prot:9,    fat:2,    carbs:59,  base:1,   unit:"יח'", dflt:1,   cat:'bread' },
+  { id:'fd_focaccia',      name:"פוקאצ'ה",                 cal:220, prot:6,    fat:7,    carbs:33,  base:100, unit:'גרם',  dflt:100, cat:'bread' },
+  { id:'fd_pita_arabit',   name:'פיתה ערבית גדולה',        cal:320, prot:10,   fat:2,    carbs:65,  base:1,   unit:"יח'", dflt:1,   cat:'bread' },
+  { id:'fd_croutons',      name:'קרוטונים',                cal:407, prot:8,    fat:16,   carbs:57,  base:100, unit:'גרם',  dflt:20,  cat:'bread' },
+  // שונות נוספות
+  { id:'fd_ketchup_sweet', name:'חריף / כתשית',            cal:85,  prot:1.5,  fat:0.5,  carbs:19,  base:100, unit:'גרם',  dflt:20,  cat:'sauce' },
+  { id:'fd_soy_sauce',     name:'רוטב סויה',               cal:53,  prot:8,    fat:0.1,  carbs:5,   base:100, unit:'גרם',  dflt:10,  cat:'sauce' },
+  { id:'fd_balsamic',      name:'חומץ בלסמי',              cal:88,  prot:0.5,  fat:0,    carbs:17,  base:100, unit:'גרם',  dflt:10,  cat:'sauce' },
 ]
 
 // ✅ "המלצה חכמה לפי צלחת" — לכל פריט יש שני ערכים נפרדים שלא מתערבבים:
@@ -819,19 +927,33 @@ function FloatingPlateBars({ bars }) {
 // גדלים לפי החלוקה האישית (welcome_doc_json.plate) אם קיימת.
 // לפני אכילה המקטע לבן; הצבע מתקדם בתוך המקטע ביחס להתקדמות עד 100%;
 // חריגה מעל 100% מסומנת במקטע אדום יחסי לגודל החריגה + האחוז.
-function LivePlate({ bars, split }) {
+function LivePlate({ bars, split, macros }) {
   const get = k => (bars.find(b => b.label === k) || { pct: 0 }).pct
-  const CX = 110, CY = 102, R = 90
+  // ✅ מידות נבחרו כך שתווית הגרמים לא נחתכת בשפת הצלחת, לא נדרסת ע"י קערית השומן
+  // ולא מתנגשת בתווית שכנה — בכל חלוקת צלחת אפשרית (נבדק על חלוקות קיצון).
+  const CX = 124, CY = 112, R = 104
+  const PILL_W = 64, PILL_H = 30, LABEL_R = 0.62, BOWL_R = 26
+  const m = macros || {}
   const raw = {
     veggies: split && split.veggies > 0 ? split.veggies : 45,
     protein: split && split.protein > 0 ? split.protein : 30,
     carbs: split && split.carbs > 0 ? split.carbs : 25,
   }
   const sum = raw.veggies + raw.protein + raw.carbs
+  const g = n => Math.round(n)
+  // ✅ מקטין את הגופן אם המחרוזת ארוכה מרוחב התווית — כך שגם יעד תלת-ספרתי
+  // או חריגה גדולה לעולם לא ייחתכו בשפת התווית
+  const fit = (str, base, maxW) => {
+    const w = String(str).length * base * 0.54
+    return w <= maxW ? base : Math.max(7, base * maxW / w)
+  }
   const SECTORS = [
-    { key: 'protein', name: 'חלבונים', color: '#ef8b3a', emojis: ['🍗', '🐟', '🥚', '🥩'] },
-    { key: 'carbs', name: 'פחמימות', color: '#d9a83c', emojis: ['🍞', '🍚', '🥔', '🌽'] },
-    { key: 'veggies', name: 'ירקות', color: '#7cb342', emojis: ['🍅', '🥦', '🥒', '🥬', '🥕', '🫑'] },
+    { key: 'protein', name: '🍗 חלבון (ג׳)', color: '#ef8b3a',
+      value: m.protein ? `${g(m.protein.eaten)}/${m.protein.target}` : '', big: true },
+    { key: 'carbs', name: '🍞 פחמימות (ג׳)', color: '#d9a83c',
+      value: m.carbs ? `${g(m.carbs.eaten)}/${m.carbs.target}` : '', big: true },
+    { key: 'veggies', name: '🥦 ירקות', color: '#7cb342',
+      value: m.veggies ? `${m.veggies.eaten}/${m.veggies.target} ארוחות` : '', big: false },
   ]
   function slicePath(r, a0, a1) {
     const x0 = CX + r * Math.cos(a0), y0 = CY + r * Math.sin(a0)
@@ -852,24 +974,16 @@ function LivePlate({ bars, split }) {
     const fillEnd = a0 + span * Math.min(100, pct) / 100
     // חריגה: מקטע אדום מסוף המקטע אחורה, יחסי לגודל החריגה (100% חריגה = כל המקטע)
     const overFrac = pct > 100 ? Math.min(1, (pct - 100) / 100) : 0
-    const nSlots = sec.emojis.length
-    const eSpan = span * 0.72
-    const slots = sec.emojis.map((e, i) => {
-      const t = nSlots === 1 ? 0.5 : i / (nSlots - 1)
-      const a = mid - eSpan / 2 + eSpan * t
-      const r = i % 2 === 0 ? R * 0.52 : R * 0.72
-      return { x: CX + r * Math.cos(a), y: CY + r * Math.sin(a), e }
-    })
-    const count = pct <= 0 ? 0 : Math.max(1, Math.min(nSlots, Math.round(Math.min(110, pct) / 100 * nSlots)))
-    return { ...sec, a0, a1, span, mid, pct, fillEnd, overFrac, slots, count }
+    return { ...sec, a0, a1, span, mid, pct, fillEnd, overFrac }
   })
   const fatPct = get('fat')
   const fatOver = fatPct > 100
   const allDone = rendered.every(s => s.pct >= 95 && s.pct <= 110) && fatPct >= 95 && fatPct <= 110
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-      <svg width={224} height={206} viewBox="0 0 220 202">
-        <ellipse cx={CX} cy={193} rx={80} ry={7} fill="rgba(0,0,0,0.08)" />
+      <svg width="100%" viewBox="0 0 248 238" style={{ maxWidth: 268, display: 'block' }} role="img"
+        aria-label="הצלחת שלך היום — כמה גרם מכל אבות המזון נאכלו מתוך היעד היומי">
+        <ellipse cx={CX} cy={228} rx={90} ry={7} fill="rgba(0,0,0,0.08)" />
         <circle cx={CX} cy={CY} r={R + 4} fill="#fff" stroke="#e5e0d5" strokeWidth={2} />
         {/* שלב 1: בסיס לבן + מילוי צבע מתקדם לכל מקטע */}
         {rendered.map(sec => (
@@ -884,9 +998,6 @@ function LivePlate({ bars, split }) {
             {sec.overFrac > 0 && (
               <path d={slicePath(R, sec.a1 - sec.span * sec.overFrac, sec.a1)} fill="#ef4444" />
             )}
-            {sec.slots.slice(0, sec.count).map((sl, i) => (
-              <text key={i} x={sl.x} y={sl.y + 6} textAnchor="middle" fontSize={19}>{sl.e}</text>
-            ))}
           </g>
         ))}
         {/* שלב 2: קווי מתאר צבעוניים עבים — החלוקה ברורה גם כשהמקטע ריק */}
@@ -894,31 +1005,70 @@ function LivePlate({ bars, split }) {
           <path key={sec.key + '-outline'} d={slicePath(R, sec.a0, sec.a1)}
             fill="none" stroke={sec.color} strokeWidth={3.5} strokeLinejoin="round" />
         ))}
-        {/* שמות מקטעים + אחוז חריגה באדום כשקיימת */}
+        {/* ✅ תווית לכל מקטע: שם + כמה גרם נאכלו מתוך היעד — המספר הוא העיקר, לא האחוז */}
         {rendered.map(sec => {
-          const lx = CX + R * 0.86 * Math.cos(sec.mid)
-          const ly = CY + R * 0.86 * Math.sin(sec.mid)
+          const lx = CX + R * LABEL_R * Math.cos(sec.mid)
+          const ly = CY + R * LABEL_R * Math.sin(sec.mid)
+          const over = sec.pct > 110
           return (
             <g key={sec.key + '-label'}>
-              <rect x={lx - 27} y={ly - 9} width={54} height={17} rx={8.5}
-                fill={sec.pct > 110 ? '#dc2626' : sec.color} opacity={0.95} />
-              <text x={lx} y={ly + 3.5} textAnchor="middle" fontSize="9.5" fontWeight="800" fill="#fff">
-                {sec.pct > 110 ? `+${sec.pct - 100}%` : sec.name}
+              <rect x={lx - PILL_W / 2} y={ly - PILL_H / 2} width={PILL_W} height={PILL_H} rx={9}
+                fill={over ? '#dc2626' : sec.color} stroke="#fff" strokeWidth={1.5} />
+              <text x={lx} y={ly - 4} textAnchor="middle" fontSize={fit(sec.name, 8.5, PILL_W - 8)}
+                fontWeight="700" fill="#fff" opacity={0.95}>
+                {sec.name}
+              </text>
+              <text x={lx} y={ly + 9.5} textAnchor="middle" fontSize={fit(sec.value, sec.big ? 12.5 : 9.5, PILL_W - 8)}
+                fontWeight="900" fill="#fff">
+                {sec.value}
               </text>
             </g>
           )
         })}
-        {/* שומנים — קערית במרכז */}
-        <circle cx={CX} cy={CY} r={24} fill="#fffdf5" stroke={fatOver ? '#ef4444' : '#e8d9a8'} strokeWidth={fatOver ? 2.5 : 2} />
-        <circle cx={CX} cy={CY} r={17 * Math.sqrt(Math.min(100, fatPct) / 100) || 0} fill="#f2d55c" opacity={0.85} />
-        <text x={CX} y={CY + 1} textAnchor="middle" fontSize="14">🫒</text>
-        <text x={CX} y={CY + 14} textAnchor="middle" fontSize="7.5" fontWeight="800" fill={fatOver ? '#dc2626' : '#8a6d1f'}>
-          {fatOver ? `+${Math.round(fatPct) - 100}%` : 'שומנים'}
+        {/* שומן — קערית במרכז, עם הגרמים בתוכה */}
+        <circle cx={CX} cy={CY} r={BOWL_R} fill="#fffdf5" stroke={fatOver ? '#ef4444' : '#e8d9a8'} strokeWidth={fatOver ? 2.5 : 2} />
+        <circle cx={CX} cy={CY} r={(BOWL_R - 4) * Math.sqrt(Math.min(100, fatPct) / 100) || 0} fill="#f2d55c" opacity={0.85} />
+        <text x={CX} y={CY - 6} textAnchor="middle" fontSize="12">🫒</text>
+        <text x={CX} y={CY + 7} textAnchor="middle" fontWeight="900" fill={fatOver ? '#dc2626' : '#6b5310'}
+          fontSize={m.fat ? fit(`${g(m.fat.eaten)}/${m.fat.target}`, 10.5, BOWL_R * 1.7) : 10.5}>
+          {m.fat ? `${g(m.fat.eaten)}/${m.fat.target}` : ''}
         </text>
-        {allDone && <text x={192} y={30} textAnchor="middle" fontSize="20">✨</text>}
+        <text x={CX} y={CY + 16.5} textAnchor="middle" fontSize="6.8" fontWeight="800" fill={fatOver ? '#dc2626' : '#8a6d1f'}>
+          שומן (ג׳)
+        </text>
+        {allDone && <text x={216} y={32} textAnchor="middle" fontSize="20">✨</text>}
       </svg>
+      {/* ✅ שורת המספרים — כמה גרם נאכלו מכל אב מזון, וכמה עוד נשאר עד היעד היומי */}
+      {m.protein && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, width: '100%', marginTop: 8 }}>
+          {[
+            { k: 'protein', name: 'חלבון', emoji: '🍗', color: '#ef8b3a' },
+            { k: 'carbs', name: 'פחמימות', emoji: '🍞', color: '#d9a83c' },
+            { k: 'fat', name: 'שומן', emoji: '🫒', color: '#c9a227' },
+          ].map(it => {
+            const d = m[it.k] || { eaten: 0, target: 0, pct: 0 }
+            const over = d.pct > 110
+            const left = Math.max(0, Math.round(d.target - d.eaten))
+            return (
+              <div key={it.k} style={{ background: '#fafaf8', border: '1px solid #eceae4', borderRadius: 12, padding: '7px 4px 6px', textAlign: 'center' }}>
+                <div style={{ fontSize: 9.5, fontWeight: 800, color: '#64748b', whiteSpace: 'nowrap' }}>{it.emoji} {it.name}</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: over ? '#dc2626' : '#1e293b', lineHeight: 1.15, fontVariantNumeric: 'tabular-nums' }}>
+                  {Math.round(d.eaten)}
+                </div>
+                <div style={{ fontSize: 9, color: '#94a3b8', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>מתוך {d.target} ג׳</div>
+                <div style={{ height: 4, background: '#e8e6df', borderRadius: 99, overflow: 'hidden', margin: '4px 2px 0' }}>
+                  <div style={{ width: Math.min(100, d.pct) + '%', height: '100%', background: over ? '#dc2626' : it.color, borderRadius: 99, transition: 'width 0.3s' }} />
+                </div>
+                <div style={{ fontSize: 8.5, fontWeight: 800, color: over ? '#dc2626' : left > 0 ? '#64748b' : '#15803d', marginTop: 3, fontVariantNumeric: 'tabular-nums' }}>
+                  {over ? `חריגה ${Math.round(d.eaten - d.target)} ג׳` : left > 0 ? `נשאר ${left} ג׳` : '✓ הושלם'}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
       {allDone && (
-        <div style={{ fontSize: 12.5, color: '#15803d', fontWeight: 800, marginTop: 2 }}>הצלחת מאוזנת — הגוף קיבל הכל 💚</div>
+        <div style={{ fontSize: 12.5, color: '#15803d', fontWeight: 800, marginTop: 8 }}>הצלחת מאוזנת — הגוף קיבל הכל 💚</div>
       )}
     </div>
   )
@@ -1439,10 +1589,11 @@ const FOOD_CATS = [
   { key:'nuts',    label:'אגוזים',  emoji:'🥜' },
   { key:'israeli', label:'מנות',    emoji:'🍽️' },
   { key:'drink',   label:'שתייה',   emoji:'🥤' },
+  { key:'snack',   label:'חטיפים',  emoji:'🍫' },
   { key:'other',   label:'שונות',   emoji:'✨' },
 ]
 
-function FoodOtherSearch({ items, onItemsChange, accent }) {
+function FoodOtherSearch({ items, onItemsChange, accent, protRemain, carbRemain }) {
   const [query, setQuery] = useState('')
   const [cat, setCat] = useState(null)
   const [suggestions, setSuggestions] = useState([])
@@ -1474,8 +1625,25 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
     setCat(next); setQuery(''); setSelected(null); setOpen(!!next); setManual(false)
   }
 
+  function recQtyForFood(food) {
+    if (!food) return 0
+    const prot100 = food.base === 100 ? food.prot : (food.prot / (food.dflt || 1)) * 100
+    const carbs100 = food.base === 100 ? food.carbs : (food.carbs / (food.dflt || 1)) * 100
+    const isProtein = prot100 > carbs100
+    if (food.base === 1) {
+      if (isProtein && protRemain > 0 && food.prot > 0) return Math.max(1, Math.round(protRemain / food.prot))
+      if (!isProtein && carbRemain > 0 && food.carbs > 0) return Math.max(1, Math.round(carbRemain / food.carbs))
+      return food.dflt
+    } else {
+      if (isProtein && protRemain > 0 && prot100 > 0) return Math.min(300, Math.max(30, Math.round((protRemain / prot100) * 100)))
+      if (!isProtein && carbRemain > 0 && carbs100 > 0) return Math.min(300, Math.max(30, Math.round((carbRemain / carbs100) * 100)))
+      return food.dflt
+    }
+  }
+
   function pick(food) {
-    setSelected(food); setQuery(food.name); setQty(String(food.dflt)); setSuggestions([]); setOpen(false)
+    const rq = (protRemain > 0 || carbRemain > 0) ? recQtyForFood(food) : food.dflt
+    setSelected(food); setQuery(food.name); setQty(String(rq)); setSuggestions([]); setOpen(false)
   }
 
   function add() {
@@ -1506,6 +1674,10 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
   function remove(idx) { onItemsChange(items.filter((_, i) => i !== idx)) }
 
   const previewCal = selected && qty ? Math.round(selected.cal * (Number(qty) || selected.dflt) / selected.base) : null
+  const cal100display = selected ? (selected.base === 100 ? selected.cal : Math.round(selected.cal / (selected.dflt || 1) * 100)) : null
+  const prot100display = selected ? (selected.base === 100 ? selected.prot : Math.round(selected.prot / (selected.dflt || 1) * 100 * 10) / 10) : null
+  const carbs100display = selected ? (selected.base === 100 ? selected.carbs : Math.round(selected.carbs / (selected.dflt || 1) * 100 * 10) / 10) : null
+  const recQtyHint = selected && (protRemain > 0 || carbRemain > 0) ? recQtyForFood(selected) : null
   const totalCal = items.reduce((s, i) => s + i.cal, 0)
   const showDropdown = open && suggestions.length > 0 && !selected
 
@@ -1539,9 +1711,14 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
         {showDropdown && (
           <div style={{ position: 'absolute', top: '100%', right: 0, left: 0, background: '#fff', border: '1.5px solid ' + accent, borderRadius: 10, zIndex: 200, boxShadow: '0 4px 20px rgba(0,0,0,0.13)', maxHeight: 260, overflowY: 'auto' }}>
             {suggestions.map(food => (
-              <div key={food.id} onMouseDown={() => pick(food)} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', textAlign: 'right', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: 14, color: '#222' }}>{food.name}</span>
-                <span style={{ fontSize: 11, color: '#9ca3af', flexShrink: 0, marginRight: 8 }}>{food.cal} קל / {food.base === 1 ? food.unit : '100 ' + food.unit}</span>
+              <div key={food.id} onMouseDown={() => pick(food)} style={{ padding: '10px 14px', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', textAlign: 'right' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 14, color: '#222' }}>{food.name}</span>
+                  <span style={{ fontSize: 11, color: '#9ca3af', flexShrink: 0, marginRight: 8 }}>{food.cal} קל / {food.base === 1 ? food.unit : '100 גרם'}</span>
+                </div>
+                <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>
+                  ח׳ {food.base === 100 ? food.prot : Math.round(food.prot / (food.dflt||1) * 100 * 10)/10}  שומן {food.base === 100 ? food.fat : Math.round(food.fat / (food.dflt||1) * 100 * 10)/10}  פחמ׳ {food.base === 100 ? food.carbs : Math.round(food.carbs / (food.dflt||1) * 100 * 10)/10} (ל-{food.base === 1 ? food.unit : '100 גרם'})
+                </div>
               </div>
             ))}
           </div>
@@ -1549,12 +1726,23 @@ function FoodOtherSearch({ items, onItemsChange, accent }) {
       </div>
 
       {selected && (
-        <div style={{ display: 'flex', gap: 6, marginTop: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button onMouseDown={add} style={{ flexShrink: 0, padding: '8px 14px', borderRadius: 10, background: accent, color: '#fff', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>+ הוסיפי</button>
-          <input type="number" value={qty} onChange={e => setQty(e.target.value)}
-            style={{ width: 65, padding: '8px', borderRadius: 10, border: '1.5px solid ' + accent, fontSize: 13, textAlign: 'center', outline: 'none' }} />
-          <span style={{ fontSize: 13, color: '#555', flexShrink: 0 }}>{selected.unit}</span>
-          {previewCal !== null && <span style={{ fontSize: 12, color: accent, fontWeight: 700 }}>≈ {previewCal} קל</span>}
+        <div style={{ marginTop: 8 }}>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button onMouseDown={add} style={{ flexShrink: 0, padding: '8px 14px', borderRadius: 10, background: accent, color: '#fff', border: 'none', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>+ הוסיפי</button>
+            <input type="number" value={qty} onChange={e => setQty(e.target.value)}
+              style={{ width: 65, padding: '8px', borderRadius: 10, border: '1.5px solid ' + accent, fontSize: 13, textAlign: 'center', outline: 'none' }} />
+            <span style={{ fontSize: 13, color: '#555', flexShrink: 0 }}>{selected.unit}</span>
+            {previewCal !== null && <span style={{ fontSize: 12, color: accent, fontWeight: 700 }}>≈ {previewCal} קל</span>}
+          </div>
+          <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 4, textAlign: 'right' }}>
+            {selected.base === 100
+              ? <>ל-100 גרם: {cal100display} קל | ח׳ {prot100display} | פחמ׳ {carbs100display}</>
+              : <>ל{selected.unit}: {selected.cal} קל | ח׳ {selected.prot} | פחמ׳ {selected.carbs}</>
+            }
+            {recQtyHint && recQtyHint !== Number(qty) && (
+              <span style={{ marginRight: 8, color: accent, fontWeight: 700 }}>  ← מומלץ {recQtyHint} {selected.unit} להשלמת יעד</span>
+            )}
+          </div>
         </div>
       )}
 
@@ -1777,6 +1965,9 @@ export default function PlanApp({ clientName, userPassword }) {
   const [lunchOther, setLunchOther] = useState([])
   const [erevOther, setErevOther] = useState([])
   const [benayimOther, setBenayimOther] = useState([])
+  const [bokerFilter, setBokerFilter] = useState('')
+  const [lunchFilter, setLunchFilter] = useState('')
+  const [erevFilter, setErevFilter] = useState('')
 
   const fem = userGender !== 'זכר'
   const gf = (f, m) => fem ? f : m
@@ -2090,14 +2281,17 @@ export default function PlanApp({ clientName, userPassword }) {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition
     if (!SR || recordingActiveRef.current !== key) return
     recordingSessionRef.current[key] = ''
+    // מעקב מקומי על הindex האחרון שכבר עובד — תיקון לבאג Chrome שבו
+    // e.resultIndex לא תמיד מתקדם ואותן תוצאות סופיות נספרות פעמיים
+    let lastFinalIdx = 0
     const recognition = new SR()
     recognition.lang = 'he-IL'
     recognition.continuous = true
     recognition.interimResults = true
     recognition.onresult = (e) => {
-      // צבור תוצאות סופיות בנפרד — מונע איבוד טקסט כשהדפדפן לא מצבר e.results
       let gotFinal = false
-      for (let i = e.resultIndex; i < e.results.length; i++) {
+      // עיבוד רק תוצאות סופיות חדשות — אחרי lastFinalIdx
+      for (let i = lastFinalIdx; i < e.results.length; i++) {
         if (e.results[i].isFinal) {
           const phrase = e.results[i][0].transcript.trim()
           if (phrase) {
@@ -2105,11 +2299,12 @@ export default function PlanApp({ clientName, userPassword }) {
             recordingSessionRef.current[key] = prev ? prev + ' ' + phrase : phrase
             gotFinal = true
           }
+          lastFinalIdx = i + 1
         }
       }
-      // טקסט ביניים (לא סופי עדיין)
+      // טקסט ביניים — רק מה שעדיין לא סופי
       let interim = ''
-      for (let i = e.resultIndex; i < e.results.length; i++) {
+      for (let i = lastFinalIdx; i < e.results.length; i++) {
         if (!e.results[i].isFinal) interim += e.results[i][0].transcript
       }
       const base = recordingBaseRef.current[key] || ''
@@ -2118,13 +2313,11 @@ export default function PlanApp({ clientName, userPassword }) {
       const updated = { ...journeyAnswersRef.current, [key]: combined }
       journeyAnswersRef.current = updated
       setJourneyAnswers({ ...updated })
-      // שמור ל-localStorage מיד בכל ביטוי סופי — שורד סגירת אפליקציה
       if (gotFinal) saveRecordingDraft()
     }
     recognition.onend = () => {
       recognitionRef.current = null
       if (recordingActiveRef.current === key) {
-        // נעצר אוטומטית — העבר finals לbase, שמרי, והפעל מחדש
         const base = recordingBaseRef.current[key] || ''
         const finals = recordingSessionRef.current[key] || ''
         recordingBaseRef.current[key] = [base, finals].filter(Boolean).join(' ')
@@ -2133,7 +2326,6 @@ export default function PlanApp({ clientName, userPassword }) {
         autoSaveToSupabase()
         setTimeout(() => launchRecognitionSession(key), 250)
       } else {
-        // עצירת משתמש
         autoSaveToSupabase()
         delete recordingBaseRef.current[key]
         delete recordingSessionRef.current[key]
@@ -2389,6 +2581,13 @@ export default function PlanApp({ clientName, userPassword }) {
     { label: 'fat', emoji: '🫒', pct: fatTargetPct, color: plateBarColor(fatTargetPct) },
     { label: 'veggies', emoji: '🥦', pct: veggiesTargetPct, color: plateBarColor(veggiesTargetPct) },
   ]
+  // ✅ גרמים בפועל מול היעד — מה שהלקוחה צריכה לראות במספרים, לא רק כאחוז
+  const plateMacros = {
+    protein: { eaten: eatenProtein, target: targetProteinG, pct: proteinTargetPct },
+    carbs: { eaten: eatenCarbs, target: targetCarbsG, pct: carbsTargetPct },
+    fat: { eaten: eatenFat, target: targetFatG, pct: fatTargetPct },
+    veggies: { eaten: veggieMealsCount, target: 3, pct: veggiesTargetPct },
+  }
   // ✅ נקודות בדיקה לפי התקדמות קלורית — לא ברגע שמתחילים להזין (מעט מידי נתונים), אלא בשליש ובשני-שליש מהיעד הקלורי
   const calorieTargetPct = targets && targets.calories > 0 ? (eatenCalories / targets.calories) * 100 : 0
   const warnCheckpoint = calorieTargetPct >= 66 ? 66 : (calorieTargetPct >= 33 ? 33 : 0)
@@ -2424,6 +2623,10 @@ export default function PlanApp({ clientName, userPassword }) {
   const lunchCarbBudget = targets ? Math.round(targets.carbs / 2) : 0
   const lunchProtRows = buildBudgetRows(filteredProt, protChecks, protQty, protCheckOrder, lunchProtBudget, nutritionData, UNIT_PROTEIN_ITEMS, 'protein')
   const lunchCarbRows = buildBudgetRows(filteredCarbs, carbChecks, carbQty, carbCheckOrder, lunchCarbBudget, nutritionData, null, 'carbs')
+  const lunchProtActual = lunchProtRows.filter(r => r.isChecked).reduce((s, r) => s + r.macroDisplay, 0) + calcExtraProt() + lunchOther.reduce((s, it) => s + (it.prot || 0), 0)
+  const lunchCarbActual = lunchCarbRows.filter(r => r.isChecked).reduce((s, r) => s + r.macroDisplay, 0) + lunchOther.reduce((s, it) => s + (it.carbs || 0), 0)
+  const lunchProtRemain = Math.max(0, lunchProtBudget - lunchProtActual)
+  const lunchCarbRemain = Math.max(0, lunchCarbBudget - lunchCarbActual)
 
   if (!setupDone) {
     return (
@@ -3074,18 +3277,25 @@ export default function PlanApp({ clientName, userPassword }) {
                   <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.8)', marginTop: 2 }}>מטרה, חזון ומשאבים</div>
                 </div>
                 {[
-                  { key: 'goal_reason', section: 'המטרה', q: 'מה הביא אותך לכאן?', hint: 'מה גרם לך להחליט שעכשיו הזמן' },
-                  { key: 'goal_what', section: 'המטרה', q: 'מה את רוצה? איך ייראה השינוי עבורך?', hint: 'גוף, אנרגיה, לבוש, תחושה' },
-                  { key: 'goal_why', section: 'המטרה', q: 'למה זה חשוב לך?', hint: 'מה יש מאחורי הרצון?' },
-                  { key: 'goal_proof', section: 'המטרה', q: 'איך תדעי שהגעת?', hint: 'מה תרגישי, תראי, תשמעי' },
-                  { key: 'vision_see', section: 'החזון', q: 'כשתגיעי למטרה — מה תראי?', hint: 'מה נמצא מסביבך?' },
-                  { key: 'vision_hear', section: 'החזון', q: 'מה תשמעי?', hint: 'קולות, מילים' },
-                  { key: 'vision_feel', section: 'החזון', q: 'מה תרגישי בגוף?', hint: 'קלילות, חום, כוח' },
-                  { key: 'ecology_keep', section: 'משאבים', q: 'האם יש משהו שאת מפחדת לאבד?', hint: 'לפעמים השינוי מאיים — מה יכול להיות קשה?' },
-                  { key: 'resources_has', section: 'משאבים', q: 'מה כבר יש לך שיעזור לך?', hint: 'כוחות, תכונות, אנשים' },
-                  { key: 'resources_past', section: 'משאבים', q: 'מה עזר לך בעבר כשהצלחת?', hint: 'רגע שבו התגברת' },
-                  { key: 'vaccine_moment', section: 'הצעד', q: 'מהו הרגע הכי קשה ביום?', hint: 'שעה, מצב, רגש' },
-                  { key: 'first_step', section: 'הצעד', q: 'מה הצעד הראשון שתעשי השבוע?', hint: 'קטן וריאלי' },
+                  { key: 'goal_reason',    section: 'המטרה',    q: 'מה הביא אותך לכאן?',                             hint: 'מה גרם לך להחליט שעכשיו הזמן' },
+                  { key: 'goal_what',      section: 'המטרה',    q: 'מה את רוצה? איך ייראה השינוי עבורך?',           hint: 'גוף, אנרגיה, לבוש, תחושה' },
+                  { key: 'goal_context',   section: 'המטרה',    q: 'באיזה הקשר? מתי? עם מי? איפה?',                  hint: 'סיטואציות ספציפיות, שעות, אנשים' },
+                  { key: 'goal_why',       section: 'המטרה',    q: 'למה זה חשוב לך?',                               hint: 'מה יש מאחורי הרצון?' },
+                  { key: 'goal_proof',     section: 'המטרה',    q: 'איך תדעי שהגעת?',                               hint: 'מה תרגישי, תראי, תשמעי' },
+                  { key: 'vision_see',     section: 'החזון',    q: 'כשתגיעי למטרה — מה תראי?',                       hint: 'מה נמצא מסביבך?' },
+                  { key: 'vision_hear',    section: 'החזון',    q: 'מה תשמעי?',                                      hint: 'קולות, מילים' },
+                  { key: 'vision_feel',    section: 'החזון',    q: 'מה תרגישי בגוף?',                               hint: 'קלילות, חום, כוח' },
+                  { key: 'ecology_keep',   section: 'הרמוניה',  q: 'האם יש משהו שאת מפחדת לאבד?',                   hint: 'לפעמים השינוי מאיים — מה יכול להיות קשה?' },
+                  { key: 'ecology_harmony',section: 'הרמוניה',  q: 'איך תשמרי על מה שחשוב לך בתוך השינוי?',        hint: 'איך לשמור על מה שאהבת, גם תוך שינוי' },
+                  { key: 'ecology_who',    section: 'הרמוניה',  q: 'במי תלויה השגת המטרה?',                          hint: 'האם זה תלוי בך? במשפחה? בגורמים חיצוניים?' },
+                  { key: 'belief_hard',    section: 'אמונות',   q: 'מה גורם לך להרגיש שזה קשה או בלתי אפשרי?',     hint: 'מה המשפט שעולה לך כשאת חושבת על זה?' },
+                  { key: 'belief_when',    section: 'אמונות',   q: 'מתי החלטת שזה המצב?',                            hint: 'ייתכן שאירוע בעבר יצר את האמונה הזאת' },
+                  { key: 'resources_has',  section: 'משאבים',   q: 'מה כבר יש לך שיעזור לך?',                       hint: 'כוחות, תכונות, אנשים' },
+                  { key: 'resources_past', section: 'משאבים',   q: 'מה עזר לך בעבר כשהצלחת?',                       hint: 'רגע שבו התגברת' },
+                  { key: 'vaccine_moment', section: 'הצעד',     q: 'מהו הרגע הכי קשה ביום?',                        hint: 'שעה, מצב, רגש' },
+                  { key: 'vaccine_action', section: 'הצעד',     q: 'מה הפעולה הקטנה שתעשי גם ביום הכי קשה?',       hint: 'קטנה ומציאותית — גם כשאין כוח' },
+                  { key: 'vaccine_anchor', section: 'הצעד',     q: 'איזה משפט תגידי לעצמך ברגעים של עומס?',         hint: 'משפט שמרגיש אמיתי לך, לא סיסמה' },
+                  { key: 'first_step',     section: 'הצעד',     q: 'מה הצעד הראשון שתעשי השבוע?',                   hint: 'קטן וריאלי' },
                 ].reduce((acc, item) => { const last = acc[acc.length-1]; if (!last || last.s !== item.section) acc.push({ s: item.section, items: [item] }); else last.items.push(item); return acc }, []).map(({ s, items }) => (
                   <div key={s} style={{ marginBottom: 14 }}>
                     <div style={{ fontWeight: 800, fontSize: 11, color: '#7c3aed', letterSpacing: 1, marginBottom: 8, paddingRight: 2 }}>{s.toUpperCase()}</div>
@@ -3274,7 +3484,7 @@ export default function PlanApp({ clientName, userPassword }) {
         {targets && (
           <div style={{ background: '#fff', borderRadius: 18, padding: '14px 18px 10px', marginBottom: 14, border: '1.5px solid #f0f0f0' }}>
             <div style={{ fontWeight: 900, fontSize: 14, color: '#1e293b', marginBottom: 4, textAlign: 'center' }}>🍽️ הצלחת שלך היום</div>
-            <LivePlate bars={plateBars} split={plateSplit} />
+            <LivePlate bars={plateBars} split={plateSplit} macros={plateMacros} />
           </div>
         )}
 
@@ -3451,28 +3661,29 @@ export default function PlanApp({ clientName, userPassword }) {
         <Section title="ארוחת בוקר" icon="☀️" accent={C.orange} light={C.orangeLight} defaultOpen={true} cardBg="#fffdf8" cardBorder="#fed7aa">
           <div style={{ fontSize: 12, color: '#9ca3af', padding: '8px 0 4px', textAlign: 'right' }}>{PLAN.bokerSnack}</div>
           <YesNo value={hadSnack} onChange={setHadSnack} labelYes="✅ אכלתי חטיף" labelNo="❌ דילגתי" accent={C.orange} />
-          {filteredBokerProtein.length > 0 && (
+          <input value={bokerFilter} onChange={e => setBokerFilter(e.target.value)} placeholder="🔍 סננ/י מאכל בתפריט הבוקר..." style={{ width: '100%', padding: '7px 12px', borderRadius: 10, border: '1.5px solid #fed7aa', fontSize: 13, outline: 'none', boxSizing: 'border-box', textAlign: 'right', direction: 'rtl', marginTop: 6, marginBottom: 2, background: bokerFilter ? '#fff7ed' : '#fafafa' }} />
+          {filteredBokerProtein.filter(i => !bokerFilter || i.text.includes(bokerFilter)).length > 0 && (
             <>
               <div style={{ fontSize: 11, fontWeight: 700, color: C.orange, marginBottom: 4, marginTop: 4, textAlign: 'right' }}>🥛 חלבון</div>
-              {filteredBokerProtein.map(item => item.gramQty
+              {filteredBokerProtein.filter(i => !bokerFilter || i.text.includes(bokerFilter)).map(item => item.gramQty
                 ? <GramQtyCheckRow key={item.id} item={item} accent={C.orange} checked={!!checks[item.id]} qty={checksQty[item.id]} nutritionItem={nutritionData[nutritionId(item.id)]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setChecksQty(q => ({ ...q, [item.id]: v }))} />
                 : item.calPerSlice
                 ? <SliceQtyRow key={item.id} item={item} accent={C.orange} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
                 : <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
             </>
           )}
-          {filteredBokerCarbs.length > 0 && (
+          {filteredBokerCarbs.filter(i => !bokerFilter || i.text.includes(bokerFilter)).length > 0 && (
             <>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#d97706', marginBottom: 4, marginTop: 8, textAlign: 'right' }}>🍞 פחמימה</div>
-              {filteredBokerCarbs.map(item => item.calPerSlice
+              {filteredBokerCarbs.filter(i => !bokerFilter || i.text.includes(bokerFilter)).map(item => item.calPerSlice
                 ? <SliceQtyRow key={item.id} item={item} accent={C.orange} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
                 : <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
             </>
           )}
-          {filteredBokerExtra.length > 0 && (
+          {filteredBokerExtra.filter(i => !bokerFilter || i.text.includes(bokerFilter)).length > 0 && (
             <>
               <div style={{ fontSize: 11, fontWeight: 700, color: '#16a34a', marginBottom: 4, marginTop: 8, textAlign: 'right' }}>🌿 נוסף</div>
-              {filteredBokerExtra.map(item => <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
+              {filteredBokerExtra.filter(i => !bokerFilter || i.text.includes(bokerFilter)).map(item => <CheckRow key={item.id} id={item.id} text={withBaseQty(item.text, nutritionData[nutritionId(item.id)])} accent={C.orange} checked={!!checks[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} />)}
             </>
           )}
           <div style={{ fontWeight: 700, fontSize: 12, color: C.teal, padding: '10px 0 2px', textAlign: 'right' }}>🥗 ירקות לבוקר:</div>
@@ -3528,8 +3739,9 @@ export default function PlanApp({ clientName, userPassword }) {
                 )
               })()}
 
+              <input value={lunchFilter} onChange={e => setLunchFilter(e.target.value)} placeholder="🔍 סננ/י מאכל בתפריט הצהריים..." style={{ width: '100%', padding: '7px 12px', borderRadius: 10, border: '1.5px solid #86efac', fontSize: 13, outline: 'none', boxSizing: 'border-box', textAlign: 'right', direction: 'rtl', marginBottom: 6, background: lunchFilter ? '#f0fdf4' : '#fafafa' }} />
               <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '6px 0 2px', textAlign: 'right' }}>פחמימה:</div>
-              {lunchCarbRows.map(({ o, isChecked, recQty, calDisplay }) => {
+              {lunchCarbRows.filter(({ o }) => !lunchFilter || o.text.includes(lunchFilter)).map(({ o, isChecked, recQty, calDisplay }) => {
                 return (
                   <div key={o.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -3562,7 +3774,7 @@ export default function PlanApp({ clientName, userPassword }) {
               })}
 
               <div style={{ fontWeight: 700, fontSize: 12, color: C.greenMid, padding: '10px 0 2px', textAlign: 'right' }}>חלבון:</div>
-              {lunchProtRows.map(({ o, unitItem, isChecked, recQty, calDisplay }) => {
+              {lunchProtRows.filter(({ o }) => !lunchFilter || o.text.includes(lunchFilter)).map(({ o, unitItem, isChecked, recQty, calDisplay }) => {
                 return (
                   <div key={o.id}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -3607,7 +3819,7 @@ export default function PlanApp({ clientName, userPassword }) {
           {PLAN.veggieOptions.map(o => <CheckRow key={o.id} id={o.id} text={o.text} accent={C.teal} checked={!!veggieChecks[o.id]} onToggle={id => setVeggieChecks(v => ({ ...v, [id]: !v[id] }))} />)}
           <FreeText value={lunchFree} onChange={setLunchFree} placeholder="פרטים נוספים על הצהריים..." />
           <ExtraCal value={lunchExtraCal} onChange={setLunchExtraCal} valueProt={lunchExtraProt} onChangeProt={setLunchExtraProt} />
-          <FoodOtherSearch items={lunchOther} onItemsChange={setLunchOther} accent={C.greenMid} />
+          <FoodOtherSearch items={lunchOther} onItemsChange={setLunchOther} accent={C.greenMid} protRemain={lunchProtRemain} carbRemain={lunchCarbRemain} />
           <MealScanner gender={userGender} onAdd={(cal, desc, prot, fat, carbs) => { setScanCalories(c => c + cal); setScanDesc(desc); setScanProtein(p => p + (prot||0)); setScanFat(f => f + (fat||0)); setScanCarbs(c => c + (carbs||0)) }} joinedDate={joinedDate} />
           <ScanCorrection desc={scanDesc} cal={scanCalories} onChangeCal={setScanCalories} prot={scanProtein} onChangeProt={setScanProtein} fat={scanFat} onChangeFat={setScanFat} carbs={scanCarbs} onChangeCarbs={setScanCarbs} onReset={() => { setScanCalories(0); setScanDesc(''); setScanProtein(0); setScanFat(0); setScanCarbs(0) }} />
         </Section>
@@ -3658,7 +3870,8 @@ export default function PlanApp({ clientName, userPassword }) {
         </Section>
 
         <Section title="ארוחת ערב" icon="🌙" accent={C.purple} light={C.purpleLight} cardBg="#fffdf8" cardBorder="#fed7aa">
-          {filteredErev.map(item => item.gramQty
+          <input value={erevFilter} onChange={e => setErevFilter(e.target.value)} placeholder="🔍 סננ/י מאכל בתפריט הערב..." style={{ width: '100%', padding: '7px 12px', borderRadius: 10, border: '1.5px solid #d8b4fe', fontSize: 13, outline: 'none', boxSizing: 'border-box', textAlign: 'right', direction: 'rtl', marginBottom: 6, background: erevFilter ? '#faf5ff' : '#fafafa' }} />
+          {filteredErev.filter(i => !erevFilter || i.text.includes(erevFilter)).map(item => item.gramQty
             ? <GramQtyCheckRow key={item.id} item={item} accent={C.purple} checked={!!checks[item.id]} qty={checksQty[item.id]} nutritionItem={nutritionData[nutritionId(item.id)]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setChecksQty(q => ({ ...q, [item.id]: v }))} />
             : item.calPerSlice
             ? <SliceQtyRow key={item.id} item={item} accent={C.purple} checked={!!checks[item.id]} qty={carbQty[item.id]} onToggle={id => setChecks(c => { var n = {...c}; n[id] = !n[id]; return n })} onQtyChange={v => setCarbQty(q => ({ ...q, [item.id]: v }))} />
