@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>במקום כריך — מדריך לארוחת עשר ללא גלוטן</title>
+<meta name="description" content="ארוחת עשר היא לא ארוחת צהריים. מדריך להרכבת קופסה ללא גלוטן: במקום הלחם, במקום הממרח, וירק — עם כלי להרכבה עצמית.">
+<link rel="canonical" href="https://eti-zitun.com/lunchbox">
+
+<meta property="og:title" content="במקום כריך — מדריך לארוחת עשר ללא גלוטן">
+<meta property="og:description" content="ארוחת עשר לא צריכה להיות כבדה — היא צריכה להחזיק כמה שעות, להיאכל בעשר דקות, ולא לחזור הביתה שלמה.">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://eti-zitun.com/lunchbox">
+<meta property="og:site_name" content="בין הראש לצלחת">
+<meta property="og:locale" content="he_IL">
+<meta property="og:image" content="https://eti-zitun.com/og-lunchbox.jpg">
+<meta property="og:image:secure_url" content="https://eti-zitun.com/og-lunchbox.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:alt" content="בין הראש לצלחת — מדריך לארוחת עשר ללא גלוטן">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="במקום כריך — מדריך לארוחת עשר ללא גלוטן">
+<meta name="twitter:description" content="ארוחת עשר לא צריכה להיות כבדה — היא צריכה להחזיק כמה שעות ולא לחזור הביתה שלמה.">
+<meta name="twitter:image" content="https://eti-zitun.com/og-lunchbox.jpg">
+
+<meta name="theme-color" content="#3E4B31">
+<link rel="icon" href="/logo-mark.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700;900&family=Heebo:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#26301F;
+    --olive:#3E4B31;
+    --sage:#8A9A6B;
+    --sage-soft:#E4E8D8;
+    --cream:#F6F2E7;
+    --paper:#FDFBF4;
+    --amber:#B98F32;
+    --line:#DCD6C4;
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;background:var(--cream);color:var(--ink);
+    font-family:"Heebo",system-ui,sans-serif;line-height:1.7;font-size:17px;
+  }
+  .wrap{max-width:820px;margin:0 auto;padding:0 20px 80px;}
+
+  header{background:var(--olive);color:var(--paper);padding:56px 20px 48px;margin-bottom:44px;}
+  header .inner{max-width:820px;margin:0 auto;}
+  .eyebrow{font-size:13px;letter-spacing:.16em;font-weight:500;color:var(--sage-soft);opacity:.85;margin:0 0 18px;}
+  h1{font-family:"Frank Ruhl Libre",serif;font-weight:900;font-size:clamp(34px,7vw,54px);line-height:1.12;margin:0 0 18px;}
+  header p{margin:0;max-width:56ch;font-weight:300;font-size:clamp(16px,2.4vw,19px);color:#EDEAD9;}
+
+  h2{font-family:"Frank Ruhl Libre",serif;font-weight:700;font-size:clamp(24px,4.4vw,32px);line-height:1.25;margin:0 0 10px;color:var(--olive);}
+  .lede{margin:0 0 26px;max-width:60ch;color:#4A543D;}
+  section{margin-bottom:56px;}
+
+  .tray{
+    background:var(--paper);border:1px solid var(--line);border-radius:20px;
+    padding:22px;margin-bottom:26px;position:sticky;top:12px;z-index:5;
+    box-shadow:0 6px 24px rgba(38,48,31,.07);
+  }
+  .tray h3{font-size:13px;font-weight:500;letter-spacing:.12em;color:var(--sage);margin:0 0 14px;}
+  .slots{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+  .slot{background:var(--cream);border:1px dashed var(--line);border-radius:14px;padding:14px 12px;min-height:92px;display:flex;flex-direction:column;justify-content:space-between;}
+  .slot.filled{border-style:solid;border-color:var(--sage);background:#F1F4E8;}
+  .slot .role{font-size:12px;letter-spacing:.08em;color:var(--sage);font-weight:500;}
+  .slot .pick{font-weight:500;font-size:16px;margin-top:8px;}
+  .slot .pick.empty{color:#A9AF9B;font-weight:300;}
+  .tray-note{margin:16px 0 0;font-size:14px;color:#6B7460;border-top:1px solid var(--line);padding-top:12px;}
+
+  .col-title{display:flex;align-items:baseline;gap:10px;margin:32px 0 12px;flex-wrap:wrap;}
+  .col-title h3{font-family:"Frank Ruhl Libre",serif;font-size:22px;font-weight:700;color:var(--olive);margin:0;}
+  .col-title span{font-size:14px;color:#7C8570;font-weight:300;}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;padding:0;margin:0;list-style:none;}
+  .chip{
+    font-family:"Heebo",sans-serif;font-size:15px;background:var(--paper);color:var(--ink);
+    border:1px solid var(--line);border-radius:999px;padding:8px 16px;cursor:pointer;
+    transition:background .15s ease,border-color .15s ease,color .15s ease;
+  }
+  .chip:hover{border-color:var(--sage);}
+  .chip[aria-pressed="true"]{background:var(--olive);border-color:var(--olive);color:var(--paper);}
+  .chip:focus-visible{outline:2px solid var(--amber);outline-offset:2px;}
+
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;}
+  .card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:20px;}
+  .card h4{font-family:"Frank Ruhl Libre",serif;font-size:19px;font-weight:700;margin:0 0 8px;color:var(--olive);}
+  .card p{margin:0;font-size:15.5px;color:#4A543D;}
+
+  ul.plain{list-style:none;padding:0;margin:0;}
+  ul.plain li{padding:12px 0;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;}
+  ul.plain li:last-child{border-bottom:none;}
+  ul.plain b{font-weight:500;color:var(--olive);white-space:nowrap;}
+  ul.plain span{color:#4A543D;font-size:15.5px;}
+
+  .pull{
+    background:var(--sage-soft);border-radius:18px;padding:28px 26px;
+    font-family:"Frank Ruhl Libre",serif;font-size:clamp(20px,3.4vw,26px);
+    line-height:1.45;color:var(--olive);font-weight:500;
+  }
+  .safety{border-right:3px solid var(--amber);background:var(--paper);padding:16px 18px;border-radius:0 12px 12px 0;font-size:15px;color:#5A6350;}
+  footer{border-top:1px solid var(--line);padding-top:24px;font-size:15px;color:#6B7460;}
+  footer strong{color:var(--olive);font-weight:500;}
+
+  @media (max-width:560px){
+    .slots{grid-template-columns:1fr;}
+    .slot{min-height:0;flex-direction:row;align-items:center;justify-content:space-between;}
+    .slot .pick{margin-top:0;}
+    .tray{position:static;}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <p class="eyebrow">בין הראש לצלחת</p>
+    <h1>במקום כריך</h1>
+    <p>ארוחת עשר היא לא ארוחת צהריים. היא לא צריכה להיות כבדה — היא צריכה להחזיק כמה שעות, להיאכל בעשר דקות, ולא לחזור הביתה שלמה.</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section>
+    <h2>מה בעצם יש בכריך</h2>
+    <p class="lede">כשמפרקים אותו, כריך הוא שלושה דברים: נשא, משהו שמרוח או מונח עליו, ובצד — משהו טרי. אף אחד משלושתם לא חייב להיות לחם.</p>
+    <div class="pull">אותם מרכיבים בדיוק.<br>צורת הגשה אחרת לגמרי.</div>
+  </section>
+
+  <section>
+    <h2>מרכיבים קופסה</h2>
+    <p class="lede">בחרו דבר אחד מכל טור. הירק הוא לא תוספת — הוא חלק מהארוחה.</p>
+
+    <div class="tray" aria-live="polite">
+      <h3>הקופסה שלכם</h3>
+      <div class="slots">
+        <div class="slot">
+          <span class="role">במקום הלחם</span>
+          <span class="pick empty" data-slot="base">עוד לא נבחר</span>
+        </div>
+        <div class="slot">
+          <span class="role">במקום הממרח</span>
+          <span class="pick empty" data-slot="spread">עוד לא נבחר</span>
+        </div>
+        <div class="slot">
+          <span class="role">ירק — חובה</span>
+          <span class="pick empty" data-slot="veg">עוד לא נבחר</span>
+        </div>
+      </div>
+      <p class="tray-note" id="trayNote">אפשר להחליף ולראות מה מתקבל. כל שילוב הוא ארוחה שלמה.</p>
+    </div>
+
+    <div class="col-title"><h3>במקום הלחם</h3><span>מה שנושא את השאר</span></div>
+    <ul class="chips" data-group="base">
+      <li><button class="chip" aria-pressed="false">לחמנייה ל״ג קטנה</button></li>
+      <li><button class="chip" aria-pressed="false">קרקרים ל״ג</button></li>
+      <li><button class="chip" aria-pressed="false">פריכיות אורז או תירס</button></li>
+      <li><button class="chip" aria-pressed="false">טורטייה ל״ג</button></li>
+      <li><button class="chip" aria-pressed="false">דפי אורז</button></li>
+      <li><button class="chip" aria-pressed="false">לביבות תפו״א</button></li>
+      <li><button class="chip" aria-pressed="false">לביבות בטטה</button></li>
+      <li><button class="chip" aria-pressed="false">לביבות קישוא</button></li>
+      <li><button class="chip" aria-pressed="false">מאפין ירק וגבינה</button></li>
+      <li><button class="chip" aria-pressed="false">פנקייק מלוח ל״ג</button></li>
+      <li><button class="chip" aria-pressed="false">חביתה מגולגלת</button></li>
+    </ul>
+
+    <div class="col-title"><h3>במקום הממרח</h3><span>מה שהופך אותו לארוחה</span></div>
+    <ul class="chips" data-group="spread">
+      <li><button class="chip" aria-pressed="false">חומוס ביתי</button></li>
+      <li><button class="chip" aria-pressed="false">טחינה</button></li>
+      <li><button class="chip" aria-pressed="false">לאבנה</button></li>
+      <li><button class="chip" aria-pressed="false">גבינת שמנת</button></li>
+      <li><button class="chip" aria-pressed="false">קוטג׳</button></li>
+      <li><button class="chip" aria-pressed="false">גבינה צהובה בקוביות</button></li>
+      <li><button class="chip" aria-pressed="false">גבינה בולגרית</button></li>
+      <li><button class="chip" aria-pressed="false">מטבל טונה</button></li>
+      <li><button class="chip" aria-pressed="false">ביצה קשה מעוכה</button></li>
+      <li><button class="chip" aria-pressed="false">ממרח אבוקדו עם לימון</button></li>
+    </ul>
+
+    <div class="col-title"><h3>ירק</h3><span>לא תוספת — חלק מהארוחה</span></div>
+    <ul class="chips" data-group="veg">
+      <li><button class="chip" aria-pressed="false">עגבניות שרי</button></li>
+      <li><button class="chip" aria-pressed="false">מקלות מלפפון</button></li>
+      <li><button class="chip" aria-pressed="false">גזר מגולגל</button></li>
+      <li><button class="chip" aria-pressed="false">רצועות פלפל</button></li>
+      <li><button class="chip" aria-pressed="false">קולורבי</button></li>
+      <li><button class="chip" aria-pressed="false">סלרי</button></li>
+      <li><button class="chip" aria-pressed="false">תירס</button></li>
+    </ul>
+
+    <p class="tray-note" style="border:none;padding-top:18px;">ואם יש מקום — פרי חתוך בצד. ענבים, תפוח, קלמנטינה, תותים, אבטיח.</p>
+  </section>
+
+  <section>
+    <h2>אותו אוכל, צורה אחרת</h2>
+    <p class="lede">זה מה שעושה את רוב העבודה. הילד לא בהכרח לא רוצה את המרכיבים — הוא לא רוצה את הצורה שהם מגיעים בה כבר חודשיים.</p>
+    <ul class="plain">
+      <li><b>מגולגל</b><span>טורטייה עם ממרח, מגולגלת וחתוכה לעיגולים. אותו כריך, נראה אחרת לגמרי.</span></li>
+      <li><b>קריספי</b><span>טורטייה חתוכה למשולשים ונקלית עד שהיא פריכה, עם מטבל בצד.</span></li>
+      <li><b>רול דף אורז</b><span>ממולא ברצועות ירק וגבינה. לוקח שתי דקות ונראה כמו משהו מיוחד.</span></li>
+      <li><b>לטבילה</b><span>קופסה עם מטבל ולידה מקלות ירק וקרקרים. ילדים אוכלים בטבילה מה שלא יאכלו בכריך.</span></li>
+      <li><b>בקוביות</b><span>הכל חתוך קטן וניתן לאכילה ביד. בהפסקה זה מה שנאכל.</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>חומוס אחד לשבוע</h2>
+    <p class="lede">אם יש דבר אחד שמשנה את כל השבוע, זה הוא. חומוס ביתי טוב שמכינים פעם אחת בתחילת השבוע ומעמידים קדימה במקרר — לא מאחורי כל השאר.</p>
+    <div class="cards">
+      <div class="card">
+        <h4>למה דווקא הוא</h4>
+        <p>הוא מחזיק כמה ימים, מתאים כמעט לכל נשא, ומשמש גם כממרח וגם כמטבל. ילד שלא רוצה כריך יטבול בו מקלות ירק.</p>
+      </div>
+      <div class="card">
+        <h4>איך משנים אותו</h4>
+        <p>אותו חומוס עם טיפת שמן זית ופפריקה, או עם קוביות ירק מעל, נראה בכל פעם אחרת בקופסה.</p>
+      </div>
+      <div class="card">
+        <h4>מה עוד שווה מראש</h4>
+        <p>ביצים קשות, ירקות חתוכים בקופסה שקופה, גבינה חתוכה לקוביות. עשרים דקות בסוף השבוע.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>מה שטעים גם קר — ייאכל</h2>
+    <p class="lede">זה המבחן היחיד שצריך. לביבה, מאפין, חביתה או פנקייק שעברו את הלילה במקרר ועדיין טעימים בבוקר — מתאימים לקופסה.</p>
+    <div class="cards">
+      <div class="card">
+        <h4>עובד טוב קר</h4>
+        <p>לביבות ירק, מאפינים מלוחים, חביתה, קרקרים ומטבלים, ירקות חתוכים, גבינות.</p>
+      </div>
+      <div class="card">
+        <h4>פחות מומלץ</h4>
+        <p>מה שנרטב או מתקשה — נשא רך עם ממרח לח שמונח שעות, מטוגן דק, אבוקדו חתוך שמשחיר.</p>
+      </div>
+      <div class="card">
+        <h4>הבוקר הוא לא זמן הכנה</h4>
+        <p>אם משהו דורש בישול בשבע בבוקר, הוא לא ייכנס לקופסה. אורזים, לא מכינים.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>שני דברים שקשורים לילד, לא לאוכל</h2>
+    <div class="cards">
+      <div class="card">
+        <h4>שיהיה בה משהו שהוא בחר</h4>
+        <p>ילד שהיה שותף למה שנכנס פנימה פותח את הקופסה אחרת. בחירה אחת בשבוע מספיקה.</p>
+      </div>
+      <div class="card">
+        <h4>שתיראה כמו של כולם</h4>
+        <p>הקופסה היא גם הרגע שבו הוא יושב ליד ילדים אחרים. ככל שהיא פחות מיוחדת — כך טוב יותר.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="safety">
+      חשוב: יש לוודא שכל המוצרים מסומנים ומתאימים לתזונה ללא גלוטן, ולשים לב להנחיות הגן או בית הספר לגבי אגוזים, שומשום ובוטנים. בשאלות של חסרים תזונתיים, מעקב או כמויות — כדאי להתייעץ עם דיאטנית קלינית שמכירה את התיק.
+    </div>
+  </section>
+
+  <footer>
+    <p><strong>אתי רפאלה זיתון</strong> — יועצת בריאות בגישה תזונתית־התנהגותית, מאסטר NLP ומייסדת "בין הראש לצלחת".</p>
+    <p>@eti.rafaela.zitun · eti-zitun.com</p>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  var picks = {base:null, spread:null, veg:null};
+  var full = "זו קופסה שלמה. אותם מרכיבים — הגשה אחרת.";
+  var idle = "אפשר להחליף ולראות מה מתקבל. כל שילוב הוא ארוחה שלמה.";
+  var vegNote = "בלי הירק זו עדיין ארוחה, אבל הוא מה שהופך אותה לשלמה.";
+
+  document.querySelectorAll('.chips').forEach(function(list){
+    var group = list.dataset.group;
+    list.addEventListener('click', function(e){
+      var btn = e.target.closest('.chip');
+      if(!btn) return;
+      var on = btn.getAttribute('aria-pressed') === 'true';
+      list.querySelectorAll('.chip').forEach(function(c){ c.setAttribute('aria-pressed','false'); });
+      picks[group] = on ? null : btn.textContent.trim();
+      if(!on) btn.setAttribute('aria-pressed','true');
+      render();
+    });
+  });
+
+  function render(){
+    ['base','spread','veg'].forEach(function(g){
+      var el = document.querySelector('.pick[data-slot="'+g+'"]');
+      var slot = el.closest('.slot');
+      if(picks[g]){
+        el.textContent = picks[g];
+        el.classList.remove('empty');
+        slot.classList.add('filled');
+      } else {
+        el.textContent = 'עוד לא נבחר';
+        el.classList.add('empty');
+        slot.classList.remove('filled');
+      }
+    });
+    var note = document.getElementById('trayNote');
+    if(picks.base && picks.spread && picks.veg){
+      note.textContent = full;
+    } else if(picks.base && picks.spread && !picks.veg){
+      note.textContent = vegNote;
+    } else {
+      note.textContent = idle;
+    }
+  }
+})();
+</script>
+
+</body>
+</html>
