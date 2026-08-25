@@ -52,6 +52,8 @@
 
   header{background:var(--olive);color:var(--paper);padding:56px 20px 48px;margin-bottom:44px;}
   header .inner{max-width:820px;margin:0 auto;}
+  .brand{display:block;width:auto;height:132px;margin:0 0 28px;}
+  @media (max-width:560px){.brand{height:108px;margin-bottom:22px;}}
   .eyebrow{font-size:13px;letter-spacing:.16em;font-weight:500;color:var(--sage-soft);opacity:.85;margin:0 0 18px;}
   h1{font-family:"Frank Ruhl Libre",serif;font-weight:900;font-size:clamp(34px,7vw,54px);line-height:1.12;margin:0 0 18px;}
   header p{margin:0;max-width:56ch;font-weight:300;font-size:clamp(16px,2.4vw,19px);color:#EDEAD9;}
@@ -105,7 +107,8 @@
     line-height:1.45;color:var(--olive);font-weight:500;
   }
   .safety{border-right:3px solid var(--amber);background:var(--paper);padding:16px 18px;border-radius:0 12px 12px 0;font-size:15px;color:#5A6350;}
-  footer{border-top:1px solid var(--line);padding-top:24px;font-size:15px;color:#6B7460;}
+  footer{border-top:1px solid var(--line);padding-top:28px;font-size:15px;color:#6B7460;text-align:center;}
+  .footer-mark{display:block;height:96px;width:auto;margin:0 auto 18px;opacity:.9;}
   footer strong{color:var(--olive);font-weight:500;}
 
   @media (max-width:560px){
@@ -121,7 +124,8 @@
 
 <header>
   <div class="inner">
-    <p class="eyebrow">בין הראש לצלחת</p>
+    <img class="brand" src="/logo-gold.png" alt="בין הראש לצלחת — אתי רפאלה זיתון, יועצת בריאות במגמת תזונה התנהגותית" width="371" height="377">
+    <p class="eyebrow">מדריך להורים</p>
     <h1>במקום כריך</h1>
     <p>ארוחת עשר היא לא ארוחת צהריים. היא לא צריכה להיות כבדה — היא צריכה להחזיק כמה שעות, להיאכל בעשר דקות, ולא לחזור הביתה שלמה.</p>
   </div>
@@ -272,6 +276,7 @@
   </section>
 
   <footer>
+    <img class="footer-mark" src="/logo-mark.png" alt="" width="515" height="520" loading="lazy">
     <p><strong>אתי רפאלה זיתון</strong> — יועצת בריאות בגישה תזונתית־התנהגותית, מאסטר NLP ומייסדת "בין הראש לצלחת".</p>
     <p>@eti.rafaela.zitun · eti-zitun.com</p>
   </footer>
