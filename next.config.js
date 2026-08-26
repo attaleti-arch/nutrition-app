@@ -7,6 +7,8 @@ const nextConfig = {
       { source: '/celiac', destination: '/celiac.html' },
       { source: '/lunchbox', destination: '/lunchbox.html' },
       { source: '/lunchbox/', destination: '/lunchbox.html' },
+      { source: '/fat-guide', destination: '/fat-guide.html' },
+      { source: '/fat-guide/', destination: '/fat-guide.html' },
     ]
   },
 }
