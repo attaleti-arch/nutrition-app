@@ -1,0 +1,1826 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>בית שמאפשר לאכול</title>
+<link rel="canonical" href="https://eti-zitun.com/families">
+<meta property="og:title" content="בית שמאפשר לאכול">
+<meta property="og:description" content="הילד לא ישתנה מעוד הסבר. הבית כן. ליווי אישי לאמהות סביב אוכל — משקל ואורח חיים, בררנות ומאבקי ארוחות, צליאק ואלרגיה.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://eti-zitun.com/families">
+<meta property="og:site_name" content="בין הראש לצלחת">
+<meta property="og:locale" content="he_IL">
+<meta property="og:image" content="https://eti-zitun.com/og-families.jpg?v=1">
+<meta property="og:image:secure_url" content="https://eti-zitun.com/og-families.jpg?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:alt" content="בין הראש לצלחת — בית שמאפשר לאכול">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="בית שמאפשר לאכול">
+<meta name="twitter:description" content="הילד לא ישתנה מעוד הסבר. הבית כן.">
+<meta name="twitter:image" content="https://eti-zitun.com/og-families.jpg?v=1">
+<meta name="theme-color" content="#1A2E1A">
+<link rel="icon" href="/logo-mark.png">
+  <meta name="description" content="הילד לא ישתנה מעוד הסבר. הבית כן. ליווי אישי לאמהות סביב אוכל — משקל ואורח חיים, בררנות ומאבקי ארוחות, צליאק ואלרגיה. אתי רפאלה זיתון.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&family=Assistant:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ============================================================
+       TOKENS
+       Single-theme by choice: warm paper, three deep-green anchors.
+       Every surface painted explicitly so the page holds anywhere.
+    ============================================================ */
+    :root {
+      /* the brand palette, sampled from the existing site */
+      --paper:        #F5EDE0;   /* קרם */
+      --paper-2:      #E8D9C4;   /* קרם עמוק */
+      --paper-card:   #FFFFFF;   /* לבן */
+
+      --forest:       #1A2E1A;   /* ירוק כהה מאוד */
+      --forest-deep:  #12210F;   /* עמוק עוד יותר, לסגירה */
+      --olive:        #3A5C3A;   /* ירוק זית */
+      --forest-soft:  #5E785A;   /* ירוק בהיר */
+
+      --honey:        #C8A83C;   /* זהב */
+      --honey-deep:   #7A6218;   /* זהב כהה, לטקסט על קרם */
+
+      --on-paper:        #1A2E1A;
+      --on-paper-muted:  #4C5E4A;
+      --on-paper-faint:  #7C8A79;
+      --on-forest:       #F5EDE0;
+      --on-forest-muted: #B4C6AE;
+
+      --line-paper:  rgba(26 46 26 / 0.14);
+      --line-forest: rgba(255 255 255 / 0.13);
+    }
+
+    /* ============================================================
+       RESET
+    ============================================================ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 18px; scroll-behavior: smooth; }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    body {
+      font-family: 'Assistant', 'Arial Hebrew', Arial, sans-serif;
+      background: var(--paper);
+      color: var(--on-paper);
+      direction: rtl;
+      text-align: right;
+      line-height: 1.78;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    :focus-visible {
+      outline: 2px solid var(--honey);
+      outline-offset: 3px;
+      border-radius: 4px;
+    }
+
+    h1, h2, h3 {
+      font-family: 'Rubik', 'Arial Hebrew', Arial, sans-serif;
+      text-wrap: balance;
+      line-height: 1.2;
+      font-weight: 700;
+    }
+
+    /* ============================================================
+       LAYOUT
+    ============================================================ */
+    .container {
+      width: 100%;
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 28px;
+    }
+
+    .section { padding: 76px 0; }
+    .section--tight { padding: 58px 0; }
+
+    @media (max-width: 768px) {
+      .section { padding: 62px 0; }
+      .section--tight { padding: 42px 0; }
+    }
+
+    /* alternating full-width grounds — one per block */
+    .bg-paper   { background: var(--paper); }
+    .bg-paper2  { background: var(--paper-2); }
+    .bg-forest  { background: var(--forest);      color: var(--on-forest); }
+    .bg-forestd { background: var(--forest-deep); color: var(--on-forest); }
+    .bg-olive   { background: var(--olive);       color: var(--on-forest); }
+
+    /* ============================================================
+       SHARED TYPE
+    ============================================================ */
+    .eyebrow {
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.70rem;
+      font-weight: 700;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+      color: var(--olive);
+      margin-bottom: 16px;
+    }
+    .eyebrow--forest { color: var(--on-forest-muted); }
+
+    .h2 {
+      font-size: clamp(1.6rem, 4.1vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.018em;
+      color: var(--on-paper);
+    }
+    .h2--forest { color: var(--honey); }
+    .h2--forest::after,
+    .statement h2::after,
+    .about-name::after {
+      content: "";
+      display: block;
+      width: 64px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--honey);
+      margin-top: 16px;
+    }
+
+    /* the italic-ish thesis line that sits under a heading */
+    .sub {
+      font-family: 'Rubik', sans-serif;
+      font-size: clamp(1.02rem, 2.2vw, 1.24rem);
+      font-weight: 500;
+      line-height: 1.62;
+      color: var(--olive);
+      margin-top: 22px;
+      max-width: 46ch;
+    }
+    .sub--forest { color: var(--on-forest-muted); }
+
+    .p {
+      font-size: 1.06rem;          /* ~19px — measured off the original */
+      line-height: 1.79;           /* 34px line pitch — measured */
+      color: var(--on-paper-muted);
+      max-width: 62ch;
+      margin-top: 26px;
+    }
+    .p--forest { color: var(--on-forest-muted); }
+
+    .p strong         { color: var(--on-paper);  font-weight: 700; }
+    .p--forest strong { color: var(--honey); font-weight: 700; }
+
+    /* ============================================================
+       BUTTONS
+    ============================================================ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-family: 'Rubik', sans-serif;
+      font-weight: 700;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: background 0.18s, color 0.18s, border-color 0.18s, transform 0.18s;
+    }
+
+    .btn-primary {
+      background: var(--honey);
+      color: var(--forest);
+      font-size: 1rem;
+      padding: 15px 34px;
+      border-radius: 999px;
+      min-height: 54px;
+      box-shadow: 0 2px 14px rgba(200 168 60 / 0.26);
+    }
+    .btn-primary:hover { background: #D8B94A; transform: translateY(-1px); }
+
+    .btn-ghost {
+      color: var(--forest);
+      font-size: 0.92rem;
+      padding: 14px 6px;
+      min-height: 48px;
+      border-bottom: 1.5px solid rgba(58 92 58 / 0.3);
+    }
+    .btn-ghost:hover { color: var(--honey-deep); border-color: var(--honey); }
+
+    .btn-outline {
+      color: var(--forest);
+      border: 1.5px solid rgba(58 92 58 / 0.32);
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 12px 26px;
+      min-height: 46px;
+    }
+    .btn-outline:hover { border-color: var(--forest); background: rgba(58 92 58 / 0.05); }
+
+    /* ============================================================
+       HEADER
+    ============================================================ */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--forest);
+      border-bottom: 1px solid rgba(255 255 255 / 0.08);
+    }
+
+    .header-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 64px;
+    }
+
+    .site-logo {
+      font-family: 'Rubik', sans-serif;
+      font-weight: 800;
+      font-size: 0.98rem;
+      color: var(--on-forest);
+      text-decoration: none;
+      letter-spacing: -0.01em;
+    }
+    .site-logo em   { font-style: normal; color: var(--honey); }
+    .site-logo span { font-weight: 400; color: var(--on-forest-muted); font-size: 0.8rem; margin-right: 5px; }
+
+    .btn-header {
+      font-family: 'Rubik', sans-serif;
+      font-weight: 700;
+      font-size: 0.84rem;
+      color: var(--forest);
+      background: var(--honey);
+      text-decoration: none;
+      padding: 10px 26px;
+      border-radius: 999px;
+      transition: background 0.18s;
+      white-space: nowrap;
+    }
+    .btn-header:hover { background: #D8B94A; }
+
+    /* ============================================================
+       1 · HOOK
+    ============================================================ */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 96px 0 100px;
+      background:
+        radial-gradient(120% 80% at 88% 0%, rgba(58 92 58 / 0.09) 0%, rgba(58 92 58 / 0) 58%),
+        radial-gradient(90% 70% at 4% 100%, rgba(58 92 58 / 0.07) 0%, rgba(58 92 58 / 0) 60%),
+        var(--paper);
+    }
+
+    @media (max-width: 768px) { .hero { padding: 62px 0 68px; } }
+
+    .hero-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 38px;
+    }
+
+    .hero-figure { order: -1; width: 100%; }
+
+    .hero-figure {
+      position: relative;
+      justify-self: center;
+    }
+
+    /* soft warm halo behind the portrait */
+    .hero-figure::before {
+      content: "";
+      position: absolute;
+      inset: -26px -22px -18px -26px;
+      border-radius: 50% 50% 46% 46%;
+      background: radial-gradient(circle at 50% 42%, rgba(58 92 58 / 0.14) 0%, rgba(58 92 58 / 0) 70%);
+      z-index: 0;
+    }
+
+    .hero-photo {
+      position: relative;
+      z-index: 1;
+      display: block;
+      width: 100%;
+      max-width: 700px;               /* capped by the source resolution */
+      margin-inline: auto;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      object-position: center 26%;
+      border-radius: 20px;
+      box-shadow: 0 18px 44px rgba(26 46 26 / 0.18), 0 3px 10px rgba(26 46 26 / 0.08);
+    }
+
+    @media (max-width: 760px) {
+      /* full-bleed: cancel the container gutter entirely.
+         the explicit width must grow too — a flex item with width:100%
+         is not widened by negative margins, only shifted. */
+      .hero-figure { margin-inline: -28px; width: calc(100% + 56px); }
+      .hero-photo { border-radius: 0; aspect-ratio: 1 / 1; }
+      .hero-figure::before { display: none; }
+    }
+
+    .hero-eyebrow {
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--honey-deep);
+      margin-bottom: 22px;
+    }
+
+    .hero h1 {
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 800;
+      color: var(--forest);
+      letter-spacing: -0.028em;
+      max-width: 17ch;
+      line-height: 1.12;
+    }
+
+    .hero-thesis {
+      font-family: 'Rubik', sans-serif;
+      font-size: clamp(1.08rem, 2.6vw, 1.42rem);
+      font-weight: 600;
+      line-height: 1.55;
+      color: var(--on-paper);
+      margin-top: 22px;
+      max-width: 34ch;
+    }
+
+    .hero-thesis u {
+      text-decoration: none;
+      background: linear-gradient(transparent 64%, rgba(58 92 58 / 0.18) 64%);
+      padding: 0 2px;
+    }
+
+    .hero-body {
+      font-size: clamp(1rem, 2vw, 1.1rem);
+      line-height: 1.9;
+      color: var(--on-paper-muted);
+      max-width: 52ch;
+      margin-top: 26px;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px 24px;
+      margin-top: 36px;
+    }
+
+    /* ============================================================
+       2 · THREE ENTRY POINTS
+    ============================================================ */
+    .gates {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+      margin-top: 40px;
+    }
+
+    @media (max-width: 860px) { .gates { grid-template-columns: 1fr; } }
+
+    .gate {
+      background: var(--paper-card);
+      border: 1px solid var(--line-paper);
+      border-radius: 14px;
+      padding: 26px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .gate-mark {
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gate-mark svg { width: 21px; height: 21px; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+    .gate .gate-mark { background: rgba(58 92 58 / 0.10); }
+    .gate .gate-mark svg { stroke: var(--forest); }
+
+    .gate h3 { font-size: 1.06rem; font-weight: 800; color: var(--on-paper); }
+    .gate p  { font-size: 0.9rem; line-height: 1.75; color: var(--on-paper-muted); }
+
+    /* ============================================================
+       3 · STATEMENT (dark anchor)
+    ============================================================ */
+    .statement h2 {
+      font-size: clamp(1.8rem, 4.8vw, 2.85rem);
+      font-weight: 800;
+      color: var(--honey);
+      letter-spacing: -0.024em;
+      max-width: 18ch;
+    }
+
+    .promise {
+      margin-top: 30px;
+      padding: 26px 28px;
+      background: rgba(255 255 255 / 0.06);
+      border: 1px solid var(--line-forest);
+      border-radius: 14px;
+      max-width: 62ch;
+    }
+
+    .promise h3 {
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: var(--on-forest);
+      margin-bottom: 10px;
+    }
+
+    .promise p {
+      font-size: clamp(1rem, 2.1vw, 1.16rem);
+      line-height: 1.9;
+      color: var(--on-forest-muted);
+    }
+
+    .promise p strong { color: var(--honey); font-weight: 700; }
+
+    /* ============================================================
+       4 · THE SCENE
+    ============================================================ */
+    .scene-time {
+      font-family: 'Rubik', sans-serif;
+      font-size: clamp(1.7rem, 4.4vw, 2.5rem);
+      font-weight: 800;
+      color: var(--forest);
+      letter-spacing: -0.02em;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .scene-body {
+      font-size: clamp(1.02rem, 2.1vw, 1.16rem);
+      line-height: 1.95;
+      color: var(--on-paper);
+      max-width: 58ch;
+      margin-top: 22px;
+    }
+
+    .scene-turn {
+      margin-top: 24px;
+      font-size: 1rem;
+      line-height: 1.9;
+      color: var(--on-paper-muted);
+      max-width: 58ch;
+    }
+
+    .scene-turn strong { color: var(--on-paper); font-weight: 700; }
+
+    /* ============================================================
+       5 · WHAT ACTUALLY CHANGES
+    ============================================================ */
+    .changes {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0 44px;
+      margin-top: 32px;
+    }
+
+    @media (max-width: 720px) { .changes { grid-template-columns: 1fr; gap: 0; } }
+
+    .change {
+      display: flex;
+      gap: 13px;
+      align-items: flex-start;
+      padding: 15px 0;
+      border-bottom: 1px solid var(--line-paper);
+      font-size: 0.96rem;
+      line-height: 1.7;
+      color: var(--on-paper);
+    }
+
+    .change svg {
+      width: 17px; height: 17px;
+      flex-shrink: 0;
+      margin-top: 5px;
+      fill: none;
+      stroke: var(--honey-deep);
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* ============================================================
+       QUESTION LIST + BULLET LIST
+    ============================================================ */
+    .q-list, .b-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+      margin-top: 26px;
+      max-width: 60ch;
+    }
+
+    .q-list li, .b-list li {
+      position: relative;
+      padding-right: 28px;
+      font-size: 0.99rem;
+      line-height: 1.78;
+    }
+
+    .q-list li { color: var(--on-paper); font-weight: 500; }
+    .b-list li { color: var(--on-paper-muted); }
+    .b-list li strong { color: var(--on-paper); font-weight: 700; }
+
+    .q-list li::before, .b-list li::before {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 0.64em;
+      width: 9px; height: 9px;
+      border-radius: 3px;
+    }
+
+    .q-list li::before { background: var(--forest); }
+    .b-list li::before { background: var(--forest); }
+
+    /* ============================================================
+       TWO-COLUMN (מה משנים / איך זה מרגיש)
+    ============================================================ */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px 48px;
+      margin-top: 34px;
+    }
+
+    @media (max-width: 760px) { .two-col { grid-template-columns: 1fr; gap: 28px; } }
+
+    .col-title {
+      font-size: 1.02rem;
+      font-weight: 800;
+      color: var(--forest);
+      padding-bottom: 10px;
+      margin-bottom: 4px;
+      border-bottom: 2px solid rgba(58 92 58 / 0.16);
+    }
+
+    /* the merged columns each hold one list — drop the two-up inner grid */
+    .two-col .changes { grid-template-columns: 1fr; gap: 0; margin-top: 0; }
+    .two-col .settled { margin-top: 14px; }
+
+    /* ============================================================
+       ACCORDION (שלושת המצבים — לעומק)
+    ============================================================ */
+    .acc-list {
+      margin-top: 32px;
+      border-top: 1px solid var(--line-paper);
+    }
+
+    .acc { border-bottom: 1px solid var(--line-paper); }
+
+    .acc summary {
+      cursor: pointer;
+      list-style: none;
+      display: block;
+      padding: 22px 0 22px 40px;
+      position: relative;
+    }
+
+    .acc summary::-webkit-details-marker { display: none; }
+
+    .acc summary::after {
+      content: "";
+      position: absolute;
+      left: 6px;
+      top: 30px;
+      width: 11px; height: 11px;
+      border-right: 2.2px solid var(--forest);
+      border-bottom: 2.2px solid var(--forest);
+      transform: rotate(45deg);
+      transition: transform 0.22s;
+    }
+
+    .acc[open] summary::after { transform: rotate(-135deg); top: 34px; }
+
+    .acc-title {
+      display: block;
+      font-family: 'Rubik', sans-serif;
+      font-size: clamp(1.08rem, 2.4vw, 1.32rem);
+      font-weight: 800;
+      color: var(--forest);
+      line-height: 1.35;
+    }
+
+    .acc-lead {
+      display: block;
+      margin-top: 6px;
+      font-size: 0.94rem;
+      line-height: 1.65;
+      color: var(--on-paper-muted);
+      max-width: 62ch;
+    }
+
+    .acc-body { padding: 2px 0 26px; }
+    .acc-body > :first-child { margin-top: 0; }
+
+    /* ============================================================
+       SUBHEAD
+    ============================================================ */
+    .subhead {
+      font-size: clamp(1.15rem, 2.5vw, 1.42rem);
+      font-weight: 800;
+      letter-spacing: -0.012em;
+      color: var(--on-paper);
+      margin-top: 36px;
+      max-width: 46ch;
+    }
+    .subhead--honey { color: var(--forest); }
+
+    /* ============================================================
+       SETTLED LIST
+    ============================================================ */
+    .settled {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+      margin-top: 28px;
+      max-width: 58ch;
+    }
+
+    .settled li {
+      position: relative;
+      padding-right: 30px;
+      font-size: 1rem;
+      line-height: 1.78;
+      color: var(--on-paper);
+    }
+
+    .settled li::before {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 0.7em;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--honey-deep);
+    }
+
+    /* ============================================================
+       CLOSING STATEMENT
+    ============================================================ */
+    .statement-line {
+      text-align: center;
+      font-family: 'Rubik', sans-serif;
+      font-size: clamp(1.22rem, 3.1vw, 1.9rem);
+      font-weight: 700;
+      line-height: 1.55;
+      color: var(--forest);
+      letter-spacing: -0.015em;
+      max-width: 44ch;
+      margin: 0 auto;
+      text-wrap: balance;
+    }
+
+    /* ============================================================
+       PULL QUOTE
+    ============================================================ */
+    .pull {
+      margin-top: 34px;
+      padding: 24px 26px;
+      border-radius: 14px;
+      font-family: 'Rubik', sans-serif;
+      font-size: clamp(1.02rem, 2.2vw, 1.24rem);
+      font-weight: 600;
+      line-height: 1.62;
+      max-width: 56ch;
+    }
+
+    .pull--honey, .pull--clay, .pull--harbor {
+      background: rgba(58 92 58 / 0.12);
+      color: var(--forest);
+    }
+
+    /* ============================================================
+       8 · MEDICAL — facts
+    ============================================================ */
+    .facts {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      margin-top: 32px;
+      max-width: 66ch;
+    }
+
+    .fact {
+      background: rgba(255 255 255 / 0.62);
+      border: 1px solid var(--line-paper);
+      border-radius: 12px;
+      padding: 18px 20px;
+    }
+
+    .fact h3 { font-size: 0.95rem; font-weight: 800; color: var(--on-paper); margin-bottom: 5px; }
+    .fact p  { font-size: 0.89rem; line-height: 1.72; color: var(--on-paper-muted); }
+
+    /* ============================================================
+       9 · HOW IT WORKS (dark anchor)
+    ============================================================ */
+    .steps {
+      display: flex;
+      flex-direction: column;
+      margin-top: 38px;
+      max-width: 68ch;
+      counter-reset: step;
+    }
+
+    .step {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 4px 18px;
+      padding: 24px 0;
+      border-bottom: 1px solid var(--line-forest);
+    }
+
+    .step:first-child { border-top: 1px solid var(--line-forest); }
+
+    .step::before {
+      content: counter(step, decimal-leading-zero);
+      counter-increment: step;
+      grid-row: 1 / span 2;
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.94rem;
+      font-weight: 800;
+      color: var(--honey);
+      font-variant-numeric: tabular-nums;
+      padding-top: 3px;
+    }
+
+    .step h3 { font-size: 1.06rem; font-weight: 800; color: var(--on-forest); margin-bottom: 6px; }
+    .step p  { font-size: 0.92rem; line-height: 1.8; color: var(--on-forest-muted); grid-column: 2; }
+
+    /* ============================================================
+       FACTS STRIP (3 חודשים · 4 מפגשים · ביקור בית · 24/7)
+    ============================================================ */
+    .facts-strip {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 40px;
+    }
+
+    @media (max-width: 640px) { .facts-strip { grid-template-columns: repeat(2, 1fr); } }
+
+    .fact-cell {
+      /* darker than the olive it sits on, so the gold numeral clears AA */
+      background: rgba(0 0 0 / 0.14);
+      border: 1px solid rgba(255 255 255 / 0.14);
+      border-radius: 14px;
+      padding: 20px 12px 18px;
+      text-align: center;
+    }
+
+    .fact-num {
+      display: block;
+      font-family: 'Rubik', sans-serif;
+      font-size: clamp(1.7rem, 4.4vw, 2.3rem);
+      font-weight: 900;
+      line-height: 1.05;
+      color: var(--honey);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .fact-word {
+      display: block;
+      margin-top: 5px;
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--on-forest);
+      line-height: 1.35;
+    }
+
+    /* ============================================================
+       11 · ABOUT
+    ============================================================ */
+    .about {
+      display: grid;
+      grid-template-columns: 210px 1fr;
+      gap: 44px;
+      align-items: start;
+    }
+
+    @media (max-width: 780px) { .about { grid-template-columns: 1fr; gap: 28px; } }
+
+    .about-photo {
+      display: block;
+      width: 100%;
+      max-width: 210px;
+      aspect-ratio: 4 / 5;
+      object-fit: cover;
+      object-position: center 22%;
+      border-radius: 16px;
+      border: 2px solid var(--honey);
+      box-shadow: 0 10px 26px rgba(18 33 15 / 0.35);
+    }
+
+    @media (max-width: 780px) {
+      .about-photo { max-width: 190px; }
+    }
+
+    .about-name { font-size: clamp(1.5rem, 3.5vw, 2rem); font-weight: 800; color: var(--honey); }
+
+    .about-role {
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.86rem;
+      font-weight: 500;
+      color: var(--on-forest-muted);
+      margin-top: 8px;
+      line-height: 1.65;
+    }
+
+    /* ============================================================
+       12 · ILLUSTRATED MEALS
+    ============================================================ */
+    .meals {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+      margin-top: 34px;
+      width: 100%;
+    }
+
+    @media (max-width: 760px) {
+      .meals { gap: 4px; margin-inline: -28px; width: auto; }
+      .meals .meal-frame { border-radius: 0 40% 40% 0; }
+      .meals .meal-frame:nth-child(even) { border-radius: 40% 0 0 40%; }
+    }
+
+    .meals .meal-frame:nth-child(2) { transition-delay: 0.09s; }
+    .meals .meal-frame:nth-child(3) { transition-delay: 0.18s; }
+    .meals .meal-frame:nth-child(4) { transition-delay: 0.27s; }
+
+    /* the frame clips; the image drifts inside it and can never escape */
+    .meal-frame {
+      aspect-ratio: 1 / 1;
+      overflow: hidden;
+      /* each row reads as one pill: outer corners round, inner square (RTL) */
+      border-radius: 0 50% 50% 0;
+    }
+
+    .meals .meal-frame:nth-child(even) { border-radius: 50% 0 0 50%; }
+
+    .meal {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* ============================================================
+       13 · CLOSING FORM
+    ============================================================ */
+    .contact-form {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      max-width: 680px;
+      margin-top: 34px;
+    }
+
+    @media (max-width: 640px) { .contact-form { grid-template-columns: 1fr; } }
+
+    .form-col-2 { grid-column: 1 / -1; }
+    .form-field { display: flex; flex-direction: column; gap: 6px; }
+
+    .form-label { font-size: 0.8rem; font-weight: 600; color: var(--on-forest-muted); }
+
+    .form-input {
+      padding: 15px 18px;
+      border-radius: 12px;
+      border: 1.5px solid transparent;
+      background: #F7F4EC;
+      font-family: 'Assistant', sans-serif;
+      font-size: 0.95rem;
+      color: var(--on-paper);
+      direction: rtl;
+      text-align: right;
+      min-height: 48px;
+      transition: border-color 0.18s, background 0.18s;
+    }
+
+    .form-input::placeholder { color: #98A296; }
+    .form-input:focus { border-color: var(--honey); background: #FFFFFF; outline: none; }
+
+    textarea.form-input { resize: vertical; min-height: 108px; }
+
+    .btn-submit {
+      background: var(--honey);
+      color: var(--forest);
+      font-size: 1rem;
+      padding: 15px 34px;
+      border-radius: 999px;
+      min-height: 54px;
+    }
+    .btn-submit:hover { background: #D8B94A; }
+
+    .signoff {
+      margin-top: 44px;
+      padding-top: 26px;
+      border-top: 1px solid var(--line-forest);
+      font-family: 'Rubik', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--on-forest-muted);
+      letter-spacing: 0.02em;
+    }
+
+    /* ============================================================
+       WHATSAPP ALTERNATIVE UNDER THE FORM
+    ============================================================ */
+    .or-rule {
+      display: flex; align-items: center; gap: 16px;
+      max-width: 680px; margin: 34px 0 24px;
+      color: var(--on-forest-muted); font-size: 0.86rem;
+    }
+    .or-rule::before, .or-rule::after { content: ""; flex: 1; height: 1px; background: var(--line-forest); }
+
+    .btn-wa {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      max-width: 680px; background: #0F7A36; color: #fff;
+      font-family: 'Rubik', sans-serif; font-weight: 700; font-size: 1rem;
+      padding: 16px 28px; border-radius: 999px; text-decoration: none; min-height: 56px;
+      transition: background 0.18s, transform 0.18s;
+    }
+    .btn-wa:hover { background: #0C6A2E; transform: translateY(-2px); }
+    .btn-wa svg { width: 24px; height: 24px; fill: #fff; flex-shrink: 0; }
+
+    .wa-note { max-width: 680px; text-align: center; margin-top: 16px; font-size: 0.86rem; color: var(--on-forest-muted); }
+
+    /* ============================================================
+       FOOTER
+    ============================================================ */
+    footer {
+      background: var(--forest-deep);
+      color: var(--on-forest);
+      padding: 40px 0 30px;
+      border-top: 1px solid rgba(255 255 255 / 0.07);
+    }
+
+    .footer-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 22px;
+      border-bottom: 1px solid rgba(255 255 255 / 0.08);
+    }
+
+    .footer-logo {
+      font-family: 'Rubik', sans-serif;
+      font-weight: 800;
+      font-size: 0.98rem;
+      color: var(--on-forest);
+      text-decoration: none;
+    }
+
+    .footer-links { list-style: none; display: flex; flex-wrap: wrap; gap: 24px; }
+
+    .footer-links a {
+      font-size: 0.87rem;
+      color: var(--on-forest-muted);
+      text-decoration: none;
+      transition: color 0.18s;
+    }
+    .footer-links a:hover { color: var(--on-forest); }
+
+    .footer-disclaimer {
+      margin-top: 18px;
+      font-size: 0.7rem;
+      color: rgba(158 187 169 / 0.55);
+      line-height: 1.65;
+      max-width: 80ch;
+    }
+
+    /* ============================================================
+       FLOATING WHATSAPP
+    ============================================================ */
+    .wa-float {
+      position: fixed;
+      bottom: 24px;
+      left: 24px;
+      z-index: 200;
+      width: 56px; height: 56px;
+      border-radius: 50%;
+      background: #25D366;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 16px rgba(37 211 102 / 0.35);
+      text-decoration: none;
+      transition: transform 0.2s;
+    }
+    .wa-float:hover { transform: scale(1.08); }
+    .wa-float svg { width: 30px; height: 30px; fill: #fff; }
+
+    /* ============================================================
+       MOTION
+       One orchestrated entrance, slow drift on the food, and hover
+       feedback on things you can click. Everything here is switched
+       off wholesale by the prefers-reduced-motion block above.
+    ============================================================ */
+
+    /* --- hero entrance: a single staggered sequence on load --- */
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes photoIn {
+      from { opacity: 0; transform: scale(1.06); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .hero-eyebrow,
+    .hero h1,
+    .hero-thesis,
+    .hero-body,
+    .hero-actions { animation: rise 0.7s cubic-bezier(.22,.7,.3,1) both; }
+
+    .hero-eyebrow { animation-delay: 0.28s; }
+    .hero h1      { animation-delay: 0.36s; }
+    .hero-thesis  { animation-delay: 0.48s; }
+    .hero-body    { animation-delay: 0.58s; }
+    .hero-actions { animation-delay: 0.68s; }
+    .hero-figure  { animation: photoIn 1.1s cubic-bezier(.22,.7,.3,1) both; }
+
+    /* the gold underline draws itself in once the thesis has landed */
+    @keyframes drawUnderline { from { background-size: 0% 100%; } to { background-size: 100% 100%; } }
+    .hero-thesis u {
+      background-repeat: no-repeat;
+      animation: drawUnderline 0.75s cubic-bezier(.22,.7,.3,1) 1.05s both;
+    }
+
+    /* --- food in motion: a very slow drift, desynchronised --- */
+    @keyframes drift {
+      from { transform: scale(1.02) translate3d(0,  1.5%, 0); }
+      to   { transform: scale(1.16) translate3d(0, -2.5%, 0); }
+    }
+    .meal {
+      animation: drift 7s ease-in-out infinite alternate;
+      will-change: transform;
+    }
+    .meals .meal-frame:nth-child(2) .meal { animation-duration: 8.5s; animation-delay: -2s; }
+    .meals .meal-frame:nth-child(3) .meal { animation-duration: 7.6s; animation-delay: -4s; }
+    .meals .meal-frame:nth-child(4) .meal { animation-duration: 9.2s; animation-delay: -1s; }
+
+    /* --- the main CTA breathes on its own; touch devices have no hover --- */
+    /* no idle pulsing — the buttons answer when touched, they do not nag */
+
+    /* touch feedback — the press itself, since there is nothing to hover */
+    .gate:active, .step:active, .fact-cell:active { transform: scale(0.985); }
+    .acc summary:active .acc-title { color: var(--honey-deep); }
+
+    /* --- floating CTA: follows you once the hero is gone --- */
+    .sticky-cta {
+      position: fixed;
+      z-index: 190;
+      right: 16px;
+      bottom: 18px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 24px;
+      border-radius: 999px;
+      background: var(--honey);
+      color: var(--forest);
+      font-family: 'Rubik', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      text-decoration: none;
+      box-shadow: 0 8px 26px rgba(26 46 26 / 0.28);
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(18px) scale(0.94);
+      transition: opacity 0.3s, transform 0.3s cubic-bezier(.22,.7,.3,1), visibility 0.3s;
+      min-height: 52px;
+    }
+
+    .sticky-cta.show { opacity: 1; visibility: visible; transform: translateY(0) scale(1); }
+    .sticky-cta:hover { background: #D8B94A; }
+    .sticky-cta:active { transform: scale(0.97); }
+
+    @media (max-width: 640px) {
+      /* a full-width bar reads better than a pill on a phone */
+      .sticky-cta { right: 16px; left: 88px; justify-content: center; bottom: 16px; }
+    }
+
+    /* --- buttons that answer back --- */
+    .btn { will-change: transform; }
+    .btn-primary:hover,
+    .btn-submit:hover,
+    .btn-onforest:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(200 168 60 / 0.34); }
+    .btn-primary:active,
+    .btn-submit:active,
+    .btn-onforest:active { transform: translateY(0); }
+
+    .arw { display: inline-block; transition: transform 0.22s cubic-bezier(.22,.7,.3,1); }
+    .btn:hover .arw, a:hover > .arw { transform: translateX(-5px); }
+
+    .btn-header { transition: background 0.18s, transform 0.18s; }
+    .btn-header:hover { transform: translateY(-1px); }
+
+    /* --- cards lift a little when pointed at --- */
+    .gate, .step, .fact-cell {
+      transition: transform 0.25s cubic-bezier(.22,.7,.3,1), box-shadow 0.25s;
+    }
+    .gate:hover  { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(26 46 26 / 0.10); }
+    .step:hover  { transform: translateY(-3px); background: rgba(255 255 255 / 0.085); }
+    .fact-cell:hover { transform: translateY(-3px); }
+
+    /* --- header gains a shadow once you leave the top --- */
+    .site-header { transition: box-shadow 0.25s, background 0.25s; }
+    .site-header.scrolled { box-shadow: 0 2px 18px rgba(18 33 15 / 0.30); }
+
+    /* --- accordion opens smoothly instead of snapping --- */
+    .acc-wrap {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.34s cubic-bezier(.22,.7,.3,1);
+    }
+    .acc[open] .acc-wrap { grid-template-rows: 1fr; }
+    .acc.anim-closed .acc-wrap { grid-template-rows: 0fr; }
+    .acc-wrap > .acc-body { overflow: hidden; min-height: 0; }
+    .acc summary:hover .acc-title { color: var(--honey-deep); }
+    .acc-title { transition: color 0.18s; }
+
+    /* --- floating whatsapp: one slow nudge, then still --- */
+    .wa-float { transition: transform 0.3s, box-shadow 0.2s; }
+
+    /* ============================================================
+       REVEAL
+    ============================================================ */
+    .reveal {
+      opacity: 0;
+      transform: translateY(16px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .reveal.visible { opacity: 1; transform: translateY(0); }
+
+    .gates .reveal:nth-child(2), .steps .reveal:nth-child(2) { transition-delay: 0.09s; }
+    .gates .reveal:nth-child(3), .steps .reveal:nth-child(3) { transition-delay: 0.18s; }
+    .steps .reveal:nth-child(4) { transition-delay: 0.27s; }
+  </style>
+</head>
+<body>
+
+  <!-- ================= HEADER ================= -->
+  <header class="site-header" role="banner">
+    <div class="container">
+      <div class="header-inner">
+        <a href="#" class="site-logo" aria-label="בין הראש לצלחת — בבית">
+          בין הראש <em>לצלחת</em> <span>— בבית</span>
+        </a>
+        <a href="#contact" class="btn-header">ליצירת קשר</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ================= 1 · ההוק ================= -->
+    <section class="hero" aria-labelledby="hero-h1">
+      <div class="container">
+        <div class="hero-inner">
+          <div>
+            <p class="hero-eyebrow">ליווי להורים ולמשפחות · סביב אוכל, משקל והרגלים בבית</p>
+
+            <h1 id="hero-h1">את מבינה אותו יותר מכולם.</h1>
+
+            <p class="hero-body">
+              את יודעת מתי טוב לו, מתי הוא מדוכדך, מתי הוא סתם עייף.
+              את יודעת איך להניע אותו כמעט בכל דבר.
+            </p>
+
+            <p class="hero-thesis">
+              ורק סביב אוכל — <u>משהו פשוט לא נוגע.</u>
+            </p>
+
+            <p class="hero-body" style="animation-delay:0.66s;">
+              לפעמים זו דאגה למשקל. לפעמים האוכל כבר הפך למאבק.
+              ולפעמים נכנס הביתה שינוי שאי אפשר להתעלם ממנו.
+              בכולם, מה שצריך להשתנות קודם הוא לא הילד — אלא הדרך.
+            </p>
+
+            <div class="hero-actions">
+              <a href="#contact" class="btn btn-primary">אני רוצה לדבר על זה</a>
+              <a href="#how" class="btn btn-ghost">איך זה עובד בפועל <span class="arw">←</span></a>
+            </div>
+          </div>
+
+          <figure class="hero-figure">
+            <img class="hero-photo" src="/families-1.jpg" alt="אתי רפאלה זיתון יושבת על נדנדת עץ בשדה בשעת בין ערביים">
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 2 · שלוש נקודות הכניסה ================= -->
+    <section class="section bg-paper2" aria-labelledby="gates-title">
+      <div class="container">
+        <h2 class="h2" id="gates-title">את יודעת בדיוק מה מדאיג אותך</h2>
+        <p class="sub">את פשוט לא יודעת איך לגשת לזה בלי להחמיר.</p>
+        <div class="gates">
+          <div class="gate reveal">
+            <div class="gate-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 4-6 5 5"/></svg>
+            </div>
+            <h3>משקל ואורח חיים</h3>
+            <p>את רוצה לעזור לו לבנות הרגלים בריאים — בלי הערות, בלי איסורים, ובלי שהגוף שלו יהפוך לנושא בבית.</p>
+          </div>
+          <div class="gate reveal">
+            <div class="gate-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/><path d="M3 12h18"/></svg>
+            </div>
+            <h3>האוכל הפך למאבק</h3>
+            <p>בררנות שמצמצמת את הרשימה, ארוחות שנגררות, רדיפה עם צלחת, מתוקים שהפכו לזירת כוח.</p>
+          </div>
+          <div class="gate reveal">
+            <div class="gate-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg>
+            </div>
+            <h3>שינוי שמחריג אותו</h3>
+            <p>צליאק, אלרגיה או רגישות שנכנסו הביתה — עם כללים חדשים, התארגנות מעשית, ולצידה גם הסתגלות רגשית.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 3 · הגישה ================= -->
+    <section class="section bg-forest statement" aria-labelledby="approach-title">
+      <div class="container">
+        <h2 id="approach-title">את לא צריכה עוד דרך לשכנע אותו</h2>
+        <p class="sub sub--forest">את צריכה דרך להגיע אליו.</p>
+
+        <p class="p p--forest">
+          הסברת, הצעת, ניסית בטוב וניסית פחות בטוב. וזה לא כי לא ניסית מספיק —
+          זה כי ברוב המקרים הוא כבר יודע מה בריא ומה כדאי.
+          <strong>מה שחסר לו הוא לא עוד ידע, אלא סביבה שעוזרת לו לחיות את זה.</strong>
+        </p>
+
+        <p class="p p--forest">
+          וזה בדיוק מה שנמצא בידיים שלך: מה נכנס הביתה, איך נראה השולחן,
+          מה נאמר ומה לא, ומה זמין ברגע שהוא רעב.
+        </p>
+
+        <div class="promise reveal">
+          <p><strong>אני לא באה במקומך. אני באה איתך — ומביאה את הדרך.</strong></p>
+        </div>
+
+        <p class="p p--forest">
+          אנחנו עובדות יחד על הבית, ומשם השינוי מגיע גם אליו —
+          בלי שהאוכל או הגוף שלו יהפכו לפרויקט משפחתי.
+        </p>
+      </div>
+    </section>
+
+    <!-- ================= 4 · המשקל ================= -->
+    <section class="section bg-paper" aria-labelledby="worry-title">
+      <div class="container">
+        <h2 class="h2" id="worry-title">מותר לך לדאוג</h2>
+        <p class="sub">את הדאגה הזאת תביאי אליי.</p>
+
+        <p class="p">
+          אם משהו במשקל שלו השתנה, אם הרופא העיר, אם הבגדים נעשו קטנים מהר מדי —
+          הדאגה הזאת במקומה, ואני לא באה לבטל אותה.
+        </p>
+
+        <p class="p">
+          לפעמים, דווקא מתוכה, אנחנו מוצאות את עצמנו מדברות איתו על בריאות,
+          מציצות במדדים, מעירות על בגד שבחר — לא כדי לפגוע,
+          אלא כדי לחסוך ממנו הערות שיגיעו מבחוץ.
+        </p>
+
+        <p class="pull pull--honey reveal">
+          ואת המשקל אפשר תמיד לשנות. את מה שנוצר בינתיים ביניכם — הרבה יותר קשה.
+        </p>
+
+        <h3 class="subhead">ומה שחשוב לי שתדעי מראש:</h3>
+        <p class="p">
+          אני לא שוקלת את הילד. אני לא נותנת לו דיאטה.
+          השינוי לא אמור להרגיש לו כמו משהו שעושים עליו —
+          הוא פשוט פוגש בבית התנהלות אחרת.
+        </p>
+      </div>
+    </section>
+
+    <!-- ================= 5 · הסצנה ================= -->
+    <section class="section bg-paper2" aria-labelledby="scene-title">
+      <div class="container">
+        <p class="eyebrow">רוב הקושי לא קורה בפגישה</p>
+        <h2 class="scene-time" id="scene-title">שש וחצי בערב</h2>
+
+        <p class="scene-body">
+          הוא חוזר רעב, פותח את הארון, לוקח משהו. עשרים דקות אחר כך פותח שוב.
+          את מתחילה לחשב בראש מה הוא כבר אכל היום, מתלבטת אם להגיד משהו —
+          ואז אומרת "אולי מספיק?" ומיד מתחרטת, כי שמעת את הטון של עצמך.
+        </p>
+
+        <p class="scene-turn">
+          השאלה היא לא אם מותר לו לפתוח שוב את הארון.
+          השאלה היא למה בכל ערב מחדש את צריכה להחליט מה לעשות ברגע הזה,
+          כשכולם כבר עייפים ורעבים.
+        </p>
+
+        <p class="scene-turn">
+          <strong>בליווי אנחנו מורידות חלק מההחלטות האלה מהשולחן מראש. לא עוד כללים לילד — מבנה שעובד בשביל הבית.</strong>
+        </p>
+      </div>
+    </section>
+
+    <!-- ================= 6 · מה משתנה ================= -->
+    <section class="section bg-paper" aria-labelledby="changes-title">
+      <div class="container">
+        <h2 class="h2" id="changes-title">פחות לנהל אותו. יותר לבנות את מה שסביבו.</h2>
+        <p class="sub">את ואני משנות את הדרך — והוא מתחיל לפגוש משהו אחר בבית.</p>
+
+        <div class="two-col">
+          <div>
+            <h3 class="col-title">מה משנים</h3>
+<div class="changes">
+          <div class="change"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>מה זמין במקרר ובמזווה, ומה עבר למקום אחר</div>
+          <div class="change"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>איך נראית ארוחה על השולחן, ומי מחליט מה</div>
+          <div class="change"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>מה מפסיקים להגיד — גם כשזה נאמר מדאגה</div>
+          <div class="change"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>איפה עובר הגבול, ומתי מפסיקים לשכנע</div>
+          <div class="change"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>מה הוא יכול לקחת, להכין ולבחור בעצמו</div>
+          <div class="change"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>איך מדברים בבית על גוף, על בריאות ועל משקל</div>
+          </div>
+          </div>
+          <div>
+            <h3 class="col-title">איך זה מרגיש</h3>
+<ul class="settled" role="list">
+          <li>פחות משא ומתן סביב הצלחת</li>
+          <li>פחות החלטות שמתקבלות מתוך עייפות</li>
+          <li>הילד יודע יותר מה מצופה ממנו ומה הוא יכול לבחור</li>
+          <li>את יודעת מתי להתערב — ומתי דווקא לא</li>
+          <li>האוכל חוזר להיות חלק מהבית, במקום הנושא שמנהל אותו</li>
+        </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 7 · האקורדיונים ================= -->
+    <section class="section bg-paper2" aria-labelledby="deep-title">
+      <div class="container">
+        <h2 class="h2" id="deep-title">אותה גישה. נקודת התחלה אחרת בכל בית.</h2>
+        <p class="sub">פתחי את מה שרלוונטי לכם.</p>
+
+        <div class="acc-list">
+          <details class="acc">
+            <summary>
+              <span class="acc-title">כשהדאגה היא למשקל</span>
+              <span class="acc-lead">אפשר לעבוד על משקל והרגלים בלי להפוך את הגוף שלו לנושא בבית.</span>
+            </summary>
+            <div class="acc-wrap"><div class="acc-body">
+        <ul class="q-list" role="list">
+          <li>איך משנים את מה שיש בבית בלי "לעשות לו דיאטה"?</li>
+          <li>איך מצמצמים נשנושים בלי לפקח על כל ביס?</li>
+          <li>איך מדברים על בריאות בלי שמשקל יהפוך למדד לערך?</li>
+          <li>ומה עושים כשגם את נמצאת במאבק עם אוכל — והוא רואה ושומע גם את זה?</li>
+        </ul>
+
+        <p class="p" style="margin-top:30px;">
+          וכשאמא אומרת "אני רק דואגת לו", לפעמים יושבים בתוך הדאגה הזאת כל המסרים שהיא עצמה קיבלה:
+          <strong>תסיימי מהצלחת. אם לא תאכלי אין קינוח. את באמת צריכה את זה?</strong>
+          זו ירושה שאף אחת לא בחרה בה, והיא עוברת הלאה בלי שנשים לב.
+        </p>
+
+        <h3 class="subhead subhead--honey">כדי שהעבר לא ימשיך לנהל את השולחן</h3>
+        <p class="p">
+          גם שם אנחנו עובדות — לא כדי לפתוח את העבר, אלא כדי שיפסיק להחליט במקומך בשבע בערב.
+        </p>
+        <h3 class="subhead subhead--honey">ומה כן עושים</h3>
+        <ul class="settled" role="list">
+          <li>זמינות</li>
+          <li>מבנה ארוחות</li>
+          <li>נשנושים</li>
+          <li>רעב ושובע</li>
+          <li>שתייה</li>
+          <li>תנועה ושינה</li>
+          <li>שפה בבית</li>
+        </ul>
+        <p class="p" style="margin-top:20px;">
+          כל אלה משתנים דרך הבית — לא דרך פיקוח על הילד.
+        </p>
+            </div></div>
+          </details>
+          <details class="acc">
+            <summary>
+              <span class="acc-title">כשהאוכל הפך למאבק</span>
+              <span class="acc-lead">יש בתים שבהם האוכל הוא לא בעיה בריאותית — הוא פשוט תופס יותר מדי מקום.</span>
+            </summary>
+            <div class="acc-wrap"><div class="acc-body">
+        <p class="p">
+          ילד שאוכל חמישה דברים ומצמצם עוד. ארוחה שנמשכת שעה. מתוקים שהפכו למטבע עובר לסוחר.
+        </p>
+    
+        <p class="p">
+          המצבים האלה כמעט אף פעם לא נפתרים בעוד שכנוע.
+          <strong>הם נפתחים כשמשנים את המבנה סביב הארוחה.</strong>
+        </p>
+
+        <ul class="b-list" role="list">
+          <li>בבררנות עובדים דרך <strong>היכרות והתנסות הדרגתית</strong> — לא דרך "עוד ביס אחד"</li>
+          <li>מפרידים בין התפקיד שלך (<strong>מה מוגש ומתי</strong>) לבין שלו (<strong>כמה, ואם</strong>)</li>
+          <li>מוציאים את המתוקים <strong>מעמדת הפרס והעונש</strong></li>
+        </ul>
+
+        <p class="pull pull--honey reveal">
+          ילד שלא נלחמים איתו על אוכל, פנוי הרבה יותר לנסות אותו.
+        </p>
+            </div></div>
+          </details>
+          <details class="acc">
+            <summary>
+              <span class="acc-title">וכשמשתנים חוקי המשחק</span>
+              <span class="acc-lead">מגבלה רפואית לא נכנסת לבית ריק. היא פוגשת שפה והרגלים שכבר קיימים.</span>
+            </summary>
+            <div class="acc-wrap"><div class="acc-body">
+        <p class="p">
+          היא פוגשת שפה והרגלים שכבר קיימים סביב אוכל, ומצטרפת אליהם יחד עם הדאגה, הזהירות והרצון לעשות נכון.
+        </p>
+    
+        <p class="p">
+          <strong>יש הבדל גדול בין ילד שגדל עם "אני יודע לנהל את זה" לבין ילד שגדל עם "בודקים אותי".</strong>
+          וההבדל הזה נקבע בניסוח ובחזרתיות — לא בכללי הבטיחות עצמם, שהם כמובן לא לוויכוח.
+        </p>
+
+        <div class="facts">
+          <div class="fact reveal">
+            <h3>הספונטניות שנעלמה</h3>
+            <p>כל יציאה, כל ארוחה בחוץ, כל הזמנה של הרגע האחרון דורשת תכנון. זו לא סיבה להישאר בבית; זה מקום לעבוד עליו.</p>
+          </div>
+          <div class="fact reveal">
+            <h3>האחים והבית</h3>
+            <p>כשמגבלה של אחד משנה מערכת שלמה, יש שאלות שנשאלות בשקט. הוגן לא תמיד אומר זהה, ולפעמים צריך להגיד את זה בקול.</p>
+          </div>
+          <div class="fact reveal">
+            <h3>הזמינות</h3>
+            <p>שיהיה משהו ברור, מוכן ואהוב שהוא יכול לקחת לבד. שפע של נגישות, לא שפע של מוצרים.</p>
+          </div>
+        </div>
+
+        <p class="pull pull--honey reveal">
+          המטרה היא לא שהבית יסתובב סביב המגבלה — אלא שהיא תמצא את המקום שלה בתוך הבית.
+        </p>
+            </div></div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 8 · הליווי ================= -->
+    <section class="section bg-forest" id="how" aria-labelledby="how-title">
+      <div class="container">
+        <h2 class="h2 h2--forest" id="how-title">אני לא שולחת אותך הביתה לנסות לבד</h2>
+        <p class="sub sub--forest">זה ליווי אישי וצמוד שנמשך איתך לתוך היום־יום בבית.</p>
+
+        <div class="steps">
+          <div class="step reveal">
+            <h3>ממפות</h3>
+            <p>מה הוא אוכל, מתי, איפה נוצרים החיכוכים, מה כבר ניסית ולא עבד.</p>
+          </div>
+          <div class="step reveal">
+            <h3>משנות בבית</h3>
+            <p>ואני מתכוונת פיזית. מזווה, מקרר, זמינות, מבנה הארוחות.</p>
+          </div>
+          <div class="step reveal">
+            <h3>משנות את ההתנהלות</h3>
+            <p>שפה, תגובות, גבולות, ומקומות שבהם כוונה טובה דווקא משמרת את הקושי.</p>
+          </div>
+          <div class="step reveal">
+            <h3>ואני נשארת איתך בין המפגשים</h3>
+            <p>כי השאלה האמיתית מגיעה בשש וחצי מול הארון הפתוח, לא בזמן הפגישה.</p>
+          </div>
+        </div>
+
+        <p class="p p--forest" style="margin-top:30px;">
+          עם ילדים צעירים הליווי עובר דרכך ודרך הבית. מגיל 15 בערך הוא יכול להיכנס כשותף פעיל.
+        </p>
+        <p class="p p--forest">
+          בתוך הליווי משולבים NLP, אכילה יצירתית, אפליקציה אישית ומענה בוואטסאפ.
+        </p>
+      </div>
+    </section>
+
+    <!-- ================= 9 · המספרים ================= -->
+    <section class="section bg-olive" aria-labelledby="facts-title">
+      <div class="container">
+        <h2 class="h2 h2--forest" id="facts-title">שלושה חודשים בתוך החיים עצמם</h2>
+
+        <div class="facts-strip">
+          <div class="fact-cell"><span class="fact-num">3</span><span class="fact-word">חודשים</span></div>
+          <div class="fact-cell"><span class="fact-num">4</span><span class="fact-word">מפגשים</span></div>
+          <div class="fact-cell"><span class="fact-num">1</span><span class="fact-word">ביקור בית</span></div>
+          <div class="fact-cell"><span class="fact-num">24/7</span><span class="fact-word">מענה בוואטסאפ</span></div>
+        </div>
+
+        <p style="margin-top:32px;">
+          <a href="https://eti-zitun.com" data-journey target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+            כל הפרטים על המסע <span class="arw">←</span>
+          </a>
+        </p>
+      </div>
+    </section>
+
+    <!-- ================= 10 · נעים מאוד ================= -->
+    <section class="section bg-forest" aria-labelledby="about-title">
+      <div class="container">
+        <div class="about">
+          <img class="about-photo" src="/families-2.jpg" alt="אתי רפאלה זיתון יושבת על הקרקע ומסמנת לב באצבעות" loading="lazy" decoding="async">
+          <div>
+            <h2 class="about-name" id="about-title">נעים מאוד, אני אתי.</h2>
+            <p class="about-role">
+              אמא לשלושה בנים, מאסטרית NLP, יועצת בריאות במגמת תזונה התנהגותית ומאמנת ריצה.
+            </p>
+
+            <p class="p p--forest" style="margin-top:20px;">
+              לפני כעשור, אחרי הלידה השלישית, הרגשתי שמשהו תקוע. חיפשתי דרך לחזור לעצמי —
+              והתחלתי לצלול לעולם התנועה, הריצה והכוח. במקביל, במטבח, התחלתי ליצור
+              "ארוחות מצוירות" לילדים כדי לחשוף אותם לעולם הטעמים בצורה משחקית.
+            </p>
+
+            <p class="p p--forest">
+              לאורך השנים ליוויתי גם בהתנדבות — קבוצות של נערות סביב אוכל ודימוי גוף,
+              ומסגרות ריצה וכושר עם אנשים על הרצף. בשתיהן למדתי בדיוק את אותו הדבר:
+              <strong>שינוי לא נכנס דרך הסבר. הוא נכנס דרך מישהו שנמצא לידך.</strong>
+            </p>
+
+            <p class="p p--forest">
+              דרך העבודה עם נשים ונערות בעודף משקל הבנתי את מה שהכי חשוב:
+              שינוי תזונתי אמיתי לא קורה על הצלחת — הוא מתחיל בראש, בסביבה
+              ובדפוסים העמוקים המושרשים שלנו.
+            </p>
+
+            <p class="p p--forest">
+              היום אני משלבת את כל העולמות שלי — NLP, תזונה התנהגותית, עבודה מעשית בבית
+              וליווי יומיומי — כדי לעזור לנשים כמוך ולמשפחות לבנות קשר בריא, נינוח ומשחרר עם אוכל.
+            </p>
+
+            <p class="p p--forest">
+              לא עוד מלחמה עם הצלחת. אלא חיים חדשים, גם בבית וגם בראש.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 11 · ארוחות מצוירות ================= -->
+    <section class="section bg-paper" aria-labelledby="meals-title">
+      <div class="container">
+        <p class="eyebrow">לפני שזו הייתה שיטה</p>
+        <h2 class="h2" id="meals-title">זה היה המטבח שלי</h2>
+
+        <p class="p">
+          זה התחיל במטבח שלי, בלי שום כוונה מקצועית — פשוט כדי לעודד סקרנות ומשחק סביב אוכל.
+          היום אכילה יצירתית היא חלק מהעבודה שלי עם ילדים, במיוחד סביב בררנות
+          והרחבה הדרגתית של מה שילד מוכן לפגוש.
+        </p>
+
+        <div class="meals">
+          <div class="meal-frame reveal"><img class="meal" src="/families-3.jpg" alt="ארוחה מצוירת — חד קרן מירקות וקיווי" loading="lazy" decoding="async"></div>
+          <div class="meal-frame reveal"><img class="meal" src="/families-4.jpg" alt="ארוחה מצוירת — לב ודגל בצבעי הקשת" loading="lazy" decoding="async"></div>
+          <div class="meal-frame reveal"><img class="meal" src="/families-5.jpg" alt="ארוחה מצוירת — אנגר מהסרט הקסם שבפנים" loading="lazy" decoding="async"></div>
+          <div class="meal-frame reveal"><img class="meal" src="/families-6.jpg" alt="ארוחה מצוירת — מיניון" loading="lazy" decoding="async"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 12 · סגירה ================= -->
+    <section class="section bg-forestd" id="contact" aria-labelledby="contact-title">
+      <div class="container">
+        <h2 class="h2 h2--forest" id="contact-title">תני לי יד — ונמצא יחד את הדרך אליו.</h2>
+        <p class="sub sub--forest">לא כדי שיאכל "מושלם". כדי שהבית יעשה חלק מהעבודה במקומך.</p>
+
+        <form class="contact-form" action="" method="POST" aria-label="טופס יצירת קשר">
+          <div class="form-field">
+            <label class="form-label" for="c-name">שם</label>
+            <input class="form-input" type="text" id="c-name" name="name" placeholder="השם שלך" required autocomplete="name">
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="c-phone">טלפון</label>
+            <input class="form-input" type="tel" id="c-phone" name="phone" placeholder="050-0000000" required autocomplete="tel" dir="ltr" style="text-align:right;">
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="c-email">מייל <span style="font-weight:400;">(לא חובה)</span></label>
+            <input class="form-input" type="email" id="c-email" name="email" placeholder="your@email.com" autocomplete="email" dir="ltr" style="text-align:right;">
+          </div>
+          <div class="form-field">
+            <label class="form-label" for="c-age">גיל הילד <span style="font-weight:400;">(לא חובה)</span></label>
+            <input class="form-input" type="text" id="c-age" name="child_age" placeholder="למשל: 7">
+          </div>
+          <div class="form-field form-col-2">
+            <label class="form-label" for="c-msg">מה קרה אצלכם השבוע? <span style="font-weight:400;">(לא חובה — גם שורה אחת עוזרת)</span></label>
+            <textarea class="form-input" id="c-msg" name="message" placeholder="אפשר ממש בחופשיות. אין צורך לנסח את זה יפה."></textarea>
+          </div>
+          <div class="form-col-2 first-step">
+            <button type="submit" class="btn btn-submit">שלחי לי פרטים <span class="arw">←</span></button>
+            <span class="first-step-note">רק שם וטלפון חובה. כל השאר — אם בא לך.</span>
+          </div>
+        </form>
+
+        <div class="or-rule">או</div>
+
+        <a href="https://wa.me/972523336766" class="btn-wa" target="_blank" rel="noopener noreferrer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+          שלחי לי הודעה בוואטסאפ
+        </a>
+
+        <p class="wa-note">כל שאלה — בברכה 🌿</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= FOOTER ================= -->
+  <footer role="contentinfo">
+    <div class="container">
+      <div class="footer-top">
+        <a href="#" class="footer-logo">בין הראש לצלחת — בבית</a>
+        <ul class="footer-links" role="list">
+          <li>
+            <a href="https://www.instagram.com/eti.rafaela.zitun" target="_blank" rel="noopener noreferrer"
+               aria-label="אינסטגרם של אתי רפאלה זיתון — @eti.rafaela.zitun">אינסטגרם</a>
+          </li>
+          <li><a href="https://eti-zitun.com" target="_blank" rel="noopener noreferrer">eti-zitun.com</a></li>
+          <li><a href="#contact">יצירת קשר</a></li>
+        </ul>
+      </div>
+      <p style="text-align:center;margin-top:22px;font-size:0.86rem;color:var(--on-forest-muted);line-height:1.7;">
+        אתי רפאלה זיתון | יועצת בריאות במגמת תזונה התנהגותית | מאסטרית NLP
+      </p>
+      <p class="footer-disclaimer">
+        התכנים בדף זה הם בהיבט התנהגותי ורגשי ואינם מהווים ייעוץ רפואי או תזונתי,
+        ואינם מחליפים את הצוות המטפל. &copy; 2025 אתי רפאלה זיתון
+      </p>
+    </div>
+  </footer>
+
+  <a href="#contact" class="sticky-cta" id="stickyCta">
+    אני רוצה לדבר על זה <span class="arw">←</span>
+  </a>
+
+  <a href="https://wa.me/972523336766" class="wa-float" target="_blank" rel="noopener noreferrer"
+     aria-label="שלחי הודעה בוואטסאפ">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/>
+    </svg>
+  </a>
+
+  <script>
+    /* ============================================================
+       ⚠️  מלאי כאן פעם אחת — הכל בדף מתעדכן מעצמו
+    ============================================================ */
+    var CONFIG = {
+      whatsapp:   '972523336766',                 // המספר שלך: קוד מדינה בלי + ובלי 0. למשל 972501234567
+      journeyUrl: 'https://eti-zitun.com'         // הקישור לעמוד המסע
+    };
+
+    (function () {
+      var ready = /^\d{8,15}$/.test(CONFIG.whatsapp);
+
+      /* whatsapp button + the journey link both read from CONFIG */
+      document.querySelectorAll('a[href*="wa.me"]').forEach(function (a) {
+        if (ready) a.href = 'https://wa.me/' + CONFIG.whatsapp;
+        else a.setAttribute('data-unset', '1');
+      });
+      document.querySelectorAll('a[data-journey]').forEach(function (a) { a.href = CONFIG.journeyUrl; });
+
+      /* the form has no backend — it hands the details to whatsapp instead */
+      var form = document.querySelector('.contact-form');
+      if (form) form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        if (!ready) { alert('עוד לא הוגדר מספר וואטסאפ בדף. מלאי אותו ב-CONFIG בראש הקובץ.'); return; }
+        var v = function (n) { var e = form.querySelector('[name="' + n + '"]'); return e && e.value.trim(); };
+        var lines = ['היי אתי, הגעתי מהדף "בין הראש לצלחת — בבית".'];
+        if (v('name'))       lines.push('שם: ' + v('name'));
+        if (v('phone'))      lines.push('טלפון: ' + v('phone'));
+        if (v('email'))      lines.push('מייל: ' + v('email'));
+        if (v('child_age'))  lines.push('גיל הילד: ' + v('child_age'));
+        if (v('message'))    lines.push('', v('message'));
+        window.open('https://wa.me/' + CONFIG.whatsapp + '?text=' + encodeURIComponent(lines.join('\n')), '_blank');
+      });
+
+      var still = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      /* ---- scroll reveal ---- */
+      var reveals = document.querySelectorAll('.reveal');
+      if (still) {
+        reveals.forEach(function (el) { el.classList.add('visible'); });
+      } else {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+          });
+        }, { threshold: 0.12, rootMargin: '0px 0px -32px 0px' });
+        reveals.forEach(function (el) { io.observe(el); });
+      }
+
+      /* ---- accordion: animate closing too, which <details> will not do alone ---- */
+      document.querySelectorAll('.acc').forEach(function (d) {
+        var sum = d.querySelector('summary');
+        var wrap = d.querySelector('.acc-wrap');
+        if (!sum || !wrap) return;
+        var busy = false;
+        sum.addEventListener('click', function (ev) {
+          if (still) return;
+          ev.preventDefault();
+          if (busy) return;
+          busy = true;
+          var done = function (e) {
+            if (e && e.propertyName !== 'grid-template-rows') return;
+            wrap.removeEventListener('transitionend', done);
+            if (!d.open) { busy = false; return; }
+            d.open = false;
+            d.classList.remove('anim-closed');
+            busy = false;
+          };
+          if (d.open) {
+            d.classList.add('anim-closed');
+            wrap.addEventListener('transitionend', done);
+          } else {
+            d.open = true;
+            d.classList.add('anim-closed');          /* start collapsed so it can grow */
+            requestAnimationFrame(function () {
+              requestAnimationFrame(function () {
+                d.classList.remove('anim-closed');
+                busy = false;
+              });
+            });
+          }
+        });
+      });
+
+      /* ---- numbers count up once, when the strip comes into view ---- */
+      var strip = document.querySelector('.facts-strip');
+      if (strip) {
+        var run = function () {
+          strip.querySelectorAll('.fact-num').forEach(function (el) {
+            var target = parseInt(el.textContent, 10);
+            if (isNaN(target) || /\//.test(el.textContent)) return;   /* leaves 24/7 alone */
+            if (still) return;
+            var t0 = null, dur = 900, from = 0;
+            el.textContent = '0';
+            requestAnimationFrame(function step(ts) {
+              if (!t0) t0 = ts;
+              var k = Math.min(1, (ts - t0) / dur);
+              el.textContent = Math.round(from + (target - from) * (1 - Math.pow(1 - k, 3)));
+              if (k < 1) requestAnimationFrame(step);
+            });
+          });
+        };
+        var so = new IntersectionObserver(function (es) {
+          es.forEach(function (e) { if (e.isIntersecting) { run(); so.disconnect(); } });
+        }, { threshold: 0.4 });
+        so.observe(strip);
+      }
+
+      /* ---- floating CTA: on after the hero, off once the form is in view ---- */
+      var sticky = document.getElementById('stickyCta');
+      var hero = document.querySelector('.hero');
+      var contact = document.getElementById('contact');
+      if (sticky && hero && contact) {
+        var pastHero = false, atForm = false;
+        var apply = function () { sticky.classList.toggle('show', pastHero && !atForm); };
+        new IntersectionObserver(function (es) {
+          es.forEach(function (e) { pastHero = !e.isIntersecting; apply(); });
+        }, { threshold: 0 }).observe(hero);
+        new IntersectionObserver(function (es) {
+          es.forEach(function (e) { atForm = e.isIntersecting; apply(); });
+        }, { threshold: 0 }).observe(contact);
+      }
+
+      /* ---- header picks up a shadow off the top ---- */
+      var head = document.querySelector('.site-header');
+      if (head) {
+        var onScroll = function () { head.classList.toggle('scrolled', window.scrollY > 12); };
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+      }
+    })();
+  </script>
+</body>
+</html>
+
+</body>
+</html>

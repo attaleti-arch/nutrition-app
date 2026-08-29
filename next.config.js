@@ -11,6 +11,8 @@ const nextConfig = {
       { source: '/fat-guide/', destination: '/fat-guide.html' },
       { source: '/home', destination: '/home.html' },
       { source: '/home/', destination: '/home.html' },
+      { source: '/families', destination: '/families.html' },
+      { source: '/families/', destination: '/families.html' },
     ]
   },
 }
