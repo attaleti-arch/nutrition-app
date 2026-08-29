@@ -453,6 +453,17 @@
 
     .promise p strong { color: var(--honey); font-weight: 700; }
 
+    /* .promise was built for the dark bands; on a light band it needs its own colours */
+    .bg-paper .promise,
+    .bg-paper2 .promise {
+      background: rgba(26 46 26 / 0.04);
+      border-color: var(--line-paper);
+    }
+    .bg-paper .promise p,
+    .bg-paper2 .promise p { color: var(--on-paper-muted); }
+    .bg-paper .promise p strong,
+    .bg-paper2 .promise p strong { color: var(--honey-deep); }
+
     /* ============================================================
        4 · THE SCENE
     ============================================================ */
@@ -1195,427 +1206,172 @@
     </div>
   </header>
 
-  <main>
-
-    <!-- ================= 1 · ההוק ================= -->
-    <section class="hero" aria-labelledby="hero-h1">
-      <div class="container">
-        <div class="hero-inner">
-          <div>
-            <p class="hero-eyebrow">ליווי להורים ולמשפחות · סביב אוכל, משקל והרגלים בבית</p>
-
-            <h1 id="hero-h1">את מבינה אותו יותר מכולם.</h1>
-
-            <p class="hero-body">
-              את יודעת מתי טוב לו, מתי הוא מדוכדך, מתי הוא סתם עייף.
-              את יודעת איך להניע אותו כמעט בכל דבר.
-            </p>
-
-            <p class="hero-thesis">
-              ורק סביב אוכל — <u>משהו פשוט לא נוגע.</u>
-            </p>
-
-            <p class="hero-body" style="animation-delay:0.66s;">
-              לפעמים זו דאגה למשקל. לפעמים האוכל כבר הפך למאבק.
-              ולפעמים נכנס הביתה שינוי שאי אפשר להתעלם ממנו.
-              בכולם, מה שצריך להשתנות קודם הוא לא הילד — אלא הדרך.
-            </p>
-
-            <div class="hero-actions">
-              <a href="#contact" class="btn btn-primary">אני רוצה לדבר על זה</a>
-              <a href="#how" class="btn btn-ghost">איך זה עובד בפועל <span class="arw">←</span></a>
-            </div>
-          </div>
-
-          <figure class="hero-figure">
+<!-- ================= 1 · שש וחצי בערב ================= -->
+<section class="hero" aria-labelledby="hero-h1">
+  <div class="container">
+    <div class="hero-inner">
+      <div>
+        <p class="hero-eyebrow">ליווי להורים ולמשפחות · סביב אוכל, משקל והרגלים בבית</p>
+        <h1 id="hero-h1">שש וחצי בערב</h1>
+        <p class="hero-body">
+          הוא חוזר רעב, פותח את הארון, לוקח משהו. עשרים דקות אחר כך פותח שוב.
+        </p>
+        <p class="hero-body" style="animation-delay:0.5s;">
+          אתם מתחילים לחשב בראש מה הוא כבר אכל היום, מתלבטים אם להגיד משהו — ואז יוצא
+          "אולי מספיק?" ומיד מגיעה החרטה, כי שמעתם את הטון של עצמכם.
+        </p>
+        <p class="hero-thesis">
+          השאלה היא לא אם מותר לו <u>לפתוח שוב את הארון.</u>
+        </p>
+        <p class="hero-body" style="animation-delay:0.66s;">
+          השאלה היא למה בכל ערב מחדש צריך להחליט מה לעשות ברגע הזה, כשכולם כבר עייפים ורעבים.
+        </p>
+        <div class="hero-actions">
+          <a href="#contact" class="btn btn-primary">אני רוצה לדבר על זה</a>
+          <a href="#how" class="btn btn-ghost">איך זה עובד <span class="arw">←</span></a>
+        </div>
+      </div>
+      <figure class="hero-figure">
             <img class="hero-photo" src="/families-1.jpg" alt="אתי רפאלה זיתון יושבת על נדנדת עץ בשדה בשעת בין ערביים">
           </figure>
-        </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 2 · הסברתם, הצעתם ================= -->
+<section class="section bg-forest statement" aria-labelledby="approach-title">
+  <div class="container">
+    <h2 id="approach-title">הסברתם, הצעתם, ניסיתם בטוב ופחות בטוב</h2>
+    <p class="p p--forest">
+      וזה לא כי לא ניסיתם מספיק. זה כי הוא כבר יודע מה בריא ומה כדאי.
+      <strong>מה שחסר לו הוא לא עוד ידע — אלא סביבה שעוזרת לו לחיות את זה.</strong>
+    </p>
+    <p class="p p--forest">
+      וזה בדיוק מה שנמצא בידיים שלכם: מה נכנס הביתה, איך נראה השולחן, מה נאמר ומה לא,
+      ומה זמין ברגע שהוא רעב.
+    </p>
+    <div class="promise reveal">
+      <p><strong>פחות לנהל אותו. יותר לבנות את מה שסביבו.</strong></p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 3 · שלוש נקודות התחלה ================= -->
+<section class="section bg-paper2" aria-labelledby="gates-title">
+  <div class="container">
+    <h2 class="h2" id="gates-title">שלוש נקודות התחלה. אותה דרך.</h2>
+    <div class="gates">
+      <div class="gate reveal">
+        <div class="gate-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 4-6 5 5"/></svg></div>
+        <h3>כשהדאגה היא למשקל</h3>
+        <p>לבנות הרגלים בלי הערות, בלי איסורים, ובלי שהגוף שלו יהפוך לנושא בבית.</p>
       </div>
-    </section>
-
-    <!-- ================= 2 · שלוש נקודות הכניסה ================= -->
-    <section class="section bg-paper2" aria-labelledby="gates-title">
-      <div class="container">
-        <h2 class="h2" id="gates-title">את יודעת בדיוק מה מדאיג אותך</h2>
-        <p class="sub">את פשוט לא יודעת איך לגשת לזה בלי להחמיר.</p>
-        <div class="gates">
-          <div class="gate reveal">
-            <div class="gate-mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 4 4-6 5 5"/></svg>
-            </div>
-            <h3>משקל ואורח חיים</h3>
-            <p>את רוצה לעזור לו לבנות הרגלים בריאים — בלי הערות, בלי איסורים, ובלי שהגוף שלו יהפוך לנושא בבית.</p>
-          </div>
-          <div class="gate reveal">
-            <div class="gate-mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/><path d="M3 12h18"/></svg>
-            </div>
-            <h3>האוכל הפך למאבק</h3>
-            <p>בררנות שמצמצמת את הרשימה, ארוחות שנגררות, רדיפה עם צלחת, מתוקים שהפכו לזירת כוח.</p>
-          </div>
-          <div class="gate reveal">
-            <div class="gate-mark" aria-hidden="true">
-              <svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg>
-            </div>
-            <h3>שינוי שמחריג אותו</h3>
-            <p>צליאק, אלרגיה או רגישות שנכנסו הביתה — עם כללים חדשים, התארגנות מעשית, ולצידה גם הסתגלות רגשית.</p>
-          </div>
-        </div>
+      <div class="gate reveal">
+        <div class="gate-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 8l-4 4 4 4"/><path d="M17 8l4 4-4 4"/><path d="M3 12h18"/></svg></div>
+        <h3>כשהאוכל הפך למאבק</h3>
+        <p>בררנות שמצמצמת את הרשימה, ארוחות שנגררות, מתוקים שהפכו לזירת כוח.</p>
       </div>
-    </section>
-
-    <!-- ================= 3 · הגישה ================= -->
-    <section class="section bg-forest statement" aria-labelledby="approach-title">
-      <div class="container">
-        <h2 id="approach-title">את לא צריכה עוד דרך לשכנע אותו</h2>
-        <p class="sub sub--forest">את צריכה דרך להגיע אליו.</p>
-
-        <p class="p p--forest">
-          הסברת, הצעת, ניסית בטוב וניסית פחות בטוב. וזה לא כי לא ניסית מספיק —
-          זה כי ברוב המקרים הוא כבר יודע מה בריא ומה כדאי.
-          <strong>מה שחסר לו הוא לא עוד ידע, אלא סביבה שעוזרת לו לחיות את זה.</strong>
-        </p>
-
-        <p class="p p--forest">
-          וזה בדיוק מה שנמצא בידיים שלך: מה נכנס הביתה, איך נראה השולחן,
-          מה נאמר ומה לא, ומה זמין ברגע שהוא רעב.
-        </p>
-
-        <div class="promise reveal">
-          <p><strong>אני לא באה במקומך. אני באה איתך — ומביאה את הדרך.</strong></p>
-        </div>
-
-        <p class="p p--forest">
-          אנחנו עובדות יחד על הבית, ומשם השינוי מגיע גם אליו —
-          בלי שהאוכל או הגוף שלו יהפכו לפרויקט משפחתי.
-        </p>
+      <div class="gate reveal">
+        <div class="gate-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20.8 5.6a5.5 5.5 0 0 0-7.8 0L12 6.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l8.8 8.8 8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></svg></div>
+        <h3>כששינוי נכנס הביתה</h3>
+        <p>צליאק, אלרגיה או רגישות, עם כללים חדשים והסתגלות רגשית לצידם.</p>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
 
-    <!-- ================= 4 · המשקל ================= -->
-    <section class="section bg-paper" aria-labelledby="worry-title">
-      <div class="container">
-        <h2 class="h2" id="worry-title">מותר לך לדאוג</h2>
-        <p class="sub">את הדאגה הזאת תביאי אליי.</p>
-
-        <p class="p">
-          אם משהו במשקל שלו השתנה, אם הרופא העיר, אם הבגדים נעשו קטנים מהר מדי —
-          הדאגה הזאת במקומה, ואני לא באה לבטל אותה.
-        </p>
-
-        <p class="p">
-          לפעמים, דווקא מתוכה, אנחנו מוצאות את עצמנו מדברות איתו על בריאות,
-          מציצות במדדים, מעירות על בגד שבחר — לא כדי לפגוע,
-          אלא כדי לחסוך ממנו הערות שיגיעו מבחוץ.
-        </p>
-
-        <p class="pull pull--honey reveal">
-          ואת המשקל אפשר תמיד לשנות. את מה שנוצר בינתיים ביניכם — הרבה יותר קשה.
-        </p>
-
-        <h3 class="subhead">ומה שחשוב לי שתדעי מראש:</h3>
-        <p class="p">
-          אני לא שוקלת את הילד. אני לא נותנת לו דיאטה.
-          השינוי לא אמור להרגיש לו כמו משהו שעושים עליו —
-          הוא פשוט פוגש בבית התנהלות אחרת.
-        </p>
-      </div>
-    </section>
-
-    <!-- ================= 5 · הסצנה ================= -->
-    <section class="section bg-paper2" aria-labelledby="scene-title">
-      <div class="container">
-        <p class="eyebrow">רוב הקושי לא קורה בפגישה</p>
-        <h2 class="scene-time" id="scene-title">שש וחצי בערב</h2>
-
-        <p class="scene-body">
-          הוא חוזר רעב, פותח את הארון, לוקח משהו. עשרים דקות אחר כך פותח שוב.
-          את מתחילה לחשב בראש מה הוא כבר אכל היום, מתלבטת אם להגיד משהו —
-          ואז אומרת "אולי מספיק?" ומיד מתחרטת, כי שמעת את הטון של עצמך.
-        </p>
-
-        <p class="scene-turn">
-          השאלה היא לא אם מותר לו לפתוח שוב את הארון.
-          השאלה היא למה בכל ערב מחדש את צריכה להחליט מה לעשות ברגע הזה,
-          כשכולם כבר עייפים ורעבים.
-        </p>
-
-        <p class="scene-turn">
-          <strong>בליווי אנחנו מורידות חלק מההחלטות האלה מהשולחן מראש. לא עוד כללים לילד — מבנה שעובד בשביל הבית.</strong>
-        </p>
-      </div>
-    </section>
-
-    <!-- ================= 6 · מה משתנה ================= -->
-    <section class="section bg-paper" aria-labelledby="changes-title">
-      <div class="container">
-        <h2 class="h2" id="changes-title">פחות לנהל אותו. יותר לבנות את מה שסביבו.</h2>
-        <p class="sub">את ואני משנות את הדרך — והוא מתחיל לפגוש משהו אחר בבית.</p>
-
-        <div class="two-col">
-          <div>
-            <h3 class="col-title">מה משנים</h3>
-<div class="changes">
+<!-- ================= 4 · מה משנים ================= -->
+<section class="section bg-paper" aria-labelledby="changes-title">
+  <div class="container">
+    <h2 class="h2" id="changes-title">מה משנים</h2>
+    <div class="changes">
           <div class="change"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>מה זמין במקרר ובמזווה, ומה עבר למקום אחר</div>
           <div class="change"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>איך נראית ארוחה על השולחן, ומי מחליט מה</div>
           <div class="change"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>מה מפסיקים להגיד — גם כשזה נאמר מדאגה</div>
           <div class="change"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>איפה עובר הגבול, ומתי מפסיקים לשכנע</div>
           <div class="change"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>מה הוא יכול לקחת, להכין ולבחור בעצמו</div>
           <div class="change"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>איך מדברים בבית על גוף, על בריאות ועל משקל</div>
-          </div>
-          </div>
-          <div>
-            <h3 class="col-title">איך זה מרגיש</h3>
-<ul class="settled" role="list">
-          <li>פחות משא ומתן סביב הצלחת</li>
-          <li>פחות החלטות שמתקבלות מתוך עייפות</li>
-          <li>הילד יודע יותר מה מצופה ממנו ומה הוא יכול לבחור</li>
-          <li>את יודעת מתי להתערב — ומתי דווקא לא</li>
-          <li>האוכל חוזר להיות חלק מהבית, במקום הנושא שמנהל אותו</li>
-        </ul>
-          </div>
-        </div>
-      </div>
-    </section>
+    </div>
+    <div class="promise reveal" style="margin-top:34px;">
+      <p><strong>אני לא שוקלת את הילד. אני לא נותנת לו דיאטה.</strong>
+      השינוי לא אמור להרגיש לו כמו משהו שעושים עליו — הוא פשוט פוגש בבית התנהלות אחרת.</p>
+    </div>
+  </div>
+</section>
 
-    <!-- ================= 7 · האקורדיונים ================= -->
-    <section class="section bg-paper2" aria-labelledby="deep-title">
-      <div class="container">
-        <h2 class="h2" id="deep-title">אותה גישה. נקודת התחלה אחרת בכל בית.</h2>
-        <p class="sub">פתחי את מה שרלוונטי לכם.</p>
+<!-- ================= 5 · מותר לכם לדאוג ================= -->
+<section class="section bg-paper2" aria-labelledby="worry-title">
+  <div class="container">
+    <h2 class="h2" id="worry-title">מותר לכם לדאוג</h2>
+    <p class="p">
+      אם משהו במשקל שלו השתנה, אם הרופא העיר, אם הבגדים נעשו קטנים מהר מדי —
+      הדאגה במקומה, ואני לא באה לבטל אותה.
+    </p>
+    <p class="p">
+      אבל בתוך "אני רק דואג לו" יושבים לפעמים כל המשפטים ששמענו בעצמנו.
+      תסיים מהצלחת. אם לא תאכל אין קינוח. אתה באמת צריך עוד?
+    </p>
+    <p class="p">
+      זו ירושה שאף אחד לא בחר בה, והיא עוברת הלאה בלי שנשים לב.
+      גם שם אנחנו עובדים — לא כדי לפתוח את העבר, אלא כדי שיפסיק להחליט במקומכם בשבע בערב.
+    </p>
+    <p class="p"><strong>ואת המשקל אפשר תמיד לשנות. את מה שנוצר בינתיים ביניכם — הרבה יותר קשה.</strong></p>
+  </div>
+</section>
 
-        <div class="acc-list">
-          <details class="acc">
-            <summary>
-              <span class="acc-title">כשהדאגה היא למשקל</span>
-              <span class="acc-lead">אפשר לעבוד על משקל והרגלים בלי להפוך את הגוף שלו לנושא בבית.</span>
-            </summary>
-            <div class="acc-wrap"><div class="acc-body">
-        <ul class="q-list" role="list">
-          <li>איך משנים את מה שיש בבית בלי "לעשות לו דיאטה"?</li>
-          <li>איך מצמצמים נשנושים בלי לפקח על כל ביס?</li>
-          <li>איך מדברים על בריאות בלי שמשקל יהפוך למדד לערך?</li>
-          <li>ומה עושים כשגם את נמצאת במאבק עם אוכל — והוא רואה ושומע גם את זה?</li>
-        </ul>
+<!-- ================= 6 · איך זה עובד ================= -->
+<section class="section bg-forest" id="how" aria-labelledby="how-title">
+  <div class="container">
+    <h2 class="h2 h2--forest" id="how-title">איך זה עובד</h2>
+    <div class="facts-strip">
+      <div class="fact-cell"><span class="fact-num">3</span><span class="fact-word">חודשים</span></div>
+      <div class="fact-cell"><span class="fact-num">4</span><span class="fact-word">מפגשים</span></div>
+      <div class="fact-cell"><span class="fact-num">1</span><span class="fact-word">ביקור בית</span></div>
+      <div class="fact-cell"><span class="fact-num">24/7</span><span class="fact-word">מענה בוואטסאפ</span></div>
+    </div>
+    <div class="steps">
+      <div class="step reveal"><h3>ממפים</h3><p>מה הוא אוכל, מתי, איפה נוצרים החיכוכים, מה כבר ניסיתם ולא עבד.</p></div>
+      <div class="step reveal"><h3>משנים בבית</h3><p>ואני מתכוונת פיזית. מזווה, מקרר, זמינות, מבנה הארוחות.</p></div>
+      <div class="step reveal"><h3>משנים את ההתנהלות</h3><p>שפה, תגובות, גבולות, ומקומות שבהם כוונה טובה דווקא משמרת את הקושי.</p></div>
+      <div class="step reveal"><h3>ואני נשארת איתכם בין המפגשים</h3><p>כי השאלה האמיתית מגיעה בשש וחצי מול הארון הפתוח — לא בזמן הפגישה.</p></div>
+    </div>
+    <p class="p p--forest" style="margin-top:30px;">
+      עם ילדים צעירים הליווי עובר דרככם ודרך הבית. מגיל 15 בערך הוא יכול להיכנס כשותף פעיל.
+    </p>
+  </div>
+</section>
 
-        <p class="p" style="margin-top:30px;">
-          וכשאמא אומרת "אני רק דואגת לו", לפעמים יושבים בתוך הדאגה הזאת כל המסרים שהיא עצמה קיבלה:
-          <strong>תסיימי מהצלחת. אם לא תאכלי אין קינוח. את באמת צריכה את זה?</strong>
-          זו ירושה שאף אחת לא בחרה בה, והיא עוברת הלאה בלי שנשים לב.
-        </p>
-
-        <h3 class="subhead subhead--honey">כדי שהעבר לא ימשיך לנהל את השולחן</h3>
-        <p class="p">
-          גם שם אנחנו עובדות — לא כדי לפתוח את העבר, אלא כדי שיפסיק להחליט במקומך בשבע בערב.
-        </p>
-        <h3 class="subhead subhead--honey">ומה כן עושים</h3>
-        <ul class="settled" role="list">
-          <li>זמינות</li>
-          <li>מבנה ארוחות</li>
-          <li>נשנושים</li>
-          <li>רעב ושובע</li>
-          <li>שתייה</li>
-          <li>תנועה ושינה</li>
-          <li>שפה בבית</li>
-        </ul>
+<!-- ================= 7 · נעים מאוד ================= -->
+<section class="section bg-paper" aria-labelledby="about-title">
+  <div class="container">
+    <div class="about">
+      <img class="about-photo" src="/families-2.jpg" alt="אתי רפאלה זיתון יושבת על הקרקע ומסמנת לב באצבעות" loading="lazy" decoding="async">
+      <div>
+        <h2 class="about-name" id="about-title">נעים מאוד, אני אתי</h2>
+        <p class="about-role">אמא לשלושה בנים, מאסטרית NLP, יועצת בריאות במגמת תזונה התנהגותית ומאמנת ריצה.</p>
         <p class="p" style="margin-top:20px;">
-          כל אלה משתנים דרך הבית — לא דרך פיקוח על הילד.
+          ליוויתי בהתנדבות קבוצות של נערות סביב אוכל ודימוי גוף, ומסגרות ריצה וכושר עם אנשים על הרצף.
+          בשתיהן למדתי בדיוק את אותו הדבר:
+          <strong>שינוי לא נכנס דרך הסבר. הוא נכנס דרך מישהו שנמצא לידכם.</strong>
         </p>
-            </div></div>
-          </details>
-          <details class="acc">
-            <summary>
-              <span class="acc-title">כשהאוכל הפך למאבק</span>
-              <span class="acc-lead">יש בתים שבהם האוכל הוא לא בעיה בריאותית — הוא פשוט תופס יותר מדי מקום.</span>
-            </summary>
-            <div class="acc-wrap"><div class="acc-body">
         <p class="p">
-          ילד שאוכל חמישה דברים ומצמצם עוד. ארוחה שנמשכת שעה. מתוקים שהפכו למטבע עובר לסוחר.
-        </p>
-    
-        <p class="p">
-          המצבים האלה כמעט אף פעם לא נפתרים בעוד שכנוע.
-          <strong>הם נפתחים כשמשנים את המבנה סביב הארוחה.</strong>
-        </p>
-
-        <ul class="b-list" role="list">
-          <li>בבררנות עובדים דרך <strong>היכרות והתנסות הדרגתית</strong> — לא דרך "עוד ביס אחד"</li>
-          <li>מפרידים בין התפקיד שלך (<strong>מה מוגש ומתי</strong>) לבין שלו (<strong>כמה, ואם</strong>)</li>
-          <li>מוציאים את המתוקים <strong>מעמדת הפרס והעונש</strong></li>
-        </ul>
-
-        <p class="pull pull--honey reveal">
-          ילד שלא נלחמים איתו על אוכל, פנוי הרבה יותר לנסות אותו.
-        </p>
-            </div></div>
-          </details>
-          <details class="acc">
-            <summary>
-              <span class="acc-title">וכשמשתנים חוקי המשחק</span>
-              <span class="acc-lead">מגבלה רפואית לא נכנסת לבית ריק. היא פוגשת שפה והרגלים שכבר קיימים.</span>
-            </summary>
-            <div class="acc-wrap"><div class="acc-body">
-        <p class="p">
-          היא פוגשת שפה והרגלים שכבר קיימים סביב אוכל, ומצטרפת אליהם יחד עם הדאגה, הזהירות והרצון לעשות נכון.
-        </p>
-    
-        <p class="p">
-          <strong>יש הבדל גדול בין ילד שגדל עם "אני יודע לנהל את זה" לבין ילד שגדל עם "בודקים אותי".</strong>
-          וההבדל הזה נקבע בניסוח ובחזרתיות — לא בכללי הבטיחות עצמם, שהם כמובן לא לוויכוח.
-        </p>
-
-        <div class="facts">
-          <div class="fact reveal">
-            <h3>הספונטניות שנעלמה</h3>
-            <p>כל יציאה, כל ארוחה בחוץ, כל הזמנה של הרגע האחרון דורשת תכנון. זו לא סיבה להישאר בבית; זה מקום לעבוד עליו.</p>
-          </div>
-          <div class="fact reveal">
-            <h3>האחים והבית</h3>
-            <p>כשמגבלה של אחד משנה מערכת שלמה, יש שאלות שנשאלות בשקט. הוגן לא תמיד אומר זהה, ולפעמים צריך להגיד את זה בקול.</p>
-          </div>
-          <div class="fact reveal">
-            <h3>הזמינות</h3>
-            <p>שיהיה משהו ברור, מוכן ואהוב שהוא יכול לקחת לבד. שפע של נגישות, לא שפע של מוצרים.</p>
-          </div>
-        </div>
-
-        <p class="pull pull--honey reveal">
-          המטרה היא לא שהבית יסתובב סביב המגבלה — אלא שהיא תמצא את המקום שלה בתוך הבית.
-        </p>
-            </div></div>
-          </details>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= 8 · הליווי ================= -->
-    <section class="section bg-forest" id="how" aria-labelledby="how-title">
-      <div class="container">
-        <h2 class="h2 h2--forest" id="how-title">אני לא שולחת אותך הביתה לנסות לבד</h2>
-        <p class="sub sub--forest">זה ליווי אישי וצמוד שנמשך איתך לתוך היום־יום בבית.</p>
-
-        <div class="steps">
-          <div class="step reveal">
-            <h3>ממפות</h3>
-            <p>מה הוא אוכל, מתי, איפה נוצרים החיכוכים, מה כבר ניסית ולא עבד.</p>
-          </div>
-          <div class="step reveal">
-            <h3>משנות בבית</h3>
-            <p>ואני מתכוונת פיזית. מזווה, מקרר, זמינות, מבנה הארוחות.</p>
-          </div>
-          <div class="step reveal">
-            <h3>משנות את ההתנהלות</h3>
-            <p>שפה, תגובות, גבולות, ומקומות שבהם כוונה טובה דווקא משמרת את הקושי.</p>
-          </div>
-          <div class="step reveal">
-            <h3>ואני נשארת איתך בין המפגשים</h3>
-            <p>כי השאלה האמיתית מגיעה בשש וחצי מול הארון הפתוח, לא בזמן הפגישה.</p>
-          </div>
-        </div>
-
-        <p class="p p--forest" style="margin-top:30px;">
-          עם ילדים צעירים הליווי עובר דרכך ודרך הבית. מגיל 15 בערך הוא יכול להיכנס כשותף פעיל.
-        </p>
-        <p class="p p--forest">
-          בתוך הליווי משולבים NLP, אכילה יצירתית, אפליקציה אישית ומענה בוואטסאפ.
+          ודרך העבודה הזו הבנתי את מה שהכי חשוב — שינוי אמיתי לא קורה על הצלחת.
+          הוא מתחיל בראש, בסביבה, ובדפוסים שכבר מושרשים בבית.
         </p>
       </div>
-    </section>
+    </div>
+  </div>
+</section>
 
-    <!-- ================= 9 · המספרים ================= -->
-    <section class="section bg-olive" aria-labelledby="facts-title">
-      <div class="container">
-        <h2 class="h2 h2--forest" id="facts-title">שלושה חודשים בתוך החיים עצמם</h2>
-
-        <div class="facts-strip">
-          <div class="fact-cell"><span class="fact-num">3</span><span class="fact-word">חודשים</span></div>
-          <div class="fact-cell"><span class="fact-num">4</span><span class="fact-word">מפגשים</span></div>
-          <div class="fact-cell"><span class="fact-num">1</span><span class="fact-word">ביקור בית</span></div>
-          <div class="fact-cell"><span class="fact-num">24/7</span><span class="fact-word">מענה בוואטסאפ</span></div>
-        </div>
-
-        <p style="margin-top:32px;">
-          <a href="https://eti-zitun.com" data-journey target="_blank" rel="noopener noreferrer" class="btn btn-primary">
-            כל הפרטים על המסע <span class="arw">←</span>
-          </a>
-        </p>
-      </div>
-    </section>
-
-    <!-- ================= 10 · נעים מאוד ================= -->
-    <section class="section bg-forest" aria-labelledby="about-title">
-      <div class="container">
-        <div class="about">
-          <img class="about-photo" src="/families-2.jpg" alt="אתי רפאלה זיתון יושבת על הקרקע ומסמנת לב באצבעות" loading="lazy" decoding="async">
-          <div>
-            <h2 class="about-name" id="about-title">נעים מאוד, אני אתי.</h2>
-            <p class="about-role">
-              אמא לשלושה בנים, מאסטרית NLP, יועצת בריאות במגמת תזונה התנהגותית ומאמנת ריצה.
-            </p>
-
-            <p class="p p--forest" style="margin-top:20px;">
-              לפני כעשור, אחרי הלידה השלישית, הרגשתי שמשהו תקוע. חיפשתי דרך לחזור לעצמי —
-              והתחלתי לצלול לעולם התנועה, הריצה והכוח. במקביל, במטבח, התחלתי ליצור
-              "ארוחות מצוירות" לילדים כדי לחשוף אותם לעולם הטעמים בצורה משחקית.
-            </p>
-
-            <p class="p p--forest">
-              לאורך השנים ליוויתי גם בהתנדבות — קבוצות של נערות סביב אוכל ודימוי גוף,
-              ומסגרות ריצה וכושר עם אנשים על הרצף. בשתיהן למדתי בדיוק את אותו הדבר:
-              <strong>שינוי לא נכנס דרך הסבר. הוא נכנס דרך מישהו שנמצא לידך.</strong>
-            </p>
-
-            <p class="p p--forest">
-              דרך העבודה עם נשים ונערות בעודף משקל הבנתי את מה שהכי חשוב:
-              שינוי תזונתי אמיתי לא קורה על הצלחת — הוא מתחיל בראש, בסביבה
-              ובדפוסים העמוקים המושרשים שלנו.
-            </p>
-
-            <p class="p p--forest">
-              היום אני משלבת את כל העולמות שלי — NLP, תזונה התנהגותית, עבודה מעשית בבית
-              וליווי יומיומי — כדי לעזור לנשים כמוך ולמשפחות לבנות קשר בריא, נינוח ומשחרר עם אוכל.
-            </p>
-
-            <p class="p p--forest">
-              לא עוד מלחמה עם הצלחת. אלא חיים חדשים, גם בבית וגם בראש.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= 11 · ארוחות מצוירות ================= -->
-    <section class="section bg-paper" aria-labelledby="meals-title">
-      <div class="container">
-        <p class="eyebrow">לפני שזו הייתה שיטה</p>
-        <h2 class="h2" id="meals-title">זה היה המטבח שלי</h2>
-
-        <p class="p">
-          זה התחיל במטבח שלי, בלי שום כוונה מקצועית — פשוט כדי לעודד סקרנות ומשחק סביב אוכל.
-          היום אכילה יצירתית היא חלק מהעבודה שלי עם ילדים, במיוחד סביב בררנות
-          והרחבה הדרגתית של מה שילד מוכן לפגוש.
-        </p>
-
-        <div class="meals">
-          <div class="meal-frame reveal"><img class="meal" src="/families-3.jpg" alt="ארוחה מצוירת — חד קרן מירקות וקיווי" loading="lazy" decoding="async"></div>
-          <div class="meal-frame reveal"><img class="meal" src="/families-4.jpg" alt="ארוחה מצוירת — לב ודגל בצבעי הקשת" loading="lazy" decoding="async"></div>
-          <div class="meal-frame reveal"><img class="meal" src="/families-5.jpg" alt="ארוחה מצוירת — אנגר מהסרט הקסם שבפנים" loading="lazy" decoding="async"></div>
-          <div class="meal-frame reveal"><img class="meal" src="/families-6.jpg" alt="ארוחה מצוירת — מיניון" loading="lazy" decoding="async"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= 12 · סגירה ================= -->
-    <section class="section bg-forestd" id="contact" aria-labelledby="contact-title">
-      <div class="container">
-        <h2 class="h2 h2--forest" id="contact-title">תני לי יד — ונמצא יחד את הדרך אליו.</h2>
-        <p class="sub sub--forest">לא כדי שיאכל "מושלם". כדי שהבית יעשה חלק מהעבודה במקומך.</p>
-
-        <form class="contact-form" action="" method="POST" aria-label="טופס יצירת קשר">
+<!-- ================= 8 · סגירה ================= -->
+<section class="section bg-forestd" id="contact" aria-labelledby="contact-title">
+  <div class="container">
+    <h2 class="h2 h2--forest" id="contact-title">תנו לי יד — ונמצא יחד את הדרך אליו.</h2>
+    <p class="sub sub--forest">לא כדי שיאכל "מושלם". כדי שהבית יעשה חלק מהעבודה במקומכם.</p>
+    <form class="contact-form" action="" method="POST" aria-label="טופס יצירת קשר">
           <div class="form-field">
             <label class="form-label" for="c-name">שם</label>
-            <input class="form-input" type="text" id="c-name" name="name" placeholder="השם שלך" required autocomplete="name">
+            <input class="form-input" type="text" id="c-name" name="name" placeholder="השם שלכם" required autocomplete="name">
           </div>
           <div class="form-field">
             <label class="form-label" for="c-phone">טלפון</label>
@@ -1634,26 +1390,20 @@
             <textarea class="form-input" id="c-msg" name="message" placeholder="אפשר ממש בחופשיות. אין צורך לנסח את זה יפה."></textarea>
           </div>
           <div class="form-col-2 first-step">
-            <button type="submit" class="btn btn-submit">שלחי לי פרטים <span class="arw">←</span></button>
-            <span class="first-step-note">רק שם וטלפון חובה. כל השאר — אם בא לך.</span>
+            <button type="submit" class="btn btn-submit">שלחו לי פרטים <span class="arw">←</span></button>
+            <span class="first-step-note">רק שם וטלפון חובה. כל השאר — אם בא לכם.</span>
           </div>
         </form>
-
-        <div class="or-rule">או</div>
+    <div class="or-rule">או</div>
 
         <a href="https://wa.me/972523336766" class="btn-wa" target="_blank" rel="noopener noreferrer">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
           שלחי לי הודעה בוואטסאפ
         </a>
+  </div>
+</section>
 
-        <p class="wa-note">כל שאלה — בברכה 🌿</p>
-      </div>
-    </section>
-
-  </main>
-
-  <!-- ================= FOOTER ================= -->
-  <footer role="contentinfo">
+<footer role="contentinfo">
     <div class="container">
       <div class="footer-top">
         <a href="#" class="footer-logo">בין הראש לצלחת — בבית</a>
