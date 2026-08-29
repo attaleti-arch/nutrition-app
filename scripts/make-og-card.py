@@ -52,9 +52,18 @@ def build(out, title, sub_lines, eyebrow, photo_name, logo_name):
     d.text((R, y), eyebrow, font=ImageFont.truetype(str(FONTS / 'Heebo-700.ttf'), 30),
            fill=GOLD, anchor='ra')
     y += 64
-    d.text((R, y), title, font=ImageFont.truetype(str(FONTS / 'FrankRuhlLibre-900.ttf'), 92),
-           fill=CREAM, anchor='ra')
-    y += 116
+    # shrink the title until it clears the photo, so a long one never overflows.
+    # the photo's right third is faded, so the title may sit over that part —
+    # 400 is where the image is still solid.
+    avail = R - 400
+    size = 92
+    while size > 46:
+        ft = ImageFont.truetype(str(FONTS / 'FrankRuhlLibre-900.ttf'), size)
+        if d.textlength(title, font=ft) <= avail:
+            break
+        size -= 2
+    d.text((R, y), title, font=ft, fill=CREAM, anchor='ra')
+    y += round(size * 116 / 92)   # keeps the full-size advance at exactly 116
     d.line([(R, y), (R - 200, y)], fill=GOLD, width=5)
     y += 40
     fs = ImageFont.truetype(str(FONTS / 'Heebo-400.ttf'), 31)

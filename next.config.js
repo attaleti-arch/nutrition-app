@@ -9,6 +9,8 @@ const nextConfig = {
       { source: '/lunchbox/', destination: '/lunchbox.html' },
       { source: '/fat-guide', destination: '/fat-guide.html' },
       { source: '/fat-guide/', destination: '/fat-guide.html' },
+      { source: '/home', destination: '/home.html' },
+      { source: '/home/', destination: '/home.html' },
     ]
   },
 }
