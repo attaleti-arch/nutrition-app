@@ -13,6 +13,8 @@ const nextConfig = {
       { source: '/home/', destination: '/home.html' },
       { source: '/families', destination: '/families.html' },
       { source: '/families/', destination: '/families.html' },
+      { source: '/one-day', destination: '/one-day.html' },
+      { source: '/one-day/', destination: '/one-day.html' },
     ]
   },
 }
