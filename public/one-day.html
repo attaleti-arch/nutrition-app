@@ -41,11 +41,28 @@
     --paper:#F9F5E9;
     --amber:#B98F32;
     --line:#DBD2BC;
+    /* רצועות פסטל, נדגמו מהפיד */
+    --b1:#F5EEE2;   /* קרם */
+    --b2:#F3ECD5;   /* חמאה בהירה */
+    --b3:#F3E4D8;   /* אפרסק */
+    --b4:#E4E6D2;   /* ירוק זית בהיר */
+    --card:#FBF7EE;
   }
   *{box-sizing:border-box;}
   html{-webkit-text-size-adjust:100%;}
-  body{margin:0;background:var(--cream);color:var(--ink);font-family:"Heebo",system-ui,sans-serif;line-height:1.7;font-size:17px;}
-  .wrap{max-width:820px;margin:0 auto;padding:0 20px 80px;}
+  body{margin:0;background:var(--b1);color:var(--ink);font-family:"Heebo",system-ui,sans-serif;line-height:1.7;font-size:17px;}
+
+  /* each section is its own pastel band; the inner rail keeps the reading width */
+  .wrap{max-width:none;margin:0;padding:0 0 0;}
+  .wrap > section{margin:0;padding:48px 20px;}
+  .wrap > section > *{max-width:820px;margin-inline:auto;}
+  .wrap > section:nth-of-type(4n+1){background:var(--b1);}
+  .wrap > section:nth-of-type(4n+2){background:var(--b2);}
+  .wrap > section:nth-of-type(4n+3){background:var(--b3);}
+  .wrap > section:nth-of-type(4n+4){background:var(--b4);}
+  .wrap > footer{background:var(--b1);margin:0;padding:34px 20px 60px;}
+  .wrap > footer > *{max-width:820px;margin-inline:auto;}
+  @media (max-width:600px){ .wrap > section{padding:38px 18px;} }
 
   header{background:var(--olive);color:var(--paper);padding:56px 20px 48px;margin-bottom:44px;}
   header .inner{max-width:820px;margin:0 auto;}
@@ -56,7 +73,7 @@
 
   h2{font-family:"Frank Ruhl Libre",serif;font-weight:700;font-size:clamp(23px,4.2vw,30px);line-height:1.25;margin:0 0 10px;color:var(--olive);}
   .lede{margin:0 0 26px;max-width:60ch;color:#4A543D;}
-  section{margin-bottom:52px;}
+  
 
   .pull{
     background:var(--sage-soft);border-radius:18px;padding:26px 24px;
@@ -65,13 +82,13 @@
   }
 
   .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;}
-  .rule{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
+  .rule{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;}
   .rule b{display:block;font-family:"Frank Ruhl Libre",serif;font-size:18px;font-weight:700;color:var(--olive);margin-bottom:6px;}
   .rule span{font-size:15px;color:#4A543D;}
 
   ol.qs{list-style:none;padding:0;margin:0;counter-reset:q;}
   ol.qs li{
-    background:var(--paper);border:1px solid var(--line);border-radius:14px;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
     padding:18px 20px;margin-bottom:12px;position:relative;
   }
   ol.qs li::before{
@@ -82,7 +99,7 @@
   ol.qs b{display:block;font-weight:500;color:var(--olive);font-size:17.5px;margin-bottom:5px;}
   ol.qs span{font-size:15px;color:#6B7460;}
 
-  .map{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:6px 22px;}
+  .map{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:6px 22px;}
   .map .row{padding:20px 0;border-bottom:1px solid var(--line);}
   .map .row:last-child{border-bottom:none;}
   .map .saw{font-weight:500;color:var(--olive);font-size:17px;margin:0 0 6px;}
@@ -91,7 +108,7 @@
 
   ul.plain{list-style:none;padding:0;margin:0 0 26px;}
   ul.plain li{
-    background:var(--paper);border:1px solid var(--line);border-radius:14px;
+    background:var(--card);border:1px solid var(--line);border-radius:14px;
     padding:16px 20px;margin-bottom:10px;font-size:16.5px;color:#4A543D;
   }
   .cta{background:var(--olive);border-radius:20px;padding:34px 28px;text-align:center;color:var(--paper);}
