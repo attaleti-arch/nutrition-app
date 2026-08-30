@@ -27,8 +27,19 @@ GOLD = (0xDC, 0xC0, 0x77)
 MUTE = (0xC3, 0xCD, 0xB8)
 
 
-def build(out, title, sub_lines, eyebrow, photo_name, logo_name):
+def build(out, title, sub_lines, eyebrow, photo_name, logo_name, logo_only=False):
     im = Image.new('RGB', (W, H), OLIVE)
+
+    if logo_only:
+        # the plain brand card: just the logo, centred on the olive ground
+        lg = Image.open(PUBLIC / logo_name).convert('RGBA')
+        lh = 420
+        lg = lg.resize((int(lg.width * lh / lg.height), lh), Image.LANCZOS)
+        im.paste(lg, ((W - lg.width) // 2, (H - lh) // 2), lg)
+        dest = PUBLIC / out
+        im.save(dest, 'JPEG', quality=92, optimize=True)
+        print(f'נוצר {dest}  ({dest.stat().st_size // 1024} KB, לוגו בלבד)')
+        return
 
     if photo_name:
         photo = Image.open(PUBLIC / photo_name).convert('RGB')
@@ -88,11 +99,15 @@ def build(out, title, sub_lines, eyebrow, photo_name, logo_name):
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()
     ap.add_argument('--out', required=True, help='שם הקובץ בתוך public/, למשל og-celiac.jpg')
-    ap.add_argument('--title', required=True, help='כותרת המדריך, שורה אחת')
+    ap.add_argument('--title', default='', help='כותרת המדריך, שורה אחת')
     ap.add_argument('--sub', action='append', default=[], help='שורת תיאור; אפשר לחזור עליה')
     ap.add_argument('--eyebrow', default='מדריך להורים')
     ap.add_argument('--photo', default='food-art-unicorn.jpg',
                     help='תמונה מ-public/; --photo "" לכרטיסייה בלי תמונה')
     ap.add_argument('--logo', default='logo-mark-light.png')
+    ap.add_argument('--logo-only', action='store_true',
+                    help='כרטיסייה של הלוגו בלבד על רקע הזית, בלי תמונה ובלי טקסט')
     a = ap.parse_args()
-    build(a.out, a.title, a.sub, a.eyebrow, a.photo or None, a.logo)
+    if not a.logo_only and not a.title:
+        ap.error('--title נדרש, אלא אם משתמשים ב---logo-only')
+    build(a.out, a.title, a.sub, a.eyebrow, a.photo or None, a.logo, a.logo_only)
