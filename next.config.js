@@ -15,6 +15,8 @@ const nextConfig = {
       { source: '/families/', destination: '/families.html' },
       { source: '/one-day', destination: '/one-day.html' },
       { source: '/one-day/', destination: '/one-day.html' },
+      { source: '/running', destination: '/running.html' },
+      { source: '/running/', destination: '/running.html' },
     ]
   },
 }
