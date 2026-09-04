@@ -544,6 +544,7 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState('')
   const [auth, setAuth] = useState(false)
   const [clients, setClients] = useState([])
+  const [clientsError, setClientsError] = useState(null)
   const [leads, setLeads] = useState([])
   const [selectedClient, setSelectedClient] = useState(null)
   const [profile, setProfile] = useState({})
@@ -1089,7 +1090,13 @@ export default function AdminPage() {
   }
 
   async function loadClients() {
-    const { data } = await supabase.from('clients').select('*')
+    // בלי לתפוס את השגיאה, כל כשל בחיבור נראה בדיוק כמו "אין לקוחות"
+    const { data, error } = await supabase.from('clients').select('*')
+    if (error) {
+      setClientsError(error.message || 'שגיאת חיבור')
+      return
+    }
+    setClientsError(null)
     setClients(data || [])
   }
 
@@ -1973,6 +1980,19 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
             <div style={{ fontWeight: 700 }}>בחרי לקוח:</div>
             <button onClick={() => { setSelectedClient(null); setTab('newclient') }} style={{ padding: '8px 16px', borderRadius: 10, background: '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>➕ הוסיפי לקוח</button>
           </div>
+          {/* רשימה ריקה יכולה לנבוע משתי סיבות שונות לגמרי — להגיד איזו */}
+          {clientsError && (
+            <div style={{ background: '#fef2f2', border: '1.5px solid #fecaca', borderRadius: 12, padding: '12px 14px', marginBottom: 10, fontSize: 13, color: '#991b1b', lineHeight: 1.6 }}>
+              <div style={{ fontWeight: 700, marginBottom: 4 }}>לא הצלחתי להתחבר למסד הנתונים</div>
+              <div>הלקוחות לא נמחקו — פשוט לא הצלחתי לטעון אותם כרגע. נסי לרענן; אם זה חוזר, כנראה חסרה הגדרת חיבור.</div>
+              <div style={{ marginTop: 6, fontSize: 11, opacity: .75, direction: 'ltr', textAlign: 'left' }}>{clientsError}</div>
+            </div>
+          )}
+          {!clientsError && clients.length === 0 && (
+            <div style={{ padding: '14px 4px', fontSize: 13, color: '#6b7280' }}>
+              אין עדיין לקוחות. אפשר להוסיף עם הכפתור למעלה.
+            </div>
+          )}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
             {clients.filter(c => !c.is_child).map(parent => {
               const children = clients.filter(ch => ch.parent_id === parent.id)
