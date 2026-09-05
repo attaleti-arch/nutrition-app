@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css'
 import { MONSTERS, Monster } from './monsters'
 import { unlockAudio, setMuted, sfxTick, sfxRustle, sfxCatch, sfxAppear, sfxFinish, buzz } from './audio'
 import { fetchStreets, pickSpotsAdaptive } from './osm'
+import { buildGraph, nearestNode, planLoop, spreadAlong, loopCoords } from './routing'
 
 // ─────────────────────────────────────────────────────────────
 // ציד היצורים — מסלול אחד, שעה בחוץ, עשרה יצורים, וחזרה הביתה.
@@ -13,12 +14,15 @@ import { fetchStreets, pickSpotsAdaptive } from './osm'
 const STORE_KEY = 'hunt_v1'
 const COUNT = 10
 
-// אורך המסלול נקבע ברדיוס הטבעת. ~4.5 קמ"ש בהליכה עם ילד.
+// אורך הליכה בפועל על הרחובות. ~4 קמ"ש עם ילד, כולל עצירות לתפיסה.
 const LENGTHS = [
-  { k: 'short', label: 'קצר', mins: 30, radius: 260 },
-  { k: 'mid', label: 'רגיל', mins: 45, radius: 350 },
-  { k: 'long', label: 'ארוך', mins: 60, radius: 440 },
+  { k: 'short', label: 'קצר', mins: 30, meters: 2200 },
+  { k: 'mid', label: 'רגיל', mins: 45, meters: 3200 },
+  { k: 'long', label: 'ארוך', mins: 60, meters: 4200 },
 ]
+const lengthOf = k => LENGTHS.find(l => l.k === k) || LENGTHS[1]
+// כמה מפה להוריד: מספיק כדי שהלולאה תוכל להתפרש, בלי להוריד חצי עיר
+const fetchRadiusFor = meters => Math.max(450, Math.min(1250, Math.round(meters * 0.32)))
 
 function todayKey() {
   const d = new Date()
@@ -181,11 +185,10 @@ export default function HuntPage() {
       setGeoErr(geoMessage(err)); setBusy(false); return
     }
     const home = { lat: fix.lat, lng: fix.lng }
-    const radius = LENGTHS.find(l => l.k === len).radius
     setPos(fix)
 
     setBusy('streets')
-    const built = await planRoute(home, radius)
+    const built = await planRoute(home, lengthOf(len).meters)
     persist(prev => ({
       ...(prev || { totalPoints: 0, walks: 0 }),
       home,
@@ -198,27 +201,51 @@ export default function HuntPage() {
   // פיזור לפי מרחק בלבד מניח יצורים בשטח מת — חלקות ריקות, אזורי תעשייה,
   // ובמקרה אחד גם בית קברות. לכן שואלים קודם את OpenStreetMap אילו רחובות
   // ושבילים באמת קיימים, ומניחים רק עליהם.
-  async function planRoute(home, radius) {
+  async function planRoute(home, meters) {
+    const radius = fetchRadiusFor(meters)
     try {
       const data = osm.current && osm.current.home.lat === home.lat &&
                    osm.current.home.lng === home.lng && osm.current.radius === radius
         ? osm.current.data
         : await fetchStreets(home.lat, home.lng, radius)
       osm.current = { home, radius, data }
-      const { spots, relaxed } = pickSpotsAdaptive({
-        home, points: data.points, blocked: data.blocked, radius, count: COUNT,
+
+      // ── לולאה אמיתית: יוצאים מהבית, נעים בין הרחובות, וחוזרים ברחוב אחר ──
+      const graph = buildGraph(data.ways, data.blocked)
+      if (graph.nodes.length > 4) {
+        const start = nearestNode(graph, home)
+        if (start.idx >= 0 && start.dist < 220) {
+          const loop = planLoop(graph, start.idx, meters)
+          if (loop) {
+            const spots = spreadAlong(graph, loop.loop, COUNT)
+            if (spots.length === COUNT) {
+              return {
+                route: routeFrom(spots),
+                path: loopCoords(graph, loop.loop),
+                km: loop.len / 1000,
+                sameStreet: loop.overlap,
+                verified: true,
+              }
+            }
+          }
+        }
+      }
+
+      // הרחובות ידועים אבל לא נמצאה לולאה — לפחות נניח על רחובות אמיתיים
+      const { spots } = pickSpotsAdaptive({
+        home, points: data.points, blocked: data.blocked,
+        radius: meters / 7, count: COUNT,
       })
-      if (spots.length >= 5) return { route: routeFrom(spots), verified: true, relaxed }
+      if (spots.length >= 5) return { route: routeFrom(spots), path: null, verified: true }
     } catch (e) {
       // Overpass לא זמין — ממשיכים, אבל אומרים את זה במפורש במסך האישור
     }
-    return { route: buildRoute(home, radius), verified: false, relaxed: false }
+    return { route: buildRoute(home, meters / 7), path: null, verified: false }
   }
 
   async function reroll() {
     setBusy('streets')
-    const radius = LENGTHS.find(l => l.k === state.today.len).radius
-    const built = await planRoute(state.home, radius)
+    const built = await planRoute(state.home, lengthOf(state.today.len).meters)
     persist(prev => ({ ...prev, today: { ...prev.today, ...built } }))
     setBusy(false)
   }
@@ -343,10 +370,14 @@ export default function HuntPage() {
     const home = state.home
     const route = state.today.route
 
-    lay.line = L.polyline(
-      [[home.lat, home.lng], ...route.map(p => [p.lat, p.lng]), [home.lat, home.lng]],
-      { color: C.dusk, weight: 3, opacity: 0.45, dashArray: '7 9' }
-    ).addTo(map.current)
+    lay.line = state.today.path
+      ? L.polyline(state.today.path,
+          { color: C.dusk, weight: 5, opacity: 0.6, lineJoin: 'round', lineCap: 'round' })
+        .addTo(map.current)
+      : L.polyline(
+          [[home.lat, home.lng], ...route.map(p => [p.lat, p.lng]), [home.lat, home.lng]],
+          { color: C.dusk, weight: 3, opacity: 0.45, dashArray: '7 9' }
+        ).addTo(map.current)
 
     lay.home = L.marker([home.lat, home.lng], {
       icon: L.divIcon({
@@ -373,7 +404,7 @@ export default function HuntPage() {
     if (screen === 'preview') {
       map.current.fitBounds(lay.line.getBounds(), { padding: [45, 45] })
     }
-  }, [state?.today?.route, screen, mapReady])
+  }, [state?.today?.route, state?.today?.path, screen, mapReady])
 
   // ── הנקודה הכחולה ──
   useEffect(() => {
@@ -455,12 +486,18 @@ export default function HuntPage() {
         <div>
           <h1 style={{ ...S.h1, fontSize: 27 }}>המסלול של היום</h1>
           <p style={S.lede}>
-            {today && `${(routeLength(state.home, today.route) / 1000).toFixed(1)} ק״מ · בערך ${LENGTHS.find(l => l.k === today.len)?.mins} דקות · ${today.route.length} יצורים`}
+            {today && `${(today.km || routeLength(state.home, today.route) / 1000).toFixed(1)} ק״מ · בערך ${lengthOf(today.len).mins} דקות · ${today.route.length} יצורים`}
           </p>
-          {today?.verified ? (
+          {today?.path ? (
             <p style={S.ok}>
-              ✓ כל היצורים הונחו על רחובות ושבילים אמיתיים — מחוץ לבתי קברות, אזורי תעשייה, מים ושטחים סגורים.
-              {today.route.length < COUNT && ` באזור שלכם יצאו ${today.route.length} ולא ${COUNT} — נסו מסלול ארוך יותר.`}
+              ✓ מסלול הליכה על הרחובות — יוצא מהבית, מסתובב בשכונה, ו
+              {today.sameStreet < 0.15 ? 'חוזר בדרך אחרת' : 'חוזר הביתה'}.
+              היצורים פרוסים לאורכו במרווחים שווים.
+            </p>
+          ) : today?.verified ? (
+            <p style={S.ok}>
+              ✓ היצורים הונחו על רחובות אמיתיים — מחוץ לבתי קברות, שדות, אזורי תעשייה ומים.
+              לא נמצאה לולאה שלמה באזור, אז אין קו מסלול רציף.
             </p>
           ) : (
             <p style={S.warn}>
@@ -475,7 +512,11 @@ export default function HuntPage() {
             </button>
             <button onClick={startHunt} style={{ ...S.cta, flex: 1 }}>יוצאים! 🐾</button>
           </div>
-          <p style={S.fine}>הקו המקווקו מראה את <b>סדר</b> היצורים, לא את הדרך — הולכים ברחובות.</p>
+          <p style={S.fine}>
+            {today?.path
+              ? <>הקו הוא <b>הדרך עצמה</b> — הולכים לפיו, והיצורים מחכים עליו.</>
+              : <>הקו המקווקו מראה את <b>סדר</b> היצורים, לא את הדרך — הולכים ברחובות.</>}
+          </p>
         </div>
       )}
 

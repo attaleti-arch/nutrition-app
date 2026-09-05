@@ -66,6 +66,7 @@ export async function fetchStreets(lat, lng, radius, { signal } = {}) {
 // מפריד את התשובה לשני דברים: נקודות שאפשר לעמוד עליהן, ומצולעים שפוסלים.
 export function parseOverpass(json) {
   const points = []
+  const ways = []
   const blocked = []
   for (const el of (json && json.elements) || []) {
     const tags = el.tags || {}
@@ -73,6 +74,7 @@ export function parseOverpass(json) {
       const geom = el.geometry
       if (!geom || geom.length < 2) continue
       const tier = TIER[tags.highway] ?? 2
+      ways.push({ tier, nodes: geom.map(g => ({ lat: g.lat, lng: g.lon })) })
       for (const g of geom) points.push({ lat: g.lat, lng: g.lon, tier })
     } else if (el.type === 'relation' && Array.isArray(el.members)) {
       // שטח גדול — שדה, יער, אזור תעשייה — מגיע לרוב כרלציה של כמה קווים
@@ -83,7 +85,7 @@ export function parseOverpass(json) {
       blocked.push(el.geometry.map(g => [g.lat, g.lon]))
     }
   }
-  return { points, blocked }
+  return { points, ways, blocked }
 }
 
 // ריי-קאסטינג. במרחקים של מאות מטרים אפשר להתייחס ללט/לונג כמישור.
