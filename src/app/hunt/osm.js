@@ -17,21 +17,34 @@ const ENDPOINTS = [
 // לא כי אין שם מדרכה, אלא כי אנחנו לא שולחים ילד לעמוד ליד כביש סואן.
 const WALKABLE = 'residential|living_street|pedestrian|footway|path|unclassified|service|steps'
 
-// שטחים שנקודה בתוכם נפסלת, גם אם עובר בהם שביל.
-const FORBIDDEN = `
-  way(around:{R},{LAT},{LNG})[landuse~"^(cemetery|industrial|military|quarry|landfill|railway)$"];
-  way(around:{R},{LAT},{LNG})[amenity~"^(grave_yard|prison|hospital)$"];
-  way(around:{R},{LAT},{LNG})[natural=water];
-  way(around:{R},{LAT},{LNG})[aeroway];
-`
+// לא כל דרך שווה. שביל בשדה חקלאי רשום ב-OSM בדיוק כמו מדרכה בשכונה, אבל
+// הוא "שטח מת" מבחינת ילד שיוצא בערב. רחוב עירוני קודם תמיד.
+const TIER = {
+  residential: 0, living_street: 0, pedestrian: 0, footway: 0, steps: 0,
+  service: 1, unclassified: 1,
+  path: 2,
+}
+
+// שטחים שנקודה בתוכם נפסלת, גם אם עובר בהם שביל רשום.
+// שים לב ש-leisure=park ו-playground לא נמצאים כאן בכוונה — גן ציבורי הוא
+// מקום מצוין ליצור.
+const FORBIDDEN_TAGS = [
+  '[landuse~"^(cemetery|industrial|military|quarry|landfill|railway|farmland|farmyard|orchard|vineyard|greenhouse_horticulture|allotments|forest|meadow|plant_nursery|basin|reservoir|construction|brownfield)$"]',
+  '[natural~"^(water|wood|scrub|wetland|beach|sand|bare_rock|grassland|heath)$"]',
+  '[amenity~"^(grave_yard|prison|hospital)$"]',
+  '[leisure~"^(nature_reserve|golf_course)$"]',
+  '[aeroway]',
+]
 
 export function buildQuery(lat, lng, radius) {
-  const R = Math.round(radius * 1.35)
-  const forbidden = FORBIDDEN
-    .replaceAll('{R}', String(R)).replaceAll('{LAT}', String(lat)).replaceAll('{LNG}', String(lng))
+  const R = Math.round(radius * 1.45)
+  const around = `(around:${R},${lat},${lng})`
+  const forbidden = FORBIDDEN_TAGS
+    .flatMap(t => [`way${around}${t};`, `relation${around}${t};`])
+    .join('')
   return `[out:json][timeout:25];(` +
-    `way(around:${R},${lat},${lng})[highway~"^(${WALKABLE})$"][foot!=no][access!=private];` +
-    forbidden.replace(/\s+/g, ' ') +
+    `way${around}[highway~"^(${WALKABLE})$"][foot!=no][access!=private];` +
+    forbidden +
     `);out geom;`
 }
 
@@ -55,13 +68,19 @@ export function parseOverpass(json) {
   const points = []
   const blocked = []
   for (const el of (json && json.elements) || []) {
-    const geom = el.geometry
-    if (!geom || geom.length < 2) continue
     const tags = el.tags || {}
     if (tags.highway) {
-      for (const g of geom) points.push({ lat: g.lat, lng: g.lon })
-    } else {
-      blocked.push(geom.map(g => [g.lat, g.lon]))
+      const geom = el.geometry
+      if (!geom || geom.length < 2) continue
+      const tier = TIER[tags.highway] ?? 2
+      for (const g of geom) points.push({ lat: g.lat, lng: g.lon, tier })
+    } else if (el.type === 'relation' && Array.isArray(el.members)) {
+      // שטח גדול — שדה, יער, אזור תעשייה — מגיע לרוב כרלציה של כמה קווים
+      for (const m of el.members) {
+        if (m.geometry && m.geometry.length >= 3) blocked.push(m.geometry.map(g => [g.lat, g.lon]))
+      }
+    } else if (el.geometry && el.geometry.length >= 3) {
+      blocked.push(el.geometry.map(g => [g.lat, g.lon]))
     }
   }
   return { points, blocked }
@@ -118,13 +137,35 @@ export function pickSpots({ home, points, blocked, radius, count, minGap = 70, t
       da = 180 - da                                   // 0 = בדיוק בזווית המבוקשת
       if (da > step * tol) continue                   // מחוץ לסקטור
       if (chosen.some(c => metersBetween(c, p) < minGap)) continue
-      // מעדיפים נקודה שגם בזווית הנכונה וגם קרובה לרדיוס המבוקש
-      const score = da * 2 + Math.abs(p.d - radius) / 4
+      // זווית נכונה, מרחק נכון — ורחוב עירוני עדיף על שביל שדה
+      const score = da * 2 + Math.abs(p.d - radius) / 4 + p.tier * 45
       if (score < bestScore) { bestScore = score; best = p }
     }
-    if (best) chosen.push({ lat: best.lat, lng: best.lng })
+    if (best) chosen.push({ lat: best.lat, lng: best.lng, tier: best.tier })
   }
+
+  // ── מילוי ──
+  // כשהבית בקצה היישוב, סקטורים שלמים מצביעים החוצה אל השדות ונשארים ריקים.
+  // במקום להחזיר מסלול חסר, ממלאים את החסר מהצד שבו יש רחובות: בכל פעם
+  // הנקודה שהכי רחוקה ממה שכבר נבחר. המסלול יוצא לא-סימטרי — וזה בסדר,
+  // עדיף לולאה עקומה בשכונה מאשר טבעת יפה שחציה בשדה.
+  while (chosen.length < count) {
+    let best = null, bestScore = -Infinity
+    for (const p of clean) {
+      const near = chosen.length ? Math.min(...chosen.map(c => metersBetween(c, p))) : p.d
+      if (near < minGap) continue
+      const score = near - p.tier * 90
+      if (score > bestScore) { bestScore = score; best = p }
+    }
+    if (!best) break
+    chosen.push({ lat: best.lat, lng: best.lng, tier: best.tier })
+  }
+
+  // סידור מחדש לפי זווית, כדי שסדר האיסוף יישאר סיבוב אחד ולא הלוך-ושוב
   return chosen
+    .map(c => ({ ...c, a: bearing(home, c) }))
+    .sort((x, y) => (dir > 0 ? x.a - y.a : y.a - x.a))
+    .map(({ lat, lng, tier }) => ({ lat, lng, tier }))
 }
 
 // בשכונה צפופה המעבר הראשון מספיק. במושב, בקצה עיר או ליד שדות פתוחים אין
