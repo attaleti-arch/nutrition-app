@@ -147,7 +147,7 @@ function DefaultDocument({ clientName, onClose }) {
         />
         <div style={{ fontWeight: 900, fontSize: 22, marginBottom: 4 }}>מסמך הפתיחה שלך 🌿</div>
         <div style={{ fontSize: 13, color: '#b2dfdb' }}>היי {clientName ? clientName.split(' ')[0] : ''}! ברוכה הבאה לתוכנית</div>
-        <div style={{ marginTop: 10, fontSize: 11, color: '#80cbc4' }}>שיטת אתי אטל · בין הראש לצלחת</div>
+        <div style={{ marginTop: 10, fontSize: 11, color: '#80cbc4' }}>שיטת אתי רפאלה זיתון · בין הראש לצלחת</div>
       </div>
       <div style={{ background: '#fff', borderRadius: 20, border: '1.5px solid #f0f0f0', padding: '20px 18px', marginBottom: 16 }}>
         <div style={{ fontWeight: 800, fontSize: 16, color: '#1a1a1a', marginBottom: 4, textAlign: 'center' }}>🍽️ הצלחת החכמה של אתי</div>
@@ -199,7 +199,7 @@ function DocContent({ data, onContinue, generatedAt }) {
         />
         <div style={{ fontWeight: 900, fontSize: 22, marginBottom: 4 }}>מסמך הפתיחה שלך 🌿</div>
         <div style={{ fontSize: 13, color: '#b2dfdb', lineHeight: 1.6 }}>{greeting || `היי ${name}!`}</div>
-        <div style={{ marginTop: 10, fontSize: 11, color: '#80cbc4' }}>שיטת אתי אטל · מבוסס שאלון 360 ובדיקות דם</div>
+        <div style={{ marginTop: 10, fontSize: 11, color: '#80cbc4' }}>שיטת אתי רפאלה זיתון · מבוסס שאלון 360 ובדיקות דם</div>
         {generatedAt && (
           <div style={{ marginTop: 6, fontSize: 10, color: '#80cbc4' }}>
             הופק: {new Date(generatedAt).toLocaleDateString('he-IL')}

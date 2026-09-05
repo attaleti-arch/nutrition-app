@@ -368,7 +368,7 @@ export default function ReportPage() {
         )}
 
         <div style={{ textAlign: 'center', marginTop: 24, padding: '16px', borderTop: '1px solid #e0d5c5' }}>
-          <div style={{ fontSize: 13, color: '#9a8a7a' }}><strong style={{ color: '#3a7a6e' }}>אתי אטל</strong> · יועצת בריאות ותזונה התנהגותית</div>
+          <div style={{ fontSize: 13, color: '#9a8a7a' }}><strong style={{ color: '#3a7a6e' }}>אתי רפאלה זיתון</strong> · יועצת בריאות במגמת תזונה התנהגותית</div>
           <div style={{ fontSize: 12, color: '#9a8a7a', marginTop: 4 }}>052-333-6766 · Attal.eti@gmail.com</div>
           <div style={{ fontSize: 11, color: '#c4a882', marginTop: 8 }}>בין הראש לצלחת ©️ 2026</div>
         </div>

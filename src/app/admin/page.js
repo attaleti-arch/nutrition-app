@@ -1642,13 +1642,13 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
     var tests = DOCTOR_TESTS.filter(t => selectedTests[t.key]).map(t => '<tr><td style="padding:6px 12px;font-size:14px;border-bottom:1px solid #f0f0f0;">&#10061; ' + t.label + '</td></tr>').join('')
     if (!tests) { alert('בחרי לפחות בדיקה אחת'); return }
     var html = '<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><style>body{font-family:Arial,sans-serif;direction:rtl;padding:40px;color:#222;max-width:700px;margin:0 auto}.header{text-align:center;margin-bottom:30px;border-bottom:2px solid #0f4c2a;padding-bottom:20px}.logo{height:80px;margin-bottom:10px}.name{font-size:22px;font-weight:bold;color:#0f4c2a}.title{font-size:13px;color:#666}table{width:100%;border-collapse:collapse;margin:16px 0}.signature{margin-top:40px;border-top:1px solid #e5e7eb;padding-top:20px}p{line-height:1.8;font-size:15px}</style></head><body>'
-      + '<div class="header"><img class="logo" src="/logo.png" alt="logo" /><div class="name">אתי אטל</div><div class="title">יועצת בריאות ותזונה התנהגותית</div><div class="title">052-333-6766 | Attal.eti@gmail.com</div></div>'
+      + '<div class="header"><img class="logo" src="/logo.png" alt="logo" /><div class="name">אתי רפאלה זיתון</div><div class="title">יועצת בריאות במגמת תזונה התנהגותית</div><div class="title">052-333-6766 | Attal.eti@gmail.com</div></div>'
       + '<p style="text-align:right;color:#666;font-size:14px;">' + today + '</p>'
       + '<p>לכבוד רופא המשפחה</p>'
       + '<p><strong>הנדון: המלצה לביצוע בדיקות מעבדה</strong></p>'
       + '<p>' + fullName.trim() + ' (ת.ז: ' + id + ') הינו/ה הלקוח/ה שלי.<br/>בכדי שאוכל להמשיך את הליווי הבריאותי, אבקש לבצע את הבדיקות הבאות:</p>'
       + '<table>' + tests + '</table>'
-      + '<div class="signature"><p>בתודה מראש,</p><br/><p><strong>אתי אטל</strong><br/>יועצת בריאות ותזונה התנהגותית<br/>052-333-6766 | Attal.eti@gmail.com</p></div>'
+      + '<div class="signature"><p>בתודה מראש,</p><br/><p><strong>אתי רפאלה זיתון</strong><br/>יועצת בריאות במגמת תזונה התנהגותית<br/>052-333-6766 | Attal.eti@gmail.com</p></div>'
       + '</body></html>'
     var win = window.open('', '_blank')
     win.document.write(html + '<div style="text-align:center;margin-top:30px"><button onclick="window.print()" style="padding:14px 30px;background:#0f4c2a;color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer">הדפס / שמור PDF</button></div>')
@@ -1735,7 +1735,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
 
       // ניתוח מותאם לילד
       if (selectedClient.is_child) {
-        const childPrompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. כתבי ניתוח מקיף לילד/ה ' + selectedClient.name + ' בגיל ' + (selectedClient.age || 'לא ידוע') + '.\n\n' +
+        const childPrompt = 'אתה אתי רפאלה זיתון — יועצת בריאות במגמת תזונה התנהגותית. כתבי ניתוח מקיף לילד/ה ' + selectedClient.name + ' בגיל ' + (selectedClient.age || 'לא ידוע') + '.\n\n' +
           'נתונים:\n' +
           'משקל: ' + (selectedClient.weight || 'לא ידוע') + ' ק"ג | גובה: ' + (selectedClient.height || 'לא ידוע') + ' ס"מ\n' +
           'אכילה: ' + (profileData.child_eating || 'לא מולא') + '\n' +
@@ -1927,10 +1927,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
           <div style={{ maxWidth: 520, margin: '0 auto', padding: '70px 20px 40px' }}>
             <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+                <img src="/logo.png" alt="אתי רפאלה זיתון" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'cover', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontWeight: 900, fontSize: 15 }}>הדוח האישי שלך 💚</div>
-                  <div style={{ fontSize: 11, color: '#86efac' }}>{selectedClient?.name} · אתי אטל</div>
+                  <div style={{ fontSize: 11, color: '#86efac' }}>{selectedClient?.name} · אתי רפאלה זיתון</div>
                 </div>
               </div>
             </div>
@@ -2421,9 +2421,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                 </div>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 20, marginBottom: 12, border: '1.5px solid #f0f0f0' }}>
                   <div style={{ textAlign: 'center', marginBottom: 16 }}>
-                    <img src="/logo.png" alt="אתי אטל" style={{ height: 80, objectFit: 'contain' }} />
-                    <div style={{ fontWeight: 800, fontSize: 18, color: '#0f4c2a', marginTop: 6 }}>אתי אטל</div>
-                    <div style={{ fontSize: 13, color: '#9ca3af' }}>יועצת בריאות ותזונה התנהגותית</div>
+                    <img src="/logo.png" alt="אתי רפאלה זיתון" style={{ height: 80, objectFit: 'contain' }} />
+                    <div style={{ fontWeight: 800, fontSize: 18, color: '#0f4c2a', marginTop: 6 }}>אתי רפאלה זיתון</div>
+                    <div style={{ fontSize: 13, color: '#9ca3af' }}>יועצת בריאות במגמת תזונה התנהגותית</div>
                   </div>
                   <div style={{ marginBottom: 12 }}>
                     <div style={{ fontSize: 13, color: '#555', marginBottom: 6, fontWeight: 600 }}>תעודת זהות מטופל/ת</div>
@@ -3708,7 +3708,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   }).filter(Boolean).join('\n\n')
                   const rootsQLabels = { roots_home: 'האוכל בבית שגדלה בו', roots_identity: 'איך הרגישה בגוף בתוך המשפחה', roots_patterns: 'מה מזהה מהבית', roots_passing: 'מה עובר הלאה לילדים', roots_beliefs: 'מה קורה אחרי שבועיים-שלושה', roots_resources: 'מה כבר עושה טוב עם אוכל', roots_sentence: 'משפט שמלווה אותה', roots_trigger: 'מתי האוכל הופך ליותר מרעב', roots_comfort: 'מה מקבלת מהאוכל ברגעים אלה', roots_generation: 'הרגל שעובר מדור לדור', roots_change: 'מה הייתה משנה', roots_fear: 'מה מפחיד בתהליך', roots_hope: 'מה מקווה שיקרה' }
                   const clientRootsText = Object.entries(rootsQLabels).map(([k, label]) => journeyAnswers[k]?.trim() ? label + ':\n' + journeyAnswers[k] : '').filter(Boolean).join('\n\n')
-                  const prompt = 'אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להתכונן לפגישת שורשים עם לקוחה.\n\n' +
+                  const prompt = 'אתה עוזר לאתי רפאלה זיתון — יועצת בריאות במגמת תזונה התנהגותית — להתכונן לפגישת שורשים עם לקוחה.\n\n' +
                     (clientRootsText ? 'תשובות הלקוחה לשאלון:\n' + clientRootsText + '\n\n' : '') +
                     (notesText ? 'הערות מהזום המקדים:\n' + notesText + '\n\n' : '') +
                     'נתוני הלקוחה: ' + (selectedClient?.name||'') + ', גיל ' + (selectedClient?.age||'לא ידוע') + ', מטרה: ' + (selectedClient?.goal||'לא ידוע') + ', מסלול: ' + (selectedClient?.client_track === 'child' ? 'עבור ילד' : selectedClient?.client_track === 'both' ? 'שניהם' : 'עצמי') + '\n\n' +
@@ -3824,7 +3824,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                         ['מה מפחיד בתהליך', journeyAnswers.roots_fear],
                         ['מה מקווה שיקרה', journeyAnswers.roots_hope],
                       ].filter(([,v]) => v?.trim()).map(([q,a]) => q + ':\n' + a).join('\n\n')
-                      const prompt = `אתה אתי אטל — יועצת בריאות ותזונה התנהגותית.
+                      const prompt = `אתה אתי רפאלה זיתון — יועצת בריאות במגמת תזונה התנהגותית.
 
 כתבי מסמך שיקוף אישי עמוק ל-${selectedClient?.name||''} אחרי פגישת השורשים.
 
@@ -4011,7 +4011,7 @@ ${rootsAnalysis ? '---\nניתוח לפגישה (השתמשי בתובנות —
                     '11. פסיכוסומטי — כל רגש יש לו ביטוי פיזי. מחקר שוודי: חרם → פי 1.3 מחלת מעי דלקתית גם 20 שנה אחרי. טריגרים שנוצרים.\n' +
                     '12. מיקרוביום ורירית המעי — הליקובקטר פילורי: 50% מהאוכלוסייה נשאים, 15-20% מתבטא. רירית עדינה — סטרס/מזון מעובד פוגעים בה.'
 
-                  const prompt = 'אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להכין ניתוח מעמיק לפגישת הגוף מדבר.\n\n' +
+                  const prompt = 'אתה עוזר לאתי רפאלה זיתון — יועצת בריאות במגמת תזונה התנהגותית — להכין ניתוח מעמיק לפגישת הגוף מדבר.\n\n' +
                     'שם הלקוחה: ' + (selectedClient?.name||'') + '\n\n' +
                     'נתוני שאלון 360:\n' + profile360 + '\n\n' +
                     (clientBodyText ? 'תשובות הלקוחה לשאלון:\n' + clientBodyText + '\n\n' : '') +
@@ -4133,7 +4133,7 @@ ${rootsAnalysis ? '---\nניתוח לפגישה (השתמשי בתובנות —
                         ['מה עוזר לגוף להרגיש טוב', journeyAnswers.body_helps],
                         ['מה הגוף היה מבקש ממך היום', journeyAnswers.body_request],
                       ].filter(([,v]) => v?.trim()).map(([q,a]) => q + ':\n' + a).join('\n\n')
-                      const prompt = `את אתי אטל — יועצת בריאות ותזונה התנהגותית שיודעת לקרוא גוף ולדבר אליו בשפה שלו.
+                      const prompt = `את אתי רפאלה זיתון — יועצת בריאות במגמת תזונה התנהגותית שיודעת לקרוא גוף ולדבר אליו בשפה שלו.
 
 שם הלקוחה: ${selectedClient?.name || ''}
 
@@ -4286,7 +4286,7 @@ ${atiVoice.trim() ? '---\nדוגמאות לסגנון הכתיבה שלי — כ
                     return v.trim() ? labels[k] + ':\n' + v : ''
                   }).filter(Boolean).join('\n\n')
 
-                  const prompt = 'אתה עוזר לאתי אטל — יועצת בריאות ותזונה התנהגותית — להכין מערך מפגש עם הורה לגבי הילד שלו.\n\n' +
+                  const prompt = 'אתה עוזר לאתי רפאלה זיתון — יועצת בריאות במגמת תזונה התנהגותית — להכין מערך מפגש עם הורה לגבי הילד שלו.\n\n' +
                     'שם ההורה: ' + (selectedClient?.name||'') + '\n\n' +
                     'הערות מהזום המקדים:\n' + notesText + '\n\n' +
                     'הפק ניתוח מעמיק ומערך מפגש לאתי. כתוב בעברית, מקצועי וישיר.\n\n' +
@@ -4387,7 +4387,7 @@ ${atiVoice.trim() ? '---\nדוגמאות לסגנון הכתיבה שלי — כ
                   <div style={{ padding: '0 16px 16px' }}>
                     <button onClick={async () => {
                       setChildDocLoading(true); setChildClientDocPreview('')
-                      const prompt = 'אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. כתבי מסמך שיקוף אישי ל-' + (selectedClient?.name||'') + ' לאחר פגישת הורה-ילד.\n\n' +
+                      const prompt = 'אתה אתי רפאלה זיתון — יועצת בריאות במגמת תזונה התנהגותית. כתבי מסמך שיקוף אישי ל-' + (selectedClient?.name||'') + ' לאחר פגישת הורה-ילד.\n\n' +
                         (childAnalysis ? 'ניתוח שהכנת לפגישה:\n' + childAnalysis.substring(0,2000) + '\n\n' : '') +
                         (childSessionNotes.trim() ? 'מה עלה בפגישה:\n' + childSessionNotes + '\n\n' : '') +
                         'כתבי בעברית, גוף שני נקבה, חמה ואישית. מבנה קבוע — ללא הקדמה, ישר לתוכן:\n\n' +

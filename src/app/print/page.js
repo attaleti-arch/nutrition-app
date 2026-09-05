@@ -226,7 +226,7 @@ export default function PrintPage() {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ fontSize: 28, fontWeight: 900, color: '#0f4c2a', marginBottom: 4 }}>בין הראש לצלחת</div>
-          <div style={{ fontSize: 14, color: '#6b7280' }}>אתי אטל — תוכנית תזונה אישית</div>
+          <div style={{ fontSize: 14, color: '#6b7280' }}>אתי רפאלה זיתון — תוכנית תזונה אישית</div>
         </div>
 
         {/* Client header */}

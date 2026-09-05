@@ -626,7 +626,7 @@ function withBaseQty(text, item) {
   return text + ' (' + item.base_qty + ' גרם)'
 }
 
-const AGENT_SYSTEM_PROMPT = `אתה "עוזר החירום" של תוכנית "בין הראש לצלחת" – מבוסס שיטת אתי אטל.
+const AGENT_SYSTEM_PROMPT = `אתה "עוזר החירום" של תוכנית "בין הראש לצלחת" – מבוסס שיטת אתי רפאלה זיתון.
 
 ## זהותך
 אתה עוזר תזונתי קליני חם, מעצים ומקצועי. לא רופא — מלווה תזונתי שמדבר בשפה חיובית ומחזיר כוח ללקוחה.
@@ -650,7 +650,7 @@ const AGENT_SYSTEM_PROMPT = `אתה "עוזר החירום" של תוכנית "�
 5. עיכול (קרוהן, קוליטיס, IBS, צליאק): מזון מבושל/מאודה בלבד בדלקת. 5-6 ארוחות קטנות. פרוביוטיקה. פעילות: יוגה ופילאטיס.
 6. כליות וגאוט: 15-20% חלבון | הידרציה 2.5-3 ליטר | הימנעות מפורינים בגאוט.
 
-## 🧠 גישת NLP (אתי אטל)
+## 🧠 גישת NLP (אתי רפאלה זיתון)
 - "מה כן לאכול" — לא "מה אסור"
 - כל כישלון = משוב. "מה למדת מהמעידה הזו?"
 - "אנרגיה זורמת למקום שבו תשומת הלב מתמקדת"
@@ -695,7 +695,7 @@ function AgentChat({ clientName, gender, clientProfile }) {
   const fem = gender !== 'זכר'
   const [messages, setMessages] = useState([{
     role: 'assistant',
-    content: `שלום${clientName ? ' ' + clientName.split(' ')[0] : ''}! 🌿\nאני **עוזר החירום** של "בין הראש לצלחת"\nמבוסס **שיטת אתי אטל**.\n\nכאן איתך 24/7 לכל שאלה תזונתית 💚\n\n⚠️ כאב חזה / קוצר נשימה / נפיחות פתאומית → פני מיד למיון!`
+    content: `שלום${clientName ? ' ' + clientName.split(' ')[0] : ''}! 🌿\nאני **עוזר החירום** של "בין הראש לצלחת"\nמבוסס **שיטת אתי רפאלה זיתון**.\n\nכאן איתך 24/7 לכל שאלה תזונתית 💚\n\n⚠️ כאב חזה / קוצר נשימה / נפיחות פתאומית → פני מיד למיון!`
   }])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -772,7 +772,7 @@ function AgentChat({ clientName, gender, clientProfile }) {
         <div style={{ width: 38, height: 38, borderRadius: '50%', background: '#fff2', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>🌿</div>
         <div>
           <div style={{ fontWeight: 800, fontSize: 15, color: '#fff' }}>Agent חירום 24/7</div>
-          <div style={{ fontSize: 11, color: '#b2dfdb' }}>בין הראש לצלחת · שיטת אתי אטל</div>
+          <div style={{ fontSize: 11, color: '#b2dfdb' }}>בין הראש לצלחת · שיטת אתי רפאלה זיתון</div>
         </div>
         <div style={{ marginRight: 'auto', display: 'flex', alignItems: 'center', gap: 5, background: '#ffffff20', borderRadius: 20, padding: '4px 10px' }}>
           <div style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 6px #4ade80' }} />
@@ -1263,10 +1263,10 @@ function FeedbackCard({ feedback, clientName, logDate, onOpenFull }) {
     <div style={{ direction: 'rtl', marginBottom: 12 }}>
       <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '16px 18px', marginBottom: 10, color: '#fff' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-          <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+          <img src="/logo.png" alt="אתי רפאלה זיתון" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
           <div>
             <div style={{ fontWeight: 900, fontSize: 15 }}>משוב אישי מאתי 💚</div>
-            <div style={{ fontSize: 11, color: '#86efac' }}>{logDate} · אתי אטל</div>
+            <div style={{ fontSize: 11, color: '#86efac' }}>{logDate} · אתי רפאלה זיתון</div>
           </div>
         </div>
         <div style={{ fontSize: 13, color: '#bbf7d0', lineHeight: 1.6 }}>היי {clientName ? clientName.split(' ')[0] : ''}! המשוב האישי שלי עבורך 🌿</div>
@@ -1295,7 +1295,7 @@ function FeedbackCard({ feedback, clientName, logDate, onOpenFull }) {
             <div style={{ background: 'linear-gradient(135deg,#faf5ff,#f0fdf4)', border: '1.5px solid #d8b4fe', borderRadius: 16, padding: '14px 16px', marginBottom: 10, textAlign: 'center' }}>
               <div style={{ fontSize: 20, marginBottom: 6 }}>💚</div>
               {messageLines.map(function(line, i) { return <div key={i} style={{ fontSize: 14, color: '#7c3aed', fontWeight: 700, lineHeight: 1.7, fontStyle: 'italic' }}>"{line}"</div> })}
-              <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>— אתי אטל</div>
+              <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>— אתי רפאלה זיתון</div>
             </div>
           )}
         </div>
@@ -2767,7 +2767,7 @@ export default function PlanApp({ clientName, userPassword }) {
       <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '24px 18px 20px', color: '#fff' }}>
         <div style={{ maxWidth: 520, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <div style={{ fontSize: 11, color: '#86efac' }}>בין הראש לצלחת · אתי אטל</div>
+            <div style={{ fontSize: 11, color: '#86efac' }}>בין הראש לצלחת · אתי רפאלה זיתון</div>
             <div style={{ fontSize: 11, background: '#ffffff25', color: '#fff', padding: '3px 10px', borderRadius: 99, fontWeight: 700 }}>🏆 {stageName}</div>
           </div>
           <div style={{ fontSize: 22, fontWeight: 900 }}>היי {displayName.split(' ')[0]}!</div>
@@ -2882,10 +2882,10 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
             <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+                <img src="/logo.png" alt="אתי רפאלה זיתון" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontWeight: 900, fontSize: 15 }}>הניתוח האישי שלך 🧠</div>
-                  <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · מאתי אטל</div>
+                  <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · מאתי רפאלה זיתון</div>
                 </div>
               </div>
             </div>
@@ -2917,7 +2917,7 @@ export default function PlanApp({ clientName, userPassword }) {
                 <div style={{ fontSize: 36 }}>👨‍👩‍👧</div>
                 <div>
                   <div style={{ fontWeight: 900, fontSize: 15 }}>המשוב האישי שלך — הורה-ילד</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>{displayName.split(' ')[0]} · מאתי אטל</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>{displayName.split(' ')[0]} · מאתי רפאלה זיתון</div>
                 </div>
               </div>
             </div>
@@ -2963,7 +2963,7 @@ export default function PlanApp({ clientName, userPassword }) {
                 <div style={{ fontSize: 36 }}>🩺</div>
                 <div>
                   <div style={{ fontWeight: 900, fontSize: 15 }}>המשוב האישי שלך — הגוף מדבר</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>{displayName.split(' ')[0]} · מאתי אטל</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>{displayName.split(' ')[0]} · מאתי רפאלה זיתון</div>
                 </div>
               </div>
             </div>
@@ -3012,7 +3012,7 @@ export default function PlanApp({ clientName, userPassword }) {
                 <div style={{ fontSize: 36 }}>🌱</div>
                 <div>
                   <div style={{ fontWeight: 900, fontSize: 15 }}>המשוב האישי שלך — פגישת השורשים</div>
-                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>{displayName.split(' ')[0]} · מאתי אטל</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.85)' }}>{displayName.split(' ')[0]} · מאתי רפאלה זיתון</div>
                 </div>
               </div>
             </div>
@@ -3055,10 +3055,10 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
             <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+                <img src="/logo.png" alt="אתי רפאלה זיתון" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontWeight: 900, fontSize: 15 }}>המשוב האישי שלך 💚</div>
-                  <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · {today} · אתי אטל</div>
+                  <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · {today} · אתי רפאלה זיתון</div>
                 </div>
               </div>
             </div>
@@ -3125,10 +3125,10 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
             <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
+                <img src="/logo.png" alt="אתי רפאלה זיתון" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #86efac', background: '#fff', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontWeight: 900, fontSize: 15 }}>הניתוח האישי שלך 💚</div>
-                  <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · אתי אטל</div>
+                  <div style={{ fontSize: 11, color: '#86efac' }}>{displayName.split(' ')[0]} · אתי רפאלה זיתון</div>
                 </div>
               </div>
             </div>
@@ -3175,10 +3175,10 @@ export default function PlanApp({ clientName, userPassword }) {
           <div style={{ maxWidth: 520, margin: '0 auto', padding: '60px 20px 40px' }}>
             <div style={{ background: 'linear-gradient(135deg,#7c3aed,#9333ea)', borderRadius: 18, padding: '18px 20px', marginBottom: 16, color: '#fff' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img src="/logo.png" alt="אתי אטל" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #e9d5ff', background: '#fff', flexShrink: 0 }} />
+                <img src="/logo.png" alt="אתי רפאלה זיתון" style={{ height: 44, width: 44, borderRadius: 99, objectFit: 'contain', border: '2px solid #e9d5ff', background: '#fff', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontWeight: 900, fontSize: 15 }}>המטרה שלך — מסע התוצאה 🧭</div>
-                  <div style={{ fontSize: 11, color: '#e9d5ff' }}>{displayName.split(' ')[0]} · אתי אטל</div>
+                  <div style={{ fontSize: 11, color: '#e9d5ff' }}>{displayName.split(' ')[0]} · אתי רפאלה זיתון</div>
                 </div>
               </div>
             </div>

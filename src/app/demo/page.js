@@ -346,14 +346,14 @@ export default function DemoPage() {
     <div style={{ minHeight: '100vh', background: '#f0fdf4', direction: 'rtl', fontFamily: 'Heebo, system-ui, sans-serif' }}>
       {/* demo banner */}
       <div style={{ background: '#fbbf24', padding: '6px 12px', textAlign: 'center', fontSize: 12, fontWeight: 700, color: '#78350f', position: 'sticky', top: 0, zIndex: 100 }}>
-        ⭐ מצב הדגמה — בין הראש לצלחת · אתי אטל
+        ⭐ מצב הדגמה — בין הראש לצלחת · אתי רפאלה זיתון
       </div>
 
       {/* header */}
       <div style={{ background: 'linear-gradient(135deg,#0f4c2a,#16a34a)', padding: '22px 18px 20px', color: '#fff' }}>
         <div style={{ maxWidth: 520, margin: '0 auto' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-            <div style={{ fontSize: 11, color: '#86efac' }}>בין הראש לצלחת · אתי אטל</div>
+            <div style={{ fontSize: 11, color: '#86efac' }}>בין הראש לצלחת · אתי רפאלה זיתון</div>
             <div style={{ fontSize: 11, background: '#ffffff25', color: '#fff', padding: '3px 10px', borderRadius: 99, fontWeight: 700 }}>🏆 {CLIENT.stageName}</div>
           </div>
           <div style={{ fontSize: 24, fontWeight: 900 }}>היי {CLIENT.name}!</div>

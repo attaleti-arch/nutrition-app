@@ -1,6 +1,6 @@
 export const metadata = {
   title: 'תוכנית תזונה | בין הראש לצלחת',
-  description: 'אתי אטל',
+  description: 'אתי רפאלה זיתון',
 }
 
 export default function RootLayout({ children }) {
