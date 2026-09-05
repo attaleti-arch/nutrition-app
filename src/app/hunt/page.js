@@ -3,6 +3,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import 'leaflet/dist/leaflet.css'
 import { MONSTERS, Monster } from './monsters'
 import { unlockAudio, setMuted, sfxTick, sfxRustle, sfxCatch, sfxAppear, sfxFinish, buzz } from './audio'
+import { fetchStreets, pickSpotsAdaptive } from './osm'
 
 // ─────────────────────────────────────────────────────────────
 // ציד היצורים — מסלול אחד, שעה בחוץ, עשרה יצורים, וחזרה הביתה.
@@ -69,6 +70,11 @@ function dealKinds(n) {
   return shuffle(bag.slice(0, n))
 }
 
+function routeFrom(spots) {
+  const kinds = dealKinds(spots.length)
+  return spots.map((s, i) => ({ lat: s.lat, lng: s.lng, kind: kinds[i].id, pts: kinds[i].pts, caught: false }))
+}
+
 function routeLength(home, pts) {
   let total = haversine(home, pts[0])
   for (let i = 1; i < pts.length; i++) total += haversine(pts[i - 1], pts[i])
@@ -125,6 +131,7 @@ export default function HuntPage() {
   const lastTick = useRef(0)
   const lastRustle = useRef(0)
   const follow = useRef(true)
+  const osm = useRef(null)
 
   // ── טעינת מצב שמור ──
   useEffect(() => {
@@ -165,28 +172,55 @@ export default function HuntPage() {
 
   // ── "אני בבית" → יוצרים מסלול ומראים אותו לאישור ──
   async function anchorHome() {
-    setBusy(true); setGeoErr(null)
+    setBusy('fix'); setGeoErr(null)
     unlockAudio()
+    let fix
     try {
-      const fix = await getFix()
-      const home = { lat: fix.lat, lng: fix.lng }
-      const radius = LENGTHS.find(l => l.k === len).radius
-      setPos(fix)
-      persist(prev => ({
-        ...(prev || { totalPoints: 0, walks: 0 }),
-        home,
-        today: { date: todayKey(), route: buildRoute(home, radius), done: false, len },
-      }))
-      setScreen('preview')
+      fix = await getFix()
     } catch (err) {
-      setGeoErr(geoMessage(err))
+      setGeoErr(geoMessage(err)); setBusy(false); return
     }
+    const home = { lat: fix.lat, lng: fix.lng }
+    const radius = LENGTHS.find(l => l.k === len).radius
+    setPos(fix)
+
+    setBusy('streets')
+    const built = await planRoute(home, radius)
+    persist(prev => ({
+      ...(prev || { totalPoints: 0, walks: 0 }),
+      home,
+      today: { date: todayKey(), done: false, len, ...built },
+    }))
+    setScreen('preview')
     setBusy(false)
   }
 
-  function reroll() {
-    const radius = LENGTHS.find(l => l.k === len).radius
-    persist(prev => ({ ...prev, today: { ...prev.today, route: buildRoute(prev.home, radius), len } }))
+  // פיזור לפי מרחק בלבד מניח יצורים בשטח מת — חלקות ריקות, אזורי תעשייה,
+  // ובמקרה אחד גם בית קברות. לכן שואלים קודם את OpenStreetMap אילו רחובות
+  // ושבילים באמת קיימים, ומניחים רק עליהם.
+  async function planRoute(home, radius) {
+    try {
+      const data = osm.current && osm.current.home.lat === home.lat &&
+                   osm.current.home.lng === home.lng && osm.current.radius === radius
+        ? osm.current.data
+        : await fetchStreets(home.lat, home.lng, radius)
+      osm.current = { home, radius, data }
+      const { spots, relaxed } = pickSpotsAdaptive({
+        home, points: data.points, blocked: data.blocked, radius, count: COUNT,
+      })
+      if (spots.length >= 5) return { route: routeFrom(spots), verified: true, relaxed }
+    } catch (e) {
+      // Overpass לא זמין — ממשיכים, אבל אומרים את זה במפורש במסך האישור
+    }
+    return { route: buildRoute(home, radius), verified: false, relaxed: false }
+  }
+
+  async function reroll() {
+    setBusy('streets')
+    const radius = LENGTHS.find(l => l.k === state.today.len).radius
+    const built = await planRoute(state.home, radius)
+    persist(prev => ({ ...prev, today: { ...prev.today, ...built } }))
+    setBusy(false)
   }
 
   function startHunt() {
@@ -403,8 +437,10 @@ export default function HuntPage() {
             ))}
           </div>
 
-          <button onClick={anchorHome} disabled={busy} style={S.cta}>
-            {busy ? 'מחפשים אתכם על המפה…' : 'אני בבית — בונים מסלול'}
+          <button onClick={anchorHome} disabled={!!busy} style={S.cta}>
+            {busy === 'fix' ? 'מחפשים אתכם על המפה…'
+              : busy === 'streets' ? 'בודקים אילו רחובות יש סביבכם…'
+              : 'אני בבית — בונים מסלול'}
           </button>
           {geoErr && <p style={S.err}>{geoErr}</p>}
 
@@ -419,14 +455,27 @@ export default function HuntPage() {
         <div>
           <h1 style={{ ...S.h1, fontSize: 27 }}>המסלול של היום</h1>
           <p style={S.lede}>
-            {today && `${(routeLength(state.home, today.route) / 1000).toFixed(1)} ק״מ · בערך ${LENGTHS.find(l => l.k === today.len)?.mins} דקות · ${COUNT} יצורים`}
+            {today && `${(routeLength(state.home, today.route) / 1000).toFixed(1)} ק״מ · בערך ${LENGTHS.find(l => l.k === today.len)?.mins} דקות · ${today.route.length} יצורים`}
           </p>
-          <p style={S.warn}>הורים: הציצו על המסלול לפני שיוצאים. אם הוא עובר במקום שלא מתאים — החליפו.</p>
+          {today?.verified ? (
+            <p style={S.ok}>
+              ✓ כל היצורים הונחו על רחובות ושבילים אמיתיים — מחוץ לבתי קברות, אזורי תעשייה, מים ושטחים סגורים.
+              {today.route.length < COUNT && ` באזור שלכם יצאו ${today.route.length} ולא ${COUNT} — נסו מסלול ארוך יותר.`}
+            </p>
+          ) : (
+            <p style={S.warn}>
+              לא הצלחנו לבדוק את המפה כרגע, אז היצורים פוזרו לפי מרחק בלבד — חלקם עלולים ליפול בשטח פתוח.
+              כדאי ללחוץ "מסלול אחר", ובכל מקרה לעבור על המסלול לפני שיוצאים.
+            </p>
+          )}
           <div ref={mapEl} style={S.map} />
           <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-            <button onClick={reroll} style={{ ...S.cta, ...S.ctaGhost, flex: '0 0 40%' }}>מסלול אחר</button>
+            <button onClick={reroll} disabled={!!busy} style={{ ...S.cta, ...S.ctaGhost, flex: '0 0 40%' }}>
+              {busy ? 'רגע…' : 'מסלול אחר'}
+            </button>
             <button onClick={startHunt} style={{ ...S.cta, flex: 1 }}>יוצאים! 🐾</button>
           </div>
+          <p style={S.fine}>הקו המקווקו מראה את <b>סדר</b> היצורים, לא את הדרך — הולכים ברחובות.</p>
         </div>
       )}
 
@@ -434,20 +483,20 @@ export default function HuntPage() {
         <div>
           <div style={S.hud}>
             <div style={S.hudCount}>
-              {Array.from({ length: COUNT }).map((_, i) => (
+              {Array.from({ length: today.route.length }).map((_, i) => (
                 <span key={i} style={{
                   width: 9, height: 9, borderRadius: '50%',
                   background: i < found ? C.signal : 'rgba(90,97,84,.22)',
                 }} />
               ))}
-              <b style={{ marginInlineStart: 8, fontSize: 15 }}>{found}/{COUNT}</b>
+              <b style={{ marginInlineStart: 8, fontSize: 15 }}>{found}/{today.route.length}</b>
             </div>
             <button onClick={toggleSound} style={S.mute} aria-label="צליל">{sound ? '🔊' : '🔇'}</button>
           </div>
 
           {screen === 'homeward' && (
             <div style={S.homeward}>
-              <b style={{ fontSize: 18 }}>עשרה יצורים אצלכם 🎉</b>
+              <b style={{ fontSize: 18 }}>{today.route.length} יצורים אצלכם 🎉</b>
               <span style={{ fontSize: 15 }}>עכשיו הביתה — שם המסלול נסגר.</span>
             </div>
           )}
@@ -479,7 +528,7 @@ export default function HuntPage() {
             <Monster id={MONSTERS[0].id} size={104} />
           </div>
           <h1 style={S.h1}>חזרתם הביתה 🏠</h1>
-          <p style={S.lede}>עשרה יצורים, מסלול שלם, ובחוץ.</p>
+          <p style={S.lede}>מסלול שלם, ובחוץ.</p>
           <div style={{ ...S.stats, justifyContent: 'center' }}>
             <div><b style={S.statN}>{state.totalPoints}</b><span style={S.statL}>נקודות</span></div>
             <div><b style={S.statN}>{state.walks || 0}</b><span style={S.statL}>{(state.walks || 0) === 1 ? 'מסלול' : 'מסלולים'}</span></div>
@@ -581,6 +630,10 @@ const S = {
     display: 'flex', flexDirection: 'column', gap: 2, textAlign: 'center',
     padding: '12px 14px', borderRadius: 12, marginBottom: 10,
     background: '#E7EBDF', color: '#33452E', lineHeight: 1.5,
+  },
+  ok: {
+    padding: '10px 13px', borderRadius: 10, background: '#E7EBDF',
+    color: '#33452E', fontSize: 14, lineHeight: 1.55, margin: '0 0 12px',
   },
   warn: {
     padding: '10px 13px', borderRadius: 10, background: '#F0E4CE',
