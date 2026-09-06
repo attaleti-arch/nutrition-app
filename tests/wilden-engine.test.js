@@ -14,6 +14,7 @@ import { initial, reduce, run, beaconView, S, RUN, MODE, canStartStory } from '.
 import { forServer } from '../src/app/wilden/engine/persist.js'
 import { revalidate, PLACE_AFTER } from '../src/app/wilden/engine/placement.js'
 import { STRUCTURE, GUARDIAN_STATE, affordanceOf, isEnterable, KRAAG_AWAKENS } from '../src/app/wilden/content/canon.js'
+import nimi from '../src/app/wilden/ar/controllers/nimi.js'
 
 const HOME = { lat: 32.0853, lng: 34.7818 }
 const DAY = '2026-09-06'
@@ -334,4 +335,83 @@ test('קאנון: ההתעוררות של קראג ברחוב, בגובה מלא
   assert.equal(KRAAG_AWAKENS.heightM, 2.20)
   assert.equal(KRAAG_AWAKENS.framing, 'RISE_INTO_FRAME',
     'קם לתוך המסגרת — לא מבקשים מילד לסגת ארבעה מטרים ברחוב')
+})
+
+// ══════════════════════════════════════════════
+// הכוריאוגרפיה של נימי
+// ה-controller הוא לוגיקה טהורה, ולכן מפגש שלם נבדק כאן בלי מצלמה
+// ובלי חיישנים. זה מה שיאפשר לכתוב את שבעת הנותרים בלי לצאת החוצה.
+
+function seq(vals) { let i = 0; return () => vals[i++ % vals.length] }
+
+test('נימי: שלוש קבוצות עקבות, אחת ממשיכה', () => {
+  const s = nimi.start(0, seq([0.1, 0.2, 0.3, 0.4, 0.5]))
+  const t = nimi.targets(s)
+  assert.equal(t.length, 3)
+  assert.equal(t.filter(x => x.continues).length, 1, 'בדיוק אחת אמיתית')
+  assert.ok(t.every(x => x.kind === 'tracks'))
+})
+
+test('נימי: אף קבוצה לא נופלת מול הילד', () => {
+  for (let i = 0; i < 60; i++) {
+    const s = nimi.start(Math.random() * 360)
+    for (const t of nimi.targets(s)) {
+      const d = Math.abs(((((t.bearing - s.anchor) % 360) + 540) % 360) - 180)
+      assert.ok(180 - d > 40,
+        `יעד ב-${(180 - d).toFixed(0)}° מהמבט ההתחלתי — היה נמצא בלי לחפש`)
+    }
+  }
+})
+
+test('נימי: טעות לא מענישה — היא רק מצמצמת', () => {
+  let s = nimi.start(0)
+  const fake = nimi.targets(s).find(t => !t.continues)
+  const r = nimi.onLock(s, fake.id)
+  assert.equal(r.feedback, 'wrong')
+  assert.equal(r.state.phase, 'TRACKS', 'נשארים באותו שלב')
+  assert.equal(nimi.targets(r.state).length, 2, 'נשארות פחות אפשרויות')
+  assert.equal(nimi.isDone(r.state), false)
+})
+
+test('נימי: חמש הפעימות — עקבות, מציץ, בורח, מתקרב, חבר', () => {
+  let s = nimi.start(0)
+  const real = nimi.targets(s).find(t => t.continues)
+
+  let r = nimi.onLock(s, real.id)
+  assert.equal(r.feedback, 'right')
+  assert.equal(r.state.phase, 'PEEK')
+  assert.equal(nimi.targets(r.state)[0].peeking, true, 'מציץ, לא עומד במלואו')
+
+  const peekAt = r.state.creatureBearing
+  r = nimi.onLock(r.state, 'nimi')
+  assert.equal(r.state.phase, 'FLEE')
+  assert.notEqual(r.state.creatureBearing, peekAt, 'ברח למקום אחר')
+
+  r = nimi.onLock(r.state, 'nimi')
+  assert.equal(r.state.phase, 'APPROACH')
+  assert.ok(nimi.targets(r.state)[0].scale > 1, 'מתקרב — נראה גדול יותר')
+
+  r = nimi.onLock(r.state, 'nimi')
+  assert.equal(nimi.isDone(r.state), true)
+  assert.equal(nimi.targets(r.state).length, 0)
+})
+
+test('נימי: אי אפשר לסיים בלי לבחור נכון', () => {
+  let s = nimi.start(0)
+  for (const t of nimi.targets(s).filter(x => !x.continues)) {
+    s = nimi.onLock(s, t.id).state
+  }
+  assert.equal(nimi.isDone(s), false, 'אחרי שתי טעויות עדיין לא נגמר')
+  assert.equal(nimi.targets(s).length, 1, 'ונשארה בדיוק האמיתית')
+  s = nimi.onLock(s, nimi.targets(s)[0].id).state
+  assert.equal(s.phase, 'PEEK')
+})
+
+test('נימי: הטקסט משתנה אחרי טעות', () => {
+  let s = nimi.start(0)
+  const a = nimi.copy(s).sub
+  const fake = nimi.targets(s).find(t => !t.continues)
+  const b = nimi.copy(nimi.onLock(s, fake.id).state).line
+  assert.notEqual(a, b)
+  assert.ok(!b.includes('טעית'), 'אף פעם לא אומרים לילד שהוא טעה')
 })
