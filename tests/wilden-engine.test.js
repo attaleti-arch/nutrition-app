@@ -13,6 +13,7 @@ import { phaseOf, powerOf, PHASE, ACC_GATE, WALK_GATE, STILL_MS } from '../src/a
 import { initial, reduce, run, beaconView, S, RUN, MODE, canStartStory } from '../src/app/wilden/engine/machine.js'
 import { forServer } from '../src/app/wilden/engine/persist.js'
 import { revalidate, PLACE_AFTER } from '../src/app/wilden/engine/placement.js'
+import { STRUCTURE, GUARDIAN_STATE, affordanceOf, isEnterable, KRAAG_AWAKENS } from '../src/app/wilden/content/canon.js'
 
 const HOME = { lat: 32.0853, lng: 34.7818 }
 const DAY = '2026-09-06'
@@ -292,4 +293,45 @@ test('"לעצור" שומר הכל', () => {
   g = reduce(g, { type: 'ABORT' })
   assert.equal(g.state, S.ABORTED)
   assert.equal(g.run.loot.length, 1, 'מה שנאסף עדיין שם')
+})
+
+// ══════════════════════════════════════════════
+// קאנון: שומרי האבן
+// אותה שפה אדריכלית, שתי affordances. הבדיקות האלה קיימות כדי שילד
+// לעולם לא ינסה להיכנס בקראג, וכדי שהכלל הזה לא ייגזל בטעות בעוד חודש.
+
+test('קאנון: פורטל פתוח מזמין כניסה, שומר רדום שקוף לחלוטין', () => {
+  const portal = { kind: STRUCTURE.PORTAL, open: true }
+  const kraag = { kind: STRUCTURE.GUARDIAN, state: GUARDIAN_STATE.DORMANT }
+
+  const p = affordanceOf(portal)
+  assert.equal(p.membrane, true, 'ממברנת אנרגיה בתוך הקשת')
+  assert.equal(p.beaconMarksExit, true, 'והביקון מסמן אותו כיציאה')
+
+  const k = affordanceOf(kraag)
+  assert.equal(k.membrane, false, 'אצל השומר החלל הוא חלל — רואים דרכו את הרחוב')
+  assert.equal(k.particles, false)
+  assert.equal(k.inwardPull, false, 'ואין שום אנימציית "בוא לכאן"')
+  assert.equal(k.beaconMarksExit, false, 'והביקון שותק לגביו')
+})
+
+test('קאנון: שומר אינו מעבר בשום מצב — גם ער, גם אם סומן בטעות', () => {
+  for (const state of Object.values(GUARDIAN_STATE)) {
+    assert.equal(isEnterable({ kind: STRUCTURE.GUARDIAN, state }), false, state)
+  }
+  // אפילו אם מישהו יעביר open:true על שומר.
+  assert.equal(isEnterable({ kind: STRUCTURE.GUARDIAN, open: true }), false,
+    'השער הקשיח: קראג לא נפתח גם כשמבקשים ממנו')
+})
+
+test('קאנון: פורטל סגור אינו נכנס', () => {
+  assert.equal(isEnterable({ kind: STRUCTURE.PORTAL, open: false }), false)
+  assert.equal(isEnterable({ kind: STRUCTURE.PORTAL, open: true }), true)
+})
+
+test('קאנון: ההתעוררות של קראג ברחוב, בגובה מלא', () => {
+  assert.equal(KRAAG_AWAKENS.where, 'STREET')
+  assert.equal(KRAAG_AWAKENS.heightM, 2.20)
+  assert.equal(KRAAG_AWAKENS.framing, 'RISE_INTO_FRAME',
+    'קם לתוך המסגרת — לא מבקשים מילד לסגת ארבעה מטרים ברחוב')
 })
