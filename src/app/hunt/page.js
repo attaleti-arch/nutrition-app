@@ -119,6 +119,21 @@ function useLeaflet() {
   return ready
 }
 
+const HUNT_CSS = `
+        .hunt-blip{animation:huntPulse 1.7s ease-in-out infinite}
+        @keyframes huntPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.16)}}
+        @keyframes huntPop{0%{transform:scale(.3) rotate(-14deg);opacity:0}
+          60%{transform:scale(1.12) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
+        @keyframes huntRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+        @keyframes huntSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+        @keyframes huntSpark{0%{transform:scale(0) rotate(0);opacity:1}100%{transform:scale(1.9) rotate(140deg);opacity:0}}
+        @media (prefers-reduced-motion: reduce){
+          .hunt-blip{animation:none}
+          [class^="hunt-"]{animation-duration:.01ms !important}
+        }
+        .leaflet-container{border-radius:14px;font-family:inherit}
+      `
+
 const C = {
   cream: '#F3EDE1', card: '#FBF7EE', ink: '#22271E', soft: '#5A6154',
   olive: '#3F5C53', dusk: '#2E3A55', signal: '#C9762A',
@@ -138,6 +153,7 @@ export default function HuntPage() {
   const [avatar, setAvatar] = useState('nova')
   const [journey, setJourney] = useState('normal')
   const [enemy, setEnemy] = useState(null)
+  const [weak, setWeak] = useState(false)
 
   const mapEl = useRef(null)
   const map = useRef(null)
@@ -150,6 +166,8 @@ export default function HuntPage() {
   const osm = useRef(null)
   const abort = useRef(null)
   const enemyTimer = useRef(null)
+  const walked = useRef(0)
+  const lastFix = useRef(null)
 
   // אחרי שש שניות אומרים שזה נמשך, ונותנים דרך לצאת. אף מסך לא נשאר
   // תקוע בלי מוצא.
@@ -286,6 +304,8 @@ export default function HuntPage() {
   function startHunt() {
     unlockAudio()
     follow.current = true
+    walked.current = 0
+    lastFix.current = null
     setScreen('hunt')
   }
 
@@ -311,9 +331,29 @@ export default function HuntPage() {
   useEffect(() => {
     if (screen !== 'hunt' || !pos || !state?.today || caught) return
     const route = state.today.route
-    // רדיוס תפיסה מסתגל לדיוק ה-GPS: בשכונה צפופה הדיוק גרוע ו-15 מטר קבועים
-    // פשוט לא ייתפסו לעולם.
-    const R = Math.min(45, Math.max(22, (pos.acc || 30) * 0.9))
+
+    // ── כמה באמת הלכנו ──
+    // GPS בתוך הבית קופץ מאות מטרים בלי שאיש זז. בלי המדידה הזו המשחק
+    // "תופס" יצורים לפני שיצאו מהדלת.
+    if (lastFix.current) {
+      const step = haversine(lastFix.current, pos)
+      if (step > 6 && step < 120) walked.current += step
+    }
+    lastFix.current = { lat: pos.lat, lng: pos.lng }
+
+    // דיוק גרוע = אנחנו לא יודעים איפה הילד. קודם הגדלתי בגללו את רדיוס
+    // התפיסה, וזה בדיוק הפוך: הוא צריך להקשיח, לא להרפות.
+    const acc = pos.acc || 999
+    const ready = acc <= 40 && walked.current >= 40
+    setWeak(acc > 40)
+    if (!ready) {
+      let n = { dist: Infinity, idx: -1 }
+      route.forEach((m, i) => { if (!m.caught) { const d = haversine(pos, m); if (d < n.dist) n = { dist: d, idx: i } } })
+      nearest.current = n
+      return
+    }
+
+    const R = 28
     let best = { dist: Infinity, idx: -1 }
     route.forEach((m, i) => {
       if (m.caught) return
@@ -677,6 +717,12 @@ export default function HuntPage() {
             <button onClick={toggleSound} style={S.mute} aria-label="צליל">{sound ? '🔊' : '🔇'}</button>
           </div>
 
+          {weak && (
+            <p style={S.warn}>
+              האיתות חלש כרגע — כדי לא "לתפוס" יצורים בטעות, התפיסה מושהית עד שהמיקום יתייצב.
+              בחוץ, מתחת לשמיים פתוחים, זה נפתר תוך שניות.
+            </p>
+          )}
           {screen === 'homeward' && (
             <div style={S.homeward}>
               <b style={{ fontSize: 18 }}>{today.route.length} יצורים אצלכם 🎉</b>
@@ -730,20 +776,7 @@ export default function HuntPage() {
         onClose={() => setEnemy(null)} />}
       {caught && <CatchOverlay m={caught} onClose={dismissCatch} left={today.route.filter(x => !x.caught).length} />}
 
-      <style>{`
-        .hunt-blip{animation:huntPulse 1.7s ease-in-out infinite}
-        @keyframes huntPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.16)}}
-        @keyframes huntPop{0%{transform:scale(.3) rotate(-14deg);opacity:0}
-          60%{transform:scale(1.12) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
-        @keyframes huntRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
-        @keyframes huntSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
-        @keyframes huntSpark{0%{transform:scale(0) rotate(0);opacity:1}100%{transform:scale(1.9) rotate(140deg);opacity:0}}
-        @media (prefers-reduced-motion: reduce){
-          .hunt-blip{animation:none}
-          [class^="hunt-"]{animation-duration:.01ms !important}
-        }
-        .leaflet-container{border-radius:14px;font-family:inherit}
-      `}</style>
+      <style dangerouslySetInnerHTML={{ __html: HUNT_CSS }} />
     </Shell>
   )
 }
