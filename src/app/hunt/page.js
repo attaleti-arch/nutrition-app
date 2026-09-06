@@ -257,6 +257,25 @@ export default function HuntPage() {
     }
   }, [])
 
+  // חייבת להיות דרך לחזור למסך השם: להתחיל מחדש, או למסור את הטלפון
+  // לילד שני. בלי זה הפרופיל הראשון הוא לנצח.
+  function switchPlayer() {
+    const code = player?.code
+    const ok = confirm(
+      'להחליף שחקן?\n\n' +
+      (code ? `הקוד של ${player.name} הוא ${code} — רשמו אותו, איתו כל העולם חוזר.\n\n` : '') +
+      'העולם הנוכחי יישאר שמור בשרת, והמכשיר יתחיל מסך פתיחה חדש.'
+    )
+    if (!ok) return
+    if (watchId.current != null) { navigator.geolocation.clearWatch(watchId.current); watchId.current = null }
+    clearPlayer()
+    try { localStorage.removeItem(STORE_KEY) } catch (e) { /* אין מה לעשות */ }
+    setPlayer(null); setState({ totalPoints: 0, walks: 0 })
+    setNameIn(''); setCodeIn(''); setCodeMsg(null)
+    setCaught(null); setBeat(null); setEnemy(null)
+    setScreen('who')
+  }
+
   function createProfile() {
     const pl = newPlayer({ name: nameIn, avatar })
     savePlayer(pl)
@@ -865,6 +884,7 @@ export default function HuntPage() {
                   קוד לשחזור: <b style={{ letterSpacing: '.14em', direction: 'ltr', display: 'inline-block' }}>{player.code}</b>
                 </span>
               </div>
+              <button onClick={switchPlayer} style={S.exit}>החלפה</button>
             </div>
           )}
           <h1 style={S.h1}>ציד היצורים</h1>
