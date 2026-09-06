@@ -5,6 +5,11 @@ import { MONSTERS, Monster } from './monsters'
 import { unlockAudio, setMuted, sfxTick, sfxRustle, sfxCatch, sfxAppear, sfxFinish, buzz } from './audio'
 import { fetchStreets, pickSpotsAdaptive } from './osm'
 import { buildGraph, nearestNode, planLoop, spreadAlong, loopCoords } from './routing'
+import {
+  AVATARS, JOURNEYS, journeyOf, RESOURCES, ENEMIES, BUILDS,
+  RUNS_TO_UNLOCK_BUILDER, canAfford, countLoot,
+  EnemyOverlay, PortalScreen, WorldScreen,
+} from './world'
 
 // ─────────────────────────────────────────────────────────────
 // ציד היצורים — מסלול אחד, שעה בחוץ, עשרה יצורים, וחזרה הביתה.
@@ -12,17 +17,20 @@ import { buildGraph, nearestNode, planLoop, spreadAlong, loopCoords } from './ro
 // ─────────────────────────────────────────────────────────────
 
 const STORE_KEY = 'hunt_v1'
-const COUNT = 10
+const LOOT_KINDS = ['wood', 'stone', 'flowers']
 
 // אורך הליכה בפועל על הרחובות. ~4 קמ"ש עם ילד, כולל עצירות לתפיסה.
+// מעט יצורים בכוונה: עשרה בחצי שעה זה אחד כל שלוש דקות, ואז אף אחד מהם
+// לא שווה כלום. שלושה בחצי שעה הופכים כל מפגש לאירוע.
 const LENGTHS = [
-  { k: 'short', label: 'קצר', mins: 30, meters: 2200 },
-  { k: 'mid', label: 'רגיל', mins: 45, meters: 3200 },
-  { k: 'long', label: 'ארוך', mins: 60, meters: 4200 },
+  { k: 'short', label: 'קצר', mins: 30, meters: 2200, count: 3 },
+  { k: 'mid', label: 'רגיל', mins: 45, meters: 3200, count: 5 },
+  { k: 'long', label: 'ארוך', mins: 60, meters: 4200, count: 5, evolves: true },
 ]
 const lengthOf = k => LENGTHS.find(l => l.k === k) || LENGTHS[1]
 // כמה מפה להוריד: מספיק כדי שהלולאה תוכל להתפרש, בלי להוריד חצי עיר
 const fetchRadiusFor = meters => Math.max(450, Math.min(1250, Math.round(meters * 0.32)))
+const pick = arr => arr[Math.floor(Math.random() * arr.length)]
 
 function todayKey() {
   const d = new Date()
@@ -50,14 +58,14 @@ function offsetPoint(home, bearingDeg, distM) {
 
 // טבעת סביב הבית: היצורים מסודרים לפי הזווית, כך שההליכה יוצאת מעגל אחד
 // ולא זיגזג. הרעש בזווית וברדיוס הוא מה שמונע מזה להיראות כמו מסלול מחשב.
-function buildRoute(home, radius) {
+function buildRoute(home, radius, count) {
   const jitter = () => (Math.random() - 0.5)
   const start = Math.random() * 360
   const dir = Math.random() < 0.5 ? 1 : -1
-  const kinds = dealKinds(COUNT)
+  const kinds = dealKinds(count)
   const pts = []
-  for (let i = 0; i < COUNT; i++) {
-    const angle = start + dir * ((360 / COUNT) * i + jitter() * 18)
+  for (let i = 0; i < count; i++) {
+    const angle = start + dir * ((360 / count) * i + jitter() * 18)
     const r = radius * (0.75 + Math.random() * 0.5)
     const m = kinds[i]
     pts.push({ ...offsetPoint(home, angle, r), kind: m.id, pts: m.pts, caught: false })
@@ -127,6 +135,9 @@ export default function HuntPage() {
   const [caught, setCaught] = useState(null) // היצור שנתפס עכשיו
   const [sound, setSound] = useState(true)
   const [slow, setSlow] = useState(false)
+  const [avatar, setAvatar] = useState('nova')
+  const [journey, setJourney] = useState('normal')
+  const [enemy, setEnemy] = useState(null)
 
   const mapEl = useRef(null)
   const map = useRef(null)
@@ -138,6 +149,7 @@ export default function HuntPage() {
   const follow = useRef(true)
   const osm = useRef(null)
   const abort = useRef(null)
+  const enemyTimer = useRef(null)
 
   // אחרי שש שניות אומרים שזה נמשך, ונותנים דרך לצאת. אף מסך לא נשאר
   // תקוע בלי מוצא.
@@ -155,11 +167,15 @@ export default function HuntPage() {
   useEffect(() => {
     const s = load()
     if (!s || !s.home) { setState({ totalPoints: 0, walks: 0 }); setScreen('intro'); return }
+    setState(s)
+    setAvatar(s.avatar || 'nova')
+    setJourney(s.journey || 'normal')
     if (s.today && s.today.date === todayKey() && !s.today.done) {
-      const allCaught = s.today.route.every(m => m.caught)
-      setState(s); setScreen(allCaught ? 'homeward' : 'hunt')
+      setScreen(s.today.route.every(m => m.caught) ? 'homeward' : 'hunt')
+    } else if (s.today?.done && !s.today.transferred) {
+      setScreen('portal')          // חזרו הביתה אבל לא העבירו — הפורטל עדיין פתוח
     } else {
-      setState(s); setScreen('intro')
+      setScreen('intro')
     }
   }, [])
 
@@ -202,11 +218,12 @@ export default function HuntPage() {
     setPos(fix)
 
     setBusy('streets')
-    const built = await planRoute(home, lengthOf(len).meters)
+    const L = lengthOf(len)
+    const built = await planRoute(home, L.meters, L.count)
     persist(prev => ({
       ...(prev || { totalPoints: 0, walks: 0 }),
-      home,
-      today: { date: todayKey(), done: false, len, ...built },
+      home, avatar, journey,
+      today: { date: todayKey(), done: false, len, loot: [], stolen: null, ...built },
     }))
     setScreen('preview')
     setBusy(false)
@@ -215,7 +232,7 @@ export default function HuntPage() {
   // פיזור לפי מרחק בלבד מניח יצורים בשטח מת — חלקות ריקות, אזורי תעשייה,
   // ובמקרה אחד גם בית קברות. לכן שואלים קודם את OpenStreetMap אילו רחובות
   // ושבילים באמת קיימים, ומניחים רק עליהם.
-  async function planRoute(home, meters) {
+  async function planRoute(home, meters, count) {
     const radius = fetchRadiusFor(meters)
     abort.current = new AbortController()
     try {
@@ -232,8 +249,8 @@ export default function HuntPage() {
         if (start.idx >= 0 && start.dist < 220) {
           const loop = planLoop(graph, start.idx, meters)
           if (loop) {
-            const spots = spreadAlong(graph, loop.loop, COUNT)
-            if (spots.length === COUNT) {
+            const spots = spreadAlong(graph, loop.loop, count)
+            if (spots.length === count) {
               return {
                 route: routeFrom(spots),
                 path: loopCoords(graph, loop.loop),
@@ -249,18 +266,19 @@ export default function HuntPage() {
       // הרחובות ידועים אבל לא נמצאה לולאה — לפחות נניח על רחובות אמיתיים
       const { spots } = pickSpotsAdaptive({
         home, points: data.points, blocked: data.blocked,
-        radius: meters / 7, count: COUNT,
+        radius: meters / 7, count,
       })
       if (spots.length >= 5) return { route: routeFrom(spots), path: null, verified: true }
     } catch (e) {
       // Overpass לא זמין — ממשיכים, אבל אומרים את זה במפורש במסך האישור
     }
-    return { route: buildRoute(home, meters / 7), path: null, verified: false }
+    return { route: buildRoute(home, meters / 7, count), path: null, verified: false }
   }
 
   async function reroll() {
     setBusy('streets')
-    const built = await planRoute(state.home, lengthOf(state.today.len).meters)
+    const L = lengthOf(state.today.len)
+    const built = await planRoute(state.home, L.meters, L.count)
     persist(prev => ({ ...prev, today: { ...prev.today, ...built } }))
     setBusy(false)
   }
@@ -306,12 +324,20 @@ export default function HuntPage() {
 
     if (best.idx >= 0 && best.dist <= R) {
       const m = route[best.idx]
+      const gained = pick(LOOT_KINDS)
       sfxCatch(); buzz([30, 60, 120])
-      setCaught({ ...m, idx: best.idx })
       persist(prev => {
-        const r = prev.today.route.map((x, i) => (i === best.idx ? { ...x, caught: true } : x))
-        return { ...prev, today: { ...prev.today, route: r }, totalPoints: (prev.totalPoints || 0) + m.pts }
+        const t = prev.today
+        const r = t.route.map((x, i) => (i === best.idx ? { ...x, caught: true } : x))
+        // מה שהאויב חטף חוזר כאן — זו הסיבה להמשיך ללכת אחריו
+        const loot = [...(t.loot || []), gained, ...(t.stolen ? [t.stolen] : [])]
+        return {
+          ...prev,
+          today: { ...t, route: r, loot, stolen: null },
+          totalPoints: (prev.totalPoints || 0) + m.pts,
+        }
       })
+      setCaught({ ...m, idx: best.idx, gained, recovered: state.today.stolen || null })
     }
   }, [pos, screen, state?.today?.route, caught, persist])
 
@@ -322,11 +348,39 @@ export default function HuntPage() {
     nearest.current = { dist: d, idx: -1 }
     const R = Math.min(60, Math.max(30, (pos.acc || 30) * 1.2))
     if (d <= R) {
-      sfxFinish(); buzz([40, 70, 40, 70, 160])
+      buzz([40, 70, 40, 70, 160])
       persist(prev => ({ ...prev, walks: (prev.walks || 0) + 1, today: { ...prev.today, done: true } }))
-      setScreen('done')
+      setScreen('portal')
     }
   }, [pos, screen, state?.home, persist])
+
+  // ── אויב בדרך ──
+  // מופיע מעצמו בין יצור ליצור, בקצב שנקבע באופי המסע. אם הוא מצליח — הוא
+  // חוטף חומר, והחומר חוזר ביצור הבא ולא נמחק.
+  useEffect(() => {
+    if (screen !== 'hunt' || caught || enemy || !state?.today) return
+    const j = journeyOf(state.journey || 'normal')
+    const wait = (70 + Math.random() * 110) * 1000
+    enemyTimer.current = setTimeout(() => {
+      if (Math.random() > j.enemyChance) return
+      const escaped = Math.random() < j.escape
+      let stolen = null
+      if (!escaped) {
+        const bag = state.today.loot || []
+        if (bag.length && !state.today.stolen) {
+          stolen = bag[bag.length - 1]
+          persist(prev => ({
+            ...prev,
+            today: { ...prev.today, loot: prev.today.loot.slice(0, -1), stolen },
+          }))
+        }
+      }
+      buzz(escaped ? [25] : [60, 40, 60])
+      sfxRustle()
+      setEnemy({ ...pick(ENEMIES), escaped, stolen })
+    }, wait)
+    return () => clearTimeout(enemyTimer.current)
+  }, [screen, caught, enemy, state?.today?.loot?.length, state?.journey, persist])
 
   // ── טיקים ורשרושים: זה מה שמאפשר ללכת עם העיניים למעלה ──
   useEffect(() => {
@@ -446,6 +500,46 @@ export default function HuntPage() {
     sfxAppear()
   }
 
+  // ── מעבר דרך הפורטל ──
+  function transfer() {
+    persist(prev => {
+      const t = prev.today
+      const L = lengthOf(t.len)
+      const caughtOnes = t.route.filter(m => m.caught)
+      const kept = [...(prev.kept || [])]
+      caughtOnes.forEach((m, i) => kept.push({ kind: m.kind, evolved: !!(L.evolves && i === 0) }))
+      const res = { ...(prev.res || {}) }
+      for (const k of t.loot || []) res[k] = (res[k] || 0) + 1
+      return {
+        ...prev,
+        kept, res,
+        runs45: (prev.runs45 || 0) + (t.len === 'mid' ? 1 : 0),
+        today: { ...t, transferred: true },
+      }
+    })
+    sfxFinish()
+    setScreen('world')
+  }
+
+  function build(kind) {
+    const b = BUILDS[kind]
+    persist(prev => {
+      if (prev.built?.[kind] || !canAfford(prev.res || {}, b.cost)) return prev
+      const res = { ...prev.res }
+      for (const [k, v] of Object.entries(b.cost)) res[k] -= v
+      return { ...prev, res, built: { ...(prev.built || {}), [kind]: true } }
+    })
+    sfxCatch()
+  }
+
+  function makeHoney() {
+    persist(prev => {
+      if (!prev.built?.hive || (prev.res?.flowers || 0) < 2) return prev
+      return { ...prev, res: { ...prev.res, flowers: prev.res.flowers - 2, honey: (prev.res.honey || 0) + 1 } }
+    })
+    sfxAppear()
+  }
+
   function toggleSound() {
     const v = !sound
     setSound(v); setMuted(!v)
@@ -473,12 +567,39 @@ export default function HuntPage() {
             </div>
           )}
 
+          <p style={S.label}>מי יוצא לדרך?</p>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+            {AVATARS.map(a => (
+              <button key={a.id} onClick={() => setAvatar(a.id)}
+                style={{ ...S.chip, ...(avatar === a.id ? S.chipOn : {}), paddingBlock: 12 }}>
+                <span style={{ fontSize: 30, display: 'block', lineHeight: 1.1 }}>{a.emoji}</span>
+                {a.name}
+              </button>
+            ))}
+          </div>
+
           <p style={S.label}>כמה זמן יש לכם?</p>
           <div style={{ display: 'flex', gap: 8, marginBottom: 22 }}>
             {LENGTHS.map(l => (
               <button key={l.k} onClick={() => setLen(l.k)}
                 style={{ ...S.chip, ...(len === l.k ? S.chipOn : {}) }}>
-                {l.label}<span style={{ display: 'block', fontSize: 12, fontWeight: 400, opacity: .8 }}>{l.mins} דק׳</span>
+                {l.label}
+                <span style={{ display: 'block', fontSize: 12, fontWeight: 400, opacity: .8 }}>
+                  {l.mins} דק׳ · {l.count} יצורים
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <p style={S.label}>איזו דרך?</p>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 22 }}>
+            {JOURNEYS.map(j => (
+              <button key={j.k} onClick={() => setJourney(j.k)}
+                style={{ ...S.chip, ...(journey === j.k ? S.chipOn : {}) }}>
+                {j.label}
+                <span style={{ display: 'block', fontSize: 11.5, fontWeight: 400, opacity: .8, lineHeight: 1.35 }}>
+                  {j.sub}
+                </span>
               </button>
             ))}
           </div>
@@ -584,21 +705,29 @@ export default function HuntPage() {
         </div>
       )}
 
-      {screen === 'done' && (
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 6 }}>
-            <Monster id={MONSTERS[0].id} size={104} />
-          </div>
-          <h1 style={S.h1}>חזרתם הביתה 🏠</h1>
-          <p style={S.lede}>מסלול שלם, ובחוץ.</p>
-          <div style={{ ...S.stats, justifyContent: 'center' }}>
+      {screen === 'portal' && today && (
+        <PortalScreen
+          creatures={today.route.filter(m => m.caught)
+            .map((m, i) => ({ kind: m.kind, evolved: !!(lengthOf(today.len).evolves && i === 0) }))}
+          loot={today.loot || []}
+          evolved={!!lengthOf(today.len).evolves}
+          onTransfer={transfer}
+        />
+      )}
+
+      {screen === 'world' && (
+        <>
+          <WorldScreen state={state} onBuild={build} onHoney={makeHoney}
+            onNewRoute={() => setScreen('intro')} />
+          <div style={{ ...S.stats, justifyContent: 'center', marginTop: 18 }}>
             <div><b style={S.statN}>{state.totalPoints}</b><span style={S.statL}>נקודות</span></div>
             <div><b style={S.statN}>{state.walks || 0}</b><span style={S.statL}>{(state.walks || 0) === 1 ? 'מסלול' : 'מסלולים'}</span></div>
           </div>
-          <button onClick={() => setScreen('intro')} style={S.cta}>מסלול חדש</button>
-        </div>
+        </>
       )}
 
+      {enemy && <EnemyOverlay enemy={enemy} stolen={enemy.stolen} escaped={enemy.escaped}
+        onClose={() => setEnemy(null)} />}
       {caught && <CatchOverlay m={caught} onClose={dismissCatch} left={today.route.filter(x => !x.caught).length} />}
 
       <style>{`
@@ -607,6 +736,7 @@ export default function HuntPage() {
         @keyframes huntPop{0%{transform:scale(.3) rotate(-14deg);opacity:0}
           60%{transform:scale(1.12) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0);opacity:1}}
         @keyframes huntRise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+        @keyframes huntSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
         @keyframes huntSpark{0%{transform:scale(0) rotate(0);opacity:1}100%{transform:scale(1.9) rotate(140deg);opacity:0}}
         @media (prefers-reduced-motion: reduce){
           .hunt-blip{animation:none}
@@ -634,7 +764,11 @@ function CatchOverlay({ m, onClose, left }) {
       </div>
       <p style={{ ...S.h1, fontSize: 32, margin: '20px 0 2px', animation: 'huntRise .4s .18s both' }}>{info.name}</p>
       <p style={{ color: C.signal, fontWeight: 700, margin: 0, animation: 'huntRise .4s .26s both' }}>+{m.pts} נקודות</p>
-      <p style={{ color: 'rgba(243,237,225,.6)', marginTop: 4, animation: 'huntRise .4s .32s both' }}>
+      <p style={{ color: 'rgba(243,237,225,.78)', marginTop: 8, animation: 'huntRise .4s .3s both' }}>
+        מצאתם גם {RESOURCES[m.gained].emoji} {RESOURCES[m.gained].name}
+        {m.recovered && <><br />ו{RESOURCES[m.recovered].emoji} {RESOURCES[m.recovered].name} שנחטף — חזר אליכם!</>}
+      </p>
+      <p style={{ color: 'rgba(243,237,225,.6)', marginTop: 4, animation: 'huntRise .4s .34s both' }}>
         {left > 0 ? `נשארו עוד ${left}` : 'זה האחרון — הביתה!'}
       </p>
       <button onClick={onClose} style={{ ...S.cta, marginTop: 26, maxWidth: 240, animation: 'huntRise .4s .38s both' }}>תפסתי!</button>
@@ -707,7 +841,7 @@ const S = {
   },
   fine: { marginTop: 16, fontSize: 13.5, lineHeight: 1.65, color: C.soft },
   overlay: {
-    position: 'fixed', inset: 0, zIndex: 900,
+    position: 'fixed', inset: 0, zIndex: 2000,
     background: 'rgba(28,32,26,.93)', color: C.cream,
     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
     padding: 24, textAlign: 'center', cursor: 'pointer',
