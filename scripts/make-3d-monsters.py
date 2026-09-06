@@ -235,7 +235,7 @@ def ear(color, sx, tilt, base=(0.52, 1.46, -0.02), size=(0.17, 0.42, 0.13)):
 
 def puch():
     body, dark = '#8FB9E8', '#5E8FC4'
-    p = [(xform(sphere(0.90, 56, 72, squash=0.95), t=(0, 0.92, 0)), body, 0.62, 0.0, 1.0)]
+    p = [(xform(sphere(0.90, 56, 72, squash=0.95), t=(0, 0.92, 0)), body, 0.78, 0.0, 1.0)]
     p += [ear(dark, -1, 22), ear(dark, 1, 22)]
     p += eyes(gap=0.29, y=1.00, z=0.79)
     p += smile(y=0.74, z=0.84)
