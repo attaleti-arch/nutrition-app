@@ -12,7 +12,7 @@ import {
 import { EncounterScene, ENCOUNTER_CSS, RARITY, rollRarity } from './encounter'
 import { buildBeats, pickFind, pickHint, pickChoice, BeatOverlay, BEATS_CSS } from './beats'
 import { Avatar } from './avatars'
-import { loadPlayer, savePlayer, clearPlayer, newPlayer, pushWorld, pullPlayer, normCode } from './player'
+import { loadPlayer, savePlayer, clearPlayer, newPlayer, pushWorld, pullPlayer, normCode, syncState } from './player'
 
 // ─────────────────────────────────────────────────────────────
 // ציד היצורים — מסלול אחד, שעה בחוץ, עשרה יצורים, וחזרה הביתה.
@@ -210,6 +210,7 @@ export default function HuntPage() {
   const [lure, setLure] = useState(null)
   const [evolvePick, setEvolvePick] = useState(null)
   const [weak, setWeak] = useState(false)
+  const [sync, setSync] = useState(null)   // מצב הגיבוי בפועל, לא ההנחה עליו
 
   const mapEl = useRef(null)
   const map = useRef(null)
@@ -240,6 +241,7 @@ export default function HuntPage() {
   // ── טעינת מצב שמור ──
   useEffect(() => {
     const pl = loadPlayer()
+    setSync(syncState())
     if (!pl) { setState({ totalPoints: 0, walks: 0 }); setPlayer(null); setScreen('who'); return }
     setPlayer(pl)
     setAvatar(pl.avatar || 'nova')
@@ -282,7 +284,9 @@ export default function HuntPage() {
     setPlayer(pl)
     const fresh = { totalPoints: 0, walks: 0 }
     setState(fresh); save(fresh)
-    pushWorld(pl, fresh)                    // מיטב מאמץ; אם אין רשת, יסונכרן בפורטל
+    // מיטב מאמץ; אם אין רשת, יסונכרן בפורטל. התוצאה נרשמת כדי שההורה
+    // יראה אם באמת יש גיבוי — ולא יגלה את זה רק כשהעולם ייעלם.
+    pushWorld(pl, fresh).then(() => setSync(syncState()))
     sfxAppear()
     setScreen('intro')
   }
@@ -293,8 +297,9 @@ export default function HuntPage() {
     setCodeMsg('מחפשים…')
     const r = await pullPlayer(c)
     if (!r.ok) {
-      setCodeMsg(r.reason === 'not-found'
-        ? 'לא מצאנו עולם עם הקוד הזה. בדקו את האותיות.'
+      setCodeMsg(
+        r.reason === 'not-found' ? 'לא מצאנו עולם עם הקוד הזה. בדקו את האותיות.'
+        : r.reason === 'no-server' ? 'השחזור לא זמין כרגע — השרת לא מוגדר. אפשר להתחיל עולם חדש.'
         : 'לא הצלחנו להתחבר כרגע. אפשר להתחיל עולם חדש ולנסות שוב אחר כך.')
       return
     }
@@ -794,7 +799,10 @@ export default function HuntPage() {
     setScreen('world')
     // מסנכרנים רק כאן: בזמן ההליכה יכול להיות שאין קליטה, ואין סיבה
     // להטריד את הרשת באמצע מסע.
-    setTimeout(() => { const w = load(); if (w && player) pushWorld(player, w) }, 400)
+    setTimeout(async () => {
+      const w = load()
+      if (w && player) { await pushWorld(player, w); setSync(syncState()) }
+    }, 400)
   }
 
   function build(kind) {
@@ -883,6 +891,7 @@ export default function HuntPage() {
                 <span style={{ display: 'block', fontSize: 12.5, color: C.soft }}>
                   קוד לשחזור: <b style={{ letterSpacing: '.14em', direction: 'ltr', display: 'inline-block' }}>{player.code}</b>
                 </span>
+                <SyncNote sync={sync} />
               </div>
               <button onClick={switchPlayer} style={S.exit}>החלפה</button>
             </div>
@@ -1112,6 +1121,29 @@ export default function HuntPage() {
   )
 }
 
+
+// ── האם העולם באמת מגובה ──
+// ספארי מוחקת אחסון מקומי אחרי כשבוע בלי כניסה, והפיילוט הוא ארבעה־עשר
+// יום. הקוד בן חמש האותיות הוא ההגנה היחידה — אבל הוא שווה משהו רק אם
+// הגיבוי אמנם עלה לשרת. עד עכשיו כישלון היה שקט לחלוטין.
+function SyncNote({ sync }) {
+  if (!sync) return null
+  if (sync.ok) {
+    const days = Math.floor((Date.now() - sync.at) / 86400000)
+    return (
+      <span style={{ display: 'block', fontSize: 12, color: '#3F5C53' }}>
+        ✓ העולם מגובה{days > 2 ? ` · לפני ${days} ימים` : ''}
+      </span>
+    )
+  }
+  return (
+    <span style={{ display: 'block', fontSize: 12, color: '#A84B2A', fontWeight: 600 }}>
+      {sync.reason === 'no-server'
+        ? '⚠ אין גיבוי — העולם קיים רק במכשיר הזה'
+        : '⚠ הגיבוי האחרון נכשל. הקוד לא ישחזר עדיין.'}
+    </span>
+  )
+}
 
 function Shell({ children }) {
   return (

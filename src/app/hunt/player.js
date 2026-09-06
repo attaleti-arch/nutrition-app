@@ -53,6 +53,34 @@ export function newPlayer({ name, avatar }) {
 // תמיד "מיטב המאמץ". המשחק חייב לעבוד גם כשאין רשת — הילד בחוץ, אולי
 // בלי קליטה — ולכן localStorage הוא המקור, והשרת הוא גיבוי.
 
+// ── האם יש בכלל שרת ──
+// supabase.js נופל ל-placeholder.supabase.co כשמשתני הסביבה חסרים. אז כל
+// קריאה נכשלת ברשת — בשקט מוחלט. הורה רואה קוד שחזור על המסך, מאמין
+// שהעולם שמור, והוא לא. עדיף לדעת ביום הראשון ולא ביום השמיני.
+export function serverConfigured() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL
+  return !!url && !url.includes('placeholder')
+}
+
+// ── מצב הגיבוי, גלוי ──
+// שתי הקריאות ל-pushWorld הן "שגר ושכח" והתוצאה נזרקה, ולכן כישלון גיבוי
+// היה בלתי נראה: המשחק ממשיך לעבוד מ-localStorage — וספארי מוחקת אחסון
+// מקומי אחרי כשבוע בלי כניסה. הפיילוט הוא ארבעה־עשר יום, כלומר העולם
+// יכול להיעלם באמצע בלי שאיש ידע שלא היה גיבוי מלכתחילה.
+const SYNC_KEY = 'hunt_sync_v1'
+
+export function syncState() {
+  if (!serverConfigured()) return { ok: false, reason: 'no-server', at: null }
+  try { const r = localStorage.getItem(SYNC_KEY); if (r) return JSON.parse(r) }
+  catch (e) { /* לא קריטי */ }
+  return { ok: false, reason: 'never', at: null }
+}
+
+function recordSync(ok, reason) {
+  try { localStorage.setItem(SYNC_KEY, JSON.stringify({ ok, reason: reason || null, at: Date.now() })) }
+  catch (e) { /* אחסון מלא. הגיבוי עצמו חשוב יותר מהרישום עליו */ }
+}
+
 function stripLocation(world) {
   if (!world) return null
   // eslint-disable-next-line no-unused-vars
@@ -71,6 +99,7 @@ function withTimeout(ms) {
 
 export async function pushWorld(player, world) {
   if (!player?.code) return { ok: false, reason: 'no-player' }
+  if (!serverConfigured()) return { ok: false, reason: 'no-server' }
   try {
     const t = withTimeout(NET_TIMEOUT)
     try {
@@ -81,10 +110,12 @@ export async function pushWorld(player, world) {
         world: stripLocation(world),
         updated_at: new Date().toISOString(),
       }, { onConflict: 'code' }).abortSignal(t.signal)
-      if (error) return { ok: false, reason: error.message }
+      if (error) { recordSync(false, error.message); return { ok: false, reason: error.message } }
+      recordSync(true)
       return { ok: true }
     } finally { t.done() }
   } catch (e) {
+    recordSync(false, e.message)
     return { ok: false, reason: e.message }
   }
 }
@@ -92,6 +123,7 @@ export async function pushWorld(player, world) {
 export async function pullPlayer(code) {
   const c = normCode(code)
   if (c.length < 4) return { ok: false, reason: 'short' }
+  if (!serverConfigured()) return { ok: false, reason: 'no-server' }
   try {
     const t = withTimeout(NET_TIMEOUT)
     try {
