@@ -113,6 +113,14 @@ function routeLength(home, pts) {
   return total
 }
 
+// מסלול שמור יכול להיות כבר לא רלוונטי: נבנה במבנה ישן, מלפני שינוי
+// מספר היצורים. אז לא מחזירים אליו את הילד — פותחים מסך פתיחה.
+function isStale(s) {
+  const t = s.today
+  if (!t || !t.route?.length) return true
+  return t.route.length !== lengthOf(t.len).count
+}
+
 function load() {
   try { const r = localStorage.getItem(STORE_KEY); if (r) return JSON.parse(r) } catch (e) { /* התחלה נקייה */ }
   return null
@@ -210,7 +218,7 @@ export default function HuntPage() {
     setState(s)
     setAvatar(s.avatar || 'nova')
     setJourney(s.journey || 'normal')
-    if (s.today && s.today.date === todayKey() && !s.today.done) {
+    if (s.today && s.today.date === todayKey() && !s.today.done && !isStale(s)) {
       setScreen(s.today.route.every(m => m.caught) ? 'homeward' : 'hunt')
     } else if (s.today?.done && !s.today.transferred) {
       setScreen('portal')          // חזרו הביתה אבל לא העבירו — הפורטל עדיין פתוח
@@ -322,6 +330,16 @@ export default function HuntPage() {
     const built = await planRoute(state.home, L.meters, L.count)
     persist(prev => ({ ...prev, today: { ...prev.today, ...built } }))
     setBusy(false)
+  }
+
+  // תמיד חייבת להיות דרך לצאת ממסלול. בלי זה אפשר להיתקע במסלול שנבנה
+  // במקום אחר, בלי שום כפתור על המסך.
+  function abandon() {
+    if (!confirm('לעצור את המסלול ולחזור למסך הפתיחה? מה שנאסף היום לא יישמר.')) return
+    if (watchId.current != null) { navigator.geolocation.clearWatch(watchId.current); watchId.current = null }
+    setCaught(null); setBeat(null); setEnemy(null); setWeak(false)
+    persist(prev => ({ ...prev, today: null }))
+    setScreen('intro')
   }
 
   function startHunt() {
@@ -804,9 +822,18 @@ export default function HuntPage() {
               ))}
               <b style={{ marginInlineStart: 8, fontSize: 15 }}>{found}/{today.route.length}</b>
             </div>
-            <button onClick={toggleSound} style={S.mute} aria-label="צליל">{sound ? '🔊' : '🔇'}</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <button onClick={toggleSound} style={S.mute} aria-label="צליל">{sound ? '🔊' : '🔇'}</button>
+              <button onClick={abandon} style={S.exit}>לעצור</button>
+            </div>
           </div>
 
+          {pos && state.home && haversine(pos, state.home) > 1500 && (
+            <p style={S.err}>
+              המסלול הזה נבנה במקום אחר — אתם {(haversine(pos, state.home) / 1000).toFixed(1)} ק״מ מנקודת ההתחלה שלו.
+              לחצו <b>לעצור</b> ובנו מסלול חדש מכאן.
+            </p>
+          )}
           {weak && (
             <p style={S.warn}>
               האיתות חלש כרגע — כדי לא "לתפוס" יצורים בטעות, התפיסה מושהית עד שהמיקום יתייצב.
@@ -956,6 +983,11 @@ const S = {
   ok: {
     padding: '10px 13px', borderRadius: 10, background: '#E7EBDF',
     color: '#33452E', fontSize: 14, lineHeight: 1.55, margin: '0 0 12px',
+  },
+  exit: {
+    border: '1px solid #DCD2BE', background: 'transparent', color: '#5A6154',
+    borderRadius: 999, padding: '4px 12px', fontFamily: 'inherit',
+    fontSize: 13, fontWeight: 700, cursor: 'pointer',
   },
   chase: {
     display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10,
