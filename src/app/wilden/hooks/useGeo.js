@@ -17,6 +17,11 @@ export function useGeo({ active, onFix, onResume, onError } = {}) {
   const [pos, setPos] = useState(null)
   const [err, setErr] = useState(null)
   const [asking, setAsking] = useState(false)
+  // כמה דגימות באמת הגיעו ומתי האחרונה. בלי זה אי אפשר להבדיל בין
+  // "המיקום לא מתעדכן" לבין "מתעדכן אבל גרוע" — ושני אלה דורשים
+  // מההורה פעולה אחרת לגמרי.
+  const [fixes, setFixes] = useState(0)
+  const [lastAt, setLastAt] = useState(0)
   const watchId = useRef(null)
   const lastT = useRef(0)
   const cbs = useRef({})
@@ -52,7 +57,7 @@ export function useGeo({ active, onFix, onResume, onError } = {}) {
       p => {
         const t = Date.now()
         const fix = { lat: p.coords.latitude, lng: p.coords.longitude, acc: p.coords.accuracy }
-        setPos(fix)
+        setPos(fix); setFixes(n => n + 1); setLastAt(t)
         // פער ארוך = המסך היה נעול. לא סופרים את זה כהליכה, ומאמתים מחדש
         // איפה הילד נמצא עכשיו.
         if (lastT.current && t - lastT.current > GAP_RESUME_MS) cbs.current.onResume?.({ ...fix, t })
@@ -90,5 +95,5 @@ export function useGeo({ active, onFix, onResume, onError } = {}) {
     return () => document.removeEventListener('visibilitychange', onVis)
   }, [active])
 
-  return { pos, err, asking, request }
+  return { pos, err, asking, fixes, lastAt, request }
 }

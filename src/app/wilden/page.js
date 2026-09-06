@@ -1,7 +1,7 @@
 'use client'
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
 import { initial, reduce, beaconView, S, RUN, MODE, nextRunKind, canStartStory } from './engine/machine'
-import { PHASE, PHASE_BUZZ } from './engine/beacon'
+import { PHASE, PHASE_BUZZ, ACC_GATE, ACC_DIRECTION, ACC_COARSE, WALK_GATE } from './engine/beacon'
 import { save, load, dayKey } from './engine/persist'
 import { creatureById } from './content/creatures'
 import M01 from './content/missions/m01-signal'
@@ -271,9 +271,7 @@ function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort }) {
         <p style={s.hintStop}>עצרו במקום בטוח — ואז אפשר לחפש.</p>
       )}
 
-      {geo.pos && geo.pos.acc > 40 && (
-        <p style={s.warn}>הקליטה חלשה. המשיכו ללכת, זה משתפר.</p>
-      )}
+      <GpsPanel geo={geo} run={g.run} />
       {degraded && (
         <p style={s.note}>
           {reason === 'no-loop' || reason === 'short-loop'
@@ -287,6 +285,58 @@ function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort }) {
 
       <button onClick={onAbort} style={{ ...s.cta, ...s.ctaGhost, marginTop: 26 }}>לעצור</button>
     </>
+  )
+}
+
+// ── מה קורה עם המיקום ──
+// לא מאחורי ?debug=1. הורה בפיילוט צריך לדעת בעצמו אם הטלפון לא מעדכן
+// מיקום, אם "מיקום מדויק" כבוי, או אם פשוט צריך לצאת מתחת לבניין —
+// ולכל אחד מהם פעולה אחרת לגמרי.
+function GpsPanel({ geo, run }) {
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 2000)
+    return () => clearInterval(id)
+  }, [])
+
+  const acc = geo.pos?.acc
+  const since = geo.lastAt ? Math.round((now - geo.lastAt) / 1000) : null
+  const walked = Math.round(run?.walked || 0)
+
+  let issue = null
+  if (geo.err === 'denied') {
+    issue = { t: 'המיקום חסום', how: 'הגדרות ← Safari ← מיקום ← אפשר' }
+  } else if (!geo.fixes) {
+    issue = { t: 'עוד לא הגיעה קריאת מיקום אחת', how: 'צאו החוצה ותנו לזה כמה שניות' }
+  } else if (since != null && since > 30) {
+    issue = { t: `המיקום לא התעדכן ${since} שניות`, how: 'ייתכן שמצב חיסכון בסוללה פועל — כבו אותו' }
+  } else if (acc != null && acc > ACC_COARSE) {
+    issue = {
+      t: `הטלפון נותן מיקום מקורב בלבד (${Math.round(acc)} מ׳)`,
+      how: 'הגדרות ← פרטיות ואבטחה ← שירותי מיקום ← אתרי Safari ← הפעילו «מיקום מדויק»',
+    }
+  } else if (acc != null && acc > ACC_DIRECTION) {
+    issue = { t: `קליטה חלשה (${Math.round(acc)} מ׳)`, how: 'צאו מתחת לבניין או לחניון — זה משתפר תוך כדי הליכה' }
+  } else if (walked === 0 && geo.fixes > 20) {
+    issue = { t: 'הטלפון מעדכן מיקום אבל לא רואה תנועה', how: 'זה תקין אם עומדים. אם אתם הולכים — תגידו לי.' }
+  }
+
+  return (
+    <div style={s.gps}>
+      <div style={s.gpsRow}>
+        <span>דיוק <b style={{ color: acc == null ? C.faint : acc <= ACC_GATE ? C.green : acc <= ACC_DIRECTION ? C.amber : C.red }}>
+          {acc == null ? '—' : Math.round(acc) + ' מ׳'}</b></span>
+        <span>נצבר <b style={{ color: walked >= WALK_GATE ? C.green : C.faint }}>{walked} מ׳</b></span>
+        <span>קריאות <b style={{ color: geo.fixes ? C.green : C.red }}>{geo.fixes}</b></span>
+        {since != null && <span>לפני <b>{since}ש׳</b></span>}
+      </div>
+      {issue && (
+        <div style={s.gpsIssue}>
+          <p style={{ margin: 0, fontWeight: 700, color: C.red }}>{issue.t}</p>
+          <p style={{ margin: '3px 0 0', color: C.muted, fontSize: 13.5 }}>{issue.how}</p>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -342,6 +392,11 @@ const s = {
   warn: { marginTop: 14, fontSize: 14.5, color: C.red },
   note: { marginTop: 14, fontSize: 14, color: C.faint, lineHeight: 1.6 },
   hintStop: { marginTop: 18, fontSize: 15.5, color: C.faint, textAlign: 'center' },
+  gps: { marginTop: 20, padding: '10px 12px', background: C.card,
+    border: `1px solid ${C.line}`, borderRadius: 12 },
+  gpsRow: { display: 'flex', flexWrap: 'wrap', gap: '4px 14px', fontSize: 13,
+    color: C.faint, fontFamily: 'ui-monospace, monospace' },
+  gpsIssue: { marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.line}`, fontSize: 14.5 },
   stats: { display: 'flex', gap: 18, marginTop: 26, paddingTop: 16, borderTop: `1px solid ${C.line}` },
   statN: { display: 'block', fontSize: 22, fontWeight: 900, color: C.ink },
   statL: { fontSize: 12.5, color: C.faint },

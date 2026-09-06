@@ -9,7 +9,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import { destination, haversine, stepBetween, progressAlong } from '../src/app/wilden/engine/geo.js'
-import { phaseOf, powerOf, PHASE, ACC_GATE, WALK_GATE, STILL_MS, STILL_RADIUS } from '../src/app/wilden/engine/beacon.js'
+import { phaseOf, powerOf, PHASE, ACC_GATE, ACC_DIRECTION, WALK_GATE, STILL_MS, STILL_RADIUS } from '../src/app/wilden/engine/beacon.js'
 import { initial, reduce, run, beaconView, S, RUN, MODE, canStartStory } from '../src/app/wilden/engine/machine.js'
 import { forServer } from '../src/app/wilden/engine/persist.js'
 import { revalidate, PLACE_AFTER } from '../src/app/wilden/engine/placement.js'
@@ -80,9 +80,19 @@ test('ביקון: שני השערים שנכתבו בעקבות באג אמית�
     phaseOf({ ...base, walked: WALK_GATE - 1 }), PHASE.SIGNAL_WEAK,
     'בלי הליכה — הביקון לא מתקדם, גם אם היעד מטר משם'
   )
+  // דיוק גרוע מקשיח, לא מרפה. זה הבאג של "שני יצורים בלי צעד".
+  // אבל סף יחיד הקפיא את המשחק לגמרי ברחוב עירוני, ולכן יש שניים:
   assert.equal(
-    phaseOf({ ...base, acc: ACC_GATE + 1 }), PHASE.SIGNAL_WEAK,
-    'דיוק גרוע מקשיח, לא מרפה. זה הבאג של "שני יצורים בלי צעד"'
+    phaseOf({ ...base, acc: ACC_DIRECTION + 1 }), PHASE.SIGNAL_WEAK,
+    'דיוק גרוע באמת — שום דבר לא זז'
+  )
+  assert.equal(
+    phaseOf({ ...base, acc: ACC_GATE + 5 }), PHASE.TRACE,
+    'דיוק בינוני — מותר לומר "עקבות טריים", אסור לומר "הוא כאן"'
+  )
+  assert.equal(
+    phaseOf({ ...base, acc: ACC_GATE + 5, stillMs: STILL_MS * 3 }), PHASE.TRACE,
+    'וגם עמידה ארוכה לא פותחת מצלמה בדיוק בינוני — שם טעות שולחת ילד לפינה הלא נכונה'
   )
 })
 

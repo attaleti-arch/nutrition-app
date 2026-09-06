@@ -45,8 +45,20 @@ const RING = [
 // שני השערים שנשמרו מהמשחק הקודם, ושניהם נכתבו בעקבות באג אמיתי:
 // דיוק גרוע *הקשיח* פעם את התפיסה במקום להרפות, וילד תפס שני יצורים
 // בלי לצעוד צעד. הם נשארים בדיוק כפי שהם.
-export const ACC_GATE = 40      // מטרים. מעל זה הביקון לא מתקדם.
-export const WALK_GATE = 40     // מטרים שנצברו בהליכה לפני שמשהו קורה.
+// ── שני ספי דיוק, לא אחד ──
+// סף יחיד של 40 מ' חסם את *כל* ההתקדמות. ברחוב עירוני בין בניינים דיוק
+// של 50–70 מ' הוא נפוץ לגמרי, והמשמעות הייתה משחק שקופא לחלוטין ואומר
+// "נקלט אות חלש" עד שהילד מוותר.
+//
+// אבל בדיוק כזה עדיין אפשר לומר בכנות "זה בכיוון הזה". מה שאי אפשר הוא
+// לומר "הוא כאן" — שם טעות של 60 מ' שולחת ילד לחפש במקום הלא נכון.
+export const ACC_DIRECTION = 85   // עד כאן מותר לתת כיוון ועקבות
+export const ACC_GATE = 40        // וכאן, רק כאן, מותר "הוא כאן"
+export const WALK_GATE = 40       // מטרים שנצברו בהליכה לפני שמשהו קורה.
+
+// מעל זה זה כבר לא רעש עירוני אלא מיקום מקורב — באייפון זה בדרך כלל
+// "מיקום מדויק" שכבוי בהרשאות האתר.
+export const ACC_COARSE = 200
 
 // כמה זמן צריך לעמוד במקום כדי שהמצלמה תיפתח. זה כלל הבטיחות שהפך
 // למכניקה — ובלעדיו כל שכבת ה-AR שבחרנו לא תקפה.
@@ -69,10 +81,14 @@ export function phaseOf({ dist, acc, walked, stillMs, resolved, active = true })
   // האמת: הוא באמת עוד לא יודע איפה.
   if (dist == null) return active ? PHASE.SIGNAL_WEAK : PHASE.IDLE
   if (walked < WALK_GATE) return PHASE.SIGNAL_WEAK
-  if (acc != null && acc > ACC_GATE) return PHASE.SIGNAL_WEAK
+  if (acc != null && acc > ACC_DIRECTION) return PHASE.SIGNAL_WEAK
 
   let p = PHASE.SIGNAL_WEAK
   for (const r of RING) if (dist <= r.within) p = r.phase
+
+  // "הוא כאן" דורש דיוק אמיתי. עם 60 מ' שגיאה זה שולח ילד לחפש בפינה
+  // הלא נכונה, ולכן שם נעצרים על "עקבות טריים" עד שהקליטה משתפרת.
+  if (p === PHASE.VERY_CLOSE && acc != null && acc > ACC_GATE) return PHASE.TRACE
 
   if (p === PHASE.VERY_CLOSE && stillMs >= STILL_MS) return PHASE.SAFE_STOP
   return p
