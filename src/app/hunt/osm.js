@@ -28,36 +28,50 @@ const TIER = {
 // שטחים שנקודה בתוכם נפסלת, גם אם עובר בהם שביל רשום.
 // שים לב ש-leisure=park ו-playground לא נמצאים כאן בכוונה — גן ציבורי הוא
 // מקום מצוין ליצור.
+// רשימה מצומצמת בכוונה. כל תגית נוספת היא עוד סריקה בשרת, ו-Overpass הוא
+// שירות מתנדבים — שאילתה כבדה נכנסת לתור ומרגישה כמו תקיעה.
 const FORBIDDEN_TAGS = [
-  '[landuse~"^(cemetery|industrial|military|quarry|landfill|railway|farmland|farmyard|orchard|vineyard|greenhouse_horticulture|allotments|forest|meadow|plant_nursery|basin|reservoir|construction|brownfield)$"]',
-  '[natural~"^(water|wood|scrub|wetland|beach|sand|bare_rock|grassland|heath)$"]',
-  '[amenity~"^(grave_yard|prison|hospital)$"]',
-  '[leisure~"^(nature_reserve|golf_course)$"]',
+  '[landuse~"^(cemetery|industrial|military|quarry|landfill|farmland|orchard|vineyard|forest|meadow|allotments)$"]',
+  '[natural~"^(water|wood|scrub|wetland|grassland)$"]',
+  '[amenity=grave_yard]',
   '[aeroway]',
 ]
 
 export function buildQuery(lat, lng, radius) {
-  const R = Math.round(radius * 1.45)
+  const R = Math.round(radius * 1.2)
   const around = `(around:${R},${lat},${lng})`
   const forbidden = FORBIDDEN_TAGS
     .flatMap(t => [`way${around}${t};`, `relation${around}${t};`])
     .join('')
-  return `[out:json][timeout:25];(` +
+  return `[out:json][timeout:20];(` +
     `way${around}[highway~"^(${WALKABLE})$"][foot!=no][access!=private];` +
     forbidden +
     `);out geom;`
 }
 
-export async function fetchStreets(lat, lng, radius, { signal } = {}) {
+// fetch בדפדפן מחכה לנצח אם השרת לא עונה — ו-Overpass הוא שירות מתנדבים
+// שלפעמים מכניס בקשה לתור ארוך. בלי הפסקת זמן מפורשת המשחק פשוט נתקע על
+// "בודקים אילו רחובות יש סביבכם".
+const TIMEOUT_MS = 10000
+
+export async function fetchStreets(lat, lng, radius, { signal, timeoutMs = TIMEOUT_MS } = {}) {
   const body = buildQuery(lat, lng, radius)
   let lastErr = null
   for (const url of ENDPOINTS) {
+    if (signal?.aborted) throw new Error('aborted')
+    const ctl = new AbortController()
+    const timer = setTimeout(() => ctl.abort(), timeoutMs)
+    const relay = () => ctl.abort()
+    signal?.addEventListener('abort', relay)
     try {
-      const res = await fetch(url, { method: 'POST', body, signal })
+      const res = await fetch(url, { method: 'POST', body, signal: ctl.signal })
       if (!res.ok) { lastErr = new Error('http ' + res.status); continue }
       return parseOverpass(await res.json())
     } catch (e) {
       lastErr = e
+    } finally {
+      clearTimeout(timer)
+      signal?.removeEventListener('abort', relay)
     }
   }
   throw lastErr || new Error('overpass unreachable')

@@ -126,6 +126,7 @@ export default function HuntPage() {
   const [busy, setBusy] = useState(false)
   const [caught, setCaught] = useState(null) // היצור שנתפס עכשיו
   const [sound, setSound] = useState(true)
+  const [slow, setSlow] = useState(false)
 
   const mapEl = useRef(null)
   const map = useRef(null)
@@ -136,6 +137,19 @@ export default function HuntPage() {
   const lastRustle = useRef(0)
   const follow = useRef(true)
   const osm = useRef(null)
+  const abort = useRef(null)
+
+  // אחרי שש שניות אומרים שזה נמשך, ונותנים דרך לצאת. אף מסך לא נשאר
+  // תקוע בלי מוצא.
+  useEffect(() => {
+    if (busy !== 'streets') { setSlow(false); return }
+    const t = setTimeout(() => setSlow(true), 6000)
+    return () => clearTimeout(t)
+  }, [busy])
+
+  function skipStreets() {
+    if (abort.current) abort.current.abort()
+  }
 
   // ── טעינת מצב שמור ──
   useEffect(() => {
@@ -203,11 +217,12 @@ export default function HuntPage() {
   // ושבילים באמת קיימים, ומניחים רק עליהם.
   async function planRoute(home, meters) {
     const radius = fetchRadiusFor(meters)
+    abort.current = new AbortController()
     try {
       const data = osm.current && osm.current.home.lat === home.lat &&
                    osm.current.home.lng === home.lng && osm.current.radius === radius
         ? osm.current.data
-        : await fetchStreets(home.lat, home.lng, radius)
+        : await fetchStreets(home.lat, home.lng, radius, { signal: abort.current?.signal })
       osm.current = { home, radius, data }
 
       // ── לולאה אמיתית: יוצאים מהבית, נעים בין הרחובות, וחוזרים ברחוב אחר ──
@@ -473,6 +488,12 @@ export default function HuntPage() {
               : busy === 'streets' ? 'בודקים אילו רחובות יש סביבכם…'
               : 'אני בבית — בונים מסלול'}
           </button>
+          {busy === 'streets' && slow && (
+            <p style={S.warn}>
+              שרת המפות מגיב לאט כרגע. עוד רגע נוותר עליו לבד ונבנה מסלול לפי מרחק —
+              או שאפשר <button onClick={skipStreets} style={S.linkBtn}>לדלג עכשיו</button>.
+            </p>
+          )}
           {geoErr && <p style={S.err}>{geoErr}</p>}
 
           <p style={S.fine}>
@@ -675,6 +696,10 @@ const S = {
   ok: {
     padding: '10px 13px', borderRadius: 10, background: '#E7EBDF',
     color: '#33452E', fontSize: 14, lineHeight: 1.55, margin: '0 0 12px',
+  },
+  linkBtn: {
+    background: 'none', border: 'none', padding: 0, font: 'inherit',
+    color: '#6B4A18', textDecoration: 'underline', cursor: 'pointer',
   },
   warn: {
     padding: '10px 13px', borderRadius: 10, background: '#F0E4CE',
