@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { MONSTERS } from '../monsters'
 import { AVATARS } from '../avatars'
 import { EncounterScene, ENCOUNTER_CSS, RARITY, rollRarity } from '../encounter'
+import { JOURNEYS, journeyOf } from '../world'
 import { ENEMIES } from '../world'
 
 // עמוד תצוגה למסך המפגש בלבד. לא חלק מהמשחק — כאן אפשר לראות את הרגע
@@ -13,7 +14,7 @@ const C = { cream: '#F3EDE1', card: '#FBF7EE', ink: '#22271E', soft: '#5A6154', 
 export default function EncounterDemo() {
   const [run, setRun] = useState(null)
   const [avatar, setAvatar] = useState('nova')
-  const [diff, setDiff] = useState('normal')
+  const [diff, setDiff] = useState('adventure')
   const [honey, setHoney] = useState(2)
   const [log, setLog] = useState([])
 
@@ -21,7 +22,7 @@ export default function EncounterDemo() {
     setRun({
       key: Date.now(),
       monsterId: MONSTERS[Math.floor(Math.random() * MONSTERS.length)].id,
-      rarity: forced ? RARITY[forced] : rollRarity(diff),
+      rarity: forced ? RARITY[forced] : rollRarity(journeyOf(diff).odds),
       enemy: Math.random() < 0.35 ? ENEMIES[Math.floor(Math.random() * ENEMIES.length)] : null,
       index: 1 + Math.floor(Math.random() * 5),
     })
@@ -51,11 +52,11 @@ export default function EncounterDemo() {
           ))}
         </div>
 
-        <p style={lbl}>קושי — משנה את הסיכוי לנדיר</p>
+        <p style={lbl}>סוג המסע — משנה את הסיכוי לנדיר</p>
         <div style={row}>
-          {[['easy', 'קל'], ['normal', 'בינוני'], ['hard', 'קשה']].map(([k, l]) => (
-            <button key={k} onClick={() => setDiff(k)}
-              style={{ ...chip, ...(diff === k ? chipOn : {}) }}>{l}</button>
+          {JOURNEYS.map(j => (
+            <button key={j.k} onClick={() => setDiff(j.k)}
+              style={{ ...chip, ...(diff === j.k ? chipOn : {}) }}>{j.label}</button>
           ))}
         </div>
 

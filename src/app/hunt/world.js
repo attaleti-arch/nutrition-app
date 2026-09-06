@@ -11,13 +11,31 @@ export const AVATARS = [
   { id: 'kai', emoji: '🧙', name: 'קאי' },
 ]
 
-// במקור אלה היו "קל / בינוני / קשה". ילד שנמנע מתנועה קורא "קשה", בוחר
-// "קל", ומרגיש שבחר בפחות — בדיוק התחושה שהמשחק אמור לעקוף. אותו מנגנון,
-// שם שמתאר אופי ולא יכולת.
+// שלושה סוגי מסע, בלי היררכיה. "קל / בינוני / קשה" מדרג את המאמץ של הילד
+// ומסמן לו שהוא בחר בפחות. כאן אף אחד מהם הוא לא "החלש" — לכל אחד אופי
+// ותמורה משלו, והילד בוחר איזו חוויה בא לו היום.
 export const JOURNEYS = [
-  { k: 'calm', label: 'שקטה', sub: 'כמעט בלי הפרעות', enemyChance: 0.25, escape: 0.9 },
-  { k: 'normal', label: 'רגילה', sub: 'משהו יקרה בדרך', enemyChance: 0.5, escape: 0.8 },
-  { k: 'wild', label: 'פראית', sub: 'הדרך לא תיתן לכם מנוחה', enemyChance: 0.8, escape: 0.65 },
+  {
+    k: 'calm', label: 'רגועה', sub: 'קצב ידוע מראש',
+    blurb: 'המפגשים מגיעים בקצב צפוי, בלי הפתעות גדולות.',
+    beats: { find: 2, choice: 1, hint: 1, enemy: 0 },
+    odds: { common: 0.72, rare: 0.24, legend: 0.04 },
+    lootMult: 1,
+  },
+  {
+    k: 'adventure', label: 'הרפתקה', sub: 'יותר הפתעות בדרך',
+    blurb: 'יותר דברים קורים בדרך, ויותר חומרים חוזרים הביתה.',
+    beats: { find: 3, choice: 2, hint: 1, enemy: 1 },
+    odds: { common: 0.62, rare: 0.30, legend: 0.08 },
+    lootMult: 1.6,
+  },
+  {
+    k: 'wild', label: 'פראית', sub: 'אויבים ויצורים שאין באחרות',
+    blurb: 'גנבים, עקבות נדירות ואירועים שלא קורים במסעות האחרים.',
+    beats: { find: 2, choice: 1, hint: 2, enemy: 2 },
+    odds: { common: 0.44, rare: 0.36, legend: 0.20 },
+    lootMult: 1.3,
+  },
 ]
 export const journeyOf = k => JOURNEYS.find(j => j.k === k) || JOURNEYS[1]
 

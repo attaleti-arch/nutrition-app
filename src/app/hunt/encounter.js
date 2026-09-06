@@ -16,18 +16,17 @@ export const RARITY = {
   legend: { k: 'legend', label: 'אגדי', color: '#C9762A', glow: 'rgba(201,118,42,.65)', mult: 4, sparks: 22 },
 }
 
-// ההסתברויות תלויות בקושי — זה מה שהופך "קשה" למפתה ולא רק לעונש
-export const RARITY_ODDS = {
-  easy: { common: 0.82, rare: 0.16, legend: 0.02 },
-  normal: { common: 0.66, rare: 0.27, legend: 0.07 },
-  hard: { common: 0.44, rare: 0.38, legend: 0.18 },
-}
+// לכל סוג מסע הסתברויות משלו — לא "יותר טוב", אלא אופי אחר. boost מגיע
+// מרמז שנמצא בדרך ומטה את הפגישה הבאה לכיוון הנדיר.
+export const DEFAULT_ODDS = { common: 0.62, rare: 0.30, legend: 0.08 }
 
-export function rollRarity(diff = 'normal') {
-  const odds = RARITY_ODDS[diff] || RARITY_ODDS.normal
+export function rollRarity(odds = DEFAULT_ODDS, boost = false) {
+  const o = odds || DEFAULT_ODDS
+  const legend = boost ? Math.min(0.5, o.legend * 2.6) : o.legend
+  const rare = boost ? Math.min(0.45, o.rare * 1.5) : o.rare
   const r = Math.random()
-  if (r < odds.legend) return RARITY.legend
-  if (r < odds.legend + odds.rare) return RARITY.rare
+  if (r < legend) return RARITY.legend
+  if (r < legend + rare) return RARITY.rare
   return RARITY.common
 }
 
