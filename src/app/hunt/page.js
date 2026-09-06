@@ -22,18 +22,34 @@ import { loadPlayer, savePlayer, clearPlayer, newPlayer, pushWorld, pullPlayer, 
 const STORE_KEY = 'hunt_v1'
 const LOOT_KINDS = ['wood', 'stone', 'flowers']
 
-// אורך הליכה בפועל על הרחובות. ~4 קמ"ש עם ילד, כולל עצירות לתפיסה.
-// מעט יצורים בכוונה: עשרה בחצי שעה זה אחד כל שלוש דקות, ואז אף אחד מהם
-// לא שווה כלום. שלושה בחצי שעה הופכים כל מפגש לאירוע.
-const LENGTHS = [
-  { k: 'short', label: 'קצר', mins: 30, meters: 2200, count: 3 },
-  { k: 'mid', label: 'רגיל', mins: 45, meters: 3200, count: 5 },
-  { k: 'long', label: 'ארוך', mins: 60, meters: 4200, count: 5, evolves: true },
+// ── שלוש רגליים, לא שלוש רמות ──
+// אין בחירת אורך לפני היציאה. שואלים ילד בבית "רוצה ללכת שעה?" והתשובה
+// ברורה. במקום זה יוצאים, ובדקה 30 — כשהוא כבר בחוץ ומסוקרן — מופיע פיתוי.
+//
+// כל רגל היא לולאה שמתחילה ונגמרת בבית, ולא קטע מתוך מסלול ארוך אחד. כך
+// בכל נקודת החלטה הילד עומד ליד הבית, ואפשר לעצור באמת.
+const LEGS = [
+  { i: 0, mins: 30, own: 30, meters: 2200, count: 3 },
+  { i: 1, mins: 45, own: 15, meters: 1100, count: 2 },
+  { i: 2, mins: 60, own: 15, meters: 1100, count: 2, evolves: true },
 ]
-const lengthOf = k => LENGTHS.find(l => l.k === k) || LENGTHS[1]
+const legOf = i => LEGS[Math.min(i ?? 0, LEGS.length - 1)]
+const lengthOf = t => legOf(typeof t === 'object' ? t?.leg : t)
 // כמה מפה להוריד: מספיק כדי שהלולאה תוכל להתפרש, בלי להוריד חצי עיר
 const fetchRadiusFor = meters => Math.max(450, Math.min(1250, Math.round(meters * 0.32)))
 const pick = arr => arr[Math.floor(Math.random() * arr.length)]
+
+// הפיתוי הוא סקרנות, לא חשבון. לא "רוצה ללכת עוד רבע שעה?" אלא משהו
+// שקרה עכשיו, ואי אפשר לדעת מה בסופו.
+const LURES = [
+  ['נמצאו עקבות שלא ראינו קודם. הן ממשיכות מכאן…', 'לעקוב אחרי העקבות'],
+  ['משהו זז מעבר לפינה. זה לא אחד מאלה שתפסתם.', 'ללכת לראות'],
+  ['אור חלש דולק במרחק. הוא לא היה שם בדרך לכאן.', 'להתקרב'],
+]
+const DEEP_LURES = [
+  ['אחד היצורים שלכם התחיל לזהור. משהו קורה לו…', 'להמשיך איתו'],
+  ['הריח המתוק חזר, חזק יותר מקודם.', 'ללכת אחריו'],
+]
 
 function todayKey() {
   const d = new Date()
@@ -119,7 +135,7 @@ function routeLength(home, pts) {
 function isStale(s) {
   const t = s.today
   if (!t || !t.route?.length) return true
-  return t.route.length !== lengthOf(t.len).count
+  return t.route.length !== legOf(t.leg).count
 }
 
 function load() {
@@ -188,6 +204,7 @@ export default function HuntPage() {
   const [nameIn, setNameIn] = useState('')
   const [codeIn, setCodeIn] = useState('')
   const [codeMsg, setCodeMsg] = useState(null)
+  const [lure, setLure] = useState(null)
   const [weak, setWeak] = useState(false)
 
   const mapEl = useRef(null)
@@ -307,12 +324,12 @@ export default function HuntPage() {
     setPos(fix)
 
     setBusy('streets')
-    const L = lengthOf(len)
+    const L = legOf(0)
     const built = await planRoute(home, L.meters, L.count)
     persist(prev => ({
       ...(prev || { totalPoints: 0, walks: 0 }),
       home, avatar, journey,
-      today: { date: todayKey(), done: false, len, loot: [], chase: null,
+      today: { date: todayKey(), done: false, leg: 0, bag: [], loot: [], chase: null,
                beats: buildBeats(journeyOf(journey), L.count), ...built },
     }))
     setScreen('preview')
@@ -367,10 +384,43 @@ export default function HuntPage() {
 
   async function reroll() {
     setBusy('streets')
-    const L = lengthOf(state.today.len)
+    const L = legOf(state.today.leg)
     const built = await planRoute(state.home, L.meters, L.count)
     persist(prev => ({ ...prev, today: { ...prev.today, ...built } }))
     setBusy(false)
+  }
+
+  // ── נקודת ההחלטה ──
+  // הגענו הביתה והרגל הושלמה. אם יש עוד רגל — מציעים אותה כפיתוי, לא
+  // כשאלה על זמן. אם לא — הפורטל.
+  async function continueOn() {
+    const next = (state.today.leg || 0) + 1
+    const L = legOf(next)
+    setBusy('streets')
+    const built = await planRoute(state.home, L.meters, L.count)
+    persist(prev => ({
+      ...prev,
+      today: {
+        ...prev.today,
+        leg: next,
+        bag: [...(prev.today.bag || []), ...prev.today.route.filter(m => m.caught)],
+        beats: buildBeats(journeyOf(prev.journey || 'adventure'), L.count),
+        chase: null, caughtThief: null,
+        ...built,
+      },
+    }))
+    walked.current = 0
+    lastFix.current = null
+    setBusy(false)
+    setScreen('preview')
+  }
+
+  function toPortal() {
+    persist(prev => ({
+      ...prev,
+      today: { ...prev.today, bag: [...(prev.today.bag || []), ...prev.today.route.filter(m => m.caught)] },
+    }))
+    setScreen('portal')
   }
 
   // תמיד חייבת להיות דרך לצאת ממסלול. בלי זה אפשר להיתקע במסלול שנבנה
@@ -484,8 +534,14 @@ export default function HuntPage() {
     const R = Math.min(60, Math.max(30, (pos.acc ?? 30) * 1.2))
     if (d <= R) {
       buzz([40, 70, 40, 70, 160])
-      persist(prev => ({ ...prev, walks: (prev.walks || 0) + 1, today: { ...prev.today, done: true } }))
-      setScreen('portal')
+      const last = (state.today.leg || 0) >= LEGS.length - 1
+      persist(prev => ({
+        ...prev,
+        walks: (prev.walks || 0) + (prev.today.leg === 0 ? 1 : 0),
+        today: { ...prev.today, done: last },
+      }))
+      if (last) { sfxFinish(); setScreen('portal') }
+      else { sfxAppear(); setLure(pick((state.today.leg || 0) === 0 ? LURES : DEEP_LURES)); setScreen('crossroads') }
     }
   }, [pos, screen, state?.home, persist])
 
@@ -493,7 +549,7 @@ export default function HuntPage() {
   useEffect(() => {
     if (screen !== 'hunt' || caught || beat || enemy || !state?.today) return
     const t = state.today
-    const target = lengthOf(t.len).meters
+    const target = legOf(t.leg).meters
     const prog = walked.current / target
     const next = (t.beats || []).find(x => !x.done && prog >= x.at)
     if (!next) return
@@ -693,8 +749,8 @@ export default function HuntPage() {
   function transfer() {
     persist(prev => {
       const t = prev.today
-      const L = lengthOf(t.len)
-      const caughtOnes = t.route.filter(m => m.caught)
+      const L = legOf(t.leg)
+      const caughtOnes = [...(t.bag || []), ...t.route.filter(m => m.caught)]
       const kept = [...(prev.kept || [])]
       caughtOnes.forEach((m, i) => kept.push({ kind: m.kind, evolved: !!(L.evolves && i === 0) }))
       const res = { ...(prev.res || {}) }
@@ -812,21 +868,8 @@ export default function HuntPage() {
             </div>
           )}
 
-          <p style={S.label}>כמה זמן יש לכם?</p>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 22 }}>
-            {LENGTHS.map(l => (
-              <button key={l.k} onClick={() => setLen(l.k)}
-                style={{ ...S.chip, ...(len === l.k ? S.chipOn : {}) }}>
-                {l.label}
-                <span style={{ display: 'block', fontSize: 12, fontWeight: 400, opacity: .8 }}>
-                  {l.mins} דק׳ · {l.count} יצורים
-                </span>
-              </button>
-            ))}
-          </div>
-
-          <p style={S.label}>איזו דרך?</p>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 22 }}>
+          <p style={S.label}>איזו דרך היום?</p>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
             {JOURNEYS.map(j => (
               <button key={j.k} onClick={() => setJourney(j.k)}
                 style={{ ...S.chip, ...(journey === j.k ? S.chipOn : {}) }}>
@@ -841,7 +884,7 @@ export default function HuntPage() {
           <button onClick={anchorHome} disabled={!!busy} style={S.cta}>
             {busy === 'fix' ? 'מחפשים אתכם על המפה…'
               : busy === 'streets' ? 'בודקים אילו רחובות יש סביבכם…'
-              : 'אני בבית — בונים מסלול'}
+              : 'צא למסע 🐾'}
           </button>
           {busy === 'streets' && slow && (
             <p style={S.warn}>
@@ -862,7 +905,7 @@ export default function HuntPage() {
         <div>
           <h1 style={{ ...S.h1, fontSize: 27 }}>המסלול של היום</h1>
           <p style={S.lede}>
-            {today && `${(today.km || routeLength(state.home, today.route) / 1000).toFixed(1)} ק״מ · בערך ${lengthOf(today.len).mins} דקות · ${today.route.length} יצורים`}
+            {today && `${(today.km || routeLength(state.home, today.route) / 1000).toFixed(1)} ק״מ · בערך ${legOf(today.leg).own} דקות · ${today.route.length} יצורים`}
           </p>
           {today?.path ? (
             <p style={S.ok}>
@@ -973,12 +1016,33 @@ export default function HuntPage() {
         </div>
       )}
 
+      {screen === 'crossroads' && today && lure && (
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 4 }}>
+            <Avatar id={state.avatar || 'nova'} size={96} mood="ready" />
+          </div>
+          <p style={S.crossKicker}>
+            {(today.leg || 0) === 0 ? 'המסע הושלם. הפורטל מוכן.' : 'עוד רגל הושלמה. הפורטל עדיין פתוח.'}
+          </p>
+          <p style={S.crossLine}>{lure[0]}</p>
+
+          <button onClick={continueOn} disabled={!!busy} style={{ ...S.cta, marginBottom: 10 }}>
+            {busy ? 'רגע…' : lure[1]}
+          </button>
+          <button onClick={toPortal} style={{ ...S.cta, ...S.ctaGhost }}>לחזור דרך הפורטל</button>
+
+          <p style={S.fine}>
+            אפשר לחזור עכשיו — <b>שום דבר לא הולך לאיבוד.</b> מה שנאסף כבר שלכם.
+          </p>
+        </div>
+      )}
+
       {screen === 'portal' && today && (
         <PortalScreen
-          creatures={today.route.filter(m => m.caught)
-            .map((m, i) => ({ kind: m.kind, evolved: !!(lengthOf(today.len).evolves && i === 0) }))}
+          creatures={[...(today.bag || []), ...today.route.filter(m => m.caught)]
+            .map((m, i) => ({ kind: m.kind, evolved: !!(legOf(today.leg).evolves && i === 0) }))}
           loot={today.loot || []}
-          evolved={!!lengthOf(today.len).evolves}
+          evolved={!!legOf(today.leg).evolves}
           onTransfer={transfer}
         />
       )}
@@ -1096,6 +1160,11 @@ const S = {
   divider: {
     display: 'flex', alignItems: 'center', gap: 12, margin: '24px 0 18px',
     color: '#5A6154', fontSize: 13.5,
+  },
+  crossKicker: { fontSize: 14.5, color: C.soft, margin: '0 0 6px' },
+  crossLine: {
+    fontFamily: 'inherit', fontSize: 22, fontWeight: 700, lineHeight: 1.45,
+    margin: '0 0 26px', textWrap: 'balance',
   },
   who: {
     display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20,
