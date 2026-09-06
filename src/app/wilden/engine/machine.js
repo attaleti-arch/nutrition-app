@@ -1,0 +1,255 @@
+// ─── מכונת המצבים ───
+// טהורה: מקבלת מצב ואירוע, מחזירה מצב חדש. אין בתוכה GPS, אין React,
+// אין localStorage ואין Date.now — כל אירוע נושא את הזמן שלו. זה מה
+// שמאפשר להריץ מסע שלם בבדיקה אוטומטית בלי לצאת לרחוב, ולתקן באגים
+// באמצע פיילוט של ארבעה־עשר יום בלי ללכת שוב ושוב.
+
+import { haversine, bearing, stepBetween, progressAlong } from './geo.js'
+import { phaseOf, powerOf, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL_STEP } from './beacon.js'
+import { placeTarget, revalidate, PLACE_AFTER } from './placement.js'
+
+export const S = {
+  BROKEN_WORLD: 'BROKEN_WORLD',     // עולם הבית ההרוס. נקודת הכניסה.
+  PERMISSIONS: 'PERMISSIONS',
+  ROUTE_BUILDING: 'ROUTE_BUILDING',
+  ROUTE_FAILED: 'ROUTE_FAILED',
+  SEARCH: 'SEARCH',                 // הליכה. שלב הביקון נגזר, לא נשמר.
+  ENCOUNTER: 'ENCOUNTER',           // מצלמה או סיפור — ראה encounterMode
+  BEFRIEND: 'BEFRIEND',
+  PORTAL: 'PORTAL',
+  HOME_RETURN: 'HOME_RETURN',
+  CLUE: 'CLUE',
+  RUN_COMPLETE: 'RUN_COMPLETE',
+  ABORTED: 'ABORTED',
+}
+
+// שני סוגי יציאה, מופרדים ברמת הארכיטקטורה מהיום הראשון. אם נוסיף את
+// זה מאוחר, מנוע ההתקדמות כולו ישתנה.
+export const RUN = {
+  STORY: 'STORY_MISSION',           // אחד ביום. מקדם עלילה.
+  FREE: 'FREE_EXPEDITION',          // בלי הגבלה. משאבים, קשר, נדירים — בלי עלילה.
+}
+
+// שני מצבי מפגש. "אין מצלמה" אינו דילוג על המפגש: אותו controller,
+// אותה בעיה, אותו befriending — בסביבה משחקית במקום פיד מצלמה.
+// היצור אף פעם לא מתקבל בחינם.
+export const MODE = { CAMERA: 'CAMERA', STORY: 'STORY' }
+
+export function initial() {
+  return {
+    v: 1,
+    state: S.BROKEN_WORLD,
+    run: null,
+    progress: {
+      missionsCompleted: 0,
+      lastStoryDay: null,
+      creatures: [],
+      res: {},
+      story: {},
+    },
+  }
+}
+
+// ── מי מותר לצאת עכשיו ──
+// משימה סיפורית אחת ליום — כדי שיישאר בראש "מחר בולדי ימשיך לבנות".
+// אבל אין שום נעילה של יציאה נוספת: ילד שמתלהב ורוצה לצאת שוב בערב
+// יוצא, וזה בדיוק ההפך מ"תחזור מחר".
+export function canStartStory(progress, day) {
+  return progress.lastStoryDay !== day
+}
+
+export function nextRunKind(progress, day) {
+  return canStartStory(progress, day) ? RUN.STORY : RUN.FREE
+}
+
+// ── הביקון, נגזר ולא נשמר ──
+// שלב החיפוש הוא פונקציה של המרחק, הדיוק, מה שנצבר בהליכה וכמה זמן
+// עומדים. לשמור אותו כמצב נפרד היה יוצר שני מקורות אמת שנפרדים זה מזה
+// בדיוק כשה-GPS קופץ.
+export function beaconView(g) {
+  const r = g.run
+  const power = powerOf(g.progress.missionsCompleted)
+  if (!r || g.state !== S.SEARCH) {
+    return { power, phase: PHASE.IDLE, ...PHASE_COPY[PHASE.IDLE], arrow: false, bearing: null }
+  }
+  const dist = r.target && r.pos ? haversine(r.pos, r.target) : null
+  const phase = phaseOf({
+    dist, acc: r.acc, walked: r.walked, stillMs: r.stillMs, resolved: r.resolved,
+  })
+  return {
+    power,
+    phase,
+    ...PHASE_COPY[phase],
+    arrow: showsArrow(phase, r.acc) && !!r.target && !!r.pos,
+    bearing: r.target && r.pos ? bearing(r.pos, r.target) : null,
+    canSearch: phase === PHASE.SAFE_STOP,
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// הרדוסר
+// ═══════════════════════════════════════════════════════════════
+
+export function reduce(g, ev) {
+  switch (ev.type) {
+
+    case 'START_RUN': {
+      const kind = ev.kind || nextRunKind(g.progress, ev.day)
+      if (kind === RUN.STORY && !canStartStory(g.progress, ev.day)) {
+        return { ...g, state: S.BROKEN_WORLD, notice: 'story-done-today' }
+      }
+      return {
+        ...g,
+        state: S.PERMISSIONS,
+        notice: null,
+        run: {
+          kind,
+          missionId: ev.missionId || null,
+          day: ev.day,
+          startedAt: ev.t,
+          home: null, path: null, pos: null, lastFix: null,
+          acc: null, walked: 0, along: 0,
+          target: null, resolved: false,
+          encounterMode: null, stillMs: 0,
+          loot: [],
+        },
+      }
+    }
+
+    case 'PERMISSION_GRANTED':
+      return { ...g, state: S.ROUTE_BUILDING, run: { ...g.run, home: ev.home } }
+
+    case 'PERMISSION_DENIED':
+      // בלי מיקום אין משחק. זה השער היחיד שבאמת חוסם.
+      return { ...g, state: S.BROKEN_WORLD, run: null, notice: 'no-location' }
+
+    case 'ROUTE_READY':
+      return { ...g, state: S.SEARCH, run: { ...g.run, path: ev.path, home: ev.home ?? g.run.home } }
+
+    case 'ROUTE_FAILED':
+      return { ...g, state: S.ROUTE_FAILED }
+
+    // ── הדופק של המשחק ──
+    case 'FIX': {
+      if (g.state !== S.SEARCH || !g.run) return g
+      const r = g.run
+      const pos = { lat: ev.lat, lng: ev.lng }
+
+      const step = stepBetween(r.lastFix, pos)
+      const walked = r.walked + step
+
+      // "עומד במקום" נמדד מהתנועה בפועל ולא משעון: ילד שנוסע באוטובוס
+      // לא עומד, וילד שמסתובב בלי לזוז כן.
+      const dt = r.lastT ? Math.max(0, ev.t - r.lastT) : 0
+      const stillMs = step < STILL_STEP ? r.stillMs + dt : 0
+
+      let target = r.target
+      const along = r.path ? progressAlong(r.path, pos).along : 0
+
+      // היעד נוצר רק אחרי שהילד באמת יצא לדרך, וקדימה על המסלול שהוא
+      // כבר הולך בו.
+      if (!target && r.path && walked >= PLACE_AFTER) {
+        target = placeTarget(r.path, along)
+      }
+
+      return {
+        ...g,
+        run: { ...r, pos, lastFix: pos, lastT: ev.t, acc: ev.acc ?? null, walked, along, target, stillMs },
+      }
+    }
+
+    // ── resume אחרי שהילד סגר וזז ──
+    // מצב הסיפור וכל מה שהושג נשמרים. המיקום נבדק מחדש, ואם הילד כבר
+    // איפה שהוא — היעד עובר אליו במקום להחזיר אותו לאתמול.
+    case 'RESUME': {
+      if (!g.run || g.state !== S.SEARCH) return g
+      const r = g.run
+      const pos = { lat: ev.lat, lng: ev.lng }
+      const v = revalidate({ path: r.path, target: r.target, pos })
+
+      if (v.action === 'rebuild-route') {
+        return { ...g, state: S.ROUTE_BUILDING, run: { ...r, home: pos, path: null, target: null, pos, lastFix: pos, lastT: ev.t, stillMs: 0 } }
+      }
+      const target = v.action === 'keep' ? r.target : placeTarget(r.path, v.at)
+      return {
+        ...g,
+        run: { ...r, pos, lastFix: pos, lastT: ev.t, acc: ev.acc ?? null, along: v.at, target, stillMs: 0 },
+      }
+    }
+
+    // ── הילד עצר ולחץ "חפש אותו" ──
+    case 'SEARCH_PRESSED': {
+      const view = beaconView(g)
+      if (!view.canSearch) return g
+      return { ...g, state: S.ENCOUNTER, run: { ...g.run, encounterMode: null } }
+    }
+
+    case 'CAMERA_READY':
+      return { ...g, run: { ...g.run, encounterMode: MODE.CAMERA } }
+
+    // מצלמה נדחתה — לא מדלגים על המפגש. אותו controller, בלי פיד.
+    case 'CAMERA_DENIED':
+      return { ...g, run: { ...g.run, encounterMode: MODE.STORY } }
+
+    case 'ENCOUNTER_RESOLVED': {
+      if (g.state !== S.ENCOUNTER) return g
+      if (!ev.befriended) {
+        // נכשל אינו "איבדת" — היצור עדיין שם, והחיפוש ממשיך.
+        return { ...g, state: S.SEARCH, run: { ...g.run, stillMs: 0, encounterMode: null } }
+      }
+      return { ...g, state: S.BEFRIEND, run: { ...g.run, resolved: true } }
+    }
+
+    case 'PORTAL_OPEN':
+      return { ...g, state: S.PORTAL }
+
+    case 'PORTAL_ENTERED': {
+      const r = g.run
+      const isStory = r.kind === RUN.STORY
+      const creatures = r.creature && !g.progress.creatures.includes(r.creature)
+        ? [...g.progress.creatures, r.creature]
+        : g.progress.creatures
+      const res = { ...g.progress.res }
+      for (const k of r.loot || []) res[k] = (res[k] || 0) + 1
+
+      return {
+        ...g,
+        state: isStory ? S.CLUE : S.RUN_COMPLETE,
+        progress: {
+          ...g.progress,
+          creatures,
+          res,
+          // רק משימה סיפורית מקדמת את העולם ואת הביקון.
+          missionsCompleted: isStory ? g.progress.missionsCompleted + 1 : g.progress.missionsCompleted,
+          lastStoryDay: isStory ? r.day : g.progress.lastStoryDay,
+          story: isStory && r.missionId
+            ? { ...g.progress.story, [r.missionId]: 'done' }
+            : g.progress.story,
+        },
+      }
+    }
+
+    case 'CLUE_SEEN':
+      return { ...g, state: S.RUN_COMPLETE }
+
+    case 'RUN_CLOSED':
+      return { ...g, state: S.BROKEN_WORLD, run: null }
+
+    case 'ABORT':
+      // "לעצור" שומר הכל. אין עונש על לחזור הביתה.
+      return { ...g, state: S.ABORTED, run: { ...g.run, resolved: false } }
+
+    case 'SET_CREATURE':
+      return { ...g, run: { ...g.run, creature: ev.id } }
+
+    case 'ADD_LOOT':
+      return { ...g, run: { ...g.run, loot: [...(g.run.loot || []), ev.kind] } }
+
+    default:
+      return g
+  }
+}
+
+export function run(state, events) {
+  return events.reduce(reduce, state)
+}

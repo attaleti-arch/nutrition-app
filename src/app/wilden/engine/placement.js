@@ -1,0 +1,64 @@
+// ─── איפה היצור נמצא ───
+// במשחק הקודם היעד קיבל נקודת GPS בזמן בניית המסלול, והילד היה חייב
+// להגיע לתוך 28 מ' ממנה. במסע 1 יש יצור אחד — ואם הנקודה נפלה מאחורי
+// גדר, שער נעול או חצר פרטית, המסע לא ניתן להשלמה בכלל.
+//
+// כאן היעד נוצר *קדימה על המסלול שהילד כבר הולך בו*, בתוך המסלול
+// שה-routing ושכבת הבטיחות כבר אימתו. הוא תמיד נגיש, תמיד על רחוב
+// אמיתי, ואף פעם לא מעבר לגדר.
+
+import { pointAlong, pathLength, progressAlong, haversine } from './geo.js'
+
+// כמה קדימה למקם. מספיק רחוק כדי שתהיה הליכה אמיתית, מספיק קרוב כדי
+// שהילד לא יאבד עניין בדרך.
+export const AHEAD_MIN = 220
+export const AHEAD_MAX = 420
+
+// לא ממקמים לפני שהילד באמת יצא לדרך. זה גם מונע יעד שנוחת בסלון.
+export const PLACE_AFTER = 60
+
+export function placeTarget(path, walkedAlong, { ahead, endBufferM = 120 } = {}) {
+  if (!path || path.length < 2) return null
+  const total = pathLength(path)
+  const dist = ahead ?? AHEAD_MIN + Math.random() * (AHEAD_MAX - AHEAD_MIN)
+
+  // משאירים מרווח לפני סוף הלולאה: יצור שנוחת עשרה מטר מהבית גורם
+  // למסע להיגמר לפני שהתחיל.
+  const maxAlong = Math.max(walkedAlong + 60, total - endBufferM)
+  const at = Math.min(walkedAlong + dist, maxAlong)
+
+  const p = pointAlong(path, at)
+  if (!p) return null
+  return { lat: p.point.lat, lng: p.point.lng, along: at }
+}
+
+// ── resume אחרי שהילד סגר וזז ──
+// שומרים את מצב הסיפור ואת מה שכבר הושג, אבל לא מכריחים אותו לחזור
+// פיזית לנקודה של אתמול. אם הוא כבר איפה שהיה היעד — או עבר אותו, או
+// שהוא בכלל רחוק מהמסלול — היעד נוצר מחדש קדימה מהמקום שבו הוא עומד
+// עכשיו.
+export const REVALIDATE_OFFPATH = 150   // מטר מהמסלול = כבר לא אותו מסלול
+export const REVALIDATE_PASSED = 30     // עבר את היעד בלי שהמפגש קרה
+
+export function revalidate({ path, target, pos }) {
+  if (!path || path.length < 2) return { action: 'rebuild-route' }
+  const here = progressAlong(path, pos)
+
+  if (here.offPath > REVALIDATE_OFFPATH) {
+    // הילד לא על המסלול הזה בכלל. המסלול עצמו צריך להיבנות מחדש
+    // סביב המקום שבו הוא עומד — אבל הסיפור וההתקדמות נשמרים.
+    return { action: 'rebuild-route', reason: 'off-path', offPath: here.offPath }
+  }
+
+  if (!target) {
+    return { action: 'place', at: here.along }
+  }
+
+  const passed = here.along > target.along - REVALIDATE_PASSED
+  const behind = haversine(pos, target) > 40 && passed
+  if (passed || behind) {
+    return { action: 'replace', at: here.along, reason: 'passed' }
+  }
+
+  return { action: 'keep', at: here.along }
+}
