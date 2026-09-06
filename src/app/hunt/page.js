@@ -28,10 +28,13 @@ const LOOT_KINDS = ['wood', 'stone', 'flowers']
 //
 // כל רגל היא לולאה שמתחילה ונגמרת בבית, ולא קטע מתוך מסלול ארוך אחד. כך
 // בכל נקודת החלטה הילד עומד ליד הבית, ואפשר לעצור באמת.
+// שלושה מפגשים ב-30, חמישה ב-45 — ובשישים *אותם חמישה*, ועוד משהו
+// שלא יכול לקרות במסע קצר. הרגל השלישית היא לא "עוד שניים", היא מפגש
+// אחד מיוחד: נדיר לפחות, ובסופו התפתחות שהילד בוחר.
 const LEGS = [
   { i: 0, mins: 30, own: 30, meters: 2200, count: 3 },
   { i: 1, mins: 45, own: 15, meters: 1100, count: 2 },
-  { i: 2, mins: 60, own: 15, meters: 1100, count: 2, evolves: true },
+  { i: 2, mins: 60, own: 15, meters: 1000, count: 1, deep: true },
 ]
 const legOf = i => LEGS[Math.min(i ?? 0, LEGS.length - 1)]
 const lengthOf = t => legOf(typeof t === 'object' ? t?.leg : t)
@@ -205,6 +208,7 @@ export default function HuntPage() {
   const [codeIn, setCodeIn] = useState('')
   const [codeMsg, setCodeMsg] = useState(null)
   const [lure, setLure] = useState(null)
+  const [evolvePick, setEvolvePick] = useState(null)
   const [weak, setWeak] = useState(false)
 
   const mapEl = useRef(null)
@@ -497,10 +501,14 @@ export default function HuntPage() {
     if (best.idx >= 0 && best.dist <= R) {
       const m = route[best.idx]
       const j = journeyOf(state.journey || 'adventure')
+      const deep = legOf(state.today.leg).deep
       buzz([30, 60, 120])
       setCaught({
         ...m, idx: best.idx,
-        rarity: rollRarity(j.odds, rareBoost),
+        // ברגל העמוקה אין מפגש רגיל. זה כל מה שהיא נותנת, אז הוא שווה משהו.
+        rarity: deep
+          ? (Math.random() < 0.45 ? RARITY.legend : RARITY.rare)
+          : rollRarity(j.odds, rareBoost),
       })
       setRareBoost(false)
     }
@@ -752,7 +760,7 @@ export default function HuntPage() {
       const L = legOf(t.leg)
       const caughtOnes = [...(t.bag || []), ...t.route.filter(m => m.caught)]
       const kept = [...(prev.kept || [])]
-      caughtOnes.forEach((m, i) => kept.push({ kind: m.kind, evolved: !!(L.evolves && i === 0) }))
+      caughtOnes.forEach((m, i) => kept.push({ kind: m.kind, evolved: L.deep && i === evolvePick }))
       const res = { ...(prev.res || {}) }
       for (const k of t.loot || []) res[k] = (res[k] || 0) + 1
       return {
@@ -762,6 +770,7 @@ export default function HuntPage() {
         today: { ...t, transferred: true },
       }
     })
+    setEvolvePick(null)
     sfxFinish()
     setScreen('world')
     // מסנכרנים רק כאן: בזמן ההליכה יכול להיות שאין קליטה, ואין סיבה
@@ -1040,9 +1049,11 @@ export default function HuntPage() {
       {screen === 'portal' && today && (
         <PortalScreen
           creatures={[...(today.bag || []), ...today.route.filter(m => m.caught)]
-            .map((m, i) => ({ kind: m.kind, evolved: !!(legOf(today.leg).evolves && i === 0) }))}
+            .map(m => ({ kind: m.kind }))}
           loot={today.loot || []}
-          evolved={!!legOf(today.leg).evolves}
+          evolved={!!legOf(today.leg).deep}
+          chosen={evolvePick}
+          onChoose={setEvolvePick}
           onTransfer={transfer}
         />
       )}

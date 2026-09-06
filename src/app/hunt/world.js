@@ -91,7 +91,9 @@ export function EnemyOverlay({ enemy, stolen, escaped, onClose }) {
 }
 
 // ── הפורטל ──
-export function PortalScreen({ creatures, loot, evolved, onTransfer }) {
+// evolvePick: כשחזרו מהרגל העמוקה, הילד בוחר מי מתפתח. במפרט זה "התפתחות
+// של יצור שהילד בוחר" — לא של מי שנתפס ראשון.
+export function PortalScreen({ creatures, loot, evolved, chosen, onChoose, onTransfer }) {
   return (
     <div style={{ textAlign: 'center' }}>
       <div style={{ fontSize: 96, animation: 'huntSpin 7s linear infinite' }}>🌀</div>
@@ -101,10 +103,21 @@ export function PortalScreen({ creatures, loot, evolved, onTransfer }) {
       <div style={w.tray}>
         <div style={w.trayRow}>
           {creatures.map((c, i) => (
-            <span key={i} style={{ position: 'relative' }}>
-              <Monster id={c.kind} size={46} />
-              {c.evolved && <span style={w.spark}>✨</span>}
-            </span>
+            evolved ? (
+              <button key={i} onClick={() => onChoose(i)} style={{
+                ...w.pickBtn,
+                borderColor: chosen === i ? C.signal : 'transparent',
+                background: chosen === i ? '#FDF1E2' : 'transparent',
+              }}>
+                <Monster id={c.kind} size={46} />
+                {chosen === i && <span style={w.spark}>✨</span>}
+              </button>
+            ) : (
+              <span key={i} style={{ position: 'relative' }}>
+                <Monster id={c.kind} size={46} />
+                {c.evolved && <span style={w.spark}>✨</span>}
+              </span>
+            )
           ))}
         </div>
         <div style={w.trayRow}>
@@ -115,11 +128,22 @@ export function PortalScreen({ creatures, loot, evolved, onTransfer }) {
         </div>
       </div>
 
-      {evolved && <p style={w.evolveNote}>✨ יצור אחד התפתח במסלול הארוך</p>}
-      <button onClick={onTransfer} style={w.cta}>העבירו למימד הבית</button>
+      {evolved && (
+        <p style={w.evolveNote}>
+          {chosen == null
+            ? '✨ הגעתם עמוק. אחד מהם יכול להתפתח — בחרו מי.'
+            : '✨ ' + monsterName(creatures[chosen]?.kind) + ' יתפתח.'}
+        </p>
+      )}
+      <button onClick={onTransfer} disabled={evolved && chosen == null}
+        style={{ ...w.cta, opacity: evolved && chosen == null ? 0.5 : 1 }}>
+        העבירו למימד הבית
+      </button>
     </div>
   )
 }
+
+const monsterName = id => (MONSTERS.find(m => m.id === id) || {}).name || ''
 
 export function countLoot(loot) {
   return loot.reduce((acc, k) => ({ ...acc, [k]: (acc[k] || 0) + 1 }), {})
@@ -216,6 +240,10 @@ const w = {
     padding: '6px 13px', fontSize: 15, fontVariantNumeric: 'tabular-nums',
   },
   spark: { position: 'absolute', insetInlineEnd: -2, top: -4, fontSize: 15 },
+  pickBtn: {
+    position: 'relative', border: '2.5px solid transparent', borderRadius: 14,
+    padding: 4, cursor: 'pointer', lineHeight: 0, transition: 'border-color .2s, background .2s',
+  },
   evolveNote: { color: C.signal, fontWeight: 700, margin: '0 0 16px' },
   scene: {
     position: 'relative', height: 220, borderRadius: 18, overflow: 'hidden',
