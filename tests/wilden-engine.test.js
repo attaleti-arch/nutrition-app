@@ -15,6 +15,7 @@ import { forServer } from '../src/app/wilden/engine/persist.js'
 import { revalidate, PLACE_AFTER } from '../src/app/wilden/engine/placement.js'
 import { STRUCTURE, GUARDIAN_STATE, affordanceOf, isEnterable, KRAAG_AWAKENS } from '../src/app/wilden/content/canon.js'
 import nimi from '../src/app/wilden/ar/controllers/nimi.js'
+import { buildLoop, fallbackLoop, normalize } from '../src/app/wilden/engine/route.js'
 
 const HOME = { lat: 32.0853, lng: 34.7818 }
 const DAY = '2026-09-06'
@@ -464,4 +465,79 @@ test('phaseOf שותק רק כשאין מסע', () => {
   const off = { dist: null, acc: 10, walked: 0, stillMs: 0, resolved: false, active: false }
   assert.equal(phaseOf(off), PHASE.IDLE)
   assert.equal(phaseOf({ ...off, active: true }), PHASE.SIGNAL_WEAK)
+})
+
+// ══════════════════════════════════════════════
+// שרשרת בניית המסלול
+// שני באגי אינטגרציה ברצף חמקו מכאן כי הלוגיקה ישבה בתוך hook. עכשיו
+// היא פונקציה טהורה, ומריצים עליה תשובת Overpass שמורה — בלי רשת.
+
+// רשת רחובות סינתטית: 5×5 בלוקים במרווח 150 מ', בפורמט של Overpass.
+function fakeOverpass(home, n = 9, gap = 220) {
+  const elements = []
+  const at = (i, j) => {
+    const p = destination(destination(home, 0, (i - (n - 1) / 2) * gap), 90, (j - (n - 1) / 2) * gap)
+    return { lat: p.lat, lon: p.lng }
+  }
+  let id = 1
+  for (let i = 0; i < n; i++) {
+    elements.push({ type: 'way', id: id++, tags: { highway: 'residential' },
+      geometry: Array.from({ length: n }, (_, j) => at(i, j)) })
+    elements.push({ type: 'way', id: id++, tags: { highway: 'residential' },
+      geometry: Array.from({ length: n }, (_, j) => at(j, i)) })
+  }
+  return { elements }
+}
+
+test('מסלול: תשובת Overpass גולמית הופכת ללולאה', () => {
+  const r = buildLoop(fakeOverpass(HOME), HOME)
+  assert.equal(r.ok, true, `נכשל עם ${r.reason}`)
+  assert.ok(r.path.length >= 8, 'ולולאה אמיתית, לא שני קווים')
+})
+
+test('מסלול: הלולאה מתחילה ונגמרת ליד הבית', () => {
+  const { path } = buildLoop(fakeOverpass(HOME), HOME)
+  assert.ok(haversine(path[0], HOME) < 200, 'מתחילה ליד הבית')
+  assert.ok(haversine(path[path.length - 1], HOME) < 200, 'וחוזרת אליו')
+})
+
+test('מסלול: תשובה שכבר פוענחה עובדת גם היא', () => {
+  // זה בדיוק הבאג הראשון: fetchStreets מחזירה מפוענח, והקוד פענח שוב.
+  const parsed = normalize(fakeOverpass(HOME))
+  const r = buildLoop(parsed, HOME)
+  assert.equal(r.ok, true, `נכשל עם ${r.reason} — פענוח כפול זרק את הנתונים`)
+})
+
+test('מסלול: כל כשל מקבל שם משלו', () => {
+  assert.equal(buildLoop({ elements: [] }, HOME).reason, 'empty')
+  assert.equal(buildLoop(null, HOME).reason, 'empty')
+  // רחוב בודד — יש צמתים, אין לולאה
+  const one = { elements: [{ type: 'way', id: 1, tags: { highway: 'residential' },
+    geometry: [{ lat: HOME.lat, lon: HOME.lng }, { lat: HOME.lat + 0.002, lon: HOME.lng }] }] }
+  assert.ok(['no-loop', 'short-loop'].includes(buildLoop(one, HOME).reason))
+})
+
+test('מסלול: החלופי תמיד קיים, וסגור', () => {
+  const fb = fallbackLoop(HOME)
+  assert.ok(fb.length >= 8)
+  assert.deepEqual(fb[0], HOME)
+  assert.deepEqual(fb[fb.length - 1], HOME, 'מתחיל ונגמר בבית')
+})
+
+test('מסלול: שטח אסור לא נכנס ללולאה', () => {
+  const base = fakeOverpass(HOME)
+  // בית קברות שמכסה את כל הרבע הצפוני-מזרחי
+  const c1 = destination(HOME, 45, 300), c2 = destination(HOME, 45, 800)
+  base.elements.push({
+    type: 'way', id: 999, tags: { landuse: 'cemetery' },
+    geometry: [
+      { lat: c1.lat, lon: c1.lng }, { lat: c2.lat, lon: c1.lng },
+      { lat: c2.lat, lon: c2.lng }, { lat: c1.lat, lon: c2.lng },
+      { lat: c1.lat, lon: c1.lng },
+    ],
+  })
+  const r = buildLoop(base, HOME)
+  assert.equal(r.ok, true, `נכשל עם ${r.reason}`)
+  const { blocked } = normalize(base)
+  assert.ok(blocked.length > 0, 'השטח האסור אכן נקרא')
 })
