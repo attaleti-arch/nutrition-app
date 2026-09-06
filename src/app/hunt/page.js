@@ -12,6 +12,7 @@ import {
 import { EncounterScene, ENCOUNTER_CSS, RARITY, rollRarity } from './encounter'
 import { buildBeats, pickFind, pickHint, pickChoice, BeatOverlay, BEATS_CSS } from './beats'
 import { Avatar } from './avatars'
+import { loadPlayer, savePlayer, clearPlayer, newPlayer, pushWorld, pullPlayer, normCode } from './player'
 
 // ─────────────────────────────────────────────────────────────
 // ציד היצורים — מסלול אחד, שעה בחוץ, עשרה יצורים, וחזרה הביתה.
@@ -179,10 +180,14 @@ export default function HuntPage() {
   const [sound, setSound] = useState(true)
   const [slow, setSlow] = useState(false)
   const [avatar, setAvatar] = useState('nova')
-  const [journey, setJourney] = useState('normal')
+  const [journey, setJourney] = useState('adventure')
   const [enemy, setEnemy] = useState(null)
   const [beat, setBeat] = useState(null)
   const [rareBoost, setRareBoost] = useState(false)
+  const [player, setPlayer] = useState(null)
+  const [nameIn, setNameIn] = useState('')
+  const [codeIn, setCodeIn] = useState('')
+  const [codeMsg, setCodeMsg] = useState(null)
   const [weak, setWeak] = useState(false)
 
   const mapEl = useRef(null)
@@ -213,11 +218,15 @@ export default function HuntPage() {
 
   // ── טעינת מצב שמור ──
   useEffect(() => {
+    const pl = loadPlayer()
+    if (!pl) { setState({ totalPoints: 0, walks: 0 }); setPlayer(null); setScreen('who'); return }
+    setPlayer(pl)
+    setAvatar(pl.avatar || 'nova')
     const s = load()
     if (!s || !s.home) { setState({ totalPoints: 0, walks: 0 }); setScreen('intro'); return }
     setState(s)
     setAvatar(s.avatar || 'nova')
-    setJourney(s.journey || 'normal')
+    setJourney(s.journey || 'adventure')
     if (s.today && s.today.date === todayKey() && !s.today.done && !isStale(s)) {
       setScreen(s.today.route.every(m => m.caught) ? 'homeward' : 'hunt')
     } else if (s.today?.done && !s.today.transferred) {
@@ -226,6 +235,38 @@ export default function HuntPage() {
       setScreen('intro')
     }
   }, [])
+
+  function createProfile() {
+    const pl = newPlayer({ name: nameIn, avatar })
+    savePlayer(pl)
+    setPlayer(pl)
+    const fresh = { totalPoints: 0, walks: 0 }
+    setState(fresh); save(fresh)
+    pushWorld(pl, fresh)                    // מיטב מאמץ; אם אין רשת, יסונכרן בפורטל
+    sfxAppear()
+    setScreen('intro')
+  }
+
+  async function restoreProfile() {
+    const c = normCode(codeIn)
+    if (c.length < 4) { setCodeMsg('הקוד קצר מדי'); return }
+    setCodeMsg('מחפשים…')
+    const r = await pullPlayer(c)
+    if (!r.ok) {
+      setCodeMsg(r.reason === 'not-found'
+        ? 'לא מצאנו עולם עם הקוד הזה. בדקו את האותיות.'
+        : 'לא הצלחנו להתחבר כרגע. אפשר להתחיל עולם חדש ולנסות שוב אחר כך.')
+      return
+    }
+    const pl = { code: r.row.code, name: r.row.name, avatar: r.row.avatar, created: null }
+    savePlayer(pl)
+    setPlayer(pl)
+    setAvatar(pl.avatar || 'nova')
+    const world = { totalPoints: 0, walks: 0, ...(r.row.world || {}) }
+    setState(world); save(world)
+    sfxFinish()
+    setScreen('intro')
+  }
 
   const persist = useCallback((updater) => {
     setState(prev => {
@@ -667,6 +708,9 @@ export default function HuntPage() {
     })
     sfxFinish()
     setScreen('world')
+    // מסנכרנים רק כאן: בזמן ההליכה יכול להיות שאין קליטה, ואין סיבה
+    // להטריד את הרשת באמצע מסע.
+    setTimeout(() => { const w = load(); if (w && player) pushWorld(player, w) }, 400)
   }
 
   function build(kind) {
@@ -703,10 +747,63 @@ export default function HuntPage() {
 
   return (
     <Shell>
+      {screen === 'who' && (
+        <div>
+          <h1 style={S.h1}>מי יוצא לדרך?</h1>
+          <p style={S.lede}>בוחרים דמות ושם. העולם שתבנו יישמר עליהם.</p>
+
+          <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+            {AVATARS.map(a => (
+              <button key={a.id} onClick={() => setAvatar(a.id)}
+                style={{ ...S.chip, ...(avatar === a.id ? S.chipOn : {}), padding: '14px 6px 11px' }}>
+                <span style={{ display: 'block', marginBottom: 4 }}>
+                  <span style={{ display: 'inline-block' }}><Avatar id={a.id} size={54} /></span>
+                </span>
+                {a.name}
+              </button>
+            ))}
+          </div>
+
+          <p style={S.label}>איך קוראים לך?</p>
+          <input value={nameIn} onChange={e => setNameIn(e.target.value)} maxLength={20}
+            placeholder="השם שלך" style={S.input} />
+
+          <button onClick={createProfile} style={{ ...S.cta, marginTop: 14 }}>מתחילים עולם חדש</button>
+
+          <div style={S.divider}>
+            <span style={{ flex: 1, height: 1, background: '#DCD2BE' }} />
+            <span>או</span>
+            <span style={{ flex: 1, height: 1, background: '#DCD2BE' }} />
+          </div>
+
+          <p style={S.label}>כבר יש לכם קוד? הכניסו אותו וכל העולם יחזור</p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <input value={codeIn} onChange={e => setCodeIn(normCode(e.target.value))}
+              placeholder="ABC12" maxLength={5}
+              style={{ ...S.input, textAlign: 'center', letterSpacing: '.22em', fontWeight: 800, direction: 'ltr' }} />
+            <button onClick={restoreProfile} style={{ ...S.cta, ...S.ctaGhost, flex: '0 0 40%', marginTop: 0 }}>
+              שחזור
+            </button>
+          </div>
+          {codeMsg && <p style={S.fine}>{codeMsg}</p>}
+        </div>
+      )}
+
       {screen === 'intro' && (
         <div>
+          {player && (
+            <div style={S.who}>
+              <Avatar id={player.avatar || avatar} size={44} />
+              <div style={{ flex: 1 }}>
+                <b style={{ fontSize: 16 }}>{player.name}</b>
+                <span style={{ display: 'block', fontSize: 12.5, color: C.soft }}>
+                  קוד לשחזור: <b style={{ letterSpacing: '.14em', direction: 'ltr', display: 'inline-block' }}>{player.code}</b>
+                </span>
+              </div>
+            </div>
+          )}
           <h1 style={S.h1}>ציד היצורים</h1>
-          <p style={S.lede}>יוצאים מהבית, מסתובבים בשכונה, אוספים עשרה יצורים — וחוזרים הביתה.</p>
+          <p style={S.lede}>יוצאים מהבית, מסתובבים בשכונה, אוספים יצורים — וחוזרים הביתה דרך הפורטל.</p>
 
           {state?.totalPoints > 0 && (
             <div style={S.stats}>
@@ -714,17 +811,6 @@ export default function HuntPage() {
               <div><b style={S.statN}>{state.walks || 0}</b><span style={S.statL}>{(state.walks || 0) === 1 ? 'מסלול' : 'מסלולים'}</span></div>
             </div>
           )}
-
-          <p style={S.label}>מי יוצא לדרך?</p>
-          <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-            {AVATARS.map(a => (
-              <button key={a.id} onClick={() => setAvatar(a.id)}
-                style={{ ...S.chip, ...(avatar === a.id ? S.chipOn : {}), paddingBlock: 12 }}>
-                <span style={{ fontSize: 30, display: 'block', lineHeight: 1.1 }}>{a.emoji}</span>
-                {a.name}
-              </button>
-            ))}
-          </div>
 
           <p style={S.label}>כמה זמן יש לכם?</p>
           <div style={{ display: 'flex', gap: 8, marginBottom: 22 }}>
@@ -1002,6 +1088,18 @@ const S = {
     position: 'absolute', insetInlineStart: 10, bottom: 8, zIndex: 500,
     filter: 'drop-shadow(0 3px 6px rgba(0,0,0,.35))', pointerEvents: 'none',
     animation: 'huntStep 2.4s ease-in-out infinite',
+  },
+  input: {
+    width: '100%', padding: '13px 14px', borderRadius: 12, fontFamily: 'inherit',
+    fontSize: 16.5, border: '1.5px solid #DCD2BE', background: '#FBF7EE', color: '#22271E',
+  },
+  divider: {
+    display: 'flex', alignItems: 'center', gap: 12, margin: '24px 0 18px',
+    color: '#5A6154', fontSize: 13.5,
+  },
+  who: {
+    display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20,
+    padding: '10px 14px', borderRadius: 14, background: '#FBF7EE', border: '1px solid #DCD2BE',
   },
   linkBtn: {
     background: 'none', border: 'none', padding: 0, font: 'inherit',
