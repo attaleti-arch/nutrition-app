@@ -16,6 +16,7 @@ import { revalidate, PLACE_AFTER } from '../src/app/wilden/engine/placement.js'
 import { STRUCTURE, GUARDIAN_STATE, affordanceOf, isEnterable, KRAAG_AWAKENS } from '../src/app/wilden/content/canon.js'
 import nimi from '../src/app/wilden/ar/controllers/nimi.js'
 import { buildLoop, fallbackLoop, normalize } from '../src/app/wilden/engine/route.js'
+import { getCached, putCached } from '../src/app/wilden/engine/routeCache.js'
 
 const HOME = { lat: 32.0853, lng: 34.7818 }
 const DAY = '2026-09-06'
@@ -618,4 +619,55 @@ test('הליכה: נסיעה ברכב לא נספרת כהליכה', () => {
     t += 10000
   }
   assert.equal(g.run.walked, 0, 'קפיצות של 200 מ׳ אינן צעדים')
+})
+
+// ══════════════════════════════════════════════
+// זיכרון מסלולים
+// ילד יוצא מאותה דלת כל יום. Overpass איטית מהטלפון, וההמתנה דוחפת
+// ללחוץ "לדלג עכשיו" — כלומר למסלול חלופי גרוע יותר, כל יום מחדש.
+
+test('זיכרון: מסלול חוזר מאותו בית', () => {
+  const store = {}
+  global.localStorage = {
+    getItem: k => store[k] ?? null,
+    setItem: (k, v) => { store[k] = v },
+    removeItem: k => { delete store[k] },
+  }
+  const path = Array.from({ length: 12 }, (_, i) => destination(HOME, i * 30, 200))
+
+  assert.equal(getCached(HOME), null, 'בפעם הראשונה אין מה לזכור')
+  assert.equal(putCached(HOME, path), true)
+  assert.ok(getCached(HOME), 'ובפעם השנייה הוא שם — בלי רשת')
+
+  // אותו בניין, GPS שסטה קצת — עדיין אותו תא
+  const drifted = destination(HOME, 45, 40)
+  assert.ok(getCached(drifted), 'סטייה של 40 מ׳ לא מאבדת את המסלול')
+
+  // בית אחר לגמרי
+  assert.equal(getCached(destination(HOME, 0, 5000)), null)
+})
+
+test('זיכרון: מסלול ישן נשכח', () => {
+  const store = {}
+  global.localStorage = {
+    getItem: k => store[k] ?? null,
+    setItem: (k, v) => { store[k] = v },
+    removeItem: k => { delete store[k] },
+  }
+  const path = Array.from({ length: 12 }, (_, i) => destination(HOME, i * 30, 200))
+  const longAgo = Date.now() - 40 * 86400000
+  putCached(HOME, path, longAgo)
+  assert.equal(getCached(HOME), null, 'רחובות לא זזים, אבל בית כן')
+})
+
+test('זיכרון: מסלול פגום לא נשמר', () => {
+  const store = {}
+  global.localStorage = {
+    getItem: k => store[k] ?? null,
+    setItem: (k, v) => { store[k] = v },
+    removeItem: k => { delete store[k] },
+  }
+  assert.equal(putCached(HOME, null), false)
+  assert.equal(putCached(HOME, [HOME, HOME]), false, 'שתי נקודות אינן לולאה')
+  assert.equal(getCached(HOME), null)
 })

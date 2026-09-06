@@ -54,27 +54,39 @@ export function buildQuery(lat, lng, radius) {
 // "בודקים אילו רחובות יש סביבכם".
 const TIMEOUT_MS = 10000
 
+// ── שני השרתים במקביל, לא בזה אחר זה ──
+// Overpass הוא שירות מתנדבים, ולפעמים מכניס בקשה לתור ארוך. בגרסה
+// הקודמת חיכינו לראשון עד סוף הפסקת הזמן ורק אז ניסינו את השני — כלומר
+// במקרה הרע כפול הזמן, וילד עומד ברחוב מול "בודקים אילו רחובות".
+// כאן שניהם יוצאים יחד ומי שעונה ראשון מנצח.
 export async function fetchStreets(lat, lng, radius, { signal, timeoutMs = TIMEOUT_MS } = {}) {
   const body = buildQuery(lat, lng, radius)
-  let lastErr = null
-  for (const url of ENDPOINTS) {
-    if (signal?.aborted) throw new Error('aborted')
-    const ctl = new AbortController()
-    const timer = setTimeout(() => ctl.abort(), timeoutMs)
-    const relay = () => ctl.abort()
-    signal?.addEventListener('abort', relay)
-    try {
-      const res = await fetch(url, { method: 'POST', body, signal: ctl.signal })
-      if (!res.ok) { lastErr = new Error('http ' + res.status); continue }
-      return parseOverpass(await res.json())
-    } catch (e) {
-      lastErr = e
-    } finally {
-      clearTimeout(timer)
-      signal?.removeEventListener('abort', relay)
-    }
+  const ctl = new AbortController()
+  const timer = setTimeout(() => ctl.abort(), timeoutMs)
+  const relay = () => ctl.abort()
+  signal?.addEventListener('abort', relay)
+
+  const tries = ENDPOINTS.map(url =>
+    fetch(url, { method: 'POST', body, signal: ctl.signal })
+      .then(res => {
+        if (!res.ok) throw new Error('http ' + res.status)
+        return res.json()
+      })
+      .then(parseOverpass)
+  )
+
+  try {
+    // any: מחזיר את הראשון שהצליח, ולא את הראשון שהסתיים.
+    const won = await Promise.any(tries)
+    ctl.abort()          // השני כבר לא מעניין
+    return won
+  } catch (e) {
+    if (signal?.aborted) { const a = new Error('aborted'); a.name = 'AbortError'; throw a }
+    throw new Error('overpass unreachable')
+  } finally {
+    clearTimeout(timer)
+    signal?.removeEventListener('abort', relay)
   }
-  throw lastErr || new Error('overpass unreachable')
 }
 
 // מפריד את התשובה לשני דברים: נקודות שאפשר לעמוד עליהן, ומצולעים שפוסלים.

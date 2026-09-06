@@ -2,6 +2,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { fetchStreets } from '../engine/osm'
 import { buildLoop, fallbackLoop, TARGET_M } from '../engine/route'
+import { getCached, putCached } from '../engine/routeCache'
 
 // ─── בניית הלולאה ───
 // ה-hook עושה שני דברים בלבד: מביא מ-Overpass, ומנהל מצב מסך. כל החישוב
@@ -29,6 +30,17 @@ export function useRoute() {
 
   const build = useCallback(async home => {
     setStatus('working'); setDegraded(false); setPath(null); setReason(null)
+
+    // ── מסלול שכבר נבנה מהבית הזה ──
+    // ילד בפיילוט יוצא מאותה דלת כל יום. אין סיבה לחכות ל-Overpass בפעם
+    // השנייה והעשירית — וזה בדיוק מה שקרה: המתנה, "לוקח יותר מהרגיל",
+    // ואז מסלול חלופי גרוע יותר. פעם אחת מספיקה.
+    const remembered = getCached(home)
+    if (remembered) {
+      setPath(remembered); setStatus('ok')
+      return remembered
+    }
+
     const ctl = new AbortController()
     abort.current = ctl
     clearTimeout(softTimer.current)
@@ -54,6 +66,7 @@ export function useRoute() {
     abort.current = null
 
     if (out.ok) {
+      putCached(home, out.path)      // כדי שהפעם הבאה תהיה מיידית
       setPath(out.path); setStatus('ok')
       return out.path
     }
