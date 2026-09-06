@@ -51,9 +51,14 @@ export const WALK_GATE = 40     // מטרים שנצברו בהליכה לפני
 export const STILL_MS = 3000
 export const STILL_STEP = 3     // מטרים. פחות מזה נחשב "עומד".
 
-export function phaseOf({ dist, acc, walked, stillMs, resolved }) {
+export function phaseOf({ dist, acc, walked, stillMs, resolved, active = true }) {
   if (resolved) return PHASE.IDLE
-  if (dist == null) return PHASE.IDLE
+  // ── לפני שהיעד קיים ──
+  // בתחילת מסע היעד עדיין לא הונח, ולכן אין מרחק. בגרסה הקודמת זה החזיר
+  // IDLE — כלומר הביקון שתק בדיוק ברגע שהילד יוצא מהבית וצריך לדעת
+  // שמשהו קורה. עכשיו הוא אומר "נקלט אות חלש. המשיכו ללכת", וזו גם
+  // האמת: הוא באמת עוד לא יודע איפה.
+  if (dist == null) return active ? PHASE.SIGNAL_WEAK : PHASE.IDLE
   if (walked < WALK_GATE) return PHASE.SIGNAL_WEAK
   if (acc != null && acc > ACC_GATE) return PHASE.SIGNAL_WEAK
 

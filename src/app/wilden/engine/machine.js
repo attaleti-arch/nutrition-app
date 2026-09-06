@@ -5,7 +5,7 @@
 // באמצע פיילוט של ארבעה־עשר יום בלי ללכת שוב ושוב.
 
 import { haversine, bearing, stepBetween, progressAlong } from './geo.js'
-import { phaseOf, powerOf, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL_STEP } from './beacon.js'
+import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL_STEP } from './beacon.js'
 import { placeTarget, revalidate, PLACE_AFTER } from './placement.js'
 
 export const S = {
@@ -68,13 +68,20 @@ export function nextRunKind(progress, day) {
 // בדיוק כשה-GPS קופץ.
 export function beaconView(g) {
   const r = g.run
-  const power = powerOf(g.progress.missionsCompleted)
+  const done = g.progress.missionsCompleted
   if (!r || g.state !== S.SEARCH) {
-    return { power, phase: PHASE.IDLE, ...PHASE_COPY[PHASE.IDLE], arrow: false, bearing: null }
+    return { power: powerOf(done), phase: PHASE.IDLE, ...PHASE_COPY[PHASE.IDLE], arrow: false, bearing: null }
   }
+
+  // ── הביקון ער בזמן מסע ──
+  // powerOf נגזר ממשימות שהושלמו, ולכן במסע הראשון הוא החזיר DORMANT:
+  // אבן אפורה וכבויה בדיוק במסע שכל הסיפור שלו הוא "הביקון זז לראשונה
+  // מאז שהאור כבה". בזמן יציאה הוא לפחות REACTIVE.
+  const power = done === 0 ? POWER[1] : powerOf(done)
+
   const dist = r.target && r.pos ? haversine(r.pos, r.target) : null
   const phase = phaseOf({
-    dist, acc: r.acc, walked: r.walked, stillMs: r.stillMs, resolved: r.resolved,
+    dist, acc: r.acc, walked: r.walked, stillMs: r.stillMs, resolved: r.resolved, active: true,
   })
   return {
     power,

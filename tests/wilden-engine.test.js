@@ -440,3 +440,28 @@ test('נימי: הטקסט אף פעם לא אומר לילד שהוא טעה', 
   }
   assert.notEqual(all[0].line, all[1].line, 'והטקסט מתקדם אחרי שקראנו ענף')
 })
+
+// ══════════════════════════════════════════════
+// שלושה באגים שנמצאו רק על טלפון אמיתי ברחוב
+
+test('הביקון ער כבר במסע הראשון', () => {
+  let g = started()
+  assert.equal(beaconView(g).power, 'REACTIVE',
+    'במסע 1 הוא היה DORMANT — אבן אפורה במסע שכולו "הביקון זז לראשונה"')
+  assert.equal(beaconView(initial()).power, 'DORMANT', 'אבל בעולם ההרוס, לפני יציאה, כן')
+})
+
+test('הביקון מדבר גם לפני שהיעד הונח', () => {
+  let g = started()
+  assert.equal(g.run.target, null)
+  const v = beaconView(g)
+  assert.equal(v.phase, PHASE.SIGNAL_WEAK,
+    'בתחילת מסע הוא החזיר IDLE ולא אמר כלום — בדיוק כשהילד יוצא מהבית')
+  assert.ok(v.line.length > 0, 'ויש טקסט')
+})
+
+test('phaseOf שותק רק כשאין מסע', () => {
+  const off = { dist: null, acc: 10, walked: 0, stillMs: 0, resolved: false, active: false }
+  assert.equal(phaseOf(off), PHASE.IDLE)
+  assert.equal(phaseOf({ ...off, active: true }), PHASE.SIGNAL_WEAK)
+})

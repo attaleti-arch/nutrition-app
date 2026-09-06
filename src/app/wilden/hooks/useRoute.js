@@ -1,6 +1,6 @@
 'use client'
 import { useCallback, useRef, useState } from 'react'
-import { fetchStreets, parseOverpass, pickSpotsAdaptive } from '../engine/osm'
+import { fetchStreets } from '../engine/osm'
 import { buildGraph, planLoop, loopCoords, nearestNode } from '../engine/routing'
 import { destination } from '../engine/geo'
 
@@ -23,6 +23,7 @@ export function useRoute() {
   const [status, setStatus] = useState('idle')   // idle | working | slow | ok | failed
   const [path, setPath] = useState(null)
   const [degraded, setDegraded] = useState(false)
+  const [reason, setReason] = useState(null)   // למה נפלנו לחלופי, בשמו
   const abort = useRef(null)
   const softTimer = useRef(null)
 
@@ -37,10 +38,17 @@ export function useRoute() {
 
     try {
       const radius = Math.max(450, Math.min(1250, Math.round(TARGET_M * 0.32)))
-      const json = await fetchStreets(home.lat, home.lng, radius, {
+
+      // fetchStreets כבר מחזירה תוצאה מפוענחת. בגרסה הקודמת העברתי אותה
+      // שוב דרך parseOverpass, שמחפשת json.elements — שדה שלא קיים בה.
+      // התוצאה: הנתונים נזרקו, הגרף יצא ריק, וכל מסלול נפל לחלופי.
+      // בסביבת הפיתוח Overpass חסומה, ולכן הנתיב היה זהה ושום בדיקה לא
+      // יכלה לתפוס את זה. זה התגלה רק על טלפון אמיתי ברחוב.
+      const { ways, blocked } = await fetchStreets(home.lat, home.lng, radius, {
         signal: ctl.signal, timeoutMs: FETCH_TIMEOUT,
       })
-      const { ways, blocked } = parseOverpass(json)
+      if (!ways || !ways.length) throw new Error('empty')
+
       const graph = buildGraph(ways, blocked)
       const start = nearestNode(graph, home)
       if (start == null) throw new Error('no-node')
@@ -52,13 +60,18 @@ export function useRoute() {
       if (!coords || coords.length < 8) throw new Error('short-loop')
 
       clearTimeout(softTimer.current)
-      setPath(coords); setStatus('ok')
+      setPath(coords); setStatus('ok'); setReason(null)
       return coords
     } catch (e) {
       // ── המסלול החלופי ──
       // מרובע גס סביב הבית. הוא לא מוצמד לרחובות, ולכן הוא רק רשת אחרונה
       // ולא ברירת מחדל: הילד עדיין יוצא, אבל בלי הבטחת הבטיחות של OSM.
+      //
+      // הסיבה נשמרת בנפרד. "לא הצלחנו לקרוא את הרחובות" כיסה קודם חמישה
+      // כשלים שונים — רשת, אפס דרכים, אין צומת, אין לולאה — ואי אפשר היה
+      // לדעת מה נשבר בשדה.
       clearTimeout(softTimer.current)
+      setReason(e?.message || 'unknown')
       const r = TARGET_M / 6.5
       const ring = [0, 45, 90, 135, 180, 225, 270, 315].map(b => destination(home, b, r))
       const fallback = [home, ...ring, home]
@@ -69,5 +82,5 @@ export function useRoute() {
     }
   }, [])
 
-  return { status, path, degraded, build, skip }
+  return { status, path, degraded, reason, build, skip }
 }

@@ -40,8 +40,8 @@ export default function Wilden() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (!new URLSearchParams(window.location.search).has('debug')) return
-    window.__wilden = { state: g, view: beaconView(g) }
-  }, [g])
+    window.__wilden = { state: g, view: beaconView(g), route: { degraded: route.degraded, reason: route.reason, status: route.status } }
+  }, [g, route.degraded, route.reason, route.status])
 
   const onFix = useCallback(f => dispatch({ type: 'FIX', ...f }), [])
   const onResume = useCallback(f => dispatch({ type: 'RESUME', ...f }), [])
@@ -143,7 +143,7 @@ export default function Wilden() {
         )}
 
         {g.state === S.SEARCH && (
-          <SearchScreen g={g} view={view} geo={geo} degraded={route.degraded}
+          <SearchScreen g={g} view={view} geo={geo} degraded={route.degraded} reason={route.reason}
             onSearch={() => dispatch({ type: 'SEARCH_PRESSED' })}
             onAbort={() => dispatch({ type: 'ABORT' })} />
         )}
@@ -249,7 +249,7 @@ function BrokenWorld({ g, today, onStart }) {
 }
 
 // ── מסך החיפוש ──
-function SearchScreen({ g, view, geo, degraded, onSearch, onAbort }) {
+function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort }) {
   const hot = view.phase === PHASE.VERY_CLOSE || view.phase === PHASE.SAFE_STOP
   return (
     <>
@@ -275,7 +275,14 @@ function SearchScreen({ g, view, geo, degraded, onSearch, onAbort }) {
         <p style={s.warn}>הקליטה חלשה. המשיכו ללכת, זה משתפר.</p>
       )}
       {degraded && (
-        <p style={s.note}>לא הצלחנו לקרוא את הרחובות כאן. המסלול כללי — עברו עליו לפני שיוצאים.</p>
+        <p style={s.note}>
+          {reason === 'no-loop' || reason === 'short-loop'
+            ? 'לא מצאנו כאן לולאה שחוזרת הביתה. המסלול כללי — עברו עליו לפני שיוצאים.'
+            : reason === 'empty' || reason === 'no-node'
+              ? 'לא מצאנו רחובות ממופים סביב הבית. המסלול כללי — עברו עליו לפני שיוצאים.'
+              : 'לא הצלחנו להתחבר למפה כרגע. המסלול כללי — עברו עליו לפני שיוצאים.'}
+          {reason && <span style={{ opacity: .55 }}> ({reason})</span>}
+        </p>
       )}
 
       <button onClick={onAbort} style={{ ...s.cta, ...s.ctaGhost, marginTop: 26 }}>לעצור</button>
