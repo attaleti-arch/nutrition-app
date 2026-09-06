@@ -9,7 +9,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import { destination, haversine, stepBetween, progressAlong } from '../src/app/wilden/engine/geo.js'
-import { phaseOf, powerOf, PHASE, ACC_GATE, WALK_GATE, STILL_MS } from '../src/app/wilden/engine/beacon.js'
+import { phaseOf, powerOf, PHASE, ACC_GATE, WALK_GATE, STILL_MS, STILL_RADIUS } from '../src/app/wilden/engine/beacon.js'
 import { initial, reduce, run, beaconView, S, RUN, MODE, canStartStory } from '../src/app/wilden/engine/machine.js'
 import { forServer } from '../src/app/wilden/engine/persist.js'
 import { revalidate, PLACE_AFTER } from '../src/app/wilden/engine/placement.js'
@@ -540,4 +540,72 @@ test('מסלול: שטח אסור לא נכנס ללולאה', () => {
   assert.equal(r.ok, true, `נכשל עם ${r.reason}`)
   const { blocked } = normalize(base)
   assert.ok(blocked.length > 0, 'השטח האסור אכן נקרא')
+})
+
+// ══════════════════════════════════════════════
+// הליכה בקצב אמיתי
+// כל הבדיקות עד כאן "הלכו" בקפיצות של 15 מ' — וזה בדיוק מה שהסתיר את
+// הבאג שהרג את המסע הראשון בשטח. GPS בטלפון דוגם כפעם בשנייה, ובהליכה
+// זה כמטר וחצי. אם נקודת הייחוס מתקדמת בכל דגימה, כל צעד נופל מתחת
+// לסף הרעש והמונה נשאר על אפס לנצח.
+
+function strollTo(g, meters, { acc = 8, perFix = 1.5, t0 = 1000, hz = 1000 } = {}) {
+  let t = t0
+  for (let d = perFix; d <= meters; d += perFix) {
+    const p = destination(HOME, 0, d)
+    g = reduce(g, { type: 'FIX', lat: p.lat, lng: p.lng, acc, t })
+    t += hz
+  }
+  return g
+}
+
+test('הליכה: מטר וחצי בין דגימות עדיין נספר', () => {
+  let g = strollTo(started(), 300)
+  assert.ok(g.run.walked > 250,
+    `הלכנו 300 מ׳ ונספרו ${g.run.walked.toFixed(0)} — זה הבאג שתקע את הביקון על "אות חלש"`)
+})
+
+test('הליכה: הביקון מתעורר תוך כדי, לא אחרי', () => {
+  let g = strollTo(started(), 300)
+  assert.ok(g.run.target, 'היעד הונח')
+  const v = beaconView(g)
+  assert.notEqual(v.phase, PHASE.SIGNAL_WEAK,
+    'אחרי 300 מ׳ הליכה הוא כבר לא אמור להיות תקוע על "נקלט אות חלש"')
+  assert.equal(v.arrow, true, 'ויש חץ')
+})
+
+test('הליכה: עמידה במקום עדיין לא סופרת', () => {
+  let g = started()
+  const p = destination(HOME, 0, 5)
+  // מאה דגימות באותה נקודה, עם רעש של חצי מטר לכל כיוון
+  for (let i = 0; i < 100; i++) {
+    const j = destination(p, (i * 47) % 360, 0.5)
+    g = reduce(g, { type: 'FIX', lat: j.lat, lng: j.lng, acc: 8, t: 1000 + i * 1000 })
+  }
+  assert.ok(g.run.walked < 15,
+    `רעש מקלט צבר ${g.run.walked.toFixed(0)} מ׳ — הסף אמור לפסול אותו`)
+})
+
+test('הליכה: "עומד במקום" נמדד מתזוזה אמיתית', () => {
+  // ילד שהולך לא אמור להיחשב עומד, גם כשהצעד הבודד קטן מהסף
+  let g = strollTo(started(), 200)
+  assert.equal(g.run.stillMs, 0, 'בהליכה רצופה אין עצירה')
+
+  // ואז הוא עוצר
+  const at = destination(HOME, 0, 200)
+  for (let i = 0; i < 8; i++) {
+    g = reduce(g, { type: 'FIX', lat: at.lat, lng: at.lng, acc: 8, t: 500000 + i * 1000 })
+  }
+  assert.ok(g.run.stillMs >= STILL_MS, 'ואחרי חמש שניות במקום — כן')
+})
+
+test('הליכה: נסיעה ברכב לא נספרת כהליכה', () => {
+  let g = started()
+  let t = 1000
+  for (let d = 200; d <= 4000; d += 200) {   // 200 מ׳ בין דגימות = ~70 קמ"ש
+    const p = destination(HOME, 0, d)
+    g = reduce(g, { type: 'FIX', lat: p.lat, lng: p.lng, acc: 8, t })
+    t += 10000
+  }
+  assert.equal(g.run.walked, 0, 'קפיצות של 200 מ׳ אינן צעדים')
 })

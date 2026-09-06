@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { Beacon, BeaconLine, BEACON_CSS } from '../ui/Beacon'
-import { phaseOf, powerOf, PHASE, PHASE_COPY, POWER, ACC_GATE, WALK_GATE, STILL_MS } from '../engine/beacon'
+import { phaseOf, powerOf, PHASE, PHASE_COPY, POWER, ACC_GATE, WALK_GATE, STILL_MS, STILL_RADIUS } from '../engine/beacon'
 
 // ─── מעבדת הביקון ───
 // אי אפשר לבדוק ביקון בלי ללכת חצי שעה ברחוב — אלא אם מזיזים את
@@ -82,7 +82,7 @@ export default function BeaconLab() {
         <Slider label="נצבר בהליכה" v={walked} set={setWalked} min={0} max={800} step={10} unit=" מ׳"
           note={`מתחת ל-${WALK_GATE} שום דבר לא קורה. זה הבאג של "שני יצורים בלי צעד".`} />
         <Slider label="עומד במקום" v={still} set={setStill} min={0} max={6000} step={250} unit=" מ״ש"
-          note={`${STILL_MS} מ״ש פותחות את המצלמה. כלל הבטיחות כמכניקה.`} />
+          note={`${STILL_MS} מ״ש בתוך ${STILL_RADIUS} מ׳ פותחות את המצלמה.`} />
         <Slider label="כיוון היעד" v={bearing} set={setBearing} min={0} max={359} step={1} unit="°" />
 
         <p style={{ fontSize: 13.5, fontWeight: 700, color: C.muted, margin: '26px 0 8px' }}>

@@ -11,8 +11,8 @@ import { pointAlong, pathLength, progressAlong, haversine } from './geo.js'
 
 // כמה קדימה למקם. מספיק רחוק כדי שתהיה הליכה אמיתית, מספיק קרוב כדי
 // שהילד לא יאבד עניין בדרך.
-export const AHEAD_MIN = 220
-export const AHEAD_MAX = 420
+export const AHEAD_MIN = 180
+export const AHEAD_MAX = 300
 
 // לא ממקמים לפני שהילד באמת יצא לדרך. זה גם מונע יעד שנוחת בסלון.
 export const PLACE_AFTER = 60

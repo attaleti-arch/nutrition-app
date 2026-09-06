@@ -35,7 +35,9 @@ export const PHASE = {
 }
 
 const RING = [
-  { phase: PHASE.DIRECTION, within: 250 },
+  // הסף הרחב תואם למרחק שבו היעד מונח (180–300 מ'), כדי שהביקון יתעורר
+  // באותו רגע ולא אחרי עוד מאה מטר של "נקלט אות חלש".
+  { phase: PHASE.DIRECTION, within: 340 },
   { phase: PHASE.TRACE, within: 120 },
   { phase: PHASE.VERY_CLOSE, within: 45 },
 ]
@@ -48,8 +50,15 @@ export const WALK_GATE = 40     // מטרים שנצברו בהליכה לפני
 
 // כמה זמן צריך לעמוד במקום כדי שהמצלמה תיפתח. זה כלל הבטיחות שהפך
 // למכניקה — ובלעדיו כל שכבת ה-AR שבחרנו לא תקפה.
-export const STILL_MS = 3000
-export const STILL_STEP = 3     // מטרים. פחות מזה נחשב "עומד".
+// ── "עומד במקום" נמדד ברדיוס, לא בין שתי דגימות ──
+// GPS דוגם כפעם בשנייה, ובהליכה זה כמטר וחצי — כלומר *כל* דגימה בודדת
+// נראית כמו עמידה, והמצלמה הייתה נפתחת באמצע הליכה. בדיוק מה שכלל
+// הבטיחות בא למנוע.
+//
+// לכן מודדים מרחק מנקודת ייחוס: מי שנשאר בתוך 4 מ' במשך 4 שניות באמת
+// עומד. הולך חוצה 4 מ' תוך כשלוש שניות ומאפס לפני שהספיק.
+export const STILL_MS = 4000
+export const STILL_RADIUS = 4
 
 export function phaseOf({ dist, acc, walked, stillMs, resolved, active = true }) {
   if (resolved) return PHASE.IDLE

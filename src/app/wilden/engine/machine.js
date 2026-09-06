@@ -4,8 +4,8 @@
 // שמאפשר להריץ מסע שלם בבדיקה אוטומטית בלי לצאת לרחוב, ולתקן באגים
 // באמצע פיילוט של ארבעה־עשר יום בלי ללכת שוב ושוב.
 
-import { haversine, bearing, stepBetween, progressAlong } from './geo.js'
-import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL_STEP } from './beacon.js'
+import { haversine, bearing, advanceWalk, progressAlong } from './geo.js'
+import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL_RADIUS } from './beacon.js'
 import { placeTarget, revalidate, PLACE_AFTER } from './placement.js'
 
 export const S = {
@@ -114,7 +114,7 @@ export function reduce(g, ev) {
           missionId: ev.missionId || null,
           day: ev.day,
           startedAt: ev.t,
-          home: null, path: null, pos: null, lastFix: null,
+          home: null, path: null, pos: null, lastFix: null, walkRef: null, stillRef: null,
           acc: null, walked: 0, along: 0,
           target: null, resolved: false,
           encounterMode: null, stillMs: 0,
@@ -142,13 +142,18 @@ export function reduce(g, ev) {
       const r = g.run
       const pos = { lat: ev.lat, lng: ev.lng }
 
-      const step = stepBetween(r.lastFix, pos)
-      const walked = r.walked + step
+      // נקודת הייחוס זזה רק כשהצעד נספר, אחרת הליכה רגילה — מטר וחצי בין
+      // דגימה לדגימה — נופלת כולה מתחת לסף הרעש והמונה נשאר על אפס.
+      const w = advanceWalk(r.walkRef, pos)
+      const walked = r.walked + w.add
 
-      // "עומד במקום" נמדד מהתנועה בפועל ולא משעון: ילד שנוסע באוטובוס
-      // לא עומד, וילד שמסתובב בלי לזוז כן.
+      // "עומד" נמדד כשהייה בתוך רדיוס, לא כהפרש בין שתי דגימות: בקצב
+      // הליכה כל דגימה בודדת קטנה מהסף, וכל הליכה הייתה נספרת כעמידה.
       const dt = r.lastT ? Math.max(0, ev.t - r.lastT) : 0
-      const stillMs = step < STILL_STEP ? r.stillMs + dt : 0
+      const drift = r.stillRef ? haversine(r.stillRef, pos) : 0
+      const staying = r.stillRef && drift <= STILL_RADIUS
+      const stillMs = staying ? r.stillMs + dt : 0
+      const stillRef = staying ? r.stillRef : pos
 
       let target = r.target
       const along = r.path ? progressAlong(r.path, pos).along : 0
@@ -161,7 +166,7 @@ export function reduce(g, ev) {
 
       return {
         ...g,
-        run: { ...r, pos, lastFix: pos, lastT: ev.t, acc: ev.acc ?? null, walked, along, target, stillMs },
+        run: { ...r, pos, lastFix: pos, walkRef: w.ref, stillRef, lastT: ev.t, acc: ev.acc ?? null, walked, along, target, stillMs },
       }
     }
 
@@ -175,12 +180,12 @@ export function reduce(g, ev) {
       const v = revalidate({ path: r.path, target: r.target, pos })
 
       if (v.action === 'rebuild-route') {
-        return { ...g, state: S.ROUTE_BUILDING, run: { ...r, home: pos, path: null, target: null, pos, lastFix: pos, lastT: ev.t, stillMs: 0 } }
+        return { ...g, state: S.ROUTE_BUILDING, run: { ...r, home: pos, path: null, target: null, pos, lastFix: pos, walkRef: pos, stillRef: pos, lastT: ev.t, stillMs: 0 } }
       }
       const target = v.action === 'keep' ? r.target : placeTarget(r.path, v.at)
       return {
         ...g,
-        run: { ...r, pos, lastFix: pos, lastT: ev.t, acc: ev.acc ?? null, along: v.at, target, stillMs: 0 },
+        run: { ...r, pos, lastFix: pos, walkRef: pos, stillRef: pos, lastT: ev.t, acc: ev.acc ?? null, along: v.at, target, stillMs: 0 },
       }
     }
 
