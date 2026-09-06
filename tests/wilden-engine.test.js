@@ -339,79 +339,104 @@ test('קאנון: ההתעוררות של קראג ברחוב, בגובה מלא
 
 // ══════════════════════════════════════════════
 // הכוריאוגרפיה של נימי
-// ה-controller הוא לוגיקה טהורה, ולכן מפגש שלם נבדק כאן בלי מצלמה
-// ובלי חיישנים. זה מה שיאפשר לכתוב את שבעת הנותרים בלי לצאת החוצה.
+// ה-controller הוא לוגיקה טהורה, ולכן מפגש שלם נבדק בלי מצלמה ובלי
+// חיישנים. זה מה שיאפשר לכתוב את שבעת הנותרים בלי לצאת החוצה.
 
-function seq(vals) { let i = 0; return () => vals[i++ % vals.length] }
+const angDiff = (a, b) => Math.abs(((((b - a) % 360) + 540) % 360) - 180)
 
-test('נימי: שלוש קבוצות עקבות, אחת ממשיכה', () => {
-  const s = nimi.start(0, seq([0.1, 0.2, 0.3, 0.4, 0.5]))
+test('נימי: שביל אחד שמתפצל לשלוש התנהגויות', () => {
+  const s = nimi.start(0)
   const t = nimi.targets(s)
-  assert.equal(t.length, 3)
-  assert.equal(t.filter(x => x.continues).length, 1, 'בדיוק אחת אמיתית')
-  assert.ok(t.every(x => x.kind === 'tracks'))
+  assert.equal(t.filter(x => x.kind === 'trailhead').length, 1, 'ראש שביל אחד')
+  const br = t.filter(x => x.kind === 'trail')
+  assert.equal(br.length, 3)
+  assert.deepEqual(
+    [...br.map(x => x.branch)].sort(),
+    ['doubles-back', 'fades', 'runs'],
+    'כל שלוש ההתנהגויות, אחת מכל סוג — לא "נכון/לא נכון"'
+  )
 })
 
-test('נימי: אף קבוצה לא נופלת מול הילד', () => {
-  for (let i = 0; i < 60; i++) {
-    const s = nimi.start(Math.random() * 360)
+test('נימי: ראש השביל אינו יעד לנעילה', () => {
+  const s = nimi.start(0)
+  assert.equal(nimi.targets(s).find(t => t.kind === 'trailhead').passive, true)
+  assert.deepEqual(nimi.onLock(s, 'head').state, s, 'לחיצה עליו לא מזיזה כלום')
+})
+
+test('נימי: השביל נקרא בסיבוב קטן, לא ב-360°', () => {
+  for (let i = 0; i < 40; i++) {
+    const a = Math.random() * 360
+    const s = nimi.start(a)
     for (const t of nimi.targets(s)) {
-      const d = Math.abs(((((t.bearing - s.anchor) % 360) + 540) % 360) - 180)
-      assert.ok(180 - d > 40,
-        `יעד ב-${(180 - d).toFixed(0)}° מהמבט ההתחלתי — היה נמצא בלי לחפש`)
+      assert.ok(angDiff(a, t.bearing) < 85,
+        `יעד ב-${angDiff(a, t.bearing).toFixed(0)}° — הילד היה צריך להסתובב לחפש אותו`)
     }
   }
 })
 
-test('נימי: טעות לא מענישה — היא רק מצמצמת', () => {
+test('נימי: הכיוון שנלמד מהעקבות הוא שקובע איפה הוא מתחבא', () => {
+  for (let i = 0; i < 40; i++) {
+    const s = nimi.start(Math.random() * 360)
+    const live = s.branches.find(b => b.live)
+    assert.ok(angDiff(live.bearing, s.hidden) <= 27,
+      'נימי בקשת צרה סביב הענף החי — הסיבוב הוא מסקנה ולא סריקה')
+    assert.ok(angDiff(s.anchor, s.hidden) > 35,
+      `ואף פעם לא מול הילד בפתיחה (${angDiff(s.anchor, s.hidden).toFixed(0)}°)`)
+    assert.ok(angDiff(s.anchor, s.hidden) >= angDiff(s.anchor, live.bearing) - 1,
+      'ההסטה מתרחקת מהמבט ההתחלתי, לא חוזרת אליו')
+  }
+})
+
+test('נימי: ענף מת מספר מה נימי עשה, לא שהילד טעה', () => {
   let s = nimi.start(0)
-  const fake = nimi.targets(s).find(t => !t.continues)
-  const r = nimi.onLock(s, fake.id)
-  assert.equal(r.feedback, 'wrong')
-  assert.equal(r.state.phase, 'TRACKS', 'נשארים באותו שלב')
-  assert.equal(nimi.targets(r.state).length, 2, 'נשארות פחות אפשרויות')
+  const dead = s.branches.find(b => !b.live)
+  const r = nimi.onLock(s, dead.id)
+  assert.ok(['back', 'fade'].includes(r.feedback), 'המשוב הוא ההתנהגות עצמה')
+  assert.equal(r.state.phase, 'TRAIL', 'נשארים בשביל')
+  assert.equal(nimi.targets(r.state).filter(t => t.kind === 'trail').length, 2)
   assert.equal(nimi.isDone(r.state), false)
 })
 
-test('נימי: חמש הפעימות — עקבות, מציץ, בורח, מתקרב, חבר', () => {
+test('נימי: הפעימות — שביל, מציץ, בורח עם קו, מתקרב, חבר', () => {
   let s = nimi.start(0)
-  const real = nimi.targets(s).find(t => t.continues)
+  const live = s.branches.find(b => b.live)
 
-  let r = nimi.onLock(s, real.id)
-  assert.equal(r.feedback, 'right')
+  let r = nimi.onLock(s, live.id)
+  assert.equal(r.feedback, 'run')
   assert.equal(r.state.phase, 'PEEK')
-  assert.equal(nimi.targets(r.state)[0].peeking, true, 'מציץ, לא עומד במלואו')
+  assert.equal(nimi.targets(r.state)[0].peeking, true)
 
-  const peekAt = r.state.creatureBearing
+  const was = r.state.hidden
   r = nimi.onLock(r.state, 'nimi')
-  assert.equal(r.state.phase, 'FLEE')
-  assert.notEqual(r.state.creatureBearing, peekAt, 'ברח למקום אחר')
+  assert.equal(r.state.phase, 'CHASE')
+  assert.notEqual(r.state.hidden, was, 'ברח למקום אחר')
+  assert.equal(nimi.targets(r.state)[0].streak, was, 'והשאיר קו שמראה מאיפה')
 
   r = nimi.onLock(r.state, 'nimi')
   assert.equal(r.state.phase, 'APPROACH')
-  assert.ok(nimi.targets(r.state)[0].scale > 1, 'מתקרב — נראה גדול יותר')
+  assert.ok(nimi.targets(r.state)[0].scale > 1)
 
   r = nimi.onLock(r.state, 'nimi')
   assert.equal(nimi.isDone(r.state), true)
-  assert.equal(nimi.targets(r.state).length, 0)
 })
 
-test('נימי: אי אפשר לסיים בלי לבחור נכון', () => {
+test('נימי: אי אפשר לסיים בלי לקרוא את השביל', () => {
   let s = nimi.start(0)
-  for (const t of nimi.targets(s).filter(x => !x.continues)) {
-    s = nimi.onLock(s, t.id).state
-  }
-  assert.equal(nimi.isDone(s), false, 'אחרי שתי טעויות עדיין לא נגמר')
-  assert.equal(nimi.targets(s).length, 1, 'ונשארה בדיוק האמיתית')
-  s = nimi.onLock(s, nimi.targets(s)[0].id).state
+  for (const b of s.branches.filter(x => !x.live)) s = nimi.onLock(s, b.id).state
+  assert.equal(s.phase, 'TRAIL', 'שני ענפים מתים ועדיין לא נגמר')
+  assert.equal(nimi.targets(s).filter(t => t.kind === 'trail').length, 1)
+  s = nimi.onLock(s, s.branches.find(b => b.live).id).state
   assert.equal(s.phase, 'PEEK')
 })
 
-test('נימי: הטקסט משתנה אחרי טעות', () => {
+test('נימי: הטקסט אף פעם לא אומר לילד שהוא טעה', () => {
   let s = nimi.start(0)
-  const a = nimi.copy(s).sub
-  const fake = nimi.targets(s).find(t => !t.continues)
-  const b = nimi.copy(nimi.onLock(s, fake.id).state).line
-  assert.notEqual(a, b)
-  assert.ok(!b.includes('טעית'), 'אף פעם לא אומרים לילד שהוא טעה')
+  const all = [nimi.copy(s)]
+  const dead = s.branches.find(b => !b.live)
+  s = nimi.onLock(s, dead.id).state
+  all.push(nimi.copy(s))
+  for (const c of all) {
+    assert.ok(!/טעית|לא נכון|שגוי/.test(c.line + c.sub), c.line)
+  }
+  assert.notEqual(all[0].line, all[1].line, 'והטקסט מתקדם אחרי שקראנו ענף')
 })

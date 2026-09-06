@@ -91,7 +91,11 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
     const dy = hasSensors ? (t.elev ?? 0) - (pitch || 0) : 0
     return { ...t, dx, dy, off: dx == null ? 999 : Math.hypot(dx, dy) }
   })
-  const nearest = placed.reduce((a, b) => (b.off < (a?.off ?? 999) ? b : a), null)
+  // ראש השביל הוא הזמנה, לא בחירה. אם הוא ניתן לנעילה, הילד "בוחר" את
+  // הרגליים של עצמו והמפגש נתקע.
+  const nearest = placed
+    .filter(t => !t.passive)
+    .reduce((a, b) => (b.off < (a?.off ?? 999) ? b : a), null)
 
   // ── נעילה ──
   // הזמן מצטבר ונשחק לאט: "תחזיק אותו בערך במרכז בערך שנייה", ולא
@@ -175,9 +179,9 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
             opacity: Math.max(0.6, 1 - Math.abs(t.dx) / 74),
             transform: `translate(-50%,-50%) scale(${t.scale || 1})`,
           }}>
-            {t.kind === 'tracks'
-              ? <Tracks continues={t.continues} />
-              : <Nimi peeking={t.peeking} />}
+            {t.kind === 'trailhead' ? <Trailhead />
+              : t.kind === 'trail' ? <Trail branch={t.branch} />
+              : <Nimi peeking={t.peeking} streak={t.streak != null} />}
             {locked && <LockRing pct={hold / HOLD_MS} />}
           </div>
         )
@@ -212,8 +216,9 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
 function fire(kind, setFlash) {
   if (!kind) return
   const map = {
-    wrong: { t: 'אלה נעצרות כאן.', buzz: [50], sfx: sfxRustle },
-    right: { t: 'אלה ממשיכות!', buzz: [40, 60, 40], sfx: sfxAppear },
+    back: { t: 'כאן הוא הסתובב וחזר.', buzz: [50], sfx: sfxRustle },
+    fade: { t: 'כאן העקבות נגמרות. הוא קפץ.', buzz: [50], sfx: sfxRustle },
+    run: { t: 'הצעדים מתרחקים — הוא רץ לשם!', buzz: [40, 60, 40], sfx: sfxAppear },
     flee: { t: 'הוא ברח!', buzz: [70, 50, 70], sfx: sfxRustle },
     near: { t: 'הוא נעצר.', buzz: [40], sfx: sfxAppear },
     befriend: { t: '', buzz: [40, 60, 40, 140], sfx: sfxCatch },
@@ -236,39 +241,72 @@ function LockRing({ pct }) {
   )
 }
 
-// ── העקבות ──
-// הרמז היחיד: האמיתיות ממשיכות ונמוגות במרחק, המזויפות נעצרות.
-// נקרא במבט אחד, הוגן, ונלמד אחרי טעות אחת.
-function Tracks({ continues }) {
-  const paw = (x, y, o, s = 1) => (
-    <g key={`${x}-${y}`} opacity={o} transform={`translate(${x} ${y}) scale(${s})`}>
-      <ellipse cx="0" cy="0" rx="4.2" ry="5.4" fill="#F0C069" />
-      <circle cx="-4" cy="-5.6" r="1.7" fill="#F0C069" />
-      <circle cx="0" cy="-7.2" r="1.8" fill="#F0C069" />
-      <circle cx="4" cy="-5.6" r="1.7" fill="#F0C069" />
+// ── השביל ──
+// שלוש התנהגויות, ולא שלוש אפשרויות מסומנות. ההבדל הוא בכיוון הטביעות,
+// במרווח ביניהן ובשאלה אם הן ממשיכות — כלומר במה שנימי עשה, לא בסימון
+// שאומר "זו הנכונה".
+function paw(x, y, rot, o, s = 1) {
+  return (
+    <g key={`${x}-${y}`} opacity={o} transform={`translate(${x} ${y}) rotate(${rot}) scale(${s})`}>
+      <ellipse cx="0" cy="0" rx="4" ry="5.2" fill="#F0C069" />
+      <circle cx="-3.8" cy="-5.4" r="1.6" fill="#F0C069" />
+      <circle cx="0" cy="-7" r="1.7" fill="#F0C069" />
+      <circle cx="3.8" cy="-5.4" r="1.6" fill="#F0C069" />
     </g>
   )
-  // הצביר ממורכז ב-viewBox בכוונה: טבעת הנעילה ממורכזת על הצומת, ואם
-  // הציור יושב בפינה הטבעת נראית כאילו היא מקיפה משהו אחר.
+}
+
+const GLOW = { filter: 'drop-shadow(0 0 8px rgba(240,192,105,.6))' }
+
+function Trail({ branch }) {
+  let prints = []
+  if (branch === 'runs') {
+    // מרווח שגדל = הוא האיץ. וממשיך אל מחוץ למסגרת.
+    prints = [
+      paw(46, 84, 0, 1), paw(56, 71, 4, 1), paw(45, 55, -4, 1),
+      paw(58, 36, 6, 0.95, 1.02), paw(44, 14, -6, 0.9, 1.04),
+    ]
+  } else if (branch === 'doubles-back') {
+    // הולכות למעלה, מסתובבות, וחוזרות — הטביעות החוזרות הפוכות.
+    prints = [
+      paw(44, 84, 0, 1), paw(54, 70, 6, 1), paw(58, 56, 24, 0.95),
+      paw(50, 47, 90, 0.9), paw(38, 52, 168, 0.9), paw(30, 66, 180, 0.85),
+      paw(34, 82, 180, 0.8),
+    ]
+  } else {
+    // נחלשות ונפסקות באמצע.
+    prints = [
+      paw(46, 84, 0, 1), paw(56, 72, 4, 0.8, 0.94),
+      paw(46, 62, -3, 0.5, 0.85), paw(55, 54, 5, 0.24, 0.74),
+    ]
+  }
   return (
-    <svg width="150" height="150" viewBox="0 0 100 100" aria-hidden="true"
-      style={{ filter: 'drop-shadow(0 0 9px rgba(240,192,105,.65))' }}>
-      {paw(42, 68, 1)}
-      {paw(56, 58, 0.95)}
-      {paw(44, 48, 0.85)}
-      {continues && <>
-        {paw(58, 37, 0.58, 0.85)}
-        {paw(46, 27, 0.36, 0.7)}
-        {paw(58, 18, 0.19, 0.55)}
-      </>}
+    <svg width="150" height="150" viewBox="0 0 100 100" aria-hidden="true" style={GLOW}>
+      {prints}
     </svg>
   )
 }
 
-function Nimi({ peeking }) {
+// ראש השביל: כאן הוא עבר. זו ההזמנה לקרוא, ולא יעד לנעילה.
+function Trailhead() {
+  return (
+    <svg width="120" height="120" viewBox="0 0 100 100" aria-hidden="true" style={GLOW}>
+      <ellipse cx="50" cy="62" rx="30" ry="10" fill="#F0C069" opacity="0.1" />
+      {paw(44, 68, -8, 0.95)}
+      {paw(56, 60, 6, 0.9)}
+    </svg>
+  )
+}
+
+function Nimi({ peeking, streak }) {
   return (
     <svg width="150" height="150" viewBox="0 0 100 100" aria-hidden="true">
       <ellipse cx="50" cy="90" rx="24" ry="5" fill="#000" opacity="0.26" />
+      {streak && (
+        <path d="M14 74 C28 66 38 62 46 60" stroke="#F0C069" strokeWidth="3.4"
+          strokeLinecap="round" fill="none" opacity="0.55"
+          style={{ filter: 'drop-shadow(0 0 7px rgba(240,192,105,.6))' }} />
+      )}
       <g clipPath={peeking ? 'url(#peekClip)' : undefined}>
         <defs><clipPath id="peekClip"><rect x="34" y="0" width="66" height="100" /></clipPath></defs>
         <circle cx="50" cy="58" r="26" fill="#8FA277" />
