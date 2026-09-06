@@ -9,12 +9,21 @@ import { MONSTERS } from '../monsters'
 //
 // אייפון דורש .usdz ואנדרואיד .glb — לכן שניהם נבנים ב-scripts/make-3d-monsters.py
 
+// המודל בנוי בגובה ~1.9 יחידות = ~1.9 מטר ב-AR. הנדירות קובעת כמה
+// באמת מהגובה הזה מופיע על המדרכה — וזו ההפתעה: אגדי הוא בגובה ילד.
+const SIZES = [
+  { k: 'common', label: 'רגיל', scale: 0.24, m: '45 ס״מ' },
+  { k: 'rare', label: 'נדיר', scale: 0.45, m: '85 ס״מ' },
+  { k: 'legend', label: 'אגדי', scale: 0.95, m: '1.8 מטר' },
+]
+
 const C = { cream: '#F3EDE1', card: '#FBF7EE', ink: '#22271E', soft: '#5A6154', olive: '#3F5C53', line: '#DCD2BE' }
 
 export default function ArPage() {
   const [ready, setReady] = useState(false)
   const [os, setOs] = useState('')
   const [id, setId] = useState('puch')
+  const [size, setSize] = useState('common')
 
   useEffect(() => {
     const ua = navigator.userAgent
@@ -51,16 +60,36 @@ export default function ArPage() {
           ))}
         </div>
 
+        <p style={{ fontSize: 13, fontWeight: 700, color: C.soft, margin: '0 0 8px' }}>
+          גודל לפי נדירות — ככה הוא יעמוד על המדרכה
+        </p>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+          {SIZES.map(z => (
+            <button key={z.k} onClick={() => setSize(z.k)} style={{
+              flex: 1, padding: '9px 4px', borderRadius: 11, cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 14.5, fontWeight: 700,
+              border: `1.5px solid ${size === z.k ? '#B4661A' : C.line}`,
+              background: size === z.k ? '#B4661A' : C.card,
+              color: size === z.k ? C.cream : C.ink, lineHeight: 1.3,
+            }}>
+              {z.label}
+              <span style={{ display: 'block', fontSize: 11.5, fontWeight: 400, opacity: .85 }}>{z.m}</span>
+            </button>
+          ))}
+        </div>
+
         <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, overflow: 'hidden' }}>
           {ready ? (
             <model-viewer
-              key={id}
+              key={id + size}
               src={`/monsters3d/${id}.glb`}
               ios-src={`/monsters3d/${id}.usdz`}
               alt="יצור"
               ar
               ar-modes="webxr scene-viewer quick-look"
               ar-scale="fixed"
+              scale={`${SIZES.find(z => z.k === size).scale} ${SIZES.find(z => z.k === size).scale} ${SIZES.find(z => z.k === size).scale}`}
+              autoplay
               camera-controls
               auto-rotate
               auto-rotate-delay="1200"
@@ -90,7 +119,8 @@ export default function ArPage() {
           <ol style={{ margin: 0, paddingInlineStart: 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
             <li>הוא נראה <b>מרשים</b> או <b>זול</b>? זו השאלה היחידה.</li>
             <li>הגודל על הרצפה מתאים, או שצריך גדול יותר?</li>
-            <li>מה חסר לו כדי להיות ״וואו״ — צבע, פרטים, תנועה?</li>
+            <li>התנועה — מספיקה, או שצריך יותר?</li>
+            <li>הגודל ״אגדי״ על הרצפה — מפתיע או מוגזם?</li>
           </ol>
         </div>
 

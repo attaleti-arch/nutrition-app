@@ -101,7 +101,15 @@ def hexrgb(h):
 
 # ── ייצוא GLB ──
 
-def write_glb(parts, path):
+# ── תנועת החיים ──
+# כדור דומם נקרא ככדור. נשימה, מעיכה וקפיצה קלה הופכות אותו ליצור.
+# הלולאה: קפיצה קטנה למעלה, ואז מעיכה בנחיתה — squash & stretch קלאסי.
+IDLE_T = [0.0, 0.45, 0.90, 1.25, 1.70]
+IDLE_POS = [(0, 0, 0), (0, 0.075, 0), (0, 0, 0), (0, -0.018, 0), (0, 0, 0)]
+IDLE_SCALE = [(1, 1, 1), (0.965, 1.06, 0.965), (1, 1, 1), (1.05, 0.94, 1.05), (1, 1, 1)]
+
+
+def write_glb(parts, path, animate=True):
     """parts: [(mesh, hexcolor, roughness, metallic, alpha)]"""
     bin_blob = b''
     accessors, views, meshes, materials, nodes = [], [], [], [], []
@@ -142,12 +150,57 @@ def write_glb(parts, path):
         }]})
         nodes.append({'mesh': idx})
 
+    # כל החלקים נעשים ילדים של שורש אחד, כדי שאפשר יהיה להניע את היצור
+    # כולו בערוץ אחד במקום להניע שלושים חלקים בנפרד
+    root = {'children': list(range(len(nodes)))}
+    nodes = nodes + [root]
+    root_idx = len(nodes) - 1
+
+    animations = []
+    if animate:
+        def push_raw(data, target=None):
+            nonlocal bin_blob
+            while len(bin_blob) % 4:
+                bin_blob += b'\0'
+            off = len(bin_blob)
+            bin_blob += data
+            v = {'buffer': 0, 'byteOffset': off, 'byteLength': len(data)}
+            if target:
+                v['target'] = target
+            views.append(v)
+            return len(views) - 1
+
+        tv = push_raw(b''.join(struct.pack('<f', t) for t in IDLE_T))
+        accessors.append({'bufferView': tv, 'componentType': 5126, 'count': len(IDLE_T),
+                          'type': 'SCALAR', 'min': [min(IDLE_T)], 'max': [max(IDLE_T)]})
+        t_acc = len(accessors) - 1
+
+        def vec_acc(vals):
+            bv = push_raw(b''.join(struct.pack('<3f', *v) for v in vals))
+            accessors.append({'bufferView': bv, 'componentType': 5126,
+                              'count': len(vals), 'type': 'VEC3'})
+            return len(accessors) - 1
+
+        p_acc, s_acc = vec_acc(IDLE_POS), vec_acc(IDLE_SCALE)
+        animations.append({
+            'name': 'idle',
+            'samplers': [
+                {'input': t_acc, 'output': p_acc, 'interpolation': 'LINEAR'},
+                {'input': t_acc, 'output': s_acc, 'interpolation': 'LINEAR'},
+            ],
+            'channels': [
+                {'sampler': 0, 'target': {'node': root_idx, 'path': 'translation'}},
+                {'sampler': 1, 'target': {'node': root_idx, 'path': 'scale'}},
+            ],
+        })
+
     gltf = {
         'asset': {'version': '2.0', 'generator': 'hunt-monsters'},
-        'scene': 0, 'scenes': [{'nodes': list(range(len(nodes)))}],
+        'scene': 0, 'scenes': [{'nodes': [root_idx]}],
         'nodes': nodes, 'meshes': meshes, 'materials': materials,
         'accessors': accessors, 'bufferViews': views,
         'buffers': [{'byteLength': len(bin_blob)}],
+        **({'animations': animations} if animations else {}),
     }
     js = json.dumps(gltf, separators=(',', ':')).encode()
     js += b' ' * ((4 - len(js) % 4) % 4)
@@ -170,8 +223,20 @@ def write_usdz(parts, path):
     root = UsdGeom.Xform.Define(stage, '/Root')
     stage.SetDefaultPrim(root.GetPrim())
 
+    # אותה תנועה גם ב-AR של אייפון. בלי זה היצור עומד קפוא על המדרכה,
+    # וזה בדיוק הרגע שבו הוא צריך להיראות חי.
+    fps = 24.0
+    stage.SetTimeCodesPerSecond(fps)
+    stage.SetStartTimeCode(0)
+    stage.SetEndTimeCode(IDLE_T[-1] * fps)
+    tr = root.AddTranslateOp()
+    sc = root.AddScaleOp()
+    for t, pos, scl in zip(IDLE_T, IDLE_POS, IDLE_SCALE):
+        tr.Set(Gf.Vec3d(*pos), time=t * fps)
+        sc.Set(Gf.Vec3f(*scl), time=t * fps)
+
     for i, (m, color, rough, metal, alpha) in enumerate(parts):
-        mesh = UsdGeom.Mesh.Define(stage, f'/Root/part_{i}')
+        mesh = UsdGeom.Mesh.Define(stage, f'/Root/part_{i}')   # ילד של השורש המונפש
         mesh.CreatePointsAttr(Vt.Vec3fArray([Gf.Vec3f(*p) for p in m.v]))
         mesh.CreateNormalsAttr(Vt.Vec3fArray([Gf.Vec3f(*p) for p in m.n]))
         mesh.SetNormalsInterpolation(UsdGeom.Tokens.vertex)
