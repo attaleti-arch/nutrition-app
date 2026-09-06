@@ -904,6 +904,9 @@ export default function HuntPage() {
           {geoErr && <p style={S.err}>{geoErr}</p>}
 
           <p style={S.fine}>
+            <a href="/hunt/parents" style={{ color: C.olive, fontWeight: 700 }}>הורים — קראו את זה לפני היציאה הראשונה ←</a>
+          </p>
+          <p style={S.fine}>
             המסלול נבנה סביב המקום שבו אתם עומדים עכשיו, ונשמר רק במכשיר הזה.
             <b> יוצאים תמיד עם מבוגר</b> — המסלול מחושב לפי מרחק ואוויר, הוא לא יודע איפה יש כביש.
           </p>
