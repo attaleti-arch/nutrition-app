@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { MONSTERS } from '../monsters'
 
 // ─── היצור בחדר ───
 // model-viewer עוטף את שני המנועים המקומיים: Scene Viewer באנדרואיד
@@ -13,6 +14,7 @@ const C = { cream: '#F3EDE1', card: '#FBF7EE', ink: '#22271E', soft: '#5A6154', 
 export default function ArPage() {
   const [ready, setReady] = useState(false)
   const [os, setOs] = useState('')
+  const [id, setId] = useState('puch')
 
   useEffect(() => {
     const ua = navigator.userAgent
@@ -30,19 +32,32 @@ export default function ArPage() {
       fontFamily: '"Heebo", system-ui, sans-serif', lineHeight: 1.7 }}>
       <div style={{ maxWidth: 520, margin: '0 auto', padding: '28px 18px 60px' }}>
         <p style={{ fontSize: 12.5, fontWeight: 700, letterSpacing: '.12em', color: '#B4661A', margin: '0 0 8px' }}>
-          ניסוי · יצור אחד
+          ניסוי · ששת היצורים
         </p>
-        <h1 style={{ fontSize: 32, fontWeight: 900, margin: '0 0 10px', lineHeight: 1.15 }}>פוּך בתלת־ממד</h1>
+        <h1 style={{ fontSize: 32, fontWeight: 900, margin: '0 0 10px', lineHeight: 1.15 }}>היצורים בתלת־ממד</h1>
         <p style={{ color: C.soft, margin: '0 0 20px' }}>
-          אפשר לסובב אותו באצבע. ובנייד — הכפתור פותח את המצלמה ומעמיד אותו על הרצפה.
+בוחרים יצור, מסובבים אותו באצבע. ובנייד — הכפתור פותח את המצלמה ומעמיד אותו על הרצפה.
         </p>
+
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+          {MONSTERS.map(m => (
+            <button key={m.id} onClick={() => setId(m.id)} style={{
+              flex: '1 1 30%', padding: '9px 4px', borderRadius: 11, cursor: 'pointer',
+              fontFamily: 'inherit', fontSize: 14.5, fontWeight: 700,
+              border: `1.5px solid ${id === m.id ? C.olive : C.line}`,
+              background: id === m.id ? C.olive : C.card,
+              color: id === m.id ? C.cream : C.ink,
+            }}>{m.name}</button>
+          ))}
+        </div>
 
         <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 18, overflow: 'hidden' }}>
           {ready ? (
             <model-viewer
-              src="/monsters3d/puch.glb"
-              ios-src="/monsters3d/puch.usdz"
-              alt="פוּך"
+              key={id}
+              src={`/monsters3d/${id}.glb`}
+              ios-src={`/monsters3d/${id}.usdz`}
+              alt="יצור"
               ar
               ar-modes="webxr scene-viewer quick-look"
               ar-scale="fixed"

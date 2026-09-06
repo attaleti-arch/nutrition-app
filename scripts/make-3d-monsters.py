@@ -248,7 +248,153 @@ def puch():
     return p
 
 
-MONSTERS = {'puch': puch}
+def cyl(r=0.1, h=0.4, seg=18):
+    m = Mesh()
+    for y in (0.0, h):
+        for j in range(seg + 1):
+            th = 2 * math.pi * j / seg
+            m.v.append((math.cos(th) * r, y, math.sin(th) * r))
+            m.n.append((math.cos(th), 0.0, math.sin(th)))
+    for j in range(seg):
+        a, b = j, j + seg + 1
+        m.f += [(a, b, a + 1), (a + 1, b, b + 1)]
+    return m
+
+
+def star_prism(outer=1.0, inner=0.42, points=5, depth=0.34, rot=90.0):
+    """כוכב אמיתי: מצולע עשרה-קודקודים שמוצא לעובי. ניסיון להרכיב כוכב
+    מכדורים או מקונוסים נותן עלי כותרת, לא כוכב."""
+    m = Mesh()
+    ring = []
+    for i in range(points * 2):
+        a = math.radians(rot + i * 180.0 / points)
+        r = outer if i % 2 == 0 else inner
+        ring.append((math.cos(a) * r, math.sin(a) * r))
+    hz = depth / 2
+
+    for sign in (1, -1):                         # שתי הפאות
+        c = len(m.v)
+        m.v.append((0.0, 0.0, sign * hz)); m.n.append((0.0, 0.0, float(sign)))
+        base = len(m.v)
+        for x, y in ring:
+            m.v.append((x, y, sign * hz)); m.n.append((0.0, 0.0, float(sign)))
+        for i in range(len(ring)):
+            a, b = base + i, base + (i + 1) % len(ring)
+            m.f.append((c, a, b) if sign > 0 else (c, b, a))
+
+    for i in range(len(ring)):                   # דפנות
+        x1, y1 = ring[i]
+        x2, y2 = ring[(i + 1) % len(ring)]
+        nx, ny = y2 - y1, -(x2 - x1)
+        ln = math.hypot(nx, ny) or 1.0
+        nx, ny = nx / ln, ny / ln
+        k = len(m.v)
+        for (x, y, z) in ((x1, y1, hz), (x2, y2, hz), (x2, y2, -hz), (x1, y1, -hz)):
+            m.v.append((x, y, z)); m.n.append((nx, ny, 0.0))
+        m.f += [(k, k + 1, k + 2), (k, k + 2, k + 3)]
+    return m
+
+
+def rock(r=1.0, seed=3):
+    """כדור מעוות. הרעש נגזר מהכיוון ולא מהאינדקס — אחרת שני הקודקודים
+    שיושבים על אותו תפר מקבלים ערכים שונים, והכדור נפתח לרווחה."""
+    m = sphere(1.0, 30, 40)
+    out = Mesh()
+    out.f = list(m.f)
+    for p in m.v:
+        # שלושה גלים בכיוונים שונים — לא אקראי, אבל נראה אקראי
+        k = (1.0
+             + 0.055 * math.sin(p[0] * 3.1 + seed)
+             + 0.045 * math.sin(p[1] * 3.7 + seed * 2)
+             + 0.040 * math.sin(p[2] * 2.9 + seed * 3))
+        out.v.append((p[0] * k * r, p[1] * k * r, p[2] * k * r))
+    # נורמלים מחדש מהפאות, אחרת ההצללה שייכת לכדור המקורי
+    acc = [[0.0, 0.0, 0.0] for _ in out.v]
+    for a, b, c in out.f:
+        pa, pb, pc = out.v[a], out.v[b], out.v[c]
+        u = (pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2])
+        w = (pc[0] - pa[0], pc[1] - pa[1], pc[2] - pa[2])
+        nx = u[1] * w[2] - u[2] * w[1]
+        ny = u[2] * w[0] - u[0] * w[2]
+        nz = u[0] * w[1] - u[1] * w[0]
+        for i in (a, b, c):
+            acc[i][0] += nx; acc[i][1] += ny; acc[i][2] += nz
+    for v in acc:
+        ln = math.sqrt(v[0]**2 + v[1]**2 + v[2]**2) or 1.0
+        out.n.append((v[0]/ln, v[1]/ln, v[2]/ln))
+    return out
+
+
+def gilgul():
+    body, dark = '#F2B366', '#C9862F'
+    p = [(xform(sphere(0.90, 56, 72), t=(0, 0.90, 0)), body, 0.78, 0.0, 1.0)]
+    for i in range(7):                                   # בלורית מסולסלת
+        t = i / 6
+        p.append((xform(sphere(0.10 - t * 0.045, 18, 22),
+                        t=(math.sin(t * 5.0) * 0.24, 1.62 + t * 0.26, 0.10 + math.cos(t * 5.0) * 0.14)),
+                  dark, 0.7, 0.0, 1.0))
+    p += eyes(gap=0.28, y=0.98, z=0.80)
+    p += smile(y=0.70, z=0.85, w=0.19)
+    for sx in (-1, 1):
+        p.append((xform(sphere(0.11, 22, 28), s=(1, 0.6, 0.3), t=(sx * 0.50, 0.80, 0.70)),
+                  '#E8907F', 0.75, 0.0, 0.42))
+    return p
+
+
+def anafon():
+    body, dark = '#9DC98A', '#6C9B57'
+    p = [(xform(sphere(0.88, 56, 72, squash=1.02), t=(0, 0.88, 0)), body, 0.8, 0.0, 1.0)]
+    p.append((xform(cyl(0.045, 0.34, 14), t=(0, 1.70, 0)), dark, 0.7, 0.0, 1.0))
+    for sx, tilt in ((-1, 34), (1, -34)):                # שני עלים
+        p.append((xform(sphere(1.0, 24, 30), s=(0.30, 0.10, 0.17), rot=(0, 0, tilt),
+                        t=(sx * 0.24, 2.02, 0)), dark, 0.65, 0.0, 1.0))
+    p += eyes(gap=0.28, y=0.96, z=0.78)
+    p += smile(y=0.68, z=0.83, w=0.18)
+    for sx in (-1, 1):
+        p.append((xform(sphere(0.115, 22, 28), s=(1, 0.6, 0.3), t=(sx * 0.50, 0.78, 0.68)),
+                  '#E8907F', 0.75, 0.0, 0.42))
+    return p
+
+
+def nitznitz():
+    body, dark = '#F2D06B', '#C9A32B'
+    p = [(xform(star_prism(1.05, 0.44, 5, 0.40), t=(0, 0.95, 0)), body, 0.6, 0.0, 1.0)]
+    p += eyes(gap=0.27, y=1.02, z=0.22, r=0.135)
+    p += smile(y=0.76, z=0.24, w=0.19, depth=0.09)
+    return p
+
+
+def zanvan():
+    body, dark = '#E39BC0', '#BF6A93'
+    p = [(xform(sphere(0.84, 56, 72, squash=0.98), t=(0, 0.88, 0)), body, 0.8, 0.0, 1.0)]
+    p += [ear(dark, -1, 26, base=(0.46, 1.40, -0.04), size=(0.15, 0.36, 0.12)),
+          ear(dark, 1, 26, base=(0.46, 1.40, -0.04), size=(0.15, 0.36, 0.12))]
+    for i in range(9):                                   # זנב מתעגל
+        t = i / 8
+        p.append((xform(sphere(0.15 - t * 0.085, 18, 24),
+                        t=(0.62 + math.sin(t * 2.4) * 0.42, 0.62 + t * 0.72, -0.34 - t * 0.16)),
+                  dark, 0.75, 0.0, 1.0))
+    p += eyes(gap=0.27, y=0.94, z=0.75)
+    p += smile(y=0.66, z=0.80, w=0.17)
+    for sx in (-1, 1):
+        p.append((xform(sphere(0.11, 22, 28), s=(1, 0.6, 0.3), t=(sx * 0.48, 0.76, 0.65)),
+                  '#E8907F', 0.75, 0.0, 0.42))
+    return p
+
+
+def avnon():
+    body, dark = '#9A9185', '#6E6659'
+    p = [(xform(rock(0.92, seed=5), t=(0, 0.90, 0)), body, 0.95, 0.0, 1.0)]
+    p.append((xform(rock(0.30, seed=11), t=(-0.46, 1.62, -0.10)), dark, 0.95, 0.0, 1.0))
+    p += eyes(gap=0.29, y=1.02, z=0.80)
+    p += smile(y=0.74, z=0.84, w=0.20)
+    for sx in (-1, 1):
+        p.append((xform(rock(0.19, seed=17 + sx), t=(sx * 0.42, 0.10, 0.16)), dark, 0.95, 0.0, 1.0))
+    return p
+
+
+MONSTERS = {'puch': puch, 'gilgul': gilgul, 'anafon': anafon,
+            'nitznitz': nitznitz, 'zanvan': zanvan, 'avnon': avnon}
 
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
