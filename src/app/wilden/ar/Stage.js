@@ -151,6 +151,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
 
   return (
     <div style={S.wrap}>
+      <style>{SPRITE_CSS}</style>
       {camState === 'on' && <video ref={videoRef} playsInline muted autoPlay style={S.video} />}
       {camState === 'denied' && <StoryBackdrop />}
       {camState === 'starting' && <div style={S.center}><p style={S.dim}>פותחים מצלמה…</p></div>}
@@ -181,7 +182,11 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
           }}>
             {t.kind === 'trailhead' ? <Trailhead />
               : t.kind === 'trail' ? <Trail branch={t.branch} />
-              : <Nimi peeking={t.peeking} streak={t.streak != null} />}
+              /* בורח: פונה הלאה מהמקום שממנו הגיע, והפס הטרי נשאר מאחוריו. */
+              : <Nimi peeking={t.peeking} approaching={(t.scale || 1) > 1.2}
+                  faceLeft={t.streak != null && angleDelta(t.streak, t.bearing) < 0}
+                  streakSide={t.streak == null ? null
+                    : angleDelta(t.streak, t.bearing) < 0 ? 'right' : 'left'} />}
             {locked && <LockRing pct={hold / HOLD_MS} />}
           </div>
         )
@@ -189,7 +194,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
 
       {done && (
         <div style={S.doneWrap}>
-          <Nimi />
+          <Nimi done />
           <p style={S.foundName}>{creature?.name}</p>
           <p style={S.foundLine}>הוא הלך אחריכם.</p>
         </div>
@@ -298,29 +303,50 @@ function Trailhead() {
   )
 }
 
-function Nimi({ peeking, streak }) {
+// ── נימי ──
+// זו הדמות שלה, גזורה מגיליון הדמויות. שקוף מה זה ומה זה לא: תמונה
+// דו-ממדית של הדמות האמיתית, לא מודל תלת-ממדי ולא אנימציה של שלד. עד
+// שיגיעו הרינדורים המקוריים ברזולוציה מלאה, זה מה שיש — ואיכות הגיליון
+// היא התקרה. כדור ירוק לא חוזר לכאן יותר.
+//
+// מה כן עושים כדי שתרגיש בשטח ולא מודבקת על המסך: צל מתחת לרגליים כדי
+// שתעמוד על הרצפה, פנייה לכיוון שאליו היא רצה, נשימה כשהיא עוצרת.
+const SPRITE = {
+  hero: '/creatures/nimi/hero.png',      // עמידה, פונה ימינה
+  peek: '/creatures/nimi/peek.png',      // ראש מבצבץ מאחורי גזע
+}
+const GLOW_DONE = 'drop-shadow(0 0 22px rgba(240,192,105,.55))'
+
+function Nimi({ peeking, faceLeft, streakSide, approaching, done }) {
+  if (peeking) {
+    return <img src={SPRITE.peek} alt="" draggable={false} style={S.peek} />
+  }
+  const anim = approaching ? 'wildenBob 1.1s ease-in-out infinite'
+    : done ? 'wildenBreathe 2.6s ease-in-out infinite' : 'none'
   return (
-    <svg width="150" height="150" viewBox="0 0 100 100" aria-hidden="true">
-      <ellipse cx="50" cy="90" rx="24" ry="5" fill="#000" opacity="0.26" />
-      {streak && (
-        <path d="M14 74 C28 66 38 62 46 60" stroke="#F0C069" strokeWidth="3.4"
-          strokeLinecap="round" fill="none" opacity="0.55"
-          style={{ filter: 'drop-shadow(0 0 7px rgba(240,192,105,.6))' }} />
+    <div className="wilden-figure" style={{ ...S.figure, animation: anim }}>
+      {streakSide && (
+        <div style={{ ...S.streak, ...(streakSide === 'left' ? S.streakL : S.streakR) }} />
       )}
-      <g clipPath={peeking ? 'url(#peekClip)' : undefined}>
-        <defs><clipPath id="peekClip"><rect x="34" y="0" width="66" height="100" /></clipPath></defs>
-        <circle cx="50" cy="58" r="26" fill="#8FA277" />
-        <path d="M34 32 L40 50 L28 47 Z" fill="#7C8F66" />
-        <path d="M66 32 L60 50 L72 47 Z" fill="#7C8F66" />
-        <path d="M50 30 C59 42 61 50 57 57 C51 51 47 42 50 30 Z" fill="#A9C288" />
-        <circle cx="42" cy="54" r="6.4" fill="#F6F2E6" />
-        <circle cx="58" cy="54" r="6.4" fill="#F6F2E6" />
-        <circle cx="43" cy="55" r="3.3" fill="#22271E" />
-        <circle cx="59" cy="55" r="3.3" fill="#22271E" />
-      </g>
-    </svg>
+      <div style={S.shadow} />
+      <img src={SPRITE.hero} alt="" draggable={false} style={{
+        ...S.hero,
+        // בסיום הדמות גדולה יותר — בגובה אמיתי ולא ב-transform, כדי שהשם
+        // מתחתיה לא ייכתב על הרגליים.
+        height: done ? '46vh' : S.hero.height,
+        transform: faceLeft ? 'scaleX(-1)' : 'none',
+        filter: done ? GLOW_DONE : 'drop-shadow(0 6px 10px rgba(0,0,0,.35))',
+      }} />
+    </div>
   )
 }
+
+// אנימציות ה-CSS של הדמות. inline style לא יודע keyframes, אז זה יושב פה.
+const SPRITE_CSS = `
+@keyframes wildenBob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-3.5%) } }
+@keyframes wildenBreathe { 0%,100% { transform: scale(1) } 50% { transform: scale(1.03) } }
+@media (prefers-reduced-motion: reduce) { .wilden-figure { animation: none !important } }
+`
 
 function StoryBackdrop() {
   return (
@@ -341,6 +367,20 @@ const S = {
   center: { position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' },
   dim: { color: '#9BA495', fontSize: 15 },
   node: { position: 'absolute', transition: 'opacity .2s, transform .35s', pointerEvents: 'none' },
+  // הדמות. גובה ביחס למסך ולא בפיקסלים, כדי שבטלפון קטן וגדול היא תתפוס
+  // אותו חלק מהעולם. scale של הפאזה מוכפל על זה (1.6 בהתקרבות → ~54vh).
+  figure: { position: 'relative', display: 'grid', justifyItems: 'center', willChange: 'transform' },
+  hero: { height: '34vh', width: 'auto', display: 'block', position: 'relative', zIndex: 1,
+    userSelect: 'none', WebkitUserDrag: 'none' },
+  peek: { height: '30vh', width: 'auto', display: 'block', userSelect: 'none',
+    filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.35))' },
+  shadow: { position: 'absolute', bottom: '-1.2vh', left: '18%', right: '18%', height: '4vh',
+    borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(0,0,0,.42), rgba(0,0,0,0) 70%)' },
+  // הפס שנשאר אחרי ריצה: כיוון, לא ניחוש.
+  streak: { position: 'absolute', bottom: '6%', width: '55%', height: '2.4vh', borderRadius: '50%',
+    filter: 'blur(3px)', opacity: 0.7 },
+  streakL: { right: '80%', background: 'linear-gradient(90deg, rgba(240,192,105,0), rgba(240,192,105,.75))' },
+  streakR: { left: '80%', background: 'linear-gradient(270deg, rgba(240,192,105,0), rgba(240,192,105,.75))' },
   lock: { position: 'absolute', inset: 6, width: 'calc(100% - 12px)', height: 'calc(100% - 12px)' },
   doneWrap: { position: 'absolute', inset: 0, display: 'grid', placeItems: 'center',
     alignContent: 'center', gap: 2 },
