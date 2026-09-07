@@ -265,6 +265,24 @@ export function reduce(g, ev) {
       }
     }
 
+    // ── קפצו למטבע הזהב ──
+    case 'GOLD_TAKEN': {
+      const r = g.run
+      if (!r?.coins) return g
+      const gold = r.coins.find(c => c.gold && !c.taken)
+      if (!gold) return g
+      const mult = r.resolved ? HOME_BONUS : 1
+      return {
+        ...g,
+        run: {
+          ...r,
+          coins: r.coins.map(c => (c === gold ? { ...c, taken: true } : c)),
+          coinsTaken: (r.coinsTaken || 0) + gold.value * mult,
+          lastCoin: { t: ev.t ?? Date.now(), gold: true, n: 1, jump: ev.jump || null },
+        },
+      }
+    }
+
     case 'PORTAL_OPEN':
       // הפורטל נפתח רק אחרי התחנה האחרונה — מיד, או בסוף הדרך הביתה.
       if (!(g.state === S.CAUGHT || g.state === S.SEARCH) || !g.run?.resolved) return g

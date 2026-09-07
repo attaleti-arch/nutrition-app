@@ -13,7 +13,8 @@ import { useRoute } from './hooks/useRoute'
 import { MiniMap } from './ui/MiniMap'
 import { turnsFor, nextCue, cueText } from './engine/turns'
 import { pathLength } from './engine/geo'
-import { loopTargetM, canBuyExtra, WALK_PLAN, heatOf } from './engine/coins'
+import { loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby } from './engine/coins'
+import { GoldStage } from './ar/GoldStage'
 import { haversine } from './engine/geo'
 import { sfxCoin } from './engine/audio'
 import 'leaflet/dist/leaflet.css'
@@ -101,6 +102,17 @@ export default function Wilden() {
     dispatch({ type: 'SET_CREATURE', id: M01.creature })
   }
 
+  // ── מטבע הזהב ──
+  // בטווח 22 מ' מהזהב נפתח מסך הקפיצה. "אחר כך" סוגר אותו עד שמתרחקים
+  // וחוזרים — לא נטפל בילד.
+  const [goldOpen, setGoldOpen] = useState(false)
+  const [goldSkipped, setGoldSkipped] = useState(false)
+  const nearGold = g.state === S.SEARCH ? goldNearby(g.run?.coins, g.run?.pos) : null
+  useEffect(() => {
+    if (nearGold && !goldSkipped && !goldOpen) setGoldOpen(true)
+    if (!nearGold && goldSkipped) setGoldSkipped(false)
+  }, [nearGold, goldSkipped, goldOpen])
+
   // ── גלינג ──
   // המנוע אוסף, הדף מצלצל. lastCoin משתנה בכל איסוף; זהב מצלצל יותר.
   const lastCoinT = useRef(null)
@@ -129,6 +141,13 @@ export default function Wilden() {
     <div dir="rtl" style={{ minHeight: '100dvh', background: C.bg, color: C.ink,
       fontFamily: '"Heebo", system-ui, -apple-system, sans-serif' }}>
       <style dangerouslySetInnerHTML={{ __html: BEACON_CSS }} />
+
+      {/* מטבע הזהב: רגע של קפיצה, מעל המפה */}
+      {g.state === S.SEARCH && goldOpen && (
+        <GoldStage value={10}
+          onTaken={res => { dispatch({ type: 'GOLD_TAKEN', t: Date.now(), jump: res }); setGoldOpen(false); setGoldSkipped(false) }}
+          onClose={() => { setGoldOpen(false); setGoldSkipped(true) }} />
+      )}
 
       {g.state === S.ENCOUNTER && (
         <Stage

@@ -16,7 +16,8 @@ import { revalidate, PLACE_AFTER } from '../src/app/wilden/engine/placement.js'
 import { STRUCTURE, GUARDIAN_STATE, affordanceOf, isEnterable, KRAAG_AWAKENS } from '../src/app/wilden/content/canon.js'
 import nimi from '../src/app/wilden/ar/controllers/nimi.js'
 import dabashon from '../src/app/wilden/ar/controllers/dabashon.js'
-import { loopTargetM, canBuyExtra, WALK_PLAN } from '../src/app/wilden/engine/coins.js'
+import { loopTargetM, canBuyExtra, WALK_PLAN, goldNearby } from '../src/app/wilden/engine/coins.js'
+import { createJumpDetector, jumpHeightCm, G } from '../src/app/wilden/engine/jump.js'
 import { buildLoop, fallbackLoop, normalize } from '../src/app/wilden/engine/loop.js'
 import { getCached, putCached } from '../src/app/wilden/engine/routeCache.js'
 
@@ -144,6 +145,45 @@ test('תחנות: היצור בסוף, לא באמצע — רוב ההליכה �
   const two = started(['nimi', 'dabashon'])
   assert.ok(two.run.stops[1].along / total >= 0.75, 'השני עדיין לקראת הסוף')
   assert.ok(two.run.stops[0].along / total >= 0.4, 'והראשון לא ליד הבית')
+})
+
+// ══════════════════════════════════════════════
+// קפיצה: מד התאוצה רואה דחיפה, ריחוף, נחיתה. נענוע יד — לא.
+function feedSeq(det, seq, dt = 20) {
+  let t = 1000, out = null
+  for (const gval of seq) { const r = det.feed({ t, a: gval * G }); if (r) out = r; t += dt }
+  return out
+}
+test('קפיצה: דחיפה, ריחוף, נחיתה — מזוהה', () => {
+  const det = createJumpDetector()
+  // 1g רגיל → דחיפה 2g (80מ"ש) → ריחוף 0.2g (240מ"ש) → נחיתה 2.4g
+  const seq = [1, 1, 1, 2.0, 2.1, 2.0, 1.9, 0.3, 0.2, 0.15, 0.2, 0.2, 0.25, 0.2, 0.3, 0.2, 0.25, 0.2, 0.3, 2.4, 1.8, 1, 1]
+  const r = feedSeq(det, seq)
+  assert.ok(r, 'זוהתה קפיצה')
+  assert.ok(r.airMs >= 200 && r.airMs <= 280, `ריחוף של ~240 מ"ש, התקבל ${r.airMs}`)
+  assert.ok(jumpHeightCm(r.airMs) >= 5 && jumpHeightCm(r.airMs) <= 12, 'גובה סביר לילד')
+})
+test('קפיצה: נענוע יד — דחיפות ומכות בלי חוסר משקל — לא מזוהה', () => {
+  const det = createJumpDetector()
+  const seq = [1, 2.2, 1.6, 0.9, 2.5, 1.2, 0.8, 2.1, 1.1, 0.9, 2.3, 1, 1]
+  assert.equal(feedSeq(det, seq), null)
+})
+test('קפיצה: ריחוף קצר מדי (צעד) — לא מזוהה', () => {
+  const det = createJumpDetector()
+  const seq = [1, 1.8, 1.9, 0.3, 0.3, 1.9, 1, 1]       // 40מ"ש באוויר
+  assert.equal(feedSeq(det, seq), null)
+})
+test('קפיצה: כשמזהים — הזהב נלקח, ולא נאסף סתם במעבר', () => {
+  let g = started()
+  const gold = g.run.coins.find(c => c.gold)
+  g = reduce(g, { type: 'FIX', lat: gold.lat, lng: gold.lng, acc: 6, t: 5000 })
+  assert.equal(g.run.coins.find(c => c.gold).taken, false, 'עוברים ליד הזהב — הוא נשאר')
+  assert.ok(goldNearby(g.run.coins, g.run.pos), 'אבל המשחק יודע שאנחנו לידו')
+  g = reduce(g, { type: 'GOLD_TAKEN', t: 6000, jump: { airMs: 240 } })
+  assert.equal(g.run.coins.find(c => c.gold).taken, true)
+  assert.equal(g.run.coinsTaken, 10)
+  assert.equal(g.run.lastCoin.gold, true)
+  assert.equal(reduce(g, { type: 'GOLD_TAKEN', t: 7000 }).run.coinsTaken, 10, 'פעם אחת בלבד')
 })
 
 test('הדרך הביתה שווה כפול', () => {

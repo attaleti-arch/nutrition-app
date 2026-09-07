@@ -36,15 +36,23 @@ export function placeCoins(path, { stops = [], every = COIN_EVERY_M, rng = Math.
 }
 
 // מחזירה את המטבעות המעודכנים ואת מה שנאסף עכשיו. לא משנה את הקלט.
+// הזהב לא נאסף בהליכה: הוא רגע של קפיצה (GOLD_TAKEN), לא של מעבר.
 export function collectCoins(coins, pos, radius = COLLECT_RADIUS_M) {
   if (!coins?.length || !pos) return { coins, got: [] }
   const got = []
   const next = coins.map(c => {
-    if (c.taken) return c
+    if (c.taken || c.gold) return c
     if (haversine(c, pos) <= radius) { got.push(c); return { ...c, taken: true } }
     return c
   })
   return got.length ? { coins: next, got } : { coins, got }
+}
+
+export const GOLD_NEAR_M = 22
+export function goldNearby(coins, pos) {
+  const g = (coins || []).find(c => c.gold && !c.taken)
+  if (!g || !pos) return null
+  return haversine(g, pos) <= GOLD_NEAR_M ? g : null
 }
 
 // הדרך הביתה שווה כפול: היצור הולך איתך. "הוא איתך" צריך להרגיש.
