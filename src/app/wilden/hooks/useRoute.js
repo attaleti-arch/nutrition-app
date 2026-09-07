@@ -32,7 +32,7 @@ export function useRoute() {
 
   const skip = useCallback(() => { abort.current?.abort() }, [])
 
-  const build = useCallback(async home => {
+  const build = useCallback(async (home, targetM = TARGET_M) => {
     setStatus('working'); setDegraded(false); setPath(null); setReason(null)
 
     // ── מסלול שכבר נבנה מהבית הזה ──
@@ -59,11 +59,11 @@ export function useRoute() {
       // למתכנן מרחב אמיתי לעבוד בו.
       // רחובות מתפתלים: לולאה של 3.4 ק"מ נכנסת ברדיוס של ~1.1 ק"מ. יותר
       // מזה — השאילתה כבדה מדי ל-Overpass ונופלת בזמן.
-      const radius = Math.max(600, Math.min(1100, Math.round(TARGET_M * 0.33)))
+      const radius = Math.max(600, Math.min(1100, Math.round(targetM * 0.33)))
       const data = await fetchStreets(home.lat, home.lng, radius, {
         signal: ctl.signal, timeoutMs: FETCH_TIMEOUT,
       })
-      out = buildLoop(data, home)
+      out = buildLoop(data, home, targetM)
     } catch (e) {
       out = { ok: false, reason: e?.name === 'AbortError' ? 'aborted' : 'network' }
     }
@@ -86,8 +86,8 @@ export function useRoute() {
   }, [])
 
   // בחירה מפורשת של ההורה: מסלול כללי, לא על רחובות.
-  const useFallback = useCallback(home => {
-    const fb = fallbackLoop(home)
+  const useFallback = useCallback((home, targetM = TARGET_M) => {
+    const fb = fallbackLoop(home, targetM)
     setPath(fb); setDegraded(true); setStatus('ok')
     return fb
   }, [])

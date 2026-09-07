@@ -13,6 +13,8 @@ import { useRoute } from './hooks/useRoute'
 import { MiniMap } from './ui/MiniMap'
 import { turnsFor, nextCue, cueText } from './engine/turns'
 import { pathLength } from './engine/geo'
+import { loopTargetM, canBuyExtra, WALK_PLAN } from './engine/coins'
+import { sfxCoin } from './engine/audio'
 import 'leaflet/dist/leaflet.css'
 import { unlockAudio, sfxAppear, sfxRustle, sfxCatch, sfxFinish, buzz } from './engine/audio'
 
@@ -82,7 +84,8 @@ export default function Wilden() {
   useEffect(() => {
     if (g.state !== S.ROUTE_BUILDING || !g.run?.home) return
     let dead = false
-    route.build(g.run.home).then(path => {
+    // אורך הלולאה לפי הלוח: 30 דקות בפעם הראשונה, 45 אחר כך.
+    route.build(g.run.home, loopTargetM(g.run.walkIndex || 0)).then(path => {
       if (dead) return
       if (path) dispatch({ type: 'ROUTE_READY', path, home: g.run.home })
       else dispatch({ type: 'ROUTE_FAILED' })
@@ -91,11 +94,21 @@ export default function Wilden() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [g.state, g.run?.home])
 
-  function startRun(kind) {
+  function startRun(kind, extra = false) {
     unlockAudio()
-    dispatch({ type: 'START_RUN', kind, missionId: kind === RUN.STORY ? M01.id : null, day: today, t: Date.now() })
+    dispatch({ type: 'START_RUN', kind, extra, missionId: kind === RUN.STORY ? M01.id : null, day: today, t: Date.now() })
     dispatch({ type: 'SET_CREATURE', id: M01.creature })
   }
+
+  // ── גלינג ──
+  // המנוע אוסף, הדף מצלצל. lastCoin משתנה בכל איסוף; זהב מצלצל יותר.
+  const lastCoinT = useRef(null)
+  useEffect(() => {
+    const lc = g.run?.lastCoin
+    if (!lc || lc.t === lastCoinT.current) return
+    lastCoinT.current = lc.t
+    try { sfxCoin(lc.gold); buzz(lc.gold ? [30, 40, 30, 40, 60] : [25]) } catch (e) { /* לא קריטי */ }
+  }, [g.run?.lastCoin])
 
   function askLocation() {
     geo.request()
@@ -169,7 +182,7 @@ export default function Wilden() {
             </p>
             <button onClick={() => dispatch({ type: 'ROUTE_RETRY' })} style={s.cta}>לנסות שוב</button>
             <button onClick={() => {
-              const fb = route.useFallback(g.run.home)
+              const fb = route.useFallback(g.run.home, loopTargetM(g.run.walkIndex || 0))
               dispatch({ type: 'ROUTE_READY', path: fb, home: g.run.home })
             }} style={{ ...s.cta, ...s.ctaGhost }}>לצאת בכל זאת, עם מסלול כללי</button>
             <p style={s.note}>מסלול כללי הוא צורה סביב הבית, לא על רחובות. ההורה מחליט אם זה בסדר כאן.</p>
@@ -257,6 +270,8 @@ export default function Wilden() {
 function BrokenWorld({ g, today, onStart }) {
   const storyOpen = canStartStory(g.progress, today)
   const first = g.progress.missionsCompleted === 0
+  const walks = g.progress.walks || 0
+  const extraOk = canBuyExtra(g.progress)
   return (
     <>
       <p style={s.eyebrow}>WILDEN</p>
@@ -273,6 +288,14 @@ function BrokenWorld({ g, today, onStart }) {
         <Beacon power={beaconView(g).power} phase={PHASE.IDLE} size={120} />
       </div>
 
+      {/* הלוח של הבן שלה: מסע 1 — 30 דקות ויצור. אחר כך 45 דקות. מהשלישי —
+          מטבעות פותחים יצור שני. */}
+      <div style={s.plan}>
+        <span>🚶 {walks === 0 ? '30 דק׳' : '45 דק׳'}</span>
+        <span>🪙 <b>{g.progress.coins || 0}</b></span>
+        <span>{walks === 0 ? 'יצור אחד בדרך' : walks === 1 ? 'יצור חדש בדרך' : 'יצור בדרך'}</span>
+      </div>
+
       {storyOpen ? (
         <>
           <div style={s.brief}>
@@ -280,6 +303,11 @@ function BrokenWorld({ g, today, onStart }) {
             <p style={s.briefSub}>{M01.brief.sub}</p>
           </div>
           <button onClick={() => onStart(RUN.STORY)} style={s.cta}>{M01.brief.cta}</button>
+          {extraOk && (
+            <button onClick={() => onStart(RUN.STORY, true)} style={{ ...s.cta, ...s.ctaGold }}>
+              🪙 {WALK_PLAN.extraCost} — לפתוח יצור שני בדרך
+            </button>
+          )}
           <button onClick={() => onStart(RUN.FREE)} style={{ ...s.cta, ...s.ctaGhost }}>צא לחקור</button>
         </>
       ) : (
@@ -289,7 +317,15 @@ function BrokenWorld({ g, today, onStart }) {
             <p style={s.briefSub}>אבל אפשר לצאת לחקור מתי שבא לכם.</p>
           </div>
           <button onClick={() => onStart(RUN.FREE)} style={s.cta}>צא לחקור</button>
+          {extraOk && (
+            <button onClick={() => onStart(RUN.FREE, true)} style={{ ...s.cta, ...s.ctaGold }}>
+              🪙 {WALK_PLAN.extraCost} — לפתוח יצור שני בדרך
+            </button>
+          )}
         </>
+      )}
+      {walks >= WALK_PLAN.extraFromWalk && !extraOk && (
+        <p style={s.note}>יצור שני בדרך עולה {WALK_PLAN.extraCost} מטבעות. יש לכם {g.progress.coins || 0}.</p>
       )}
 
       {g.notice === 'no-location' && <p style={s.warn}>בלי אישור מיקום אי אפשר לצאת.</p>}
@@ -323,7 +359,10 @@ function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, creat
         <MiniMap home={r.home} path={r.path} pos={geo.pos}
           stops={r.stops || (r.target ? [r.target] : [])} nextStop={r.stops ? r.stop : 0}
           reveal={reveal} known={g.progress.creatures} creatureImg={creature?.sprites?.hero}
-          height="100%" />
+          coins={r.coins} height="100%" />
+
+        {/* מונה המטבעות: קופץ בכל גלינג */}
+        <div key={r.coinsTaken || 0} style={s.coinHud}>🪙 {r.coinsTaken || 0}</div>
 
         {/* ההוראה, מעל המפה */}
         <div style={s.navOverlay}>
@@ -462,6 +501,12 @@ const s = {
   mapWrap: { position: 'relative', height: 'calc(100dvh - 190px)', minHeight: 420, margin: '-6px 0 10px' },
   navOverlay: { position: 'absolute', top: 10, insetInline: 10, zIndex: 600, background: 'rgba(15,21,15,.88)',
     border: `1px solid ${C.line}`, borderRadius: 14, padding: '12px 14px', backdropFilter: 'blur(6px)' },
+  coinHud: { position: 'absolute', top: 96, insetInlineEnd: 12, zIndex: 650, padding: '6px 12px', borderRadius: 999,
+    background: '#E5A342', color: '#14200F', fontWeight: 900, fontSize: 17, boxShadow: '0 3px 12px rgba(0,0,0,.35)',
+    animation: 'wildenCoinPop .35s ease-out' },
+  plan: { display: 'flex', justifyContent: 'space-between', gap: 10, background: C.card2, border: `1px solid ${C.line}`,
+    borderRadius: 12, padding: '10px 14px', margin: '0 0 12px', fontSize: 15, color: C.muted },
+  ctaGold: { background: '#F0C069', color: '#14200F' },
   navLine: { margin: 0, fontSize: 23, fontWeight: 900, color: C.ink, lineHeight: 1.25 },
   navSub: { margin: '5px 0 0', fontSize: 14.5, color: C.muted },
   beaconOverlay: { position: 'absolute', bottom: 54, insetInlineEnd: 10, zIndex: 600, display: 'grid',

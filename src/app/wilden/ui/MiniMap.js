@@ -42,7 +42,7 @@ function stopIcon(L, s, isNext, img, known) {
     html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:rgba(229,163,66,${isNext ? '.3' : '.18'});border:${isNext ? 3 : 2}px ${isNext ? 'solid' : 'dashed'} ${AMBER};display:grid;place-items:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,.45));${isNext ? 'animation:wildenPin 1.6s ease-in-out infinite' : 'opacity:.85'}">${inner}</div>` })
 }
 
-export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = true, known = [], creatureImg, height = '46vh' }) {
+export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = true, known = [], creatureImg, coins = [], height = '46vh' }) {
   const ready = useLeaflet()
   const el = useRef(null)
   const map = useRef(null)
@@ -117,6 +117,25 @@ export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = tr
     })
   }, [ready, stops, nextStop, creatureImg, reveal, known])
 
+  // ── המטבעות ──
+  // שכבה אחת, מצוירת מחדש רק כשמשהו נאסף. זהב גדול יותר. מה שנאסף נעלם.
+  useEffect(() => {
+    const m = map.current
+    if (!m) return
+    const L = Lmod
+    lay.current.coins?.remove()
+    const group = L.layerGroup()
+    for (const c of coins || []) {
+      if (c.taken) continue
+      L.circleMarker([c.lat, c.lng], {
+        radius: c.gold ? 9 : 5, color: '#8A5A12', weight: 1.5, fillColor: c.gold ? '#FFD44D' : '#F0C069',
+        fillOpacity: 1, interactive: false,
+      }).addTo(group)
+    }
+    group.addTo(m)
+    lay.current.coins = group
+  }, [ready, coins])
+
   // אני
   useEffect(() => {
     const m = map.current
@@ -145,7 +164,8 @@ export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = tr
 
   return (
     <div style={{ position: 'relative', height, borderRadius: 16, overflow: 'hidden', border: '1px solid #2B382B', background: '#1C261D' }}>
-      <style>{`@keyframes wildenPin{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}`}</style>
+      <style>{`@keyframes wildenPin{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes wildenCoinPop{0%{transform:scale(1.35)}100%{transform:scale(1)}}`}</style>
       <div ref={el} style={{ position: 'absolute', inset: 0 }} />
       {!ready && <p style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', margin: 0, color: '#9BA495', fontSize: 14 }}>טוענים מפה…</p>}
       <div style={{ position: 'absolute', bottom: 10, insetInlineStart: 10, zIndex: 500, display: 'flex', gap: 8 }}>

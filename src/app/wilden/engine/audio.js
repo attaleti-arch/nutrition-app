@@ -103,6 +103,17 @@ export function sfxCatch() {
   tone({ freq: 2093.0, dur: 0.9, type: 'sine', vol: 0.12, delay: 0.31 })     // נצנוץ
 }
 
+// ── גלינג: מטבע ──
+// קצר, גבוה, ולא מעייף גם בפעם השמונים. זהב — שלושה צלילים עולים.
+export function sfxCoin(gold = false) {
+  tone({ freq: 1567.98, dur: 0.09, type: 'sine', vol: 0.18 })
+  tone({ freq: 2093.0, dur: 0.16, type: 'sine', vol: 0.16, delay: 0.06 })
+  if (gold) {
+    tone({ freq: 2637.0, dur: 0.22, type: 'sine', vol: 0.16, delay: 0.14 })
+    tone({ freq: 3135.96, dur: 0.4, type: 'sine', vol: 0.12, delay: 0.22 })
+  }
+}
+
 // ── יצור התגלה על המפה ──
 export function sfxAppear() {
   tone({ freq: 660, dur: 0.16, type: 'triangle', vol: 0.16 })

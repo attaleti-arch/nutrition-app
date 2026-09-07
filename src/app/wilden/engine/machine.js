@@ -7,6 +7,7 @@
 import { haversine, bearing, advanceWalk, progressAlong } from './geo.js'
 import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL_RADIUS } from './beacon.js'
 import { placeTarget, placeStops, revalidate, PLACE_AFTER } from './placement.js'
+import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk } from './coins.js'
 
 export const S = {
   BROKEN_WORLD: 'BROKEN_WORLD',     // עולם הבית ההרוס. נקודת הכניסה.
@@ -46,6 +47,8 @@ export function initial() {
       creatures: [],
       res: {},
       story: {},
+      coins: 0,           // הארנק
+      walks: 0,           // כמה מסלולים הושלמו, מכל סוג — קובע את הלוח
     },
   }
 }
@@ -105,20 +108,27 @@ export function reduce(g, ev) {
       if (kind === RUN.STORY && !canStartStory(g.progress, ev.day)) {
         return { ...g, state: S.BROKEN_WORLD, notice: 'story-done-today' }
       }
+      // יצור שני בתשלום — רק מהמסע השלישי, ורק אם יש מטבעות. משלמים מראש.
+      const walks = g.progress.walks || 0
+      const wallet = g.progress.coins || 0
+      const extra = !!ev.extra && walks >= WALK_PLAN.extraFromWalk && wallet >= WALK_PLAN.extraCost
       return {
         ...g,
         state: S.PERMISSIONS,
         notice: null,
+        progress: extra ? { ...g.progress, coins: wallet - WALK_PLAN.extraCost } : g.progress,
         run: {
           kind,
           missionId: ev.missionId || null,
           day: ev.day,
           startedAt: ev.t,
+          walkIndex: walks,
+          wantCreatures: creaturesForWalk(walks, extra, ev.available),
           home: null, path: null, pos: null, lastFix: null, walkRef: null, stillRef: null,
           acc: null, walked: 0, along: 0,
           target: null, resolved: false,
           encounterMode: null, stillMs: 0,
-          loot: [],
+          loot: [], coins: [], coinsTaken: 0, lastCoin: null,
         },
       }
     }
@@ -135,13 +145,15 @@ export function reduce(g, ev) {
     // ידוע מהצעד הראשון. (בלי stops — מסע ישן ששמור בטלפון — נשארים
     // בהתנהגות הקודמת: יעד אחד שנולד אחרי 60 מ'.)
     case 'ROUTE_READY': {
-      // מי בדרך: נימי, דבשון, ושוב נימי. כשיגיעו עוד מודלים — מוסיפים לרשימה.
-      const stops = placeStops(ev.path, undefined, { creatures: ev.creatures || ['nimi', 'dabashon'] })
+      // מי בדרך נקבע ב-START_RUN לפי הלוח: יצור אחד, או שניים אם שולם.
+      const who = ev.creatures || g.run.wantCreatures || ['nimi']
+      const stops = placeStops(ev.path, who.length, { creatures: who })
+      const coins = placeCoins(ev.path, { stops })
       return {
         ...g,
         state: S.SEARCH,
         run: { ...g.run, path: ev.path, home: ev.home ?? g.run.home, stops, stop: 0,
-          target: stops[0] || null, resolved: false },
+          target: stops[0] || null, resolved: false, coins, coinsTaken: g.run.coinsTaken || 0 },
       }
     }
 
@@ -184,9 +196,16 @@ export function reduce(g, ev) {
         target = placeTarget(r.path, along)
       }
 
+      // ── מטבעות ──
+      // עוברים דרך מטבע — הוא נאסף. הדף שומע את השינוי ב-coinsTaken ומצלצל.
+      const cc = collectCoins(r.coins, pos)
+      const coinsTaken = (r.coinsTaken || 0) + coinsValue(cc.got)
+      const lastCoin = cc.got.length ? { t: ev.t, gold: cc.got.some(c => c.gold), n: cc.got.length } : r.lastCoin
+
       return {
         ...g,
-        run: { ...r, pos, lastFix: pos, walkRef: w.ref, stillRef, lastT: ev.t, acc: ev.acc ?? null, walked, along, target, stillMs },
+        run: { ...r, pos, lastFix: pos, walkRef: w.ref, stillRef, lastT: ev.t, acc: ev.acc ?? null, walked, along, target, stillMs,
+          coins: cc.coins, coinsTaken, lastCoin },
       }
     }
 
@@ -267,6 +286,8 @@ export function reduce(g, ev) {
           ...g.progress,
           creatures,
           res,
+          coins: (g.progress.coins || 0) + (r.coinsTaken || 0),
+          walks: (g.progress.walks || 0) + 1,
           // רק משימה סיפורית מקדמת את העולם ואת הביקון.
           missionsCompleted: isStory ? g.progress.missionsCompleted + 1 : g.progress.missionsCompleted,
           lastStoryDay: isStory ? r.day : g.progress.lastStoryDay,
@@ -284,8 +305,13 @@ export function reduce(g, ev) {
       return { ...g, state: S.BROKEN_WORLD, run: null }
 
     case 'ABORT':
-      // "לעצור" שומר הכל. אין עונש על לחזור הביתה.
-      return { ...g, state: S.ABORTED, run: { ...g.run, resolved: false } }
+      // "לעצור" שומר הכל. אין עונש על לחזור הביתה — גם המטבעות שנאספו נשארים.
+      return {
+        ...g,
+        state: S.ABORTED,
+        progress: { ...g.progress, coins: (g.progress.coins || 0) + (g.run?.coinsTaken || 0) },
+        run: { ...g.run, resolved: false, coinsTaken: 0 },
+      }
 
     case 'SET_CREATURE':
       return { ...g, run: { ...g.run, creature: ev.id } }

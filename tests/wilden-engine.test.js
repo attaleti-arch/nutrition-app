@@ -16,6 +16,7 @@ import { revalidate, PLACE_AFTER } from '../src/app/wilden/engine/placement.js'
 import { STRUCTURE, GUARDIAN_STATE, affordanceOf, isEnterable, KRAAG_AWAKENS } from '../src/app/wilden/content/canon.js'
 import nimi from '../src/app/wilden/ar/controllers/nimi.js'
 import dabashon from '../src/app/wilden/ar/controllers/dabashon.js'
+import { loopTargetM, canBuyExtra, WALK_PLAN } from '../src/app/wilden/engine/coins.js'
 import { buildLoop, fallbackLoop, normalize } from '../src/app/wilden/engine/loop.js'
 import { getCached, putCached } from '../src/app/wilden/engine/routeCache.js'
 
@@ -36,14 +37,16 @@ function walk(g, meters, { acc = 10, stepM = 15, t0 = 1000 } = {}) {
   return g
 }
 
-function started() {
-  let g = initial()
+// creatures: מי בדרך. ברירת המחדל (בלי) — לפי הלוח: מסע ראשון, נימי לבד.
+function started(creatures, g0) {
+  let g = g0 || initial()
   g = reduce(g, { type: 'START_RUN', kind: RUN.STORY, missionId: 'm01', day: DAY, t: 0 })
   g = reduce(g, { type: 'PERMISSION_GRANTED', home: HOME })
-  g = reduce(g, { type: 'ROUTE_READY', path: PATH, home: HOME })
+  g = reduce(g, { type: 'ROUTE_READY', path: PATH, home: HOME, creatures })
   g = reduce(g, { type: 'SET_CREATURE', id: 'nimi' })
   return g
 }
+const THREE = ['nimi', 'dabashon', 'nimi']
 
 // ══════════════════════════════════════════════
 test('גאומטריה: סינון קפיצות GPS', () => {
@@ -120,7 +123,7 @@ test('ביקון: השלבים מדורגים לפי מרחק', () => {
 
 // ══════════════════════════════════════════════
 test('תחנות: כמה יצורים לאורך המסלול, קבועים מהצעד הראשון', () => {
-  const g = started()
+  const g = started(THREE)
   assert.equal(g.run.stops.length, 3, 'שלוש תחנות על 1.2 ק"מ')
   assert.deepEqual(g.run.target, g.run.stops[0], 'היעד הראשון ידוע מיד — יש לאן ללכת')
   const total = 60 * 20
@@ -232,7 +235,7 @@ function catchHere(g, t0) {
 }
 
 test('מסע 1 מקצה לקצה: שלוש תחנות, ואז הפורטל', () => {
-  let g = started()
+  let g = started(THREE)
   g = walk(g, 200)
 
   g = catchHere(g, 500000)
@@ -258,6 +261,8 @@ test('מסע 1 מקצה לקצה: שלוש תחנות, ואז הפורטל', () 
 
   assert.equal(g.state, S.CLUE, 'משימה סיפורית נגמרת ברמז, לא במסך ניצחון')
   assert.deepEqual(g.progress.creatures, ['nimi', 'dabashon'], 'כל מי שנתפס בדרך, פעם אחת לכל סוג')
+  assert.equal(g.progress.walks, 1, 'מסלול אחד הושלם')
+  assert.ok(g.progress.coins > 0, 'המטבעות שנאספו בדרך נכנסו לארנק')
   assert.equal(g.progress.res.wood, 1)
   assert.equal(g.progress.missionsCompleted, 1)
   assert.equal(g.progress.story.m01, 'done')
@@ -269,7 +274,7 @@ test('מסע 1 מקצה לקצה: שלוש תחנות, ואז הפורטל', () 
 
 // ══════════════════════════════════════════════
 test('משימה סיפורית אחת ביום — אבל אין נעילה של יציאה נוספת', () => {
-  let g = started()
+  let g = started(THREE)
   g = walk(g, 200)
   g = catchHere(g, 500000); g = reduce(g, { type: 'CONTINUE' })
   g = catchHere(g, 600000); g = reduce(g, { type: 'CONTINUE' })
@@ -468,8 +473,55 @@ test('נימי: הפעימות — שביל, מציץ, בורח עם קו, מת�
 })
 
 test('תחנות: היצורים מתחלפים — נימי, דבשון, נימי', () => {
-  const g = started()
+  const g = started(THREE)
   assert.deepEqual(g.run.stops.map(s => s.creature), ['nimi', 'dabashon', 'nimi'])
+})
+
+// ══════════════════════════════════════════════
+// הלוח של הבן שלה: מטבעות, 30 ואז 45 דקות, יצור שני בתשלום.
+test('לוח: מסע ראשון — 30 דקות, נימי לבד, בלי אפשרות לקנות', () => {
+  const g = started()
+  assert.equal(g.run.walkIndex, 0)
+  assert.equal(loopTargetM(0), 2200); assert.equal(loopTargetM(1), 3200)
+  assert.deepEqual(g.run.stops.map(s => s.creature), ['nimi'])
+  assert.equal(canBuyExtra(initial().progress), false)
+  const paid = reduce(initial(), { type: 'START_RUN', kind: RUN.STORY, day: DAY, t: 0, extra: true })
+  assert.deepEqual(paid.run.wantCreatures, ['nimi'], 'לשלם אי אפשר לפני המסע השלישי')
+})
+
+test('מטבעות: מונחים על השביל, נאספים כשעוברים, נשארים גם כשעוצרים', () => {
+  let g = started()
+  const n = g.run.coins.length
+  assert.ok(n >= 25 && n <= 40, `מטבע כל ~35 מ' על 1.2 ק"מ, התקבלו ${n}`)
+  assert.equal(g.run.coins.filter(c => c.gold).length, 1, 'זהב אחד')
+  assert.ok(g.run.coins.every(c => Math.abs(c.along - g.run.stops[0].along) >= 30), 'לא על התחנה')
+  assert.equal(g.run.coinsTaken, 0)
+
+  g = walk(g, 200)
+  assert.ok(g.run.coinsTaken >= 4, `אחרי 200 מ' נאספו כמה: ${g.run.coinsTaken}`)
+  assert.ok(g.run.lastCoin, 'ויש אירוע לצליל')
+  const taken = g.run.coins.filter(c => c.taken).length
+  assert.ok(taken >= 4 && g.run.coins.filter(c => !c.taken && c.along < 150).length === 0, 'מה שעברנו נאסף')
+
+  const stopped = reduce(g, { type: 'ABORT' })
+  assert.equal(stopped.progress.coins, g.run.coinsTaken, 'עצירה שומרת את המטבעות')
+})
+
+test('לוח: אחרי שני מסעות אפשר לקנות יצור שני, והתשלום יורד מהארנק', () => {
+  let g = initial()
+  g = { ...g, progress: { ...g.progress, walks: 2, coins: 100 } }
+  assert.equal(canBuyExtra(g.progress), true)
+  g = started(undefined, g)
+  assert.equal(g.run.walkIndex, 2)
+  assert.deepEqual(g.run.stops.map(s => s.creature), ['nimi'], 'בלי תשלום — אחד')
+
+  let h = initial()
+  h = { ...h, progress: { ...h.progress, walks: 2, coins: 100 } }
+  h = reduce(h, { type: 'START_RUN', kind: RUN.STORY, missionId: 'm01', day: DAY, t: 0, extra: true })
+  assert.equal(h.progress.coins, 100 - WALK_PLAN.extraCost, 'שולם מראש')
+  h = reduce(h, { type: 'PERMISSION_GRANTED', home: HOME })
+  h = reduce(h, { type: 'ROUTE_READY', path: PATH, home: HOME })
+  assert.deepEqual(h.run.stops.map(s => s.creature), ['nimi', 'dabashon'], 'שניים בדרך')
 })
 
 test('דבשון: באוויר, שלוש לחיצות', () => {
