@@ -32,6 +32,29 @@ export function placeTarget(path, walkedAlong, { ahead, endBufferM = 120 } = {})
   return { lat: p.point.lat, lng: p.point.lng, along: at }
 }
 
+// ── תחנות: כמה יצורים לאורך המסלול, קבועים מראש ──
+// "רציתי מסלול כמו גוגל, של שעה, עם יעד ברור וכמה דמויות שפוגשים בדרך."
+// אז לא יעד אחד שנולד תוך כדי הליכה, אלא תחנות שנקבעות ברגע שהמסלול
+// נבנה, מפוזרות שווה לאורכו, עם מרווח מהבית בהתחלה ובסוף. הן מצוירות
+// על המפה מההתחלה. הילד יודע לאן הוא הולך.
+export const STOPS = 3
+export const STOP_BUFFER = 150
+
+export function placeStops(path, count = STOPS, { creature = 'nimi', buffer = STOP_BUFFER } = {}) {
+  if (!path || path.length < 2) return []
+  const total = pathLength(path)
+  const usable = Math.max(0, total - 2 * buffer)
+  const n = Math.max(1, Math.min(count, Math.floor(usable / 200) || 1))   // לפחות 200 מ' בין תחנות
+  const stops = []
+  for (let i = 0; i < n; i++) {
+    const at = buffer + (usable * (i + 1)) / (n + 1)
+    const p = pointAlong(path, at)
+    if (!p) continue
+    stops.push({ lat: p.point.lat, lng: p.point.lng, along: at, creature, done: false })
+  }
+  return stops
+}
+
 // ── resume אחרי שהילד סגר וזז ──
 // שומרים את מצב הסיפור ואת מה שכבר הושג, אבל לא מכריחים אותו לחזור
 // פיזית לנקודה של אתמול. אם הוא כבר איפה שהיה היעד — או עבר אותו, או

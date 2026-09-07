@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { initial, reduce, beaconView, S, RUN, MODE, nextRunKind, canStartStory } from './engine/machine'
 import { PHASE, PHASE_BUZZ, ACC_GATE, ACC_DIRECTION, ACC_COARSE, WALK_GATE } from './engine/beacon'
 import { save, load, dayKey } from './engine/persist'
@@ -10,6 +10,8 @@ import { Stage } from './ar/Stage'
 import { useGeo } from './hooks/useGeo'
 import { useRoute } from './hooks/useRoute'
 import { MiniMap } from './ui/MiniMap'
+import { turnsFor, nextCue, cueText } from './engine/turns'
+import { pathLength } from './engine/geo'
 import 'leaflet/dist/leaflet.css'
 import { unlockAudio, sfxAppear, sfxRustle, sfxCatch, sfxFinish, buzz } from './engine/audio'
 
@@ -94,7 +96,8 @@ export default function Wilden() {
 
   if (!booted) return <Shell><p style={{ color: C.muted, textAlign: 'center' }}>רגע…</p></Shell>
 
-  const creature = creatureById(g.run?.creature || M01.creature)
+  // היצור של התחנה הנוכחית. (מסע ישן בלי תחנות — היצור של המסע.)
+  const creature = creatureById(g.run?.target?.creature || g.run?.creature || M01.creature)
 
   return (
     <div dir="rtl" style={{ minHeight: '100dvh', background: C.bg, color: C.ink,
@@ -145,7 +148,7 @@ export default function Wilden() {
         )}
 
         {g.state === S.SEARCH && (
-          <SearchScreen g={g} view={view} geo={geo} degraded={route.degraded} reason={route.reason}
+          <SearchScreen g={g} view={view} geo={geo} degraded={route.degraded} reason={route.reason} creature={creature}
             onSearch={() => dispatch({ type: 'SEARCH_PRESSED' })}
             onAbort={() => dispatch({ type: 'ABORT' })} />
         )}
@@ -153,12 +156,27 @@ export default function Wilden() {
         {g.state === S.CAUGHT && (
           <Panel eyebrow="נתפס!">
             <div style={{ textAlign: 'center', margin: '10px 0 18px' }}>
-              <p style={{ fontSize: 30, fontWeight: 900, margin: 0, color: C.amber }}>{creature?.name}</p>
+              <p style={{ fontSize: 30, fontWeight: 900, margin: 0, color: C.amber }}>
+                {creatureById(g.run.stops?.[Math.max(0, g.run.stop - (g.run.resolved ? 0 : 1))]?.creature || g.run.creature)?.name || creature?.name}
+              </p>
               <p style={{ ...s.body, marginTop: 8 }}>תפסתם אותו! הוא באוסף שלכם.</p>
+              {g.run.stops && (
+                <p style={{ ...s.body, marginTop: 0, color: C.faint }}>
+                  {g.run.resolved
+                    ? 'זה היה האחרון בדרך.'
+                    : `עוד ${g.run.stops.length - g.run.stop} מחכים בדרך.`}
+                </p>
+              )}
             </div>
-            <button onClick={() => { sfxAppear(); dispatch({ type: 'PORTAL_OPEN' }) }} style={s.cta}>
-              לפתוח את הפורטל
-            </button>
+            {g.run.resolved ? (
+              <button onClick={() => { sfxAppear(); dispatch({ type: 'PORTAL_OPEN' }) }} style={s.cta}>
+                לפתוח את הפורטל
+              </button>
+            ) : (
+              <button onClick={() => { sfxAppear(); dispatch({ type: 'CONTINUE' }) }} style={s.cta}>
+                להמשיך בדרך
+              </button>
+            )}
           </Panel>
         )}
 
@@ -251,32 +269,60 @@ function BrokenWorld({ g, today, onStart }) {
 }
 
 // ── מסך החיפוש ──
-function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort }) {
+// ── מסך ההליכה ──
+// כמו ניווט: הוראה אחת גדולה למעלה, מפה עם המסלול והתחנות, ומתחתיה
+// הביקון — שמתעורר רק כשקרובים ליצור. המרחקים גלויים. יעד ברור.
+function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, creature }) {
+  const r = g.run
   const hot = view.phase === PHASE.VERY_CLOSE || view.phase === PHASE.SAFE_STOP
+  const near = hot || view.phase === PHASE.TRACE
+  const turns = useMemo(() => turnsFor(r.path), [r.path])
+  const total = useMemo(() => (r.path ? pathLength(r.path) : 0), [r.path])
+  const along = r.along || 0
+  const cue = r.target ? nextCue(turns, along, r.target.along) : null
+  const toTarget = r.target ? Math.max(0, r.target.along - along) : null
+  const stopsLeft = r.stops ? r.stops.filter(x => !x.done).length : 1
+  const name = creature?.name || 'היצור'
+
   return (
     <>
-      <p style={s.eyebrow}>{g.run.kind === RUN.STORY ? 'מסע · האות' : 'יציאה חופשית'}</p>
+      <p style={s.eyebrow}>{r.kind === RUN.STORY ? 'מסע · האות' : 'יציאה חופשית'}</p>
 
-      <div style={{ display: 'grid', placeItems: 'center', margin: '18px 0 6px' }}>
-        <Beacon power={view.power} phase={view.phase} arrow={view.arrow}
-          bearing={view.bearing ?? 0} size={150} />
-        <BeaconLine line={view.line} sub={view.sub} tone={hot ? 'hot' : 'calm'} />
+      {/* ההוראה */}
+      <div style={s.nav}>
+        <p style={s.navLine}>{cue ? cueText(cue, name) : 'יוצאים לדרך.'}</p>
+        <p style={s.navSub}>
+          {toTarget != null && <>עד {name}: <b>{fmtM(toTarget)}</b></>}
+          {toTarget != null && ' · '}
+          הביתה: <b>{fmtM(Math.max(0, total - along))}</b>
+          {r.stops && <> · בדרך: <b>{stopsLeft}</b></>}
+        </p>
       </div>
 
+      <MiniMap home={r.home} path={r.path} pos={geo.pos}
+        stops={r.stops || (r.target ? [r.target] : [])} nextStop={r.stops ? r.stop : 0}
+        creatureImg={creature?.sprites?.hero} creatureName={name} />
+
+      {/* הביקון: הכלי למטרים האחרונים. עד אז המפה מספיקה. */}
+      {near ? (
+        <div style={{ display: 'grid', placeItems: 'center', margin: '14px 0 4px' }}>
+          <Beacon power={view.power} phase={view.phase} arrow={view.arrow} bearing={view.bearing ?? 0} size={120} />
+          <BeaconLine line={view.line} sub={view.sub} tone={hot ? 'hot' : 'calm'} />
+        </div>
+      ) : (
+        <p style={{ ...s.note, textAlign: 'center', marginTop: 12 }}>
+          {view.phase === PHASE.SIGNAL_WEAK ? view.line : 'הביקון יתעורר כשתתקרבו.'}
+        </p>
+      )}
+
       {view.canSearch && (
-        <button onClick={onSearch} style={{ ...s.cta, marginTop: 22, fontSize: 19 }}>
+        <button onClick={onSearch} style={{ ...s.cta, marginTop: 14, fontSize: 19 }}>
           👁 חפש אותו
         </button>
       )}
-
       {!view.canSearch && view.phase === PHASE.VERY_CLOSE && (
         <p style={s.hintStop}>עצרו במקום בטוח — ואז אפשר לחפש.</p>
       )}
-
-      {/* מפה אמיתית: רחובות, בית, מסלול, אני. היצור הוא אזור זוהר, לא סיכה. */}
-      <div style={{ marginTop: 18 }}>
-        <MiniMap home={g.run.home} path={g.run.path} pos={geo.pos} target={g.run.target} />
-      </div>
 
       <GpsPanel geo={geo} run={g.run} />
       {degraded && (
@@ -379,8 +425,15 @@ function Shell({ children }) {
   )
 }
 
+function fmtM(m) {
+  return m >= 1000 ? `${(m / 1000).toFixed(1)} ק״מ` : `${Math.round(m / 10) * 10} מ׳`
+}
+
 const s = {
   eyebrow: { fontSize: 11.5, fontWeight: 700, letterSpacing: '.16em', color: C.amber, margin: '0 0 10px' },
+  nav: { background: C.card2, border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 16px', margin: '4px 0 12px' },
+  navLine: { margin: 0, fontSize: 24, fontWeight: 900, color: C.ink, lineHeight: 1.25 },
+  navSub: { margin: '6px 0 0', fontSize: 15, color: C.muted },
   h1: { fontSize: 32, fontWeight: 900, margin: '0 0 8px', lineHeight: 1.15 },
   h2: { fontSize: 23, fontWeight: 800, margin: '0 0 10px', lineHeight: 1.25 },
   lede: { fontSize: 17, color: C.muted, margin: '0 0 4px' },

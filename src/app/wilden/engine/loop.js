@@ -11,7 +11,8 @@ import { buildGraph, planLoop, loopCoords, nearestNode } from './routing.js'
 import { parseOverpass } from './osm.js'
 import { destination } from './geo.js'
 
-export const TARGET_M = 2200        // לולאה של ~30 דקות הליכה
+// שעה של הליכה בקצב של ילד, עם שלוש עצירות למפגשים. היא ביקשה שעה.
+export const TARGET_M = 3400
 
 // מקבלת או JSON גולמי מ-Overpass, או תוצאה שכבר פוענחה. ההבחנה הזאת
 // היא בדיוק מה שנשבר קודם, ולכן היא מפורשת כאן ולא נתונה לפרשנות.

@@ -118,41 +118,52 @@ test('ביקון: השלבים מדורגים לפי מרחק', () => {
 })
 
 // ══════════════════════════════════════════════
-test('מיקום היצור: נוצר קדימה על המסלול, לא בנקודה שרירותית', () => {
-  let g = started()
-  assert.equal(g.run.target, null, 'לפני שיוצאים — אין יעד')
+test('תחנות: כמה יצורים לאורך המסלול, קבועים מהצעד הראשון', () => {
+  const g = started()
+  assert.equal(g.run.stops.length, 3, 'שלוש תחנות על 1.2 ק"מ')
+  assert.deepEqual(g.run.target, g.run.stops[0], 'היעד הראשון ידוע מיד — יש לאן ללכת')
+  const total = 60 * 20
+  let prev = 0
+  for (const s of g.run.stops) {
+    assert.ok(progressAlong(PATH, s).offPath < 5, 'על המסלול המאומת, לא מאחורי גדר')
+    assert.ok(s.along >= 150 && s.along <= total - 150, 'מרווח מהבית בהתחלה ובסוף')
+    assert.ok(s.along - prev >= 200, 'לפחות 200 מ׳ בין תחנות')
+    prev = s.along
+  }
+})
 
+test('תחנות: מסלול קצר מקבל פחות תחנות, לא תחנות צפופות', () => {
+  const short = Array.from({ length: 21 }, (_, i) => destination(HOME, 0, i * 20))   // 400 מ'
+  let g = initial()
+  g = reduce(g, { type: 'START_RUN', kind: RUN.STORY, missionId: 'm01', day: DAY, t: 0 })
+  g = reduce(g, { type: 'PERMISSION_GRANTED', home: HOME })
+  g = reduce(g, { type: 'ROUTE_READY', path: short, home: HOME })
+  assert.equal(g.run.stops.length, 1)
+})
+
+test('מסע ישן בלי תחנות: היעד נוצר קדימה אחרי שיוצאים', () => {
+  let g = started()
+  g = { ...g, run: { ...g.run, stops: null, target: null } }
   g = walk(g, PLACE_AFTER - 20)
   assert.equal(g.run.target, null, 'עדיין לא הלכו מספיק')
-
   g = walk(g, 200)
   assert.ok(g.run.target, 'אחרי הליכה — היעד נוצר')
-
-  const onPath = progressAlong(PATH, g.run.target)
-  assert.ok(onPath.offPath < 5, 'היעד יושב על המסלול המאומת, לא מאחורי גדר')
   assert.ok(g.run.target.along > g.run.along, 'והוא קדימה, לא מאחור')
 })
 
-test('מיקום היצור: לא נוחת בסוף הלולאה', () => {
-  let g = started()
-  g = walk(g, 1150)
-  const total = 60 * 20
-  assert.ok(g.run.target.along <= total - 100, 'נשמר מרווח לפני הבית')
-})
-
 // ══════════════════════════════════════════════
-test('resume: הילד זז — היעד עובר אליו, לא הוא לאתמול', () => {
+test('resume: הילד עבר תחנה — היא לא זזה, המפה מראה אותה מאחור', () => {
   let g = started()
   g = walk(g, 200)
   const before = g.run.target
 
-  // סגר את הטלפון, ופתח אותו 700 מ׳ הלאה — כבר עבר את היעד.
+  // סגר את הטלפון, ופתח אותו 700 מ׳ הלאה — כבר עבר את התחנה הראשונה.
   const elsewhere = destination(HOME, 0, 700)
   g = reduce(g, { type: 'RESUME', lat: elsewhere.lat, lng: elsewhere.lng, acc: 10, t: 900000 })
 
   assert.equal(g.state, S.SEARCH, 'עדיין באותו מסע')
-  assert.notDeepEqual(g.run.target, before, 'היעד מוקם מחדש')
-  assert.ok(g.run.target.along > 700, 'וקדימה מהמקום שבו הוא עומד עכשיו')
+  assert.deepEqual(g.run.target, before, 'תחנה היא יעד קבוע, כמו בגוגל')
+  assert.ok(g.run.along > 650, 'אבל המנוע יודע איפה הוא עכשיו')
 })
 
 test('resume: רחוק מהמסלול — בונים מסלול חדש ושומרים את הסיפור', () => {
@@ -180,7 +191,7 @@ test('resume: עדיין באמצע הדרך — לא נוגעים ביעד', ()
 // ══════════════════════════════════════════════
 test('מצלמה נדחתה: המפגש קורה בכל זאת, והיצור לא מתקבל בחינם', () => {
   let g = started()
-  g = walk(g, 400)
+  g = walk(g, 200)
 
   // מגיעים ליעד ועוצרים
   const at = g.run.target
@@ -203,25 +214,43 @@ test('מצלמה נדחתה: המפגש קורה בכל זאת, והיצור ל�
 
 test('לא לוחצים "חפש" לפני שעוצרים', () => {
   let g = started()
-  g = walk(g, 400)
+  g = walk(g, 200)
   const before = g.state
   g = reduce(g, { type: 'SEARCH_PRESSED' })
   assert.equal(g.state, before, 'תוך כדי הליכה הכפתור לא עושה כלום')
 })
 
 // ══════════════════════════════════════════════
-test('מסע 1 מקצה לקצה', () => {
-  let g = started()
-  g = walk(g, 400)
+// מגיע לתחנה הנוכחית, עוצר, ותופס.
+function catchHere(g, t0) {
   const at = g.run.target
-  g = reduce(g, { type: 'FIX', lat: at.lat, lng: at.lng, acc: 8, t: 500000 })
-  g = reduce(g, { type: 'FIX', lat: at.lat, lng: at.lng, acc: 8, t: 505000 })
+  g = reduce(g, { type: 'FIX', lat: at.lat, lng: at.lng, acc: 8, t: t0 })
+  g = reduce(g, { type: 'FIX', lat: at.lat, lng: at.lng, acc: 8, t: t0 + 5000 })
+  assert.equal(beaconView(g).phase, PHASE.SAFE_STOP, 'עצר ליד התחנה')
+  return run(g, [{ type: 'SEARCH_PRESSED' }, { type: 'CAMERA_READY' }, { type: 'ENCOUNTER_RESOLVED', caught: true }])
+}
+
+test('מסע 1 מקצה לקצה: שלוש תחנות, ואז הפורטל', () => {
+  let g = started()
+  g = walk(g, 200)
+
+  g = catchHere(g, 500000)
+  assert.equal(g.state, S.CAUGHT)
+  assert.equal(g.run.resolved, false, 'יש עוד תחנות — המסע לא נגמר')
+  assert.equal(g.run.stops[0].done, true)
+  assert.deepEqual(g.run.target, g.run.stops[1], 'היעד עבר לתחנה הבאה')
+  assert.equal(reduce(g, { type: 'PORTAL_OPEN' }).state, S.CAUGHT, 'אין פורטל באמצע')
+
+  g = reduce(g, { type: 'CONTINUE' })
+  assert.equal(g.state, S.SEARCH, 'ממשיכים בדרך')
+  g = catchHere(g, 600000)
+  g = reduce(g, { type: 'CONTINUE' })
+  g = catchHere(g, 700000)
+  assert.equal(g.run.resolved, true, 'התחנה האחרונה — המסע הושלם')
+  assert.equal(reduce(g, { type: 'CONTINUE' }).state, S.CAUGHT, 'אין לאן להמשיך — רק הפורטל')
 
   g = run(g, [
-    { type: 'SEARCH_PRESSED' },
-    { type: 'CAMERA_READY' },
     { type: 'ADD_LOOT', kind: 'wood' },
-    { type: 'ENCOUNTER_RESOLVED', caught:true },
     { type: 'PORTAL_OPEN' },
     { type: 'PORTAL_ENTERED' },
   ])
@@ -240,13 +269,11 @@ test('מסע 1 מקצה לקצה', () => {
 // ══════════════════════════════════════════════
 test('משימה סיפורית אחת ביום — אבל אין נעילה של יציאה נוספת', () => {
   let g = started()
-  g = walk(g, 400)
-  const at = g.run.target
-  g = reduce(g, { type: 'FIX', lat: at.lat, lng: at.lng, acc: 8, t: 500000 })
-  g = reduce(g, { type: 'FIX', lat: at.lat, lng: at.lng, acc: 8, t: 505000 })
+  g = walk(g, 200)
+  g = catchHere(g, 500000); g = reduce(g, { type: 'CONTINUE' })
+  g = catchHere(g, 600000); g = reduce(g, { type: 'CONTINUE' })
+  g = catchHere(g, 700000)
   g = run(g, [
-    { type: 'SEARCH_PRESSED' }, { type: 'CAMERA_READY' },
-    { type: 'ENCOUNTER_RESOLVED', caught:true },
     { type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED' },
     { type: 'CLUE_SEEN' }, { type: 'RUN_CLOSED' },
   ])
@@ -471,7 +498,9 @@ test('הביקון ער כבר במסע הראשון', () => {
 })
 
 test('הביקון מדבר גם לפני שהיעד הונח', () => {
+  // מסע ישן בלי תחנות: היעד עוד לא קיים ביציאה מהבית.
   let g = started()
+  g = { ...g, run: { ...g.run, stops: null, target: null } }
   assert.equal(g.run.target, null)
   const v = beaconView(g)
   assert.equal(v.phase, PHASE.SIGNAL_WEAK,

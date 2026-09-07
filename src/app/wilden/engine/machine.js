@@ -6,7 +6,7 @@
 
 import { haversine, bearing, advanceWalk, progressAlong } from './geo.js'
 import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL_RADIUS } from './beacon.js'
-import { placeTarget, revalidate, PLACE_AFTER } from './placement.js'
+import { placeTarget, placeStops, revalidate, PLACE_AFTER } from './placement.js'
 
 export const S = {
   BROKEN_WORLD: 'BROKEN_WORLD',     // עולם הבית ההרוס. נקודת הכניסה.
@@ -130,8 +130,24 @@ export function reduce(g, ev) {
       // בלי מיקום אין משחק. זה השער היחיד שבאמת חוסם.
       return { ...g, state: S.BROKEN_WORLD, run: null, notice: 'no-location' }
 
-    case 'ROUTE_READY':
-      return { ...g, state: S.SEARCH, run: { ...g.run, path: ev.path, home: ev.home ?? g.run.home } }
+    // ── המסלול מוכן, והתחנות איתו ──
+    // כמה יצורים לאורך הדרך, קבועים מראש ומצוירים על המפה. היעד הראשון
+    // ידוע מהצעד הראשון. (בלי stops — מסע ישן ששמור בטלפון — נשארים
+    // בהתנהגות הקודמת: יעד אחד שנולד אחרי 60 מ'.)
+    case 'ROUTE_READY': {
+      const stops = placeStops(ev.path, undefined, { creature: g.run.creature || 'nimi' })
+      return {
+        ...g,
+        state: S.SEARCH,
+        run: { ...g.run, path: ev.path, home: ev.home ?? g.run.home, stops, stop: 0,
+          target: stops[0] || null, resolved: false },
+      }
+    }
+
+    // ── תפסנו אחד, ממשיכים לתחנה הבאה ──
+    case 'CONTINUE':
+      if (g.state !== S.CAUGHT || g.run?.resolved) return g
+      return { ...g, state: S.SEARCH, run: { ...g.run, stillMs: 0, encounterMode: null } }
 
     case 'ROUTE_FAILED':
       return { ...g, state: S.ROUTE_FAILED }
@@ -158,9 +174,8 @@ export function reduce(g, ev) {
       let target = r.target
       const along = r.path ? progressAlong(r.path, pos).along : 0
 
-      // היעד נוצר רק אחרי שהילד באמת יצא לדרך, וקדימה על המסלול שהוא
-      // כבר הולך בו.
-      if (!target && r.path && walked >= PLACE_AFTER) {
+      // מסע ישן בלי תחנות: היעד נוצר אחרי שהילד יצא לדרך, קדימה על המסלול.
+      if (!target && !r.stops && r.path && walked >= PLACE_AFTER) {
         target = placeTarget(r.path, along)
       }
 
@@ -180,9 +195,10 @@ export function reduce(g, ev) {
       const v = revalidate({ path: r.path, target: r.target, pos })
 
       if (v.action === 'rebuild-route') {
-        return { ...g, state: S.ROUTE_BUILDING, run: { ...r, home: pos, path: null, target: null, pos, lastFix: pos, walkRef: pos, stillRef: pos, lastT: ev.t, stillMs: 0 } }
+        return { ...g, state: S.ROUTE_BUILDING, run: { ...r, home: pos, path: null, target: null, stops: null, pos, lastFix: pos, walkRef: pos, stillRef: pos, lastT: ev.t, stillMs: 0 } }
       }
-      const target = v.action === 'keep' ? r.target : placeTarget(r.path, v.at)
+      // תחנות קבועות לא זזות: אם עבר אותה — המפה מראה אותה מאחור, וחוזרים.
+      const target = r.stops || v.action === 'keep' ? r.target : placeTarget(r.path, v.at)
       return {
         ...g,
         run: { ...r, pos, lastFix: pos, walkRef: pos, stillRef: pos, lastT: ev.t, acc: ev.acc ?? null, along: v.at, target, stillMs: 0 },
@@ -209,18 +225,33 @@ export function reduce(g, ev) {
         // נכשל אינו "איבדת" — היצור עדיין שם, והחיפוש ממשיך.
         return { ...g, state: S.SEARCH, run: { ...g.run, stillMs: 0, encounterMode: null } }
       }
-      return { ...g, state: S.CAUGHT, run: { ...g.run, resolved: true } }
+      const r = g.run
+      if (!r.stops) return { ...g, state: S.CAUGHT, run: { ...r, resolved: true } }
+
+      // תחנה נתפסה. יש עוד? היעד עובר לבאה, והמסע נמשך. אחרונה? הפורטל.
+      const stops = r.stops.map((s, i) => (i === r.stop ? { ...s, done: true } : s))
+      const next = r.stop + 1
+      const more = next < stops.length
+      return {
+        ...g,
+        state: S.CAUGHT,
+        run: { ...r, stops, stop: more ? next : r.stop, target: more ? stops[next] : r.target,
+          resolved: !more, stillMs: 0 },
+      }
     }
 
     case 'PORTAL_OPEN':
+      // הפורטל נפתח רק אחרי התחנה האחרונה. באמצע הדרך — ממשיכים.
+      if (g.state !== S.CAUGHT || !g.run?.resolved) return g
       return { ...g, state: S.PORTAL }
 
     case 'PORTAL_ENTERED': {
       const r = g.run
       const isStory = r.kind === RUN.STORY
-      const creatures = r.creature && !g.progress.creatures.includes(r.creature)
-        ? [...g.progress.creatures, r.creature]
-        : g.progress.creatures
+      // כל מי שנתפס בדרך נכנס לעולם — פעם אחת לכל סוג.
+      const caughtIds = r.stops ? r.stops.filter(s => s.done).map(s => s.creature) : [r.creature]
+      const creatures = [...g.progress.creatures]
+      for (const id of caughtIds) if (id && !creatures.includes(id)) creatures.push(id)
       const res = { ...g.progress.res }
       for (const k of r.loot || []) res[k] = (res[k] || 0) + 1
 
