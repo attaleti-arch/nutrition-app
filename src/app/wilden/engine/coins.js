@@ -94,7 +94,9 @@ export function canBuyExtra(progress) {
 }
 
 // מי היום: מתחלפים בין מי שיש לו מודל. השני הוא מי שלא היה ראשון.
-export const AVAILABLE = ['nimi', 'dabashon', 'kraag']   // מי שיש לו מודל
+// שישה יצורים, כמו בלוח של הבן שלה. רצפה ואוויר לסירוגין, כדי שכל מסע
+// ירגיש אחרת: עקבות, ואז להרים את הראש, ואז שוב עקבות.
+export const AVAILABLE = ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'kraag']
 export function creaturesForWalk(walks, extra, available = AVAILABLE) {
   const first = available[walks % available.length]
   if (!extra) return [first]

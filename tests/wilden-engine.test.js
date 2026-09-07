@@ -576,7 +576,7 @@ test('לוח: אחרי שני מסעות אפשר לקנות יצור שני, ו
   assert.equal(canBuyExtra(g.progress), true)
   g = started(undefined, g)
   assert.equal(g.run.walkIndex, 2)
-  assert.deepEqual(g.run.stops.map(s => s.creature), ['kraag'], 'בלי תשלום — אחד; המסע השלישי הוא של קראג')
+  assert.deepEqual(g.run.stops.map(s => s.creature), ['lumi'], 'בלי תשלום — אחד; המסע השלישי הוא של לומי')
 
   let h = initial()
   h = { ...h, progress: { ...h.progress, walks: 2, coins: 100 } }
@@ -584,7 +584,7 @@ test('לוח: אחרי שני מסעות אפשר לקנות יצור שני, ו
   assert.equal(h.progress.coins, 100 - WALK_PLAN.extraCost, 'שולם מראש')
   h = reduce(h, { type: 'PERMISSION_GRANTED', home: HOME })
   h = reduce(h, { type: 'ROUTE_READY', path: PATH, home: HOME })
-  assert.deepEqual(h.run.stops.map(s => s.creature), ['kraag', 'nimi'], 'שניים בדרך — והשני הוא מישהו אחר')
+  assert.deepEqual(h.run.stops.map(s => s.creature), ['lumi', 'nimi'], 'שניים בדרך — והשני הוא מישהו אחר')
 })
 
 test('דבשון: באוויר, שלוש לחיצות', () => {
@@ -956,14 +956,19 @@ test('התדריך: לא תמיד נימי', () => {
   assert.ok(b1.sub.includes('דבש'), 'יצור חדש — מה הוא מביא')
 
   const b2 = briefFor({ walks: 2, creatures: ['nimi', 'dabashon'] })
-  assert.equal(b2.creature, 'kraag')
+  assert.equal(b2.creature, 'lumi')
+  assert.ok(b2.sub.includes('ניצוץ'))
 
-  // הסבב חוזר: מסע 4 — שוב נימי, אבל כ"שוב בחוץ" ולא כמסע 1
-  const b3 = briefFor({ walks: 3, creatures: ['nimi', 'dabashon', 'kraag'] })
-  assert.equal(b3.creature, 'nimi')
-  assert.equal(b3.missionId, null)
-  assert.ok(b3.sub.includes('שוב'))
-  assert.equal(todaysCreature({ walks: 4 }).id, 'dabashon')
+  // שישה יצורים, רצפה ואוויר לסירוגין
+  assert.deepEqual([0, 1, 2, 3, 4, 5].map(w => todaysCreature({ walks: w }).id), ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'kraag'])
+  assert.deepEqual([0, 1, 2, 3, 4, 5].map(w => todaysCreature({ walks: w }).arMode), ['ground', 'sky', 'ground', 'sky', 'ground', 'ground'])
+
+  // הסבב חוזר: מסע 7 — שוב נימי, אבל כ"שוב בחוץ" ולא כמסע 1
+  const b6 = briefFor({ walks: 6, creatures: ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'kraag'] })
+  assert.equal(b6.creature, 'nimi')
+  assert.equal(b6.missionId, null)
+  assert.ok(b6.sub.includes('שוב'))
+  assert.equal(todaysCreature({ walks: 7 }).id, 'dabashon')
 })
 
 test('הבית אחרי הפורטל: מסע 1 — הסיפור; אחר כך — מי שנתפס ומי שמחכה', () => {
@@ -975,7 +980,7 @@ test('הבית אחרי הפורטל: מסע 1 — הסיפור; אחר כך —
   const h = homeFor(run, { walks: 2 })
   assert.ok(h.line.includes('דבשון'), h.line)
   assert.ok(h.line.includes('דבש'))
-  assert.ok(h.clue.sub.includes('קראג'), 'walks=2 → הבא בסבב הוא קראג')
+  assert.ok(h.clue.sub.includes('לומי'), 'walks=2 → הבא בסבב הוא לומי')
 
   const two = homeFor({ stops: [{ creature: 'nimi', done: true }, { creature: 'kraag', done: true }] }, { walks: 3 })
   assert.ok(two.line.includes('נימי וקראג'), two.line)
@@ -1017,4 +1022,45 @@ test('המצלמה: כל שגיאה הופכת לסיבה אחת עם פעולה
   assert.equal(camText(CAM_REASON.NO_MEDIA).retry, false, 'בלי mediaDevices אין מה לנסות שוב')
   assert.ok(camText(CAM_REASON.NO_MEDIA).how.includes('ספארי'))
   assert.ok(camText(CAM_REASON.DENIED).how.includes('aA'), 'איפה בדיוק לוחצים באייפון')
+})
+
+import ruchi from '../src/app/wilden/ar/controllers/ruchi.js'
+import { controllerFor } from '../src/app/wilden/ar/controllers/index.js'
+import { CREATURES, hasModel } from '../src/app/wilden/content/creatures.js'
+import { AVAILABLE } from '../src/app/wilden/engine/coins.js'
+
+test('רוחי: באוויר, גבוה מדבשון, שלוש לחיצות, ואותו מבנה', () => {
+  const rng = () => 0.3
+  let s = ruchi.start(0, rng)
+  let t = ruchi.targets(s)
+  assert.equal(t.length, 1)
+  assert.equal(t[0].id, 'ruchi')
+  assert.equal(t[0].flying, true)
+  assert.equal(t[0].elev, 22, 'רוחי גבוה יותר')
+  assert.equal(dabashon.targets(dabashon.start(0, rng))[0].elev, 16, 'דבשון נשאר כמו שהיה')
+  assert.ok(ruchi.copy(s).line.includes('מרשרש'))
+  const r1 = ruchi.onTap(s, rng); assert.equal(r1.feedback, 'flee'); s = r1.state
+  assert.ok(ruchi.copy(s).line.includes('רוח'))
+  assert.ok(ruchi.targets(s)[0].streak != null, 'הפס נשאר מאחוריו')
+  const r2 = ruchi.onTap(s, rng); assert.equal(r2.feedback, 'near'); s = r2.state
+  assert.equal(s.ready, true)
+  const r3 = ruchi.onTap(s, rng); assert.equal(r3.feedback, 'catch'); s = r3.state
+  assert.ok(ruchi.isDone(s))
+  assert.deepEqual(ruchi.targets(s), [])
+  // נעילה במבט על יעד אחר לא עושה כלום
+  assert.equal(ruchi.onLock(ruchi.start(0, rng), 'dabashon').state.phase, 'HUM')
+})
+
+test('שישה יצורים: לכולם מודל אמיתי, controller רשום, ומצב AR שהבמה מכירה', () => {
+  assert.equal(AVAILABLE.length, 6)
+  for (const id of AVAILABLE) {
+    const c = CREATURES[id]
+    assert.ok(c, id)
+    assert.ok(hasModel(id), id + ': בלי מודל לא נכנסים לסבב')
+    assert.ok(c.model.startsWith('/creatures/' + id + '/'), id + ': המודל שלו, לא של יצור אחר')
+    assert.ok(controllerFor(c), id + ': controller')
+    assert.ok(['ground', 'sky'].includes(c.arMode), id)
+    if (c.arMode === 'sky') assert.ok(controllerFor(c).targets(controllerFor(c).start(0))[0].flying, id + ': בשמיים → flying')
+  }
+  assert.equal(new Set(AVAILABLE).size, 6, 'בלי כפילויות')
 })

@@ -546,7 +546,7 @@ function Stats({ g }) {
     </div>
   )
 }
-const RES_NAME = { wood: 'קרשים', stone: 'אבן', flowers: 'פרחים', spark: 'ניצוץ', honey: 'דבש' }
+const RES_NAME = { wood: 'קרשים', stone: 'אבן', flowers: 'פרחים', spark: 'ניצוץ', honey: 'דבש', water: 'מים', wind: 'רוח' }
 
 function Panel({ eyebrow, children }) {
   return (
