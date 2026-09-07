@@ -30,7 +30,10 @@ const CLIPS = {
 export const CREATURES = {
   nimi: {
     id: 'nimi', name: 'נימי',
-    model: null,                          // מחכה ל-nimi.glb האמיתי
+    // המודל שלה, מ-Meshy (Image to 3D) מתוך הרינדור של נימי. המקור 24MB
+    // ומיליון משולשים; כאן גרסה ל-טלפון: 60K משולשים, טקסטורות 1K ב-WebP,
+    // 1.9MB. בלי אנימציות עדיין — הוא עומד ומסתובב עם הטלפון, לא הולך.
+    model: '/creatures/nimi/nimi.glb',
     ios: null,
     sprites: { hero: '/creatures/nimi/hero.png', peek: '/creatures/nimi/peek.png' },
     heightM: 0.45,
