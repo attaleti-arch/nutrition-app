@@ -71,15 +71,18 @@ export function GoldStage({ value = 10, onTaken, onClose }) {
       <video ref={videoRef} playsInline muted autoPlay style={{ ...S.video, opacity: cam === 'on' ? 1 : 0 }} />
       {cam !== 'on' && <div style={S.backdrop} />}
 
-      {/* המטבע */}
-      <div style={S.coinWrap}>
-        <button aria-label="מטבע הזהב" disabled={!canTap && !jumped} onClick={() => canTap && finish({ airMs: 0, peakG: 0, tapped: true })}
-          style={{ ...S.coinBtn, ...(jumped ? S.coinTaken : {}) }}>
-          <div style={{ ...S.coin, animation: jumped ? 'none' : 'wildenSpin 2.2s linear infinite' }}>
-            <div style={S.coinFace}>W</div>
-          </div>
-        </button>
-        {!jumped && <div style={S.sparkle} />}
+      {/* המטבע. המרכוז בשכבה חיצונית, הריחוף בשכבה פנימית — אחרת האנימציה
+          דורסת את ה-translate של המרכוז והמטבע זז הצידה. */}
+      <div style={S.coinAnchor}>
+        <div style={{ ...S.coinWrap, animation: jumped ? 'none' : 'wildenFloat 2.4s ease-in-out infinite' }}>
+          <button aria-label="מטבע הזהב" disabled={!canTap && !jumped} onClick={() => canTap && finish({ airMs: 0, peakG: 0, tapped: true })}
+            style={{ ...S.coinBtn, ...(jumped ? S.coinTaken : {}) }}>
+            <div style={{ ...S.coin, animation: jumped ? 'none' : 'wildenSpin 2.2s linear infinite' }}>
+              <div style={S.coinFace}>W</div>
+            </div>
+          </button>
+          {!jumped && <div style={S.sparkle} />}
+        </div>
       </div>
 
       {askNeeded && (
@@ -129,8 +132,8 @@ const S = {
   wrap: { position: 'fixed', inset: 0, background: '#0F150F', overflow: 'hidden', zIndex: 3100, direction: 'rtl' },
   video: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' },
   backdrop: { position: 'absolute', inset: 0, background: 'linear-gradient(#25402F, #4A5F3C 58%, #6B7248)' },
-  coinWrap: { position: 'absolute', left: '50%', top: '38%', transform: 'translate(-50%,-50%)',
-    animation: 'wildenFloat 2.4s ease-in-out infinite', perspective: 600 },
+  coinAnchor: { position: 'absolute', left: 0, right: 0, top: '38%', display: 'grid', placeItems: 'center' },
+  coinWrap: { position: 'relative', perspective: 600 },
   coinBtn: { background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', WebkitTapHighlightColor: 'transparent' },
   coin: { width: 150, height: 150, borderRadius: '50%', transformStyle: 'preserve-3d',
     background: 'radial-gradient(circle at 35% 30%, #FFF3B0, #FFD84A 55%, #B8860B)',
