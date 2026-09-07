@@ -25,6 +25,22 @@ function useLeaflet() {
   return ready
 }
 
+// ── מטבע שנראה כמו מטבע ──
+// "מטבעות שלא נראות מטבעות" — נקודה צהובה היא נקודה. מטבע הוא עיגול עם
+// שוליים, ברק, וחריטה. הזהב גדול יותר ומנצנץ.
+function coinSvg(size, gold) {
+  const id = gold ? 'wg' : 'wc'
+  const face = gold ? '#FFD84A' : '#F2C14E'
+  const rim = gold ? '#B8860B' : '#A6731A'
+  return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" style="display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45));${gold ? 'animation:wildenPin 1.2s ease-in-out infinite' : ''}">
+    <defs><radialGradient id="${id}" cx="35%" cy="30%" r="75%"><stop offset="0" stop-color="#FFF3B0"/><stop offset=".55" stop-color="${face}"/><stop offset="1" stop-color="${rim}"/></radialGradient></defs>
+    <circle cx="16" cy="16" r="15" fill="url(#${id})" stroke="${rim}" stroke-width="1.5"/>
+    <circle cx="16" cy="16" r="10.5" fill="none" stroke="${rim}" stroke-width="1.2" opacity=".7"/>
+    <path d="M12 21 L16 10 L20 21 M13.5 17.5 H18.5" fill="none" stroke="${rim}" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <ellipse cx="11" cy="9" rx="3.5" ry="2" fill="#fff" opacity=".55" transform="rotate(-30 11 9)"/>
+  </svg>`
+}
+
 // ── הסימנים על המפה ──
 // לא מפלצות. זה מוריד את המתח. סימן: עקבות בתוך ענן זוהר עם סימן שאלה.
 // מי שכבר נתפס פעם (known) מופיע כצללית — "אני יודע מי זה". מי שנתפס
@@ -127,10 +143,9 @@ export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = tr
     const group = L.layerGroup()
     for (const c of coins || []) {
       if (c.taken) continue
-      L.circleMarker([c.lat, c.lng], {
-        radius: c.gold ? 9 : 5, color: '#8A5A12', weight: 1.5, fillColor: c.gold ? '#FFD44D' : '#F0C069',
-        fillOpacity: 1, interactive: false,
-      }).addTo(group)
+      const size = c.gold ? 30 : 18
+      L.marker([c.lat, c.lng], { interactive: false, icon: L.divIcon({ className: '', iconSize: [size, size],
+        iconAnchor: [size / 2, size / 2], html: coinSvg(size, c.gold) }) }).addTo(group)
     }
     group.addTo(m)
     lay.current.coins = group

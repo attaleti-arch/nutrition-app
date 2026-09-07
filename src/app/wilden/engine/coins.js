@@ -7,7 +7,9 @@
 
 import { pointAlong, pathLength, haversine } from './geo.js'
 
-export const COIN_EVERY_M = 35
+// "יותר מדי מטבעות." כל 35 מ' היה מסך מלא נקודות. כל 90 מ' זה גלינג
+// בערך כל דקה ורבע של הליכה — מספיק כדי לחכות לבא, לא מספיק כדי להימאס.
+export const COIN_EVERY_M = 90
 export const COIN_START_M = 40          // לא בסלון
 export const COIN_END_M = 40
 export const COLLECT_RADIUS_M = 14      // GPS של טלפון: 5–10 מ' — צריך מרווח

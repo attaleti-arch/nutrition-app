@@ -515,16 +515,16 @@ test('לוח: מסע ראשון — 30 דקות, נימי לבד, בלי אפש�
 test('מטבעות: מונחים על השביל, נאספים כשעוברים, נשארים גם כשעוצרים', () => {
   let g = started()
   const n = g.run.coins.length
-  assert.ok(n >= 25 && n <= 40, `מטבע כל ~35 מ' על 1.2 ק"מ, התקבלו ${n}`)
+  assert.ok(n >= 10 && n <= 16, `מטבע כל ~90 מ' על 1.2 ק"מ, התקבלו ${n}`)
   assert.equal(g.run.coins.filter(c => c.gold).length, 1, 'זהב אחד')
   assert.ok(g.run.coins.every(c => Math.abs(c.along - g.run.stops[0].along) >= 30), 'לא על התחנה')
   assert.equal(g.run.coinsTaken, 0)
 
   g = walk(g, 200)
-  assert.ok(g.run.coinsTaken >= 4, `אחרי 200 מ' נאספו כמה: ${g.run.coinsTaken}`)
+  assert.ok(g.run.coinsTaken >= 2, `אחרי 200 מ' נאספו כמה: ${g.run.coinsTaken}`)
   assert.ok(g.run.lastCoin, 'ויש אירוע לצליל')
   const taken = g.run.coins.filter(c => c.taken).length
-  assert.ok(taken >= 4 && g.run.coins.filter(c => !c.taken && c.along < 150).length === 0, 'מה שעברנו נאסף')
+  assert.ok(taken >= 2 && g.run.coins.filter(c => !c.taken && c.along < 150).length === 0, 'מה שעברנו נאסף')
 
   const stopped = reduce(g, { type: 'ABORT' })
   assert.equal(stopped.progress.coins, g.run.coinsTaken, 'עצירה שומרת את המטבעות')
