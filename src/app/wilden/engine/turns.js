@@ -46,6 +46,17 @@ export function nextCue(turns, along, targetAlong = Infinity, { lead = 8 } = {})
   return { kind: 'turn', dir: t.dir, dist: t.along - along }
 }
 
+// ── לא "כאן" כשהוא 200 מ' משם ──
+// המרחק לאורך המסלול יכול לשקר: לולאה מתחילה ונגמרת באותה דלת, ומי שעומד
+// בבית נמדד לפעמים כאילו הוא בסוף הלולאה — אחרי היעד — ואז "הסימן כאן"
+// בזמן שהסימן במרחק שני רחובות. המרחק בקו ישר הוא רצפה: אי אפשר להיות
+// קרוב יותר ממנו.
+export function floorCue(cue, straightM) {
+  if (!cue || straightM == null) return cue
+  if (cue.kind !== 'target') return cue
+  return straightM > cue.dist ? { ...cue, dist: straightM } : cue
+}
+
 export function cueText(cue, targetName = 'היעד') {
   const m = Math.round(cue.dist / 10) * 10
   if (cue.kind === 'target') {

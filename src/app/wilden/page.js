@@ -13,7 +13,7 @@ import { Stage } from './ar/Stage'
 import { useGeo } from './hooks/useGeo'
 import { useRoute } from './hooks/useRoute'
 import { MiniMap } from './ui/MiniMap'
-import { turnsFor, nextCue, cueText } from './engine/turns'
+import { turnsFor, nextCue, cueText, floorCue } from './engine/turns'
 import { pathLength } from './engine/geo'
 import { loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby } from './engine/coins'
 import { GoldStage } from './ar/GoldStage'
@@ -430,16 +430,16 @@ function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, onPor
   const turns = useMemo(() => turnsFor(r.path), [r.path])
   const total = useMemo(() => (r.path ? pathLength(r.path) : 0), [r.path])
   const along = r.along || 0
-  const cue = r.target ? nextCue(turns, along, r.target.along) : null
+  const homeward = !!r.resolved
+  const distToTarget = r.target && r.pos ? haversine(r.pos, r.target) : null
+  const cue = r.target ? floorCue(nextCue(turns, along, r.target.along), homeward ? null : distToTarget) : null
   const toTarget = r.target ? Math.max(0, r.target.along - along) : null
   const stopsLeft = r.stops ? r.stops.filter(x => !x.done).length : 1
   // ── חם־קר ──
   // הסימן על המפה נחשף רק כשמתחממים (מתחת ל-320 מ'). עד אז: מסלול, רחובות,
   // ומד חום שמתחזק. סיכה מהרגע הראשון הורגת את המתח.
-  const distToTarget = r.target && r.pos ? haversine(r.pos, r.target) : null
   const heat = r.target && !r.resolved ? heatOf(distToTarget) : null
   const reveal = (r.walked || 0) >= PLACE_AFTER && !!heat && heat.t >= 0.65
-  const homeward = !!r.resolved
 
   return (
     <>

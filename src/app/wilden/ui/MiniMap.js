@@ -43,7 +43,8 @@ function coinSvg(size, gold) {
 
 // ── הסימנים על המפה ──
 // לא מפלצות. זה מוריד את המתח. סימן: עקבות בתוך ענן זוהר עם סימן שאלה.
-// מי שכבר נתפס פעם (known) מופיע כצללית — "אני יודע מי זה". מי שנתפס
+// מי שכבר נתפס פעם (known) מופיע כדמות בגוון ענבר — "אני יודע מי זה", בלי
+// לחשוף צבעים. (צללית שחורה נראתה כמו צל, שהוא יצור בעצמו.) מי שנתפס
 // במסע הזה — וי.
 function stopIcon(L, s, isNext, img, known) {
   if (s.done) {
@@ -52,7 +53,7 @@ function stopIcon(L, s, isNext, img, known) {
   }
   const size = isNext ? 58 : 36
   const inner = known && img
-    ? `<img src="${img}" alt="" style="width:${size - 14}px;height:${size - 14}px;object-fit:contain;display:block;filter:brightness(0) opacity(.75)">`
+    ? `<img src="${img}" alt="" style="width:${size - 14}px;height:${size - 14}px;object-fit:contain;display:block;filter:sepia(1) saturate(3.5) hue-rotate(-8deg) brightness(.85) opacity(.9)">`
     : `<div style="position:relative;font-size:${isNext ? 26 : 16}px;line-height:1">🐾<span style="position:absolute;top:-8px;inset-inline-end:-12px;font-size:${isNext ? 18 : 12}px;font-weight:900;color:#14200F;background:${AMBER};border-radius:50%;width:${isNext ? 22 : 15}px;height:${isNext ? 22 : 15}px;display:grid;place-items:center">?</span></div>`
   return L.divIcon({ className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2],
     html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:rgba(229,163,66,${isNext ? '.3' : '.18'});border:${isNext ? 3 : 2}px ${isNext ? 'solid' : 'dashed'} ${AMBER};display:grid;place-items:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,.45));${isNext ? 'animation:wildenPin 1.6s ease-in-out infinite' : 'opacity:.85'}">${inner}</div>` })

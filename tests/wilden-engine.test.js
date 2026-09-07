@@ -1183,3 +1183,18 @@ test('רחובות: כל שרת בשם קצר, וכל כישלון במילה א
   assert.equal(failureLabel(new Error('bad body')), 'bad')
   assert.equal(failureLabel(null), 'fail')
 })
+
+import { floorCue, cueText } from '../src/app/wilden/engine/turns.js'
+test('הוראות: לא "הסימן כאן" כשהוא 200 מ׳ בקו ישר', () => {
+  // עומדים בבית, המסלול חושב שאנחנו אחרי היעד → dist 0
+  const bad = { kind: 'target', dist: 0 }
+  assert.equal(cueText(bad, 'הסימן'), 'הסימן כאן.')
+  const fixed = floorCue(bad, 210)
+  assert.equal(cueText(fixed, 'הסימן'), 'ישר 210 מ׳ עד הסימן.')
+  // באמת ליד היעד — נשאר "כאן"
+  assert.equal(cueText(floorCue({ kind: 'target', dist: 12 }, 9), 'הסימן'), 'הסימן כאן.')
+  // פנייה — לא נוגעים; בלי מרחק — לא נוגעים
+  const turn = { kind: 'turn', dir: 'left', dist: 40 }
+  assert.equal(floorCue(turn, 500), turn)
+  assert.equal(floorCue(bad, null), bad)
+})
