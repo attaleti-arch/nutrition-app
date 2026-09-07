@@ -64,6 +64,22 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
   // ── המצלמה ──
   // התוצאה מדווחת החוצה למכונה. בלי זה "מצלמה נדחתה ← Story Mode" נשאר
   // כלל שנבדק במנוע ולא מתקיים במציאות.
+  // חיבור הזרם לאלמנט, עם וידוא שבאמת מגיעים פריימים. iOS מבטיח play()
+  // בלי שיהיה מה להראות; לכן מחכים ל-playing/loadeddata.
+  const [videoLive, setVideoLive] = useState(false)
+  const attach = s => {
+    const v = videoRef.current
+    if (!v || !s) return
+    if (v.srcObject !== s) v.srcObject = s
+    const live = () => setVideoLive(true)
+    v.addEventListener('playing', live, { once: true })
+    v.addEventListener('loadeddata', live, { once: true })
+    v.play().catch(() => {})
+    if (v.readyState >= 2) live()
+  }
+  // אם הזרם הגיע לפני שהאלמנט היה בדף (זה מה שקרה אצלה) — מחברים עכשיו.
+  useEffect(() => { if (camState === 'on' && streamRef.current) attach(streamRef.current) }, [camState])
+
   useEffect(() => {
     let dead = false
     let settled = false
@@ -84,8 +100,8 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
         if (dead || settled) { s.getTracks().forEach(t => t.stop()); return }
         settled = true
         streamRef.current = s
-        if (videoRef.current) { videoRef.current.srcObject = s; await videoRef.current.play().catch(() => {}) }
         setCamState('on'); onModeRef.current?.('CAMERA')
+        attach(s)
       } catch (e) {
         if (settled) return
         settled = true
@@ -220,7 +236,14 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
 
   return (
     <div style={S.wrap} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
-      {camState === 'on' && <video ref={videoRef} playsInline muted autoPlay style={S.video} />}
+      {/* הווידאו קיים תמיד. קודם הוא נוצר רק אחרי שהמצלמה אושרה — אבל הזרם
+          חובר אליו *לפני* זה, כשעוד לא היה אלמנט. היא אישרה מצלמה וקיבלה
+          מסך שחור. עכשיו האלמנט תמיד שם, והזרם מתחבר גם מאוחר יותר. */}
+      <video ref={videoRef} playsInline muted autoPlay
+        style={{ ...S.video, opacity: camState === 'on' ? 1 : 0 }} />
+      {camState === 'on' && !videoLive && (
+        <p style={S.camNote}>המצלמה אושרה אבל התמונה לא הגיעה. נסו לסגור את הלשונית ולפתוח מחדש.</p>
+      )}
       {camState === 'denied' && <StoryBackdrop />}
       {camState === 'denied' && !done && (
         <p style={S.camNote}>
