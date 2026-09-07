@@ -959,16 +959,17 @@ test('התדריך: לא תמיד נימי', () => {
   assert.equal(b2.creature, 'lumi')
   assert.ok(b2.sub.includes('ניצוץ'))
 
-  // שבעה יצורים, רצפה ואוויר לסירוגין
-  assert.deepEqual([0, 1, 2, 3, 4, 5, 6].map(w => todaysCreature({ walks: w }).id), ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'tzel', 'kraag'])
-  assert.deepEqual([0, 1, 2, 3, 4, 5, 6].map(w => todaysCreature({ walks: w }).arMode), ['ground', 'sky', 'ground', 'sky', 'ground', 'ground', 'ground'])
+  // שמונה יצורים, רצפה ואוויר לסירוגין, בולדר לפני קראג
+  assert.deepEqual([0, 1, 2, 3, 4, 5, 6, 7].map(w => todaysCreature({ walks: w }).id), ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'tzel', 'bolder', 'kraag'])
+  assert.deepEqual([0, 1, 2, 3, 4, 5, 6, 7].map(w => todaysCreature({ walks: w }).arMode), ['ground', 'sky', 'ground', 'sky', 'ground', 'ground', 'ground', 'ground'])
+  assert.ok(briefFor({ walks: 6, creatures: [] }).sub.includes('אבן'), 'בולדר מביא אבן')
 
-  // הסבב חוזר: מסע 8 — שוב נימי, אבל כ"שוב בחוץ" ולא כמסע 1
-  const b7 = briefFor({ walks: 7, creatures: ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'tzel', 'kraag'] })
-  assert.equal(b7.creature, 'nimi')
-  assert.equal(b7.missionId, null)
-  assert.ok(b7.sub.includes('שוב'))
-  assert.equal(todaysCreature({ walks: 8 }).id, 'dabashon')
+  // הסבב חוזר: מסע 9 — שוב נימי, אבל כ"שוב בחוץ" ולא כמסע 1
+  const b8 = briefFor({ walks: 8, creatures: ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'tzel', 'bolder', 'kraag'] })
+  assert.equal(b8.creature, 'nimi')
+  assert.equal(b8.missionId, null)
+  assert.ok(b8.sub.includes('שוב'))
+  assert.equal(todaysCreature({ walks: 9 }).id, 'dabashon')
 })
 
 test('הבית אחרי הפורטל: מסע 1 — הסיפור; אחר כך — מי שנתפס ומי שמחכה', () => {
@@ -1051,8 +1052,8 @@ test('רוחי: באוויר, גבוה מדבשון, שלוש לחיצות, וא
   assert.equal(ruchi.onLock(ruchi.start(0, rng), 'dabashon').state.phase, 'HUM')
 })
 
-test('שבעה יצורים: לכולם מודל אמיתי, controller רשום, ומצב AR שהבמה מכירה', () => {
-  assert.equal(AVAILABLE.length, 7)
+test('שמונה יצורים: לכולם מודל אמיתי, controller רשום, ומצב AR שהבמה מכירה', () => {
+  assert.equal(AVAILABLE.length, 8)
   for (const id of AVAILABLE) {
     const c = CREATURES[id]
     assert.ok(c, id)
@@ -1062,5 +1063,5 @@ test('שבעה יצורים: לכולם מודל אמיתי, controller רשום
     assert.ok(['ground', 'sky'].includes(c.arMode), id)
     if (c.arMode === 'sky') assert.ok(controllerFor(c).targets(controllerFor(c).start(0))[0].flying, id + ': בשמיים → flying')
   }
-  assert.equal(new Set(AVAILABLE).size, 7, 'בלי כפילויות')
+  assert.equal(new Set(AVAILABLE).size, 8, 'בלי כפילויות')
 })

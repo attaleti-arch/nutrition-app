@@ -94,9 +94,10 @@ export function canBuyExtra(progress) {
 }
 
 // מי היום: מתחלפים בין מי שיש לו מודל. השני הוא מי שלא היה ראשון.
-// שבעה יצורים. רצפה ואוויר לסירוגין כל עוד יש מעופפים, כדי שכל מסע
-// ירגיש אחרת: עקבות, ואז להרים את הראש, ואז שוב עקבות.
-export const AVAILABLE = ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'tzel', 'kraag']
+// שמונה יצורים. רצפה ואוויר לסירוגין כל עוד יש מעופפים, כדי שכל מסע
+// ירגיש אחרת: עקבות, ואז להרים את הראש, ואז שוב עקבות. בולדר הבנאי
+// לפני קראג — הרמז של מסע 1 ("מישהו כאן ידע לבנות") מוביל אליו.
+export const AVAILABLE = ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'tzel', 'bolder', 'kraag']
 export function creaturesForWalk(walks, extra, available = AVAILABLE) {
   const first = available[walks % available.length]
   if (!extra) return [first]

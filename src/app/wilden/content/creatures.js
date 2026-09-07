@@ -60,16 +60,19 @@ export const CREATURES = {
   },
   bolder: {
     id: 'bolder', name: 'בולדר',
-    // הבן שלה: "בולדי נשמע כמו איש קירח". מעכשיו בולדר. הבנאי.
-    model: null,                          // אין עדיין. לא מציבים יצור אחר במקומו.
+    // הבן שלה: "בולדי נשמע כמו איש קירח". מעכשיו בולדר. הבנאי: גולם אבן
+    // עם חורבה על הגב, טחב וזהב. המודל שלה מ-Meshy (19.2MB → 1.7MB, 60K
+    // משולשים). על הרצפה, גדול, עקבות אבן. "מישהו כאן ידע לבנות" — זה הוא.
+    model: '/creatures/bolder/bolder.glb',
     ios: null,
-    sprites: null,                        // הגיליון של בולדר עוד לא נגזר
-    heightM: 0.70,
+    sprites: null,
+    heightM: 0.80,
     arMode: AR_MODE.GROUND,
-    controller: 'missing-piece',
+    controller: 'tracks-true-or-false',   // 'missing-piece' (הרכבה) עוד לא נכתב
     decal: null,
     clips: { ...CLIPS, special: 'BUILD' },
     verb: 'BUILD',
+    brings: 'אבן',
   },
   ruchi: {
     id: 'ruchi', name: 'רוחי',
