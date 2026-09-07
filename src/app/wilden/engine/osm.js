@@ -8,14 +8,11 @@
 // Overpass היא ממשק השאילתות הציבורי של OpenStreetMap. חינם, בלי מפתח,
 // ובכל העולם. נקראת פעם אחת לכל מסלול.
 
-const ENDPOINTS = [
-  'https://overpass-api.de/api/interpreter',
-  'https://overpass.kumi.systems/api/interpreter',
-]
+import { buildQuery, ENDPOINTS } from './overpassQuery.js'
+export { buildQuery }
 
-// דרכים שילד הולך בהן. מכוון שאין כאן כבישים מהירים, ראשיים או עורקיים —
-// לא כי אין שם מדרכה, אלא כי אנחנו לא שולחים ילד לעמוד ליד כביש סואן.
-const WALKABLE = 'residential|living_street|pedestrian|footway|path|unclassified|service|steps'
+// הפרוקסי שלנו: שרת Vercel עם זיכרון של יום. ראה api/streets/route.js.
+const PROXY = '/wilden/api/streets'
 
 // לא כל דרך שווה. שביל בשדה חקלאי רשום ב-OSM בדיוק כמו מדרכה בשכונה, אבל
 // הוא "שטח מת" מבחינת ילד שיוצא בערב. רחוב עירוני קודם תמיד.
@@ -23,30 +20,6 @@ const TIER = {
   residential: 0, living_street: 0, pedestrian: 0, footway: 0, steps: 0,
   service: 1, unclassified: 1,
   path: 2,
-}
-
-// שטחים שנקודה בתוכם נפסלת, גם אם עובר בהם שביל רשום.
-// שים לב ש-leisure=park ו-playground לא נמצאים כאן בכוונה — גן ציבורי הוא
-// מקום מצוין ליצור.
-// רשימה מצומצמת בכוונה. כל תגית נוספת היא עוד סריקה בשרת, ו-Overpass הוא
-// שירות מתנדבים — שאילתה כבדה נכנסת לתור ומרגישה כמו תקיעה.
-const FORBIDDEN_TAGS = [
-  '[landuse~"^(cemetery|industrial|military|quarry|landfill|farmland|orchard|vineyard|forest|meadow|allotments)$"]',
-  '[natural~"^(water|wood|scrub|wetland|grassland)$"]',
-  '[amenity=grave_yard]',
-  '[aeroway]',
-]
-
-export function buildQuery(lat, lng, radius) {
-  const R = Math.round(radius * 1.2)
-  const around = `(around:${R},${lat},${lng})`
-  const forbidden = FORBIDDEN_TAGS
-    .flatMap(t => [`way${around}${t};`, `relation${around}${t};`])
-    .join('')
-  return `[out:json][timeout:20];(` +
-    `way${around}[highway~"^(${WALKABLE})$"][foot!=no][access!=private];` +
-    forbidden +
-    `);out geom;`
 }
 
 // fetch בדפדפן מחכה לנצח אם השרת לא עונה — ו-Overpass הוא שירות מתנדבים
@@ -66,14 +39,15 @@ export async function fetchStreets(lat, lng, radius, { signal, timeoutMs = TIMEO
   const relay = () => ctl.abort()
   signal?.addEventListener('abort', relay)
 
-  const tries = ENDPOINTS.map(url =>
-    fetch(url, { method: 'POST', body, signal: ctl.signal })
-      .then(res => {
-        if (!res.ok) throw new Error('http ' + res.status)
-        return res.json()
-      })
-      .then(parseOverpass)
-  )
+  const ok = res => { if (!res.ok) throw new Error('http ' + res.status); return res.json() }
+  const tries = [
+    // הפרוקסי שלנו קודם ברשימה, אבל לא לבד: אם Vercel איטי הפעם, הישיר מנצח.
+    fetch(`${PROXY}?lat=${lat}&lng=${lng}&r=${Math.round(radius)}`, { signal: ctl.signal })
+      .then(ok).then(parseOverpass),
+    ...ENDPOINTS.map(url =>
+      fetch(url, { method: 'POST', body, signal: ctl.signal }).then(ok).then(parseOverpass),
+    ),
+  ]
 
   try {
     // any: מחזיר את הראשון שהצליח, ולא את הראשון שהסתיים.

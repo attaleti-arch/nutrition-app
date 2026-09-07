@@ -1,12 +1,14 @@
 'use client'
 import { useCallback, useRef, useState } from 'react'
 import { fetchStreets } from '../engine/osm'
-import { buildLoop, fallbackLoop, TARGET_M } from '../engine/route'
+// loop.js ולא route.js: קובץ בשם route.js בתוך app/ הוא API route
+// מבחינת Next, והוא נבנה כנתיב /wilden/engine בלי שאף אחד התכוון.
+import { buildLoop, fallbackLoop, TARGET_M } from '../engine/loop'
 import { getCached, putCached } from '../engine/routeCache'
 
 // ─── בניית הלולאה ───
 // ה-hook עושה שני דברים בלבד: מביא מ-Overpass, ומנהל מצב מסך. כל החישוב
-// יושב ב-engine/route.js כפונקציה טהורה שיש עליה בדיקות.
+// יושב ב-engine/loop.js כפונקציה טהורה שיש עליה בדיקות.
 //
 // זה לא היה ככה קודם, ושילמנו על זה: שני באגי אינטגרציה ברצף — קריאה
 // כפולה לפענוח, ואובייקט שהועבר במקום אינדקס — שאף בדיקה לא יכלה לגעת

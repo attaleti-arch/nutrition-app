@@ -9,6 +9,8 @@ import { Beacon, BeaconLine, BEACON_CSS } from './ui/Beacon'
 import { Stage } from './ar/Stage'
 import { useGeo } from './hooks/useGeo'
 import { useRoute } from './hooks/useRoute'
+import { MiniMap } from './ui/MiniMap'
+import 'leaflet/dist/leaflet.css'
 import { unlockAudio, sfxAppear, sfxRustle, sfxCatch, sfxFinish, buzz } from './engine/audio'
 
 // ─── WILDEN · מסע 1 ───
@@ -270,6 +272,11 @@ function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort }) {
       {!view.canSearch && view.phase === PHASE.VERY_CLOSE && (
         <p style={s.hintStop}>עצרו במקום בטוח — ואז אפשר לחפש.</p>
       )}
+
+      {/* מפה אמיתית: רחובות, בית, מסלול, אני. היצור הוא אזור זוהר, לא סיכה. */}
+      <div style={{ marginTop: 18 }}>
+        <MiniMap home={g.run.home} path={g.run.path} pos={geo.pos} target={g.run.target} />
+      </div>
 
       <GpsPanel geo={geo} run={g.run} />
       {degraded && (

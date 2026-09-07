@@ -15,7 +15,7 @@ import { forServer } from '../src/app/wilden/engine/persist.js'
 import { revalidate, PLACE_AFTER } from '../src/app/wilden/engine/placement.js'
 import { STRUCTURE, GUARDIAN_STATE, affordanceOf, isEnterable, KRAAG_AWAKENS } from '../src/app/wilden/content/canon.js'
 import nimi from '../src/app/wilden/ar/controllers/nimi.js'
-import { buildLoop, fallbackLoop, normalize } from '../src/app/wilden/engine/route.js'
+import { buildLoop, fallbackLoop, normalize } from '../src/app/wilden/engine/loop.js'
 import { getCached, putCached } from '../src/app/wilden/engine/routeCache.js'
 
 const HOME = { lat: 32.0853, lng: 34.7818 }
