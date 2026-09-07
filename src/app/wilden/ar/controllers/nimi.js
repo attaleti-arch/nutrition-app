@@ -116,7 +116,7 @@ export default {
       case PHASE.APPROACH:
         return s.ready
           ? { line: 'עכשיו!', sub: 'תפסו אותו.' }
-          : { line: 'הוא נעצר.', sub: 'תחזיקו אותו במרכז.' }
+          : { line: 'הוא נעצר.', sub: 'כוונו אליו ולחצו לתפוס.' }
       default:
         return { line: '', sub: '' }
     }

@@ -66,22 +66,35 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
   // כלל שנבדק במנוע ולא מתקיים במציאות.
   useEffect(() => {
     let dead = false
+    let settled = false
+    // בטלפון שלה המסך נשאר שחור: לא מצלמה ולא רקע. הבקשה למצלמה לא
+    // נענתה ולא נדחתה — פשוט נתקעה. אחרי 7 שניות מפסיקים לחכות ועוברים
+    // למצב סיפור, שהוא לפחות מסך שרואים בו משהו.
+    const giveUp = setTimeout(() => {
+      if (dead || settled) return
+      settled = true
+      setCamState('denied'); onModeRef.current?.('STORY')
+    }, 7000)
     ;(async () => {
       try {
         if (!navigator.mediaDevices?.getUserMedia) throw new Error('no-camera')
         const s = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: 'environment' } }, audio: false,
         })
-        if (dead) { s.getTracks().forEach(t => t.stop()); return }
+        if (dead || settled) { s.getTracks().forEach(t => t.stop()); return }
+        settled = true
         streamRef.current = s
         if (videoRef.current) { videoRef.current.srcObject = s; await videoRef.current.play().catch(() => {}) }
         setCamState('on'); onModeRef.current?.('CAMERA')
       } catch (e) {
+        if (settled) return
+        settled = true
         setCamState('denied'); onModeRef.current?.('STORY')
       }
     })()
     return () => {
       dead = true
+      clearTimeout(giveUp)
       streamRef.current?.getTracks().forEach(t => t.stop())
       streamRef.current = null
     }
@@ -159,7 +172,8 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
   // ההחלטה שלה: תפיסה ולא ידידות, כי זה ילדים. הרגע עצמו חייב להיות של
   // הילד — כפתור גדול, או החלקה כלפי מעלה על המסך כמו זריקה. שניהם
   // עושים אותו דבר; הכפתור קיים כדי שגם בלי מגע חלק זה יעבוד.
-  const canCatch = !!cs?.ready && !done
+  // canCatch מחושב למטה, אחרי שיודעים איפה היצור; המגע קורא אותו דרך ref.
+  const canCatchRef = useRef(false)
   const doCatch = () => {
     if (!ctrl?.onCatch) return
     setCs(prev => {
@@ -173,7 +187,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
   const onTouchEnd = e => {
     const y0 = touchY.current; touchY.current = null
     const y1 = e.changedTouches?.[0]?.clientY
-    if (canCatch && y0 != null && y1 != null && y0 - y1 > 70) doCatch()
+    if (canCatchRef.current && y0 != null && y1 != null && y0 - y1 > 70) doCatch()
   }
 
   // ── היצור עצמו ──
@@ -186,6 +200,14 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
   const useModel = !!modelSrc && !modelFailed
   const showModel = useModel && (done || (ctVisible && !ct.peeking))
   const hideSprite = showModel && modelShown
+
+  // ── מתי אפשר לתפוס ──
+  // "זה חמוד, אבל איך תופסים?" — מהרחוב. הנעילה המדויקת (14°, שנייה)
+  // הייתה קשה מדי ביד של ילד, והכפתור לא הופיע. עכשיו: הוא נעצר, הוא על
+  // המסך פחות או יותר במרכז — הכפתור שם. לכוון בערך וללחוץ.
+  const canCatch = !done && cs?.phase === 'APPROACH'
+    && (!!cs?.ready || (ctVisible && Math.abs(ct.dx) < 30))
+  canCatchRef.current = canCatch
 
   return (
     <div style={S.wrap} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
