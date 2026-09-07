@@ -72,14 +72,20 @@ export const CREATURES = {
   },
   kraag: {
     id: 'kraag', name: 'קראג',
-    model: null,                          // חורבה חיה. סטטי במסעות 1–9.
+    // המודל שלה מ-Meshy (19.6MB → 1.8MB). בקאנון המקורי קראג הוא "חורבה
+    // חיה" שמתעוררת רק במסע 10 בגובה 2.2 מ'. היא שלחה את המודל שלו עכשיו,
+    // עם תוכנית של שישה יצורים — אז הוא נכנס לסבב כיצור קטן, על הרצפה,
+    // עם עקבות אבן. ההתעוררות הגדולה נשארת לסיפור, כשנגיע לשם.
+    model: '/creatures/kraag/kraag.glb',
     ios: null,
-    heightM: 2.20,
-    arMode: AR_MODE.SCENERY,
-    controller: 'awaken',
+    sprites: null,
+    heightM: 0.70,
+    arMode: AR_MODE.GROUND,
+    controller: 'tracks-true-or-false',
     decal: null,
     clips: { ...CLIPS, special: 'CARRY' },
     verb: 'CARRY',
+    brings: 'אבנים',
   },
 }
 

@@ -94,7 +94,8 @@ export function canBuyExtra(progress) {
 }
 
 // מי היום: מתחלפים בין מי שיש לו מודל. השני הוא מי שלא היה ראשון.
-export function creaturesForWalk(walks, extra, available = ['nimi', 'dabashon']) {
+export const AVAILABLE = ['nimi', 'dabashon', 'kraag']   // מי שיש לו מודל
+export function creaturesForWalk(walks, extra, available = AVAILABLE) {
   const first = available[walks % available.length]
   if (!extra) return [first]
   const second = available.find(c => c !== first) || first

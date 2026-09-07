@@ -576,7 +576,7 @@ test('לוח: אחרי שני מסעות אפשר לקנות יצור שני, ו
   assert.equal(canBuyExtra(g.progress), true)
   g = started(undefined, g)
   assert.equal(g.run.walkIndex, 2)
-  assert.deepEqual(g.run.stops.map(s => s.creature), ['nimi'], 'בלי תשלום — אחד')
+  assert.deepEqual(g.run.stops.map(s => s.creature), ['kraag'], 'בלי תשלום — אחד; המסע השלישי הוא של קראג')
 
   let h = initial()
   h = { ...h, progress: { ...h.progress, walks: 2, coins: 100 } }
@@ -584,7 +584,7 @@ test('לוח: אחרי שני מסעות אפשר לקנות יצור שני, ו
   assert.equal(h.progress.coins, 100 - WALK_PLAN.extraCost, 'שולם מראש')
   h = reduce(h, { type: 'PERMISSION_GRANTED', home: HOME })
   h = reduce(h, { type: 'ROUTE_READY', path: PATH, home: HOME })
-  assert.deepEqual(h.run.stops.map(s => s.creature), ['nimi', 'dabashon'], 'שניים בדרך')
+  assert.deepEqual(h.run.stops.map(s => s.creature), ['kraag', 'nimi'], 'שניים בדרך — והשני הוא מישהו אחר')
 })
 
 test('דבשון: באוויר, שלוש לחיצות', () => {
