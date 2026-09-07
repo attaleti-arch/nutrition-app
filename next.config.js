@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // חותמת גרסה למסך של וילדן: בבדיקות שטח היא ראתה "עדיין אותו דבר" כי
+  // הטלפון הריץ את הבנייה הקודמת. עם שבע תווים על המסך שנינו יודעים
+  // איזו גרסה רצה. Vercel מזריק את ה-SHA בזמן הבנייה.
+  env: {
+    NEXT_PUBLIC_BUILD: (process.env.VERCEL_GIT_COMMIT_SHA || 'dev').slice(0, 7),
+  },
   // כתובות קצרות וזכירות לשיתוף באינסטגרם — /menu במקום /menu.html
   async rewrites() {
     return [

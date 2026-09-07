@@ -336,6 +336,7 @@ function GpsPanel({ geo, run }) {
         <span>נצבר <b style={{ color: walked >= WALK_GATE ? C.green : C.faint }}>{walked} מ׳</b></span>
         <span>קריאות <b style={{ color: geo.fixes ? C.green : C.red }}>{geo.fixes}</b></span>
         {since != null && <span>לפני <b>{since}ש׳</b></span>}
+        <span style={{ color: C.faint }}>גרסה <b style={{ color: C.faint }}>{process.env.NEXT_PUBLIC_BUILD}</b></span>
       </div>
       {issue && (
         <div style={s.gpsIssue}>
