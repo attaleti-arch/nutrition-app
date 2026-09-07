@@ -217,28 +217,9 @@ export default function Wilden() {
         )}
 
         {g.state === S.ROUTE_FAILED && (
-          <Panel eyebrow="הרחובות לא הגיעו">
-            <h2 style={s.h2}>לא הצלחנו להביא את מפת הרחובות</h2>
-            <p style={s.body}>
-              {route.detail && route.detail.includes('blocked')
-                ? 'שרת המפות חסם אותנו זמנית אחרי כמה ניסיונות ברצף. חכו דקה ונסו שוב.'
-                : 'שרת המפות לא ענה בזמן. זה קורה, בעיקר מרשת סלולרית.'}
-              {' '}בלי הרחובות אין מסלול אמיתי, ולכן לא ממציאים אחד.
-            </p>
-            {/* מי נכשל ולמה. זה מה שצריך לצלם ולשלוח לי. */}
-            {(route.detail || route.reason) && (
-              <p style={{ ...s.note, fontFamily: 'ui-monospace, monospace', fontSize: 12.5, direction: 'ltr', textAlign: 'left' }}>
-                {route.reason}{route.detail ? ' — ' + route.detail : ''}
-              </p>
-            )}
-            <button onClick={() => dispatch({ type: 'ROUTE_RETRY' })} style={s.cta}>לנסות שוב</button>
-            <button onClick={() => {
-              const fb = route.useFallback(g.run.home, loopTargetM(g.run.walkIndex || 0))
-              dispatch({ type: 'ROUTE_READY', path: fb, home: g.run.home })
-            }} style={{ ...s.cta, ...s.ctaGhost }}>לצאת בכל זאת, עם מסלול כללי</button>
-            <p style={s.note}>מסלול כללי הוא צורה סביב הבית, לא על רחובות. ההורה מחליט אם זה בסדר כאן.</p>
-            <button onClick={() => dispatch({ type: 'ABORT' })} style={{ ...s.cta, ...s.ctaGhost }}>לא עכשיו</button>
-          </Panel>
+          <RouteFailed route={route} detail={route.detail}
+            onRetry={() => dispatch({ type: 'ROUTE_RETRY' })}
+            onAbort={() => dispatch({ type: 'ABORT' })} />
         )}
 
         {g.state === S.SEARCH && (
@@ -323,6 +304,52 @@ export default function Wilden() {
         )}
       </Shell>
     </div>
+  )
+}
+
+// ── הרחובות לא הגיעו ──
+// "רק רחובות ברורים." אין יותר "מסלול כללי": המתומן על שדות ובית קברות
+// לא היה מפה שאפשר להבין, והוא נראה כמו שקר. במקום זה: מנסים שוב לבד,
+// כמה פעמים, עם ספירה לאחור — ואומרים מי נכשל ולמה.
+const RETRY_S = 20
+const RETRY_BLOCKED_S = 60
+const MAX_AUTO = 3
+function RouteFailed({ route, detail, onRetry, onAbort }) {
+  const blocked = !!detail && detail.includes('blocked')
+  const wait = blocked ? RETRY_BLOCKED_S : RETRY_S
+  const [left, setLeft] = useState(wait)
+  const autoRef = useRef(0)
+  useEffect(() => {
+    setLeft(wait)
+    if (autoRef.current >= MAX_AUTO) return
+    const id = setInterval(() => setLeft(x => {
+      if (x <= 1) { clearInterval(id); autoRef.current += 1; onRetry(); return 0 }
+      return x - 1
+    }), 1000)
+    return () => clearInterval(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [detail])
+  return (
+    <Panel eyebrow="הרחובות לא הגיעו">
+      <h2 style={s.h2}>לא הצלחנו להביא את מפת הרחובות</h2>
+      <p style={s.body}>
+        {blocked
+          ? 'שרת המפות חסם אותנו זמנית אחרי כמה ניסיונות ברצף. זה עובר תוך דקה.'
+          : 'שרת המפות לא ענה בזמן. זה קורה, בעיקר מרשת סלולרית.'}
+        {' '}המסלול הוא רק על רחובות אמיתיים, ולכן לא ממציאים אחד.
+      </p>
+      {autoRef.current < MAX_AUTO && left > 0 && (
+        <p style={s.body}>מנסים שוב לבד בעוד <b>{left}</b> שניות.</p>
+      )}
+      {/* מי נכשל ולמה. זה מה שצריך לצלם ולשלוח לי. */}
+      {(detail || route.reason) && (
+        <p style={{ ...s.note, fontFamily: 'ui-monospace, monospace', fontSize: 12.5, direction: 'ltr', textAlign: 'left' }}>
+          {route.reason}{detail ? ' — ' + detail : ''}
+        </p>
+      )}
+      <button onClick={onRetry} style={s.cta}>לנסות שוב עכשיו</button>
+      <button onClick={onAbort} style={{ ...s.cta, ...s.ctaGhost }}>לא עכשיו</button>
+    </Panel>
   )
 }
 
