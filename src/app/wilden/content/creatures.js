@@ -37,7 +37,7 @@ export const CREATURES = {
     // 1.9MB. בלי אנימציות עדיין — הוא עומד ומסתובב עם הטלפון, לא הולך.
     model: '/creatures/nimi/nimi.glb',
     ios: null,
-    clip: null,
+    clip: '/creatures/nimi/caught.mp4',
     sprites: { hero: '/creatures/nimi/hero.png', peek: '/creatures/nimi/peek.png' },
     heightM: 0.45,
     arMode: AR_MODE.GROUND,
