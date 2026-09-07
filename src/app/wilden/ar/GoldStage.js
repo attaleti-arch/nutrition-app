@@ -1,6 +1,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useMotion } from '../hooks/useMotion'
+import { useCamera } from '../hooks/useCamera'
+import { camText } from '../engine/camera'
 import { createJumpDetector, jumpHeightCm, G } from '../engine/jump'
 
 // ─── מטבע הזהב: קופצים ───
@@ -14,33 +16,16 @@ import { createJumpDetector, jumpHeightCm, G } from '../engine/jump'
 const TAP_AFTER_MS = 9000
 
 export function GoldStage({ value = 10, onTaken, onClose }) {
-  const videoRef = useRef(null)
-  const streamRef = useRef(null)
-  const [cam, setCam] = useState('starting')
+  // ── המצלמה ── אותו hook כמו הבמה הראשית: וידאו תמיד בדף, ניסיון חוזר מלחיצה.
+  const camera = useCamera()
+  const { videoRef } = camera
+  const cam = camera.state
   const [jumped, setJumped] = useState(null)         // { airMs, peakG }
   const [peakG, setPeakG] = useState(1)
   const [phase, setPhase] = useState('idle')
   const [canTap, setCanTap] = useState(false)
   const det = useRef(createJumpDetector())
   const doneRef = useRef(false)
-
-  // ── המצלמה ── (אותו דפוס כמו הבמה הראשית: הווידאו תמיד בדף)
-  useEffect(() => {
-    let dead = false, settled = false
-    const giveUp = setTimeout(() => { if (!dead && !settled) { settled = true; setCam('none') } }, 7000)
-    ;(async () => {
-      try {
-        if (!navigator.mediaDevices?.getUserMedia) throw new Error('no-camera')
-        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false })
-        if (dead || settled) { s.getTracks().forEach(t => t.stop()); return }
-        settled = true; streamRef.current = s
-        const v = videoRef.current
-        if (v) { v.srcObject = s; v.play().catch(() => {}) }
-        setCam('on')
-      } catch (e) { if (!settled) { settled = true; setCam('none') } }
-    })()
-    return () => { dead = true; clearTimeout(giveUp); streamRef.current?.getTracks().forEach(t => t.stop()) }
-  }, [])
 
   // ── הקפיצה ──
   const finish = res => {
@@ -70,6 +55,12 @@ export function GoldStage({ value = 10, onTaken, onClose }) {
     <div style={S.wrap}>
       <video ref={videoRef} playsInline muted autoPlay style={{ ...S.video, opacity: cam === 'on' ? 1 : 0 }} />
       {cam !== 'on' && <div style={S.backdrop} />}
+      {cam === 'off' && camera.canRetry && !jumped && (
+        <div style={S.camNote}>
+          {camText(camera.reason).t}
+          <button onClick={camera.retry} style={S.camRetry}>לנסות לפתוח מצלמה</button>
+        </div>
+      )}
 
       {/* המטבע. המרכוז בשכבה חיצונית, הריחוף בשכבה פנימית — אחרת האנימציה
           דורסת את ה-translate של המרכוז והמטבע זז הצידה. */}
@@ -132,6 +123,11 @@ const S = {
   wrap: { position: 'fixed', inset: 0, background: '#0F150F', overflow: 'hidden', zIndex: 3100, direction: 'rtl' },
   video: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' },
   backdrop: { position: 'absolute', inset: 0, background: 'linear-gradient(#25402F, #4A5F3C 58%, #6B7248)' },
+  camNote: { position: 'absolute', top: 72, insetInline: 16, zIndex: 5, margin: 0, padding: '8px 12px',
+    borderRadius: 10, background: 'rgba(15,21,15,.7)', color: '#C3C8BA', fontSize: 13, lineHeight: 1.5,
+    textAlign: 'center' },
+  camRetry: { display: 'block', margin: '8px auto 0', padding: '8px 16px', borderRadius: 999, border: 'none',
+    background: '#E5A342', color: '#14200F', fontFamily: 'inherit', fontSize: 14, fontWeight: 800, cursor: 'pointer' },
   coinAnchor: { position: 'absolute', left: 0, right: 0, top: '38%', display: 'grid', placeItems: 'center' },
   coinWrap: { position: 'relative', perspective: 600 },
   coinBtn: { background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', WebkitTapHighlightColor: 'transparent' },

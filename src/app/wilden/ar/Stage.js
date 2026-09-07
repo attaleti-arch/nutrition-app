@@ -4,6 +4,8 @@ import { useOrient, angleDelta } from '../hooks/useOrient'
 import { controllerFor } from './controllers'
 import { CreatureFigure, ModelLayer } from './Figure'
 import { useModelSrc, usePreloadModel } from '../hooks/useModelViewer'
+import { useCamera } from '../hooks/useCamera'
+import { camText } from '../engine/camera'
 import { sfxAppear, sfxRustle, sfxCatch, buzz } from '../engine/audio'
 
 // ─── במה המפגש ───
@@ -30,9 +32,15 @@ const DECAY = 0.6
 const TICK = 80
 
 export function Stage({ creature, onMode, onFound, onGiveUp }) {
-  const videoRef = useRef(null)
-  const streamRef = useRef(null)
-  const [camState, setCamState] = useState('starting')
+  // ── המצלמה ──
+  // התוצאה מדווחת החוצה למכונה. בלי זה "מצלמה נדחתה ← Story Mode" נשאר
+  // כלל שנבדק במנוע ולא מתקיים במציאות. הפתיחה עצמה, הזמן הקצוב והניסיון
+  // החוזר יושבים ב-useCamera — משותף עם מסך הזהב.
+  const onModeRef = useRef(); onModeRef.current = onMode
+  const cam = useCamera({ onState: st => onModeRef.current?.(st === 'on' ? 'CAMERA' : 'STORY') })
+  const { videoRef } = cam
+  const camState = cam.state === 'on' ? 'on' : cam.state === 'off' ? 'denied' : 'starting'
+  const videoLive = cam.live
   const { heading, pitch, perm, absolute, needsAsk, request } = useOrient({ active: true })
   const hasSensors = heading != null
 
@@ -46,7 +54,6 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
   const [swipe, setSwipe] = useState(0)
   const [flash, setFlash] = useState(null)
 
-  const onModeRef = useRef(); onModeRef.current = onMode
   const onFoundRef = useRef(); onFoundRef.current = onFound
 
   // ── עוגן ──
@@ -60,61 +67,6 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
     anchored.current = true
     setCs(ctrl.start(ref))
   }, [heading, needsAsk, perm, ctrl])
-
-  // ── המצלמה ──
-  // התוצאה מדווחת החוצה למכונה. בלי זה "מצלמה נדחתה ← Story Mode" נשאר
-  // כלל שנבדק במנוע ולא מתקיים במציאות.
-  // חיבור הזרם לאלמנט, עם וידוא שבאמת מגיעים פריימים. iOS מבטיח play()
-  // בלי שיהיה מה להראות; לכן מחכים ל-playing/loadeddata.
-  const [videoLive, setVideoLive] = useState(false)
-  const attach = s => {
-    const v = videoRef.current
-    if (!v || !s) return
-    if (v.srcObject !== s) v.srcObject = s
-    const live = () => setVideoLive(true)
-    v.addEventListener('playing', live, { once: true })
-    v.addEventListener('loadeddata', live, { once: true })
-    v.play().catch(() => {})
-    if (v.readyState >= 2) live()
-  }
-  // אם הזרם הגיע לפני שהאלמנט היה בדף (זה מה שקרה אצלה) — מחברים עכשיו.
-  useEffect(() => { if (camState === 'on' && streamRef.current) attach(streamRef.current) }, [camState])
-
-  useEffect(() => {
-    let dead = false
-    let settled = false
-    // בטלפון שלה המסך נשאר שחור: לא מצלמה ולא רקע. הבקשה למצלמה לא
-    // נענתה ולא נדחתה — פשוט נתקעה. אחרי 7 שניות מפסיקים לחכות ועוברים
-    // למצב סיפור, שהוא לפחות מסך שרואים בו משהו.
-    const giveUp = setTimeout(() => {
-      if (dead || settled) return
-      settled = true
-      setCamState('denied'); onModeRef.current?.('STORY')
-    }, 7000)
-    ;(async () => {
-      try {
-        if (!navigator.mediaDevices?.getUserMedia) throw new Error('no-camera')
-        const s = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: 'environment' } }, audio: false,
-        })
-        if (dead || settled) { s.getTracks().forEach(t => t.stop()); return }
-        settled = true
-        streamRef.current = s
-        setCamState('on'); onModeRef.current?.('CAMERA')
-        attach(s)
-      } catch (e) {
-        if (settled) return
-        settled = true
-        setCamState('denied'); onModeRef.current?.('STORY')
-      }
-    })()
-    return () => {
-      dead = true
-      clearTimeout(giveUp)
-      streamRef.current?.getTracks().forEach(t => t.stop())
-      streamRef.current = null
-    }
-  }, [])
 
   const live = hasSensors ? heading : swipe
   const targets = cs && ctrl ? ctrl.targets(cs) : []
@@ -242,14 +194,19 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
       <video ref={videoRef} playsInline muted autoPlay
         style={{ ...S.video, opacity: camState === 'on' ? 1 : 0 }} />
       {camState === 'on' && !videoLive && (
-        <p style={S.camNote}>המצלמה אושרה אבל התמונה לא הגיעה. נסו לסגור את הלשונית ולפתוח מחדש.</p>
+        <div style={S.camNote}>
+          המצלמה אושרה אבל התמונה לא הגיעה.
+          <button onClick={cam.retry} style={S.camRetry}>לפתוח מצלמה שוב</button>
+        </div>
       )}
       {camState === 'denied' && <StoryBackdrop />}
+      {/* למה אין מצלמה — ומה עושים. משפט אחד, פעולה אחת, וכפתור לנסות
+          שוב מתוך לחיצה (ספארי לא פותח מצלמה בלי מגע). */}
       {camState === 'denied' && !done && (
-        <p style={S.camNote}>
-          בלי מצלמה הפעם. אם פתחתם את הקישור מוואטסאפ או מאפליקציה אחרת — פתחו אותו בספארי,
-          ושם היצור יופיע בתוך הרחוב שלכם.
-        </p>
+        <div style={S.camNote}>
+          <b>{camText(cam.reason).t}</b> {camText(cam.reason).how}
+          {cam.canRetry && <button onClick={cam.retry} style={S.camRetry}>לנסות לפתוח מצלמה</button>}
+        </div>
       )}
       {camState === 'starting' && <div style={S.center}><p style={S.dim}>פותחים מצלמה…</p></div>}
 
@@ -472,7 +429,9 @@ const S = {
   // כפתור התפיסה: גדול, אחד, במרכז. ילד לא צריך לקרוא כדי למצוא אותו.
   camNote: { position: 'absolute', top: 72, insetInline: 16, zIndex: 5, margin: 0, padding: '8px 12px',
     borderRadius: 10, background: 'rgba(15,21,15,.7)', color: '#C3C8BA', fontSize: 13, lineHeight: 1.5,
-    textAlign: 'center' },
+    textAlign: 'center', direction: 'rtl' },
+  camRetry: { display: 'block', margin: '8px auto 0', padding: '8px 16px', borderRadius: 999, border: 'none',
+    background: '#E5A342', color: '#14200F', fontFamily: 'inherit', fontSize: 14, fontWeight: 800, cursor: 'pointer' },
   catchBtn: { marginTop: 14, padding: '16px 44px', borderRadius: 999, border: 'none',
     background: '#E5A342', color: '#14200F', fontFamily: 'inherit', fontSize: 22, fontWeight: 900,
     cursor: 'pointer', boxShadow: '0 6px 24px rgba(229,163,66,.45)', pointerEvents: 'auto',

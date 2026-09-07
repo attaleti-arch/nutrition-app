@@ -8,6 +8,7 @@ import { haversine, bearing, advanceWalk, progressAlong } from './geo.js'
 import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL_RADIUS } from './beacon.js'
 import { placeTarget, placeStops, revalidate, PLACE_AFTER } from './placement.js'
 import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS } from './coins.js'
+import { mergeProgress } from './profile.js'
 
 export const S = {
   BROKEN_WORLD: 'BROKEN_WORLD',     // עולם הבית ההרוס. נקודת הכניסה.
@@ -334,6 +335,19 @@ export function reduce(g, ev) {
 
     case 'SET_CREATURE':
       return { ...g, run: { ...g.run, creature: ev.id } }
+
+    // ── עולם מהשרת ──
+    // הילד נכנס עם הקוד שלו בטלפון אחר, או שהשרת מחזיק יותר ממה שיש כאן.
+    // ממזגים — אף פעם לא דורסים — ורק בין מסעות, לא באמצע הליכה.
+    case 'IMPORT_PROGRESS': {
+      if (!ev.progress) return g
+      if (g.state !== S.BROKEN_WORLD && g.run) return g
+      return { ...g, progress: mergeProgress(g.progress, ev.progress) }
+    }
+
+    // ── שחקן אחר על אותו טלפון ──
+    case 'RESET_WORLD':
+      return { ...initial(), progress: ev.progress ? mergeProgress(initial().progress, ev.progress) : initial().progress }
 
     case 'ADD_LOOT':
       return { ...g, run: { ...g.run, loot: [...(g.run.loot || []), ev.kind] } }

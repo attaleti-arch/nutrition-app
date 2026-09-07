@@ -5,7 +5,9 @@ import { PHASE, PHASE_BUZZ, ACC_GATE, ACC_DIRECTION, ACC_COARSE, WALK_GATE } fro
 import { PLACE_AFTER } from './engine/placement'
 import { save, load, dayKey } from './engine/persist'
 import { creatureById } from './content/creatures'
-import M01 from './content/missions/m01-signal'
+import { briefFor, homeFor, todaysCreature } from './content/briefs'
+import { useProfile } from './hooks/useProfile'
+import { ProfileGate, ProfileBar } from './ui/ProfileGate'
 import { Beacon, BeaconLine, BEACON_CSS } from './ui/Beacon'
 import { Stage } from './ar/Stage'
 import { useGeo } from './hooks/useGeo'
@@ -42,6 +44,11 @@ export default function Wilden() {
   // המצב השכיח, לא קצה נדיר.
   useEffect(() => { if (booted) save(g) }, [g, booted])
   useEffect(() => { setBooted(true) }, [])
+
+  // ── מי משחק ──
+  // שם וקוד בטלפון, העולם גם בשרת. בלי זה כל דפדפן היה עולם חדש —
+  // walks חוזר לאפס והמשחק שולח שוב ושוב לתפוס את נימי.
+  const P = useProfile({ g, dispatch, booted })
 
   // ── חלון הצצה למצב, מאחורי ?debug=1 ──
   // גם לבדיקות אוטומטיות וגם לרגע שבו הורה בפיילוט אומר "זה תקוע" ואני
@@ -98,8 +105,10 @@ export default function Wilden() {
 
   function startRun(kind, extra = false) {
     unlockAudio()
-    dispatch({ type: 'START_RUN', kind, extra, missionId: kind === RUN.STORY ? M01.id : null, day: today, t: Date.now() })
-    dispatch({ type: 'SET_CREATURE', id: M01.creature })
+    // התדריך של היום — לא תמיד מסע 1. מי בדרך נקבע לפי הלוח.
+    const b = briefFor(g.progress)
+    dispatch({ type: 'START_RUN', kind, extra, missionId: kind === RUN.STORY ? b.missionId : null, day: today, t: Date.now() })
+    dispatch({ type: 'SET_CREATURE', id: b.creature })
   }
 
   // ── מטבע הזהב ──
@@ -135,7 +144,7 @@ export default function Wilden() {
   if (!booted) return <Shell><p style={{ color: C.muted, textAlign: 'center' }}>רגע…</p></Shell>
 
   // היצור של התחנה הנוכחית. (מסע ישן בלי תחנות — היצור של המסע.)
-  const creature = creatureById(g.run?.target?.creature || g.run?.creature || M01.creature)
+  const creature = creatureById(g.run?.target?.creature || g.run?.creature) || todaysCreature(g.progress)
 
   return (
     <div dir="rtl" style={{ minHeight: '100dvh', background: C.bg, color: C.ink,
@@ -159,8 +168,14 @@ export default function Wilden() {
       )}
 
       <Shell>
-        {g.state === S.BROKEN_WORLD && (
-          <BrokenWorld g={g} today={today} onStart={startRun} />
+        {g.state === S.BROKEN_WORLD && !P.loaded && (
+          <p style={{ color: C.muted, textAlign: 'center' }}>רגע…</p>
+        )}
+        {g.state === S.BROKEN_WORLD && P.needsGate && (
+          <ProfileGate P={P} switching={P.switching} />
+        )}
+        {g.state === S.BROKEN_WORLD && P.loaded && !P.needsGate && (
+          <BrokenWorld g={g} today={today} onStart={startRun} P={P} />
         )}
 
         {g.state === S.PERMISSIONS && (
@@ -261,16 +276,19 @@ export default function Wilden() {
           </Panel>
         )}
 
-        {g.state === S.CLUE && (
-          <Panel eyebrow="בעולם">
-            <p style={s.body}>{M01.home.line}</p>
-            <div style={s.clue}>
-              <p style={s.clueLine}>{M01.clue.line}</p>
-              <p style={s.clueSub}>{M01.clue.sub}</p>
-            </div>
-            <button onClick={() => dispatch({ type: 'CLUE_SEEN' })} style={s.cta}>הבנתי</button>
-          </Panel>
-        )}
+        {g.state === S.CLUE && (() => {
+          const h = homeFor(g.run, g.progress)
+          return (
+            <Panel eyebrow="בעולם">
+              <p style={s.body}>{h.line}</p>
+              <div style={s.clue}>
+                <p style={s.clueLine}>{h.clue.line}</p>
+                <p style={s.clueSub}>{h.clue.sub}</p>
+              </div>
+              <button onClick={() => dispatch({ type: 'CLUE_SEEN' })} style={s.cta}>הבנתי</button>
+            </Panel>
+          )
+        })()}
 
         {g.state === S.RUN_COMPLETE && (
           <Panel eyebrow="המסע נגמר">
@@ -293,14 +311,18 @@ export default function Wilden() {
 }
 
 // ── עולם הבית ההרוס ──
-function BrokenWorld({ g, today, onStart }) {
+function BrokenWorld({ g, today, onStart, P }) {
   const storyOpen = canStartStory(g.progress, today)
   const first = g.progress.missionsCompleted === 0
   const walks = g.progress.walks || 0
   const extraOk = canBuyExtra(g.progress)
+  // התדריך של היום: מסע 1 — הסיפור. אחר כך — מי בדרך לפי הלוח, בשם.
+  const brief = briefFor(g.progress)
+  const who = creatureById(brief.creature)
   return (
     <>
       <p style={s.eyebrow}>WILDEN</p>
+      {P && <ProfileBar P={P} />}
       <h1 style={s.h1}>{first ? 'העולם שלך נשבר.' : 'העולם שלך חוזר לאט.'}</h1>
       <p style={s.lede}>
         {first
@@ -319,16 +341,16 @@ function BrokenWorld({ g, today, onStart }) {
       <div style={s.plan}>
         <span>🚶 {walks === 0 ? '30 דק׳' : '45 דק׳'}</span>
         <span>🪙 <b>{g.progress.coins || 0}</b></span>
-        <span>{walks === 0 ? 'יצור אחד בדרך' : walks === 1 ? 'יצור חדש בדרך' : 'יצור בדרך'}</span>
+        <span>{walks === 0 ? 'יצור אחד בדרך' : `${who?.name || 'יצור'} בדרך`}</span>
       </div>
 
       {storyOpen ? (
         <>
           <div style={s.brief}>
-            <p style={s.briefLine}>{M01.brief.line}</p>
-            <p style={s.briefSub}>{M01.brief.sub}</p>
+            <p style={s.briefLine}>{brief.line}</p>
+            <p style={s.briefSub}>{brief.sub}</p>
           </div>
-          <button onClick={() => onStart(RUN.STORY)} style={s.cta}>{M01.brief.cta}</button>
+          <button onClick={() => onStart(RUN.STORY)} style={s.cta}>{brief.cta}</button>
           {extraOk && (
             <button onClick={() => onStart(RUN.STORY, true)} style={{ ...s.cta, ...s.ctaGold }}>
               🪙 {WALK_PLAN.extraCost} — לפתוח יצור שני בדרך
@@ -339,8 +361,8 @@ function BrokenWorld({ g, today, onStart }) {
       ) : (
         <>
           <div style={s.brief}>
-            <p style={s.briefLine}>המסע הבא ייפתח מחר.</p>
-            <p style={s.briefSub}>אבל אפשר לצאת לחקור מתי שבא לכם.</p>
+            <p style={s.briefLine}>המסע הבא ייפתח מחר{who ? ` — ${who.name} בדרך` : ''}.</p>
+            <p style={s.briefSub}>אבל אפשר לצאת לחקור מתי שבא לכם{who ? `, וגם ${who.name} שם` : ''}.</p>
           </div>
           <button onClick={() => onStart(RUN.FREE)} style={s.cta}>צא לחקור</button>
           {extraOk && (

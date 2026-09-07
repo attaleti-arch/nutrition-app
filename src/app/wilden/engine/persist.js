@@ -41,8 +41,8 @@ function migrate(g) {
 }
 
 // ── מה מותר לשלוח לשרת ──
-// יצורים, חומרים, התקדמות. לא מיקום, לא מסלול, לא כתובת הבית.
-// גם לא בטעות: כל ה-run יורד, ולא רק שדות נבחרים מתוכו.
+// יצורים, חומרים, מטבעות, מסעות, התקדמות. לא מיקום, לא מסלול, לא כתובת
+// הבית. גם לא בטעות: כל ה-run יורד, ולא רק שדות נבחרים מתוכו.
 export function forServer(g) {
   if (!g) return null
   return {
@@ -53,6 +53,8 @@ export function forServer(g) {
       res: g.progress?.res ?? {},
       story: g.progress?.story ?? {},
       lastStoryDay: g.progress?.lastStoryDay ?? null,
+      coins: g.progress?.coins ?? 0,
+      walks: g.progress?.walks ?? 0,
     },
   }
 }

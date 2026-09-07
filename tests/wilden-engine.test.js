@@ -861,3 +861,160 @@ test('זיכרון: מסלול פגום לא נשמר', () => {
   assert.equal(putCached(HOME, [HOME, HOME]), false, 'שתי נקודות אינן לולאה')
   assert.equal(getCached(HOME), null)
 })
+
+// ═══════════════════════════════════════════════════════════════
+// מי משחק, מה נשמר, ומי היום בדרך
+// ═══════════════════════════════════════════════════════════════
+import { makeCode, normCode, validCode, newProfile, mergeProgress, remoteAdds, richer } from '../src/app/wilden/engine/profile.js'
+import { briefFor, homeFor, todaysCreature } from '../src/app/wilden/content/briefs.js'
+import { reasonOf, camText, CAM_REASON } from '../src/app/wilden/engine/camera.js'
+
+test('פרופיל: קוד בן 5 בלי תווים מבלבלים', () => {
+  const seeded = () => 0.123456
+  const c = makeCode(5, seeded)
+  assert.equal(c.length, 5)
+  for (let i = 0; i < 200; i++) {
+    const k = makeCode()
+    assert.equal(k.length, 5)
+    assert.ok(!/[0OI1L]/.test(k), 'בלי 0/O/1/I/L: הורה מכתיב בטלפון')
+  }
+  assert.equal(normCode(' a1-b2c '), 'A1B2C')
+  assert.ok(validCode('ab2cd'))
+  assert.ok(!validCode('ab2c'))
+  assert.equal(newProfile({ name: '  ' }).name, 'שחקן')
+  assert.equal(newProfile({ name: 'נועם', code: 'q2w3e' }).code, 'Q2W3E')
+})
+
+test('מיזוג: מי שהלך יותר הוא הבסיס, ויצור שנתפס לא נעלם', () => {
+  const local = { walks: 1, coins: 40, missionsCompleted: 1, creatures: ['nimi'], res: { honey: 1 }, story: { m01: 'done' }, lastStoryDay: '2026-09-01' }
+  const remote = { walks: 3, coins: 10, missionsCompleted: 3, creatures: ['nimi', 'dabashon'], res: { stone: 2 }, story: { m01: 'done' }, lastStoryDay: '2026-09-05' }
+  assert.equal(richer(local, remote), remote)
+  const m = mergeProgress(local, remote)
+  assert.equal(m.walks, 3)
+  assert.equal(m.coins, 10, 'הארנק של הבסיס — לא סכום, אחרת מיזוג כפול מכפיל מטבעות')
+  assert.deepEqual(m.creatures, ['nimi', 'dabashon'])
+  assert.deepEqual(m.res, { stone: 2, honey: 1 })
+  assert.equal(m.lastStoryDay, '2026-09-05')
+  // שוויון ב-walks: יותר מטבעות מנצח
+  assert.equal(richer({ walks: 2, coins: 5 }, { walks: 2, coins: 9 }).coins, 9)
+  assert.equal(mergeProgress(local, null), local)
+  assert.equal(mergeProgress(null, remote), remote)
+  assert.ok(remoteAdds(local, remote))
+  assert.ok(remoteAdds(remote, local), 'גם לכיוון השני: הדבש של הטלפון לא הולך לאיבוד')
+  const subset = { walks: 1, coins: 5, creatures: ['nimi'], res: {}, story: {} }
+  assert.ok(!remoteAdds(remote, subset), 'השרת לא מוסיף כלום — לא נוגעים')
+  assert.ok(!remoteAdds(local, local))
+  assert.ok(!remoteAdds(local, { ...local, res: { honey: 1 } }), 'סדר מפתחות אחר אינו שינוי')
+})
+
+test('מיזוג במכונה: רק בין מסעות, אף פעם לא באמצע הליכה', () => {
+  let g = initial()
+  const remote = { walks: 2, coins: 30, creatures: ['nimi', 'dabashon'], res: {}, story: {}, missionsCompleted: 2 }
+  g = reduce(g, { type: 'IMPORT_PROGRESS', progress: remote })
+  assert.equal(g.progress.walks, 2)
+  assert.deepEqual(g.progress.creatures, ['nimi', 'dabashon'])
+  assert.equal(g.state, S.BROKEN_WORLD)
+
+  // באמצע מסע — מתעלמים
+  let h = started(['nimi'])
+  const before = h.progress
+  h = reduce(h, { type: 'IMPORT_PROGRESS', progress: { walks: 9, coins: 999 } })
+  assert.equal(h.progress, before)
+
+  // שחקן אחר על אותו טלפון: עולם נקי, או העולם שלו מהשרת
+  const fresh = reduce(g, { type: 'RESET_WORLD' })
+  assert.equal(fresh.progress.walks, 0)
+  assert.deepEqual(fresh.progress.creatures, [])
+  const theirs = reduce(g, { type: 'RESET_WORLD', progress: { walks: 1, coins: 7, creatures: ['kraag'] } })
+  assert.equal(theirs.progress.walks, 1)
+  assert.deepEqual(theirs.progress.creatures, ['kraag'])
+})
+
+test('לשרת: מטבעות ומסעות נשלחים, מיקום לא', () => {
+  let g = initial()
+  g = reduce(g, { type: 'IMPORT_PROGRESS', progress: { walks: 2, coins: 33, creatures: ['nimi'], res: {}, story: {} } })
+  g = reduce(g, { type: 'START_RUN', kind: RUN.STORY, day: DAY, t: 0 })
+  g = reduce(g, { type: 'PERMISSION_GRANTED', home: HOME })
+  const out = forServer(g)
+  assert.equal(out.progress.walks, 2)
+  assert.equal(out.progress.coins, 33)
+  assert.equal(out.run, undefined)
+  assert.ok(!JSON.stringify(out).includes('lat'))
+})
+
+test('התדריך: לא תמיד נימי', () => {
+  const b0 = briefFor({ walks: 0, creatures: [] })
+  assert.equal(b0.missionId, 'm01')
+  assert.equal(b0.creature, 'nimi')
+  assert.equal(b0.cta, 'צא למסע')
+
+  const b1 = briefFor({ walks: 1, creatures: ['nimi'] })
+  assert.equal(b1.missionId, null, 'מסע 1 הוא סיפור; אחר כך אין משימה קבועה')
+  assert.equal(b1.creature, 'dabashon')
+  assert.ok(b1.line.includes('דבשון'), b1.line)
+  assert.ok(b1.line.includes('מסע 2'))
+  assert.ok(b1.sub.includes('דבש'), 'יצור חדש — מה הוא מביא')
+
+  const b2 = briefFor({ walks: 2, creatures: ['nimi', 'dabashon'] })
+  assert.equal(b2.creature, 'kraag')
+
+  // הסבב חוזר: מסע 4 — שוב נימי, אבל כ"שוב בחוץ" ולא כמסע 1
+  const b3 = briefFor({ walks: 3, creatures: ['nimi', 'dabashon', 'kraag'] })
+  assert.equal(b3.creature, 'nimi')
+  assert.equal(b3.missionId, null)
+  assert.ok(b3.sub.includes('שוב'))
+  assert.equal(todaysCreature({ walks: 4 }).id, 'dabashon')
+})
+
+test('הבית אחרי הפורטל: מסע 1 — הסיפור; אחר כך — מי שנתפס ומי שמחכה', () => {
+  const m01 = homeFor({ missionId: 'm01' }, { walks: 1 })
+  assert.ok(m01.line.includes('נימי'))
+  assert.equal(m01.clue.line, 'מישהו כאן ידע לבנות.')
+
+  const run = { missionId: null, stops: [{ creature: 'dabashon', done: true }] }
+  const h = homeFor(run, { walks: 2 })
+  assert.ok(h.line.includes('דבשון'), h.line)
+  assert.ok(h.line.includes('דבש'))
+  assert.ok(h.clue.sub.includes('קראג'), 'walks=2 → הבא בסבב הוא קראג')
+
+  const two = homeFor({ stops: [{ creature: 'nimi', done: true }, { creature: 'kraag', done: true }] }, { walks: 3 })
+  assert.ok(two.line.includes('נימי וקראג'), two.line)
+  assert.ok(two.line.includes('נכנסים'))
+})
+
+test('המסע השלם: אחרי נימי, המסע הבא מציע דבשון — לא נימי שוב', () => {
+  let g = started(['nimi'])
+  g = walk(g, 200)
+  g = catchHere(g, 500000)
+  g = reduce(g, { type: 'PORTAL_OPEN' })
+  g = reduce(g, { type: 'PORTAL_ENTERED' })
+  g = reduce(g, { type: 'CLUE_SEEN' })
+  g = reduce(g, { type: 'RUN_CLOSED' })
+  assert.equal(g.progress.walks, 1)
+  const b = briefFor(g.progress)
+  assert.equal(b.creature, 'dabashon')
+  g = reduce(g, { type: 'START_RUN', kind: RUN.STORY, day: '2026-09-07', t: 1 })
+  assert.deepEqual(g.run.wantCreatures, ['dabashon'])
+})
+
+test('המצלמה: כל שגיאה הופכת לסיבה אחת עם פעולה אחת', () => {
+  assert.equal(reasonOf({ name: 'NotAllowedError' }), CAM_REASON.DENIED)
+  assert.equal(reasonOf({ name: 'PermissionDeniedError' }), CAM_REASON.DENIED)
+  assert.equal(reasonOf({ name: 'NotFoundError' }), CAM_REASON.NOT_FOUND)
+  assert.equal(reasonOf({ name: 'OverconstrainedError' }), CAM_REASON.NOT_FOUND)
+  assert.equal(reasonOf({ name: 'NotReadableError' }), CAM_REASON.BUSY)
+  assert.equal(reasonOf({ name: 'AbortError' }), CAM_REASON.BUSY)
+  assert.equal(reasonOf(new Error('timeout')), CAM_REASON.TIMEOUT)
+  assert.equal(reasonOf(new Error('no-media')), CAM_REASON.NO_MEDIA, 'דפדפן של וואטסאפ')
+  assert.equal(reasonOf(new Error('no-media'), { secure: false }), CAM_REASON.INSECURE)
+  assert.equal(reasonOf({ name: 'WeirdError' }), CAM_REASON.OTHER)
+  assert.equal(reasonOf(null), CAM_REASON.OTHER)
+  for (const r of Object.values(CAM_REASON)) {
+    const t = camText(r)
+    assert.ok(t.t && t.how, r)
+    assert.equal(typeof t.retry, 'boolean')
+  }
+  assert.equal(camText(CAM_REASON.NO_MEDIA).retry, false, 'בלי mediaDevices אין מה לנסות שוב')
+  assert.ok(camText(CAM_REASON.NO_MEDIA).how.includes('ספארי'))
+  assert.ok(camText(CAM_REASON.DENIED).how.includes('aA'), 'איפה בדיוק לוחצים באייפון')
+})
