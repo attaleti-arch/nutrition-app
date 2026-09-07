@@ -115,6 +115,21 @@ export const CREATURES = {
     verb: 'SPLASH',
     brings: 'מים',
   },
+  tzel: {
+    id: 'tzel', name: 'צל',
+    // שועל צללים סגול, הזנב זוהר. המודל שלה מ-Meshy (16.3MB → 1.8MB). על
+    // הרצפה, עקבות. הצל שלו הוא מה שהוא משאיר.
+    model: '/creatures/tzel/tzel.glb',
+    ios: null,
+    sprites: null,
+    heightM: 0.50,
+    arMode: AR_MODE.GROUND,
+    controller: 'tracks-true-or-false',
+    decal: null,
+    clips: { ...CLIPS, special: 'VANISH' },
+    verb: 'VANISH',
+    brings: 'צללים',
+  },
   kraag: {
     id: 'kraag', name: 'קראג',
     // המודל שלה מ-Meshy (19.6MB → 1.8MB). בקאנון המקורי קראג הוא "חורבה
