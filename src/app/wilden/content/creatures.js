@@ -5,8 +5,15 @@
 // קליפ בשם Idle_01 במקום IDLE — משנים מילה אחת כאן, ואף שורת לוגיקה
 // לא נוגעת בזה. זו כל ההגנה מפני כתיבה מחדש.
 //
-// כרגע model מצביע על ה-GLB הזמניים כדי שאפשר יהיה לבדוק את הצינור
-// לפני שמזמינים משהו.
+// ── שפה ברורה על מה יש ומה אין ──
+// model  — מודל תלת-ממדי (GLB) של הדמות הזאת. null = עדיין אין. הבמה
+//          נופלת לספרייט בעצמה. אף פעם לא שמים כאן מודל של יצור אחר
+//          "בינתיים": זה בדיוק איך שילד מקבל כדור ירוק במקום נימי.
+// sprites — גזירות דו-ממדיות מגיליון הדמויות. מה שמוצג היום.
+//
+// כשה-GLB של נימי יגיע: שמים אותו ב-/public/creatures/nimi/nimi.glb,
+// משנים את model לנתיב הזה, ומעדכנים את שמות הקליפים ב-clips לשמות
+// שבקובץ. אף שורת לוגיקה לא נוגעת בזה.
 
 export const AR_MODE = {
   GROUND: 'ground',       // עומד על הקרקע לפי מישור משוער
@@ -23,8 +30,9 @@ const CLIPS = {
 export const CREATURES = {
   nimi: {
     id: 'nimi', name: 'נימי',
-    model: '/monsters3d/anafon.glb',     // placeholder
-    ios: '/monsters3d/anafon.usdz',
+    model: null,                          // מחכה ל-nimi.glb האמיתי
+    ios: null,
+    sprites: { hero: '/creatures/nimi/hero.png', peek: '/creatures/nimi/peek.png' },
     heightM: 0.45,
     arMode: AR_MODE.GROUND,
     controller: 'tracks-true-or-false',
@@ -34,8 +42,9 @@ export const CREATURES = {
   },
   boldi: {
     id: 'boldi', name: 'בולדי',
-    model: '/monsters3d/avnon.glb',
-    ios: '/monsters3d/avnon.usdz',
+    model: null,                          // אין עדיין. לא מציבים יצור אחר במקומו.
+    ios: null,
+    sprites: null,                        // הגיליון של בולדי עוד לא נגזר
     heightM: 0.70,
     arMode: AR_MODE.GROUND,
     controller: 'missing-piece',

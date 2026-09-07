@@ -1,0 +1,187 @@
+'use client'
+import { useEffect, useRef, useState } from 'react'
+import { useModelViewer, useModelSrc } from '../hooks/useModelViewer'
+
+// ─── הדמות על הבמה ───
+// שתי דרכים להציג יצור, ומדרגה ברורה ביניהן:
+//
+//   1. מודל תלת-ממדי (GLB) — אם למרשם היצור יש model והקובץ נטען. מסתובב
+//      עם הטלפון, מנגן קליפ לפי הפאזה, עומד על הרצפה. (ModelLayer)
+//   2. ספרייט — גזירה דו-ממדית מגיליון הדמויות. מה שיש היום. (CreatureFigure)
+//
+// המעבר ביניהם הוא במרשם (content/creatures.js) בלבד. הבמה לא יודעת
+// ולא צריכה לדעת מה הגיע מהאמן. אם המודל לא נטען — נופלים לספרייט בשקט,
+// ולא למסך ריק ולא לכדור ירוק.
+//
+// PEEK הוא תמיד ספרייט: "ראש מבצבץ מאחורי גזע" הוא תמונה מעוצבת, ומודל
+// תלת-ממדי בלי עץ אמיתי להסתתר מאחוריו לא יעשה את זה טוב יותר.
+
+const GLOW_DONE = 'drop-shadow(0 0 22px rgba(240,192,105,.55))'
+
+// ── ספרייט + צל + פס ──
+// scale מגיע מהפאזה (0.82 מבצבץ, 1.6 מתקרב, 1.35 בסיום) ומיושם כגובה
+// אמיתי, לא כ-transform — ראה הערה ב-Stage.
+// hideSprite: המודל התלת-ממדי כבר מוצג בשכבה שלו; הצל והפס נשארים כאן.
+export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approaching, done, scale = 1, hideSprite = false }) {
+  const anim = hideSprite ? 'none'
+    : approaching ? 'wildenBob 1.1s ease-in-out infinite'
+    : done ? 'wildenBreathe 2.6s ease-in-out infinite' : 'none'
+  return (
+    <div className="wilden-figure" style={{ ...F.figure, animation: anim,
+      width: `${(60 * scale).toFixed(1)}vw`, height: `${(36 * scale).toFixed(1)}vh` }}>
+      <style>{FIGURE_CSS}</style>
+      {streakSide && (
+        <div style={{ ...F.streak, ...(streakSide === 'left' ? F.streakL : F.streakR) }} />
+      )}
+      <div style={F.shadow} />
+      {!hideSprite && (
+        <Sprite sprites={creature?.sprites} peeking={peeking} faceLeft={faceLeft} done={done} scale={scale} />
+      )}
+    </div>
+  )
+}
+
+function Sprite({ sprites, peeking, faceLeft, done, scale = 1 }) {
+  if (!sprites) return null
+  if (peeking && sprites.peek) {
+    return <img src={sprites.peek} alt="" draggable={false}
+      style={{ ...F.peek, height: `${(36 * scale).toFixed(1)}vh` }} />
+  }
+  return (
+    <img src={sprites.hero} alt="" draggable={false} style={{
+      ...F.hero,
+      // גובה אמיתי לפי הפאזה, כדי שהשם בסיום ייכתב מתחת לרגליים ולא עליהן
+      height: `${(34 * scale).toFixed(1)}vh`,
+      transform: faceLeft ? 'scaleX(-1)' : 'none',
+      filter: done ? GLOW_DONE : 'drop-shadow(0 6px 10px rgba(0,0,0,.35))',
+    }} />
+  )
+}
+
+// ── שכבת המודל ──
+// model-viewer ממלא את כל הבמה ולא זז ולא משנה גודל אף פעם. מיקום וגודל
+// הדמות על המסך נקבעים דרך המצלמה בלבד: camera-target מזיז את הדמות
+// שמאלה/ימינה/למטה, ורדיוס המצלמה באחוזים קובע כמה גדולה היא.
+//
+// למה ככה ולא תיבה שנעה עם היעד: model-viewer מודד את עצמו באירועי
+// layout, ותיבה שנעה ומשתנה תוך כדי רינדור הציגה את המודל במקום הלא
+// נכון — לא באופן שיכולתי לשחזר בעמוד סטטי. שכבה קבועה מוציאה את כל
+// המסלול הזה מהמשחק.
+//
+//   x       — מיקום אופקי במסך, -1..1 (0 = מרכז). מגיע מ-dx/(FOV/2).
+//   scale   — כמו בספרייט. 1.6 = קרוב.
+//   faceLeft, phase, done — כמו בספרייט.
+//   onShown — המודל נטען ומוצג: הספרייט יכול להיעלם.
+export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, onShown, onFailed }) {
+  const src = useModelSrc(creature)
+  const ready = useModelViewer(!!src)
+  const ref = useRef(null)
+  const [base, setBase] = useState(null)      // {target, radius, fov} מהמסגור האוטומטי
+  const wanted = creature?.clips?.[phase]
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const onLoad = () => {
+      const avail = el.availableAnimations || []
+      if (avail.length) el.animationName = avail.includes(wanted) ? wanted : avail[0]
+      const t = el.getCameraTarget()
+      const o = el.getCameraOrbit()
+      const d = el.getDimensions()
+      setBase({ target: { x: t.x, y: t.y, z: t.z }, radius: o.radius, fov: el.getFieldOfView(), height: d.y })
+      onShown?.()
+    }
+    const onError = () => onFailed?.()
+    el.addEventListener('load', onLoad)
+    el.addEventListener('error', onError)
+    return () => { el.removeEventListener('load', onLoad); el.removeEventListener('error', onError) }
+  }, [ready, wanted, onShown, onFailed])
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !el.loaded) return
+    const avail = el.availableAnimations || []
+    if (avail.length) el.animationName = avail.includes(wanted) ? wanted : avail[0]
+  }, [wanted])
+
+  if (!src || !ready) return null
+
+  // מבט שלושת-רבעי לכיוון שאליו הוא פונה
+  const yaw = faceLeft ? 55 : -55
+
+  // ── גודל ומיקום דרך המצלמה ──
+  // המסגור האוטומטי של model-viewer בתיבה על כל המסך ממלא את הרוחב —
+  // גדול מדי. רוצים שגובה הדמות יהיה כמו הספרייט: 34vh × scale.
+  // גובה נראה במרחק r הוא 2·r·tan(fov/2), ומכאן r. הרדיוס נמסר באחוזים
+  // מהרדיוס האוטומטי, ההיסט האופקי לאורך וקטור "ימינה" של המצלמה כדי
+  // שיעבוד בכל yaw, וההיסט למטה מניח את הרגליים בגובה הצל של היעד.
+  let radiusPct = Math.round(100 / scale)
+  let target = 'auto auto auto'
+  if (base) {
+    const tanH = Math.tan((base.fov * Math.PI) / 360)
+    const r = base.height / (0.68 * scale * tanH)
+    radiusPct = Math.round((r / base.radius) * 100)
+    const halfH = r * tanH
+    const aspect = typeof window !== 'undefined' ? window.innerWidth / window.innerHeight : 0.5
+    const halfW = halfH * aspect
+    const th = (yaw * Math.PI) / 180
+    const right = { x: Math.cos(th), z: -Math.sin(th) }
+    const sx = -x * halfW                        // יעד ימינה = דמות שמאלה
+    const tx = base.target.x + right.x * sx
+    const tz = base.target.z + right.z * sx
+    const ty = base.target.y + halfH * 0.06      // מרכז הדמות מעט מתחת למרכז המסך
+    target = `${tx.toFixed(3)}m ${ty.toFixed(3)}m ${tz.toFixed(3)}m`
+  }
+
+  return (
+    <model-viewer
+      ref={ref}
+      src={src}
+      autoplay
+      camera-orbit={`${yaw}deg 80deg ${radiusPct}%`}
+      min-camera-orbit="auto auto 5%"
+      max-camera-orbit="auto auto 400%"
+      camera-target={target}
+      interaction-prompt="none"
+      disable-zoom=""
+      disable-pan=""
+      disable-tap=""
+      environment-image="neutral"
+      shadow-intensity="0.9"
+      shadow-softness="0.8"
+      exposure="1.05"
+      style={{ ...F.layer, filter: done ? GLOW_DONE : 'none' }}
+    />
+  )
+}
+
+const FIGURE_CSS = `
+@keyframes wildenBob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-3.5%) } }
+@keyframes wildenBreathe { 0%,100% { transform: scale(1) } 50% { transform: scale(1.03) } }
+@media (prefers-reduced-motion: reduce) { .wilden-figure { animation: none !important } }
+model-viewer { --poster-color: transparent; --progress-bar-color: transparent; background: transparent; }
+`
+
+const F = {
+  // תיבת הדמות בגודל קבוע לפי הפאזה, כדי שהצל והפס יישבו באותו מקום גם
+  // כשהספרייט מוחלף במודל.
+  figure: { position: 'relative', display: 'grid', justifyItems: 'center', alignItems: 'end',
+    willChange: 'transform' },
+  hero: { gridArea: '1 / 1', width: 'auto', display: 'block', position: 'relative', zIndex: 1,
+    userSelect: 'none', WebkitUserDrag: 'none', transition: 'height .35s' },
+  peek: { gridArea: '1 / 1', width: 'auto', display: 'block', userSelect: 'none',
+    filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.35))' },
+  // direction: ltr — הכרחי. העמוד כולו rtl, ו-model-viewer מניח את הקנבס
+  // הפנימי שלו בלי left/right מפורש. ב-rtl הוא נצמד לימין, וקנבס ברוחב
+  // כפול (DPR 2) זז שמאלה בחצי רוחבו: המודל נעלם או מופיע במקום הלא נכון.
+  // שעתיים של חיפוש, שורה אחת של תיקון.
+  layer: { position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block',
+    background: 'transparent', pointerEvents: 'none', zIndex: 2, direction: 'ltr' },
+  shadow: { position: 'absolute', bottom: '-1.2vh', left: '18%', right: '18%', height: '4vh',
+    borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(0,0,0,.42), rgba(0,0,0,0) 70%)' },
+  // הפס שנשאר אחרי ריצה: כיוון, לא ניחוש.
+  streak: { position: 'absolute', bottom: '6%', width: '55%', height: '2.4vh', borderRadius: '50%',
+    filter: 'blur(3px)', opacity: 0.7 },
+  streakL: { right: '80%', background: 'linear-gradient(90deg, rgba(240,192,105,0), rgba(240,192,105,.75))' },
+  streakR: { left: '80%', background: 'linear-gradient(270deg, rgba(240,192,105,0), rgba(240,192,105,.75))' },
+}

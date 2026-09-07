@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useOrient, angleDelta } from '../hooks/useOrient'
 import { controllerFor } from './controllers'
+import { CreatureFigure, ModelLayer } from './Figure'
+import { useModelSrc, usePreloadModel } from '../hooks/useModelViewer'
 import { sfxAppear, sfxRustle, sfxCatch, buzz } from '../engine/audio'
 
 // ─── במה המפגש ───
@@ -35,6 +37,10 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
   const hasSensors = heading != null
 
   const ctrl = controllerFor(creature)
+  const modelSrc = useModelSrc(creature)
+  usePreloadModel(modelSrc)                 // המודל מתחיל לרדת כבר על שביל העקבות
+  const [modelShown, setModelShown] = useState(false)
+  const [modelFailed, setModelFailed] = useState(false)
   const [cs, setCs] = useState(null)        // מצב ה-controller
   const anchored = useRef(false)
   const [swipe, setSwipe] = useState(0)
@@ -149,9 +155,19 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
   const done = cs && ctrl ? ctrl.isDone(cs) : false
   const copy = cs && ctrl ? ctrl.copy(cs) : { line: '', sub: '' }
 
+  // ── היצור עצמו ──
+  // מחושב פעם אחת: גם הספרייט בתוך היעד וגם שכבת המודל צריכים את זה.
+  const ct = placed.find(t => t.kind === 'creature') || null
+  const ctVisible = !!ct && Math.abs(ct.dx ?? 999) < FOV / 2 + 4 && Math.abs(ct.dy) < 34
+  const ctFaceLeft = !!ct && ct.streak != null && angleDelta(ct.streak, ct.bearing) < 0
+  const ctStreakSide = !ct || ct.streak == null ? null
+    : angleDelta(ct.streak, ct.bearing) < 0 ? 'right' : 'left'
+  const useModel = !!modelSrc && !modelFailed
+  const showModel = useModel && (done || (ctVisible && !ct.peeking))
+  const hideSprite = showModel && modelShown
+
   return (
     <div style={S.wrap}>
-      <style>{SPRITE_CSS}</style>
       {camState === 'on' && <video ref={videoRef} playsInline muted autoPlay style={S.video} />}
       {camState === 'denied' && <StoryBackdrop />}
       {camState === 'starting' && <div style={S.center}><p style={S.dim}>פותחים מצלמה…</p></div>}
@@ -178,23 +194,39 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
             left: `${50 + (t.dx / (FOV / 2)) * 50}%`,
             top: `${52 - t.dy * 1.5}%`,
             opacity: Math.max(0.6, 1 - Math.abs(t.dx) / 74),
-            transform: `translate(-50%,-50%) scale(${t.scale || 1})`,
+            // בלי scale ב-transform: model-viewer מודד את עצמו לפי המלבן
+            // אחרי הטרנספורם ומצייר פי 1.6 גדול מדי. הגודל עובר לדמות
+            // כמספר והיא נמדדת בגובה אמיתי.
+            transform: 'translate(-50%,-50%)',
           }}>
             {t.kind === 'trailhead' ? <Trailhead />
               : t.kind === 'trail' ? <Trail branch={t.branch} />
               /* בורח: פונה הלאה מהמקום שממנו הגיע, והפס הטרי נשאר מאחוריו. */
-              : <Nimi peeking={t.peeking} approaching={(t.scale || 1) > 1.2}
-                  faceLeft={t.streak != null && angleDelta(t.streak, t.bearing) < 0}
-                  streakSide={t.streak == null ? null
-                    : angleDelta(t.streak, t.bearing) < 0 ? 'right' : 'left'} />}
+              : <CreatureFigure creature={creature} scale={t.scale || 1}
+                  peeking={t.peeking} approaching={(t.scale || 1) > 1.2}
+                  faceLeft={ctFaceLeft} streakSide={ctStreakSide}
+                  hideSprite={hideSprite && !t.peeking} />}
             {locked && <LockRing pct={hold / HOLD_MS} />}
           </div>
         )
       })}
 
+      {/* המודל התלת-ממדי, אם יש: שכבה קבועה על כל הבמה. הדמות ממוקמת
+          דרך המצלמה. הצל, הפס וטבעת הנעילה נשארים ביעד עצמו למעלה. */}
+      {showModel && (
+        <ModelLayer creature={creature}
+          x={done ? 0 : ct.dx / (FOV / 2)}
+          scale={done ? 1.35 : ct.scale || 1}
+          faceLeft={!done && ctFaceLeft}
+          phase={done ? 'befriend' : (ct.scale || 1) > 1.2 ? 'appear' : 'move'}
+          done={done}
+          onShown={() => setModelShown(true)}
+          onFailed={() => setModelFailed(true)} />
+      )}
+
       {done && (
         <div style={S.doneWrap}>
-          <Nimi done />
+          <CreatureFigure creature={creature} done scale={1.35} hideSprite={hideSprite} />
           <p style={S.foundName}>{creature?.name}</p>
           <p style={S.foundLine}>הוא הלך אחריכם.</p>
         </div>
@@ -303,50 +335,7 @@ function Trailhead() {
   )
 }
 
-// ── נימי ──
-// זו הדמות שלה, גזורה מגיליון הדמויות. שקוף מה זה ומה זה לא: תמונה
-// דו-ממדית של הדמות האמיתית, לא מודל תלת-ממדי ולא אנימציה של שלד. עד
-// שיגיעו הרינדורים המקוריים ברזולוציה מלאה, זה מה שיש — ואיכות הגיליון
-// היא התקרה. כדור ירוק לא חוזר לכאן יותר.
-//
-// מה כן עושים כדי שתרגיש בשטח ולא מודבקת על המסך: צל מתחת לרגליים כדי
-// שתעמוד על הרצפה, פנייה לכיוון שאליו היא רצה, נשימה כשהיא עוצרת.
-const SPRITE = {
-  hero: '/creatures/nimi/hero.png',      // עמידה, פונה ימינה
-  peek: '/creatures/nimi/peek.png',      // ראש מבצבץ מאחורי גזע
-}
-const GLOW_DONE = 'drop-shadow(0 0 22px rgba(240,192,105,.55))'
-
-function Nimi({ peeking, faceLeft, streakSide, approaching, done }) {
-  if (peeking) {
-    return <img src={SPRITE.peek} alt="" draggable={false} style={S.peek} />
-  }
-  const anim = approaching ? 'wildenBob 1.1s ease-in-out infinite'
-    : done ? 'wildenBreathe 2.6s ease-in-out infinite' : 'none'
-  return (
-    <div className="wilden-figure" style={{ ...S.figure, animation: anim }}>
-      {streakSide && (
-        <div style={{ ...S.streak, ...(streakSide === 'left' ? S.streakL : S.streakR) }} />
-      )}
-      <div style={S.shadow} />
-      <img src={SPRITE.hero} alt="" draggable={false} style={{
-        ...S.hero,
-        // בסיום הדמות גדולה יותר — בגובה אמיתי ולא ב-transform, כדי שהשם
-        // מתחתיה לא ייכתב על הרגליים.
-        height: done ? '46vh' : S.hero.height,
-        transform: faceLeft ? 'scaleX(-1)' : 'none',
-        filter: done ? GLOW_DONE : 'drop-shadow(0 6px 10px rgba(0,0,0,.35))',
-      }} />
-    </div>
-  )
-}
-
-// אנימציות ה-CSS של הדמות. inline style לא יודע keyframes, אז זה יושב פה.
-const SPRITE_CSS = `
-@keyframes wildenBob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-3.5%) } }
-@keyframes wildenBreathe { 0%,100% { transform: scale(1) } 50% { transform: scale(1.03) } }
-@media (prefers-reduced-motion: reduce) { .wilden-figure { animation: none !important } }
-`
+// הדמות עצמה — ספרייט או מודל — יושבת ב-Figure.js. הבמה רק מציבה אותה.
 
 function StoryBackdrop() {
   return (
@@ -367,23 +356,9 @@ const S = {
   center: { position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' },
   dim: { color: '#9BA495', fontSize: 15 },
   node: { position: 'absolute', transition: 'opacity .2s, transform .35s', pointerEvents: 'none' },
-  // הדמות. גובה ביחס למסך ולא בפיקסלים, כדי שבטלפון קטן וגדול היא תתפוס
-  // אותו חלק מהעולם. scale של הפאזה מוכפל על זה (1.6 בהתקרבות → ~54vh).
-  figure: { position: 'relative', display: 'grid', justifyItems: 'center', willChange: 'transform' },
-  hero: { height: '34vh', width: 'auto', display: 'block', position: 'relative', zIndex: 1,
-    userSelect: 'none', WebkitUserDrag: 'none' },
-  peek: { height: '30vh', width: 'auto', display: 'block', userSelect: 'none',
-    filter: 'drop-shadow(0 4px 8px rgba(0,0,0,.35))' },
-  shadow: { position: 'absolute', bottom: '-1.2vh', left: '18%', right: '18%', height: '4vh',
-    borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(0,0,0,.42), rgba(0,0,0,0) 70%)' },
-  // הפס שנשאר אחרי ריצה: כיוון, לא ניחוש.
-  streak: { position: 'absolute', bottom: '6%', width: '55%', height: '2.4vh', borderRadius: '50%',
-    filter: 'blur(3px)', opacity: 0.7 },
-  streakL: { right: '80%', background: 'linear-gradient(90deg, rgba(240,192,105,0), rgba(240,192,105,.75))' },
-  streakR: { left: '80%', background: 'linear-gradient(270deg, rgba(240,192,105,0), rgba(240,192,105,.75))' },
   lock: { position: 'absolute', inset: 6, width: 'calc(100% - 12px)', height: 'calc(100% - 12px)' },
   doneWrap: { position: 'absolute', inset: 0, display: 'grid', placeItems: 'center',
-    alignContent: 'center', gap: 2 },
+    alignContent: 'center', gap: 2, zIndex: 3, pointerEvents: 'none' },
   hint: { position: 'absolute', left: 0, right: 0, bottom: 32, padding: '0 22px', textAlign: 'center' },
   hintLine: { color: '#E9E5D8', fontSize: 19, fontWeight: 700, margin: 0,
     textShadow: '0 2px 12px rgba(0,0,0,.85)' },
