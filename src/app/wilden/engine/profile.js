@@ -55,11 +55,18 @@ export function mergeProgress(local, remote) {
   for (const id of other.creatures || []) if (!creatures.includes(id)) creatures.push(id)
   const res = { ...(other.res || {}) }
   for (const [k, v] of Object.entries(base.res || {})) res[k] = Math.max(v || 0, res[k] || 0)
+  // מה שבקע — איחוד. "נימי זהוב" לא נעלם כי שיחקו בטלפון אחר.
+  const variants = [...(base.variants || [])]
+  for (const v of other.variants || []) {
+    if (!variants.some(x => x.creature === v.creature && x.variant === v.variant)) variants.push(v)
+  }
   return {
     ...other,
     ...base,
     creatures,
     res,
+    variants,
+    egg: base.egg || other.egg || null,
     story: { ...(other.story || {}), ...(base.story || {}) },
     walks: Math.max(base.walks || 0, other.walks || 0),
     missionsCompleted: Math.max(base.missionsCompleted || 0, other.missionsCompleted || 0),
@@ -73,11 +80,13 @@ export function remoteAdds(local, remote) {
   return stable(mergeProgress(local, remote)) !== stable(local)
 }
 
-// השוואה בלי תלות בסדר המפתחות — המיזוג בונה אובייקט חדש.
+// השוואה בלי תלות בסדר המפתחות — המיזוג בונה אובייקט חדש. שדה ריק
+// (null, []) ושדה שלא קיים הם אותו דבר: סכימה חדשה לא נחשבת "שינוי".
+const empty = v => v == null || (Array.isArray(v) && v.length === 0)
 function stable(o) {
   if (Array.isArray(o)) return '[' + o.map(stable).join(',') + ']'
   if (o && typeof o === 'object') {
-    return '{' + Object.keys(o).sort().filter(k => o[k] !== undefined).map(k => JSON.stringify(k) + ':' + stable(o[k])).join(',') + '}'
+    return '{' + Object.keys(o).sort().filter(k => !empty(o[k])).map(k => JSON.stringify(k) + ':' + stable(o[k])).join(',') + '}'
   }
   return JSON.stringify(o)
 }

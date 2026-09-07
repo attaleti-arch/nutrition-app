@@ -9,6 +9,7 @@ import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL
 import { placeTarget, placeStops, revalidate, PLACE_AFTER } from './placement.js'
 import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS } from './coins.js'
 import { mergeProgress } from './profile.js'
+import { EGG_PRICE, HATCH_M, canBuyEgg, hatch } from './egg.js'
 
 export const S = {
   BROKEN_WORLD: 'BROKEN_WORLD',     // עולם הבית ההרוס. נקודת הכניסה.
@@ -50,6 +51,8 @@ export function initial() {
       story: {},
       coins: 0,           // הארנק
       walks: 0,           // כמה מסלולים הושלמו, מכל סוג — קובע את הלוח
+      egg: null,          // { boughtAt } — ביצה על הביקון, מחכה למסע
+      variants: [],       // [{ creature, variant, at }] — מה שבקע
     },
   }
 }
@@ -299,13 +302,26 @@ export function reduce(g, ev) {
       const res = { ...g.progress.res }
       for (const k of r.loot || []) res[k] = (res[k] || 0) + 1
 
+      // ── הביצה בוקעת ──
+      // רק אם הלכו מספיק כדי לחמם אותה. אחרת היא נשארת למסע הבא — לא
+      // נשרפת, לא נמחקת. מי בוקע: מתוך מי שכבר נתפס (כולל היום).
+      const progressWithToday = { ...g.progress, creatures }
+      const warm = (r.walked || 0) >= HATCH_M
+      const hatched = g.progress.egg && warm ? hatch(progressWithToday, ev.rng) : null
+      const variants = hatched
+        ? [...(g.progress.variants || []), { ...hatched, at: ev.t ?? null }]
+        : g.progress.variants || []
+
       return {
         ...g,
         state: isStory ? S.CLUE : S.RUN_COMPLETE,
+        hatched,
         progress: {
           ...g.progress,
           creatures,
           res,
+          egg: hatched ? null : g.progress.egg,
+          variants,
           coins: (g.progress.coins || 0) + (r.coinsTaken || 0),
           walks: (g.progress.walks || 0) + 1,
           // רק משימה סיפורית מקדמת את העולם ואת הביקון.
@@ -322,7 +338,17 @@ export function reduce(g, ev) {
       return { ...g, state: S.RUN_COMPLETE }
 
     case 'RUN_CLOSED':
-      return { ...g, state: S.BROKEN_WORLD, run: null }
+      return { ...g, state: S.BROKEN_WORLD, run: null, hatched: null }
+
+    // ── קונים ביצה ──
+    // במסך הבית בלבד. מטבעות יורדים מיד; הביצה יושבת על הביקון עד המסע.
+    case 'BUY_EGG': {
+      if (g.state !== S.BROKEN_WORLD || !canBuyEgg(g.progress)) return g
+      return {
+        ...g,
+        progress: { ...g.progress, coins: g.progress.coins - EGG_PRICE, egg: { boughtAt: ev.t ?? null } },
+      }
+    }
 
     case 'ABORT':
       // "לעצור" שומר הכל. אין עונש על לחזור הביתה — גם המטבעות שנאספו נשארים.

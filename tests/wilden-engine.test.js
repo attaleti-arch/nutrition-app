@@ -1065,3 +1065,108 @@ test('שמונה יצורים: לכולם מודל אמיתי, controller רשו
   }
   assert.equal(new Set(AVAILABLE).size, 8, 'בלי כפילויות')
 })
+
+// ═══════════════════════════════════════════════════════════════
+// הביצה
+// ═══════════════════════════════════════════════════════════════
+import { EGG_PRICE, HATCH_M, VARIANTS, rollVariant, canBuyEgg, eggWarmth, warmthWord, hatch, hasVariant } from '../src/app/wilden/engine/egg.js'
+
+test('ביצה: ההגרלה לפי ההסתברויות, ולכל צבע יש שם וצבע', () => {
+  assert.equal(VARIANTS.reduce((s, v) => s + v.p, 0).toFixed(2), '1.00')
+  assert.equal(rollVariant(() => 0.1).id, 'gold')
+  assert.equal(rollVariant(() => 0.8).id, 'night')
+  assert.equal(rollVariant(() => 0.97).id, 'ice')
+  for (const v of VARIANTS) { assert.ok(v.name); assert.equal(v.tint.length, 3); assert.equal(v.glow.length, 3) }
+  // בהגרלה אמיתית קרח הוא נדיר
+  let ice = 0
+  for (let i = 0; i < 4000; i++) if (rollVariant().id === 'ice') ice++
+  assert.ok(ice > 80 && ice < 340, 'קרח ~5%: ' + ice)
+})
+
+test('ביצה: קונים רק עם מטבעות, רק עם יצור אחד לפחות, ורק אחת', () => {
+  assert.ok(!canBuyEgg({ coins: 100, creatures: [] }), 'בלי יצור — למי היא תבקע?')
+  assert.ok(!canBuyEgg({ coins: EGG_PRICE - 1, creatures: ['nimi'] }))
+  assert.ok(canBuyEgg({ coins: EGG_PRICE, creatures: ['nimi'] }))
+  assert.ok(!canBuyEgg({ coins: 100, creatures: ['nimi'], egg: { boughtAt: 1 } }), 'אחת בכל פעם')
+
+  let g = initial()
+  g = { ...g, progress: { ...g.progress, coins: 50, creatures: ['nimi'] } }
+  const before = g
+  g = reduce(g, { type: 'BUY_EGG', t: 7 })
+  assert.equal(g.progress.coins, 10)
+  assert.deepEqual(g.progress.egg, { boughtAt: 7 })
+  assert.equal(reduce(g, { type: 'BUY_EGG', t: 8 }), g, 'שנייה לא נקנית')
+  // לא במסך הבית — לא קונים
+  const mid = started(['nimi'], before)
+  assert.equal(reduce(mid, { type: 'BUY_EGG' }).progress.egg, null)
+})
+
+test('ביצה: מתחממת בהליכה, בוקעת בפורטל רק כשחמה, ואם לא — נשארת', () => {
+  assert.equal(eggWarmth(0), 0)
+  assert.equal(eggWarmth(HATCH_M / 2), 0.5)
+  assert.equal(eggWarmth(HATCH_M * 3), 1)
+  assert.equal(warmthWord(0), 'קרה')
+  assert.equal(warmthWord(1), 'מוכנה לבקוע!')
+
+  // מסע קצר: לא בקעה, הביצה נשארת, המטבעות לא חוזרים
+  let g = initial()
+  g = { ...g, progress: { ...g.progress, coins: 50, creatures: ['nimi'] } }
+  g = reduce(g, { type: 'BUY_EGG', t: 1 })
+  g = started(['dabashon'], g)
+  g = walk(g, 200)
+  g = catchHere(g, 500000)
+  g = reduce(g, { type: 'PORTAL_OPEN' })
+  g = reduce(g, { type: 'PORTAL_ENTERED', t: 9, rng: () => 0.1 })
+  assert.equal(g.hatched, null)
+  assert.deepEqual(g.progress.egg, { boughtAt: 1 }, 'הביצה מחכה למסע הבא')
+  assert.deepEqual(g.progress.variants, [])
+  g = reduce(g, { type: 'RUN_CLOSED' })
+
+  // מסע ארוך (יום אחר — הסיפור הוא אחד ליום): בוקעת. דבשון נתפס אתמול —
+  // גם הוא יכול לצאת מהביצה
+  g = { ...g, progress: { ...g.progress, lastStoryDay: null } }
+  g = started(['kraag'], g)
+  assert.equal(g.state, S.SEARCH)
+  g = walk(g, HATCH_M + 100)
+  g = catchHere(g, 900000)
+  g = reduce(g, { type: 'PORTAL_OPEN' })
+  const seq = [0.1, 0.99]     // זהוב; מהמאגר — האחרון
+  let i = 0
+  g = reduce(g, { type: 'PORTAL_ENTERED', t: 11, rng: () => seq[i++ % seq.length] })
+  assert.ok(g.hatched, 'בקעה')
+  assert.equal(g.hatched.variant, 'gold')
+  assert.ok(['nimi', 'dabashon', 'kraag'].includes(g.hatched.creature))
+  assert.equal(g.progress.egg, null)
+  assert.equal(g.progress.variants.length, 1)
+  assert.equal(g.progress.variants[0].at, 11)
+  assert.ok(hasVariant(g.progress, g.hatched.creature, 'gold'))
+  g = reduce(g, { type: 'RUN_CLOSED' })
+  assert.equal(g.hatched, null, 'הרגע נגמר, לא חוזר על המסך')
+})
+
+test('ביצה: מעדיפה יצור שעוד אין לו את הצבע הזה', () => {
+  const p = { creatures: ['nimi', 'dabashon'], variants: [{ creature: 'nimi', variant: 'gold' }] }
+  for (let k = 0; k < 20; k++) {
+    const h = hatch(p, () => 0.1)         // תמיד זהוב
+    assert.equal(h.creature, 'dabashon', 'לנימי כבר יש זהוב')
+  }
+  // לכולם יש — מה שיוצא
+  const all = { creatures: ['nimi'], variants: [{ creature: 'nimi', variant: 'gold' }] }
+  assert.equal(hatch(all, () => 0.1).creature, 'nimi')
+  assert.equal(hatch({ creatures: [] }), null)
+})
+
+test('ביצה: נשלחת לשרת ומתמזגת, ומה שבקע לא נעלם', () => {
+  let g = initial()
+  g = { ...g, progress: { ...g.progress, coins: 50, creatures: ['nimi'], variants: [{ creature: 'nimi', variant: 'ice', at: 1 }] } }
+  g = reduce(g, { type: 'BUY_EGG', t: 2 })
+  const out = forServer(g)
+  assert.deepEqual(out.progress.egg, { boughtAt: 2 })
+  assert.equal(out.progress.variants.length, 1)
+
+  const local = { walks: 1, coins: 0, creatures: ['nimi'], res: {}, story: {}, variants: [{ creature: 'nimi', variant: 'ice' }] }
+  const remote = { walks: 3, coins: 5, creatures: ['nimi', 'dabashon'], res: {}, story: {}, variants: [{ creature: 'dabashon', variant: 'gold' }], egg: { boughtAt: 9 } }
+  const m = mergeProgress(local, remote)
+  assert.equal(m.variants.length, 2)
+  assert.deepEqual(m.egg, { boughtAt: 9 })
+})

@@ -55,6 +55,8 @@ export function forServer(g) {
       lastStoryDay: g.progress?.lastStoryDay ?? null,
       coins: g.progress?.coins ?? 0,
       walks: g.progress?.walks ?? 0,
+      egg: g.progress?.egg ?? null,
+      variants: g.progress?.variants ?? [],
     },
   }
 }

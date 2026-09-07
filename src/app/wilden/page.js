@@ -17,6 +17,8 @@ import { turnsFor, nextCue, cueText } from './engine/turns'
 import { pathLength } from './engine/geo'
 import { loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby } from './engine/coins'
 import { GoldStage } from './ar/GoldStage'
+import { Hatch } from './ui/Hatch'
+import { EGG_PRICE, canBuyEgg, eggWarmth, warmthWord, variantById } from './engine/egg'
 import { haversine } from './engine/geo'
 import { sfxCoin } from './engine/audio'
 import 'leaflet/dist/leaflet.css'
@@ -115,6 +117,8 @@ export default function Wilden() {
   // בטווח 22 מ' מהזהב נפתח מסך הקפיצה. "אחר כך" סוגר אותו עד שמתרחקים
   // וחוזרים — לא נטפל בילד.
   const [goldOpen, setGoldOpen] = useState(false)
+  const [hatchSeen, setHatchSeen] = useState(false)
+  useEffect(() => { if (g.state === S.BROKEN_WORLD) setHatchSeen(false) }, [g.state])
   const [goldSkipped, setGoldSkipped] = useState(false)
   const nearGold = g.state === S.SEARCH ? goldNearby(g.run?.coins, g.run?.pos) : null
   useEffect(() => {
@@ -158,6 +162,11 @@ export default function Wilden() {
           onClose={() => { setGoldOpen(false); setGoldSkipped(true) }} />
       )}
 
+      {/* הביצה בקעה: מסך אחד מעל הכול, לפני הבית */}
+      {g.hatched && (g.state === S.CLUE || g.state === S.RUN_COMPLETE) && !hatchSeen && (
+        <Hatch hatched={g.hatched} onClose={() => setHatchSeen(true)} />
+      )}
+
       {g.state === S.ENCOUNTER && (
         <Stage
           creature={creature}
@@ -175,7 +184,7 @@ export default function Wilden() {
           <ProfileGate P={P} switching={P.switching} />
         )}
         {g.state === S.BROKEN_WORLD && P.loaded && !P.needsGate && (
-          <BrokenWorld g={g} today={today} onStart={startRun} P={P} />
+          <BrokenWorld g={g} today={today} onStart={startRun} onEgg={() => { sfxAppear(); dispatch({ type: 'BUY_EGG', t: Date.now() }) }} P={P} />
         )}
 
         {g.state === S.PERMISSIONS && (
@@ -270,7 +279,7 @@ export default function Wilden() {
             <p style={s.body}>
               הקשת מתמלאת אור. {creature?.name} נכנס פנימה — והפעם לא לבד.
             </p>
-            <button onClick={() => { sfxFinish(); dispatch({ type: 'PORTAL_ENTERED' }) }} style={s.cta}>
+            <button onClick={() => { sfxFinish(); dispatch({ type: 'PORTAL_ENTERED', t: Date.now() }) }} style={s.cta}>
               לחזור הביתה
             </button>
           </Panel>
@@ -311,7 +320,7 @@ export default function Wilden() {
 }
 
 // ── עולם הבית ההרוס ──
-function BrokenWorld({ g, today, onStart, P }) {
+function BrokenWorld({ g, today, onStart, onEgg, P }) {
   const storyOpen = canStartStory(g.progress, today)
   const first = g.progress.missionsCompleted === 0
   const walks = g.progress.walks || 0
@@ -376,6 +385,25 @@ function BrokenWorld({ g, today, onStart, P }) {
         <p style={s.note}>יצור שני בדרך עולה {WALK_PLAN.extraCost} מטבעות. יש לכם {g.progress.coins || 0}.</p>
       )}
 
+      {/* הביצה: קונים במטבעות, היא מתחממת בהליכה, בוקעת בפורטל. מי ובאיזה
+          צבע — לא יודעים מראש. */}
+      {g.progress.egg ? (
+        <div style={s.eggCard}>
+          <span style={s.eggIcon}>🥚</span>
+          <div>
+            <p style={s.briefLine}>יש ביצה על הביקון.</p>
+            <p style={s.briefSub}>היא מתחממת בהליכה. אחרי מסע ארוך היא תבקע בפורטל.</p>
+          </div>
+        </div>
+      ) : canBuyEgg(g.progress) ? (
+        <button onClick={onEgg} style={{ ...s.cta, ...s.ctaGhost, display: 'flex', alignItems: 'center', gap: 12, textAlign: 'start' }}>
+          <span style={s.eggIcon}>🥚</span>
+          <span>🪙 {EGG_PRICE} — ביצה<br /><span style={{ fontSize: 13.5, color: C.muted, fontWeight: 500 }}>מי בפנים? באיזה צבע? מגלים רק כשהיא בוקעת.</span></span>
+        </button>
+      ) : g.progress.creatures.length > 0 && (
+        <p style={s.note}>🥚 ביצה עולה {EGG_PRICE} מטבעות. יש לכם {g.progress.coins || 0}.</p>
+      )}
+
       {g.notice === 'no-location' && <p style={s.warn}>בלי אישור מיקום אי אפשר לצאת.</p>}
       <Stats g={g} />
     </>
@@ -428,6 +456,7 @@ function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, onPor
             הביתה: <b>{fmtM(Math.max(0, total - along))}</b>
             {r.stops && !homeward && <> · יצורים בדרך: <b>{stopsLeft}</b></>}
             {homeward && <> · מטבעות כפול</>}
+            {g.progress.egg && <> · 🥚 <b>{warmthWord(eggWarmth(r.walked))}</b></>}
           </p>
         </div>
 
@@ -543,6 +572,13 @@ function Stats({ g }) {
       {kinds.map(([k, v]) => (
         <div key={k}><b style={s.statN}>{v}</b><span style={s.statL}>{RES_NAME[k] || k}</span></div>
       ))}
+      {(g.progress.variants || []).length > 0 && (
+        <div style={{ flexBasis: '100%', display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
+          {g.progress.variants.map((v, i) => (
+            <span key={i} style={s.variantChip}>✨ {creatureById(v.creature)?.name} {variantById(v.variant)?.name}</span>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -619,7 +655,11 @@ const s = {
   gpsRow: { display: 'flex', flexWrap: 'wrap', gap: '4px 14px', fontSize: 13,
     color: C.faint, fontFamily: 'ui-monospace, monospace' },
   gpsIssue: { marginTop: 8, paddingTop: 8, borderTop: `1px solid ${C.line}`, fontSize: 14.5 },
-  stats: { display: 'flex', gap: 18, marginTop: 26, paddingTop: 16, borderTop: `1px solid ${C.line}` },
+  stats: { display: 'flex', flexWrap: 'wrap', gap: 18, marginTop: 26, paddingTop: 16, borderTop: `1px solid ${C.line}` },
+  variantChip: { fontSize: 13.5, color: '#F0C069', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 999, padding: '4px 10px' },
+  eggCard: { display: 'flex', alignItems: 'center', gap: 12, background: C.card, border: `1px solid ${C.line}`, borderRadius: 14,
+    padding: '14px 16px', marginTop: 12 },
+  eggIcon: { fontSize: 30, lineHeight: 1 },
   statN: { display: 'block', fontSize: 22, fontWeight: 900, color: C.ink },
   statL: { fontSize: 12.5, color: C.faint },
 }
