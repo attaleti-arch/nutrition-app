@@ -7,7 +7,7 @@
 import { haversine, bearing, advanceWalk, progressAlong } from './geo.js'
 import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL_RADIUS } from './beacon.js'
 import { placeTarget, placeStops, revalidate, PLACE_AFTER } from './placement.js'
-import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS } from './coins.js'
+import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS, CATCH_BONUS } from './coins.js'
 import { mergeProgress } from './profile.js'
 import { EGG_PRICE, HATCH_M, canBuyEgg, hatch } from './egg.js'
 
@@ -157,7 +157,8 @@ export function reduce(g, ev) {
         ...g,
         state: S.SEARCH,
         run: { ...g.run, path: ev.path, home: ev.home ?? g.run.home, stops, stop: 0,
-          target: stops[0] || null, resolved: false, coins, coinsTaken: g.run.coinsTaken || 0 },
+          target: stops[0] || null, resolved: false, coins, coinsTaken: g.run.coinsTaken || 0,
+          walkStartedAt: ev.t ?? g.run.walkStartedAt ?? null },
       }
     }
 
@@ -255,7 +256,9 @@ export function reduce(g, ev) {
         return { ...g, state: S.SEARCH, run: { ...g.run, stillMs: 0, encounterMode: null } }
       }
       const r = g.run
-      if (!r.stops) return { ...g, state: S.CAUGHT, run: { ...r, resolved: true } }
+      // תפיסה שווה מטבעות — והמסך אחריה סופר אותם אחד-אחד.
+      const bonus = { coinsTaken: (r.coinsTaken || 0) + CATCH_BONUS, catchBonus: CATCH_BONUS }
+      if (!r.stops) return { ...g, state: S.CAUGHT, run: { ...r, ...bonus, resolved: true } }
 
       // תחנה נתפסה. יש עוד? היעד עובר לבאה, והמסע נמשך. אחרונה? הפורטל.
       const stops = r.stops.map((s, i) => (i === r.stop ? { ...s, done: true } : s))
@@ -264,7 +267,7 @@ export function reduce(g, ev) {
       return {
         ...g,
         state: S.CAUGHT,
-        run: { ...r, stops, stop: more ? next : r.stop, target: more ? stops[next] : r.target,
+        run: { ...r, ...bonus, stops, stop: more ? next : r.stop, target: more ? stops[next] : r.target,
           resolved: !more, stillMs: 0 },
       }
     }

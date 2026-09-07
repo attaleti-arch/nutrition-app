@@ -13,14 +13,15 @@ import { Stage } from './ar/Stage'
 import { useGeo } from './hooks/useGeo'
 import { useRoute } from './hooks/useRoute'
 import { MiniMap } from './ui/MiniMap'
-import { turnsFor, nextCue, cueText, floorCue } from './engine/turns'
+import { turnsFor, nextCue, cueText, floorCue, cueGlyph, timeLeftMs, fmtClock } from './engine/turns'
 import { pathLength } from './engine/geo'
-import { loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby } from './engine/coins'
+import { loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, plannedMs } from './engine/coins'
+import { cheer, milestone } from './content/cheers'
 import { GoldStage } from './ar/GoldStage'
 import { Hatch } from './ui/Hatch'
 import { EGG_PRICE, canBuyEgg, eggWarmth, warmthWord, variantById } from './engine/egg'
 import { haversine } from './engine/geo'
-import { sfxCoin } from './engine/audio'
+import { sfxCoin, sfxTally, sfxCheer, resumeAudio } from './engine/audio'
 import 'leaflet/dist/leaflet.css'
 import { unlockAudio, sfxAppear, sfxRustle, sfxCatch, sfxFinish, buzz } from './engine/audio'
 
@@ -29,6 +30,12 @@ import { unlockAudio, sfxAppear, sfxRustle, sfxCatch, sfxFinish, buzz } from './
 // כל ההחלטות — איפה היצור, מתי הביקון מתקדם, מה קורה ב-resume — יושבות
 // במנוע הטהור ונבדקות בלעדיו.
 
+const PAGE_CSS = `
+@keyframes wildenCoinFly { 0% { transform: translate(-50%,-50%) scale(.6); opacity: 0 } 15% { transform: translate(-50%,-50%) scale(1.25); opacity: 1 }
+  100% { transform: translate(calc(-50% + 34vw), calc(-50% - 36vh)) scale(.4); opacity: 0 } }
+@keyframes wildenToast { 0% { opacity: 0; transform: translateX(-50%) translateY(10px) scale(.9) } 12% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1) }
+  80% { opacity: 1 } 100% { opacity: 0; transform: translateX(-50%) translateY(-8px) } }
+`
 const C = {
   bg: '#0F150F', card: '#161E17', card2: '#1C261D',
   ink: '#E9E5D8', muted: '#9BA495', faint: '#767F71',
@@ -60,6 +67,20 @@ export default function Wilden() {
     if (!new URLSearchParams(window.location.search).has('debug')) return
     window.__wilden = { state: g, view: beaconView(g), route: { degraded: route.degraded, reason: route.reason, detail: route.detail, source: route.source, status: route.status } }
   }, [g, route.degraded, route.reason, route.detail, route.source, route.status])
+
+  // ── סאונד שחוזר לחיים ──
+  // ספארי מקפיא את הסאונד כשהמסך נכבה באמצע הליכה, ולא מחזיר לבד. בלי זה
+  // "המטבעות לא עושות צליל, גם התפיסה לא". כל מגע וכל חזרה למסך מחזירים.
+  useEffect(() => {
+    const wake = () => resumeAudio()
+    window.addEventListener('touchend', wake, { passive: true })
+    window.addEventListener('click', wake)
+    document.addEventListener('visibilitychange', wake)
+    return () => {
+      window.removeEventListener('touchend', wake); window.removeEventListener('click', wake)
+      document.removeEventListener('visibilitychange', wake)
+    }
+  }, [])
 
   const onFix = useCallback(f => dispatch({ type: 'FIX', ...f }), [])
   const onResume = useCallback(f => dispatch({ type: 'RESUME', ...f }), [])
@@ -98,7 +119,7 @@ export default function Wilden() {
     // אורך הלולאה לפי הלוח: 30 דקות בפעם הראשונה, 45 אחר כך.
     route.build(g.run.home, loopTargetM(g.run.walkIndex || 0)).then(path => {
       if (dead) return
-      if (path) dispatch({ type: 'ROUTE_READY', path, home: g.run.home })
+      if (path) dispatch({ type: 'ROUTE_READY', path, home: g.run.home, t: Date.now() })
       else dispatch({ type: 'ROUTE_FAILED' })
     })
     return () => { dead = true }
@@ -133,8 +154,10 @@ export default function Wilden() {
     const lc = g.run?.lastCoin
     if (!lc || lc.t === lastCoinT.current) return
     lastCoinT.current = lc.t
-    try { sfxCoin(lc.gold); buzz(lc.gold ? [30, 40, 30, 40, 60] : [25]) } catch (e) { /* לא קריטי */ }
+    try { resumeAudio(); sfxCoin(lc.gold); buzz(lc.gold ? [30, 40, 30, 40, 60] : [25]) } catch (e) { /* לא קריטי */ }
+    setBurst({ t: lc.t, gold: !!lc.gold, n: lc.n || 1 })
   }, [g.run?.lastCoin])
+  const [burst, setBurst] = useState(null)
 
   function askLocation() {
     geo.request()
@@ -153,7 +176,7 @@ export default function Wilden() {
   return (
     <div dir="rtl" style={{ minHeight: '100dvh', background: C.bg, color: C.ink,
       fontFamily: '"Heebo", system-ui, -apple-system, sans-serif' }}>
-      <style dangerouslySetInnerHTML={{ __html: BEACON_CSS }} />
+      <style dangerouslySetInnerHTML={{ __html: BEACON_CSS + PAGE_CSS }} />
 
       {/* מטבע הזהב: רגע של קפיצה, מעל המפה */}
       {g.state === S.SEARCH && goldOpen && (
@@ -223,7 +246,7 @@ export default function Wilden() {
         )}
 
         {g.state === S.SEARCH && (
-          <SearchScreen g={g} view={view} geo={geo} degraded={route.degraded} reason={route.reason} creature={creature}
+          <SearchScreen g={g} view={view} geo={geo} degraded={route.degraded} reason={route.reason} creature={creature} burst={burst}
             onSearch={() => dispatch({ type: 'SEARCH_PRESSED' })}
             onPortal={() => { sfxAppear(); dispatch({ type: 'PORTAL_OPEN' }) }}
             onAbort={() => dispatch({ type: 'ABORT' })} />
@@ -235,7 +258,9 @@ export default function Wilden() {
               <p style={{ fontSize: 30, fontWeight: 900, margin: 0, color: C.amber }}>
                 {creatureById(g.run.stops?.[Math.max(0, g.run.stop - (g.run.resolved ? 0 : 1))]?.creature || g.run.creature)?.name || creature?.name}
               </p>
-              <p style={{ ...s.body, marginTop: 8 }}>תפסתם אותו! הוא באוסף שלכם.</p>
+              <p style={{ ...s.cheer }}>{cheer('catch', (g.progress.creatures?.length || 0) + (g.run.stop || 0))}</p>
+              <p style={{ ...s.body, marginTop: 4 }}>תפסתם אותו! הוא באוסף שלכם.</p>
+              <Tally total={g.run.coinsTaken || 0} bonus={g.run.catchBonus || 0} />
               {g.run.stops && (
                 <p style={{ ...s.body, marginTop: 0, color: C.faint }}>
                   {g.run.resolved
@@ -303,6 +328,33 @@ export default function Wilden() {
           </Panel>
         )}
       </Shell>
+    </div>
+  )
+}
+
+// ── ספירת המטבעות אחרי התפיסה ──
+// "הם רוצים לראות את המטבעות עולות ברצף." המונה מטפס מאפס עד הסכום של
+// המסע, גלינג לכל צעד, והבונוס של התפיסה כתוב לידו.
+const TALLY_STEPS = 14
+function Tally({ total, bonus }) {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    if (!total) return
+    const steps = Math.min(total, TALLY_STEPS)
+    let i = 0
+    const id = setInterval(() => {
+      i += 1
+      const v = Math.round((total * i) / steps)
+      setN(v)
+      try { resumeAudio(); sfxTally(i - 1, steps) } catch (e) { /* לא קריטי */ }
+      if (i >= steps) clearInterval(id)
+    }, 110)
+    return () => clearInterval(id)
+  }, [total])
+  return (
+    <div style={s.tally}>
+      <span key={n} style={s.tallyN}>🪙 {n}</span>
+      {bonus > 0 && <span style={s.tallyBonus}>+{bonus} על התפיסה</span>}
     </div>
   )
 }
@@ -450,8 +502,28 @@ function BrokenWorld({ g, today, onStart, onEgg, P }) {
 // המסלול על רחובות אמיתיים, ההתקדמות עליו. הביקון הוא שכבה קטנה בפינה
 // שמתעוררת רק כשקרובים. היצורים לא מצוירים מראש — רק סימנים: עקבות,
 // סימן שאלה, ניצוץ. מגלים מי זה רק כשמגיעים.
-function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, onPortal, creature }) {
+function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, onPortal, creature, burst }) {
   const r = g.run
+  // ── טיימר לאחור ──
+  const [now, setNow] = useState(Date.now())
+  useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id) }, [])
+  const left = timeLeftMs(r.walkStartedAt, plannedMs(r.walkIndex || 0), now)
+  // ── מילות עידוד ──
+  // כל 10 מטבעות, וחצי הדרך. מופיע לכמה שניות מעל המפה ונעלם.
+  const [toast, setToast] = useState(null)
+  const prevRef = useRef({ coins: r.coinsTaken || 0, along: r.along || 0 })
+  useEffect(() => {
+    const total0 = r.path ? pathLength(r.path) : 0
+    const m = milestone({ coinsBefore: prevRef.current.coins, coinsNow: r.coinsTaken || 0,
+      alongBefore: prevRef.current.along, alongNow: r.along || 0, total: total0 })
+    prevRef.current = { coins: r.coinsTaken || 0, along: r.along || 0 }
+    if (!m) return
+    try { sfxCheer(); buzz([30, 30, 30]) } catch (e) { /* לא קריטי */ }
+    setToast(m.text)
+    const id = setTimeout(() => setToast(null), 3200)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [r.coinsTaken, r.along])
   const hot = view.phase === PHASE.VERY_CLOSE || view.phase === PHASE.SAFE_STOP
   const near = hot || view.phase === PHASE.TRACE
   const turns = useMemo(() => turnsFor(r.path), [r.path])
@@ -479,14 +551,28 @@ function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, onPor
         {/* מונה המטבעות: קופץ בכל גלינג. בדרך הביתה — כפול. */}
         <div key={r.coinsTaken || 0} style={s.coinHud}>🪙 {r.coinsTaken || 0}{homeward && <span style={{ fontSize: 12 }}> ×2</span>}</div>
 
+        {/* אפקט איסוף: מטבע עף מהמרכז אל המונה, עם +1 */}
+        {burst && (
+          <div key={burst.t} style={s.burst} aria-hidden="true">
+            <span style={{ ...s.burstCoin, fontSize: burst.gold ? 54 : 40 }}>🪙</span>
+            <span style={s.burstPlus}>+{burst.gold ? 10 : burst.n}{homeward ? '×2' : ''}</span>
+          </div>
+        )}
+        {toast && <div style={s.toast}>{toast}</div>}
+
         {/* ההוראה, מעל המפה */}
         <div style={s.navOverlay}>
-          <p style={s.navLine}>
-            {homeward ? (cue ? cueText(cue, 'הבית') : 'חוזרים הביתה. הוא איתכם.')
-              : cue ? cueText(cue, reveal ? 'הסימן' : 'הפנייה הבאה')
-              : 'יוצאים לדרך.'}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {/* חץ גדול: ילד רואה חץ לפני שהוא קורא מילה */}
+            <span style={s.navGlyph} aria-hidden="true">{cueGlyph(cue)}</span>
+            <p style={s.navLine}>
+              {homeward ? (cue ? cueText(cue, 'הבית') : 'חוזרים הביתה. הוא איתכם.')
+                : cue ? cueText(cue, reveal ? 'הסימן' : 'הפנייה הבאה')
+                : 'יוצאים לדרך.'}
+            </p>
+          </div>
           <p style={s.navSub}>
+            {left != null && <><span style={{ color: left < 5 * 60000 ? C.amber : C.ink }}>⏱ <b>{fmtClock(left)}</b></span> · </>}
             הביתה: <b>{fmtM(Math.max(0, total - along))}</b>
             {r.stops && !homeward && <> · יצורים בדרך: <b>{stopsLeft}</b></>}
             {homeward && <> · מטבעות כפול</>}
@@ -655,6 +741,18 @@ const s = {
     borderRadius: 12, padding: '10px 14px', margin: '0 0 12px', fontSize: 15, color: C.muted },
   ctaGold: { background: '#F0C069', color: '#14200F' },
   navLine: { margin: 0, fontSize: 23, fontWeight: 900, color: C.ink, lineHeight: 1.25 },
+  navGlyph: { fontSize: 40, lineHeight: 1, color: C.amber, flex: 'none', textShadow: '0 2px 8px rgba(0,0,0,.5)' },
+  burst: { position: 'absolute', left: '50%', top: '55%', zIndex: 700, pointerEvents: 'none', display: 'grid',
+    justifyItems: 'center', animation: 'wildenCoinFly .9s cubic-bezier(.3,.7,.4,1) forwards' },
+  burstCoin: { lineHeight: 1, filter: 'drop-shadow(0 4px 10px rgba(0,0,0,.5))' },
+  burstPlus: { color: '#FFD84A', fontWeight: 900, fontSize: 22, textShadow: '0 2px 8px rgba(0,0,0,.8)' },
+  toast: { position: 'absolute', left: '50%', top: '42%', transform: 'translateX(-50%)', zIndex: 720, padding: '12px 20px',
+    borderRadius: 999, background: '#E5A342', color: '#14200F', fontWeight: 900, fontSize: 19, whiteSpace: 'nowrap',
+    boxShadow: '0 8px 28px rgba(0,0,0,.45)', animation: 'wildenToast 3.2s ease-out forwards' },
+  cheer: { margin: '8px 0 0', fontSize: 22, fontWeight: 900, color: '#F0C069' },
+  tally: { display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: 12, marginTop: 10 },
+  tallyN: { fontSize: 34, fontWeight: 900, color: '#FFD84A', animation: 'wildenCoinPop .2s ease-out' },
+  tallyBonus: { fontSize: 14, color: C.muted },
   navSub: { margin: '5px 0 0', fontSize: 14.5, color: C.muted },
   beaconOverlay: { position: 'absolute', bottom: 54, insetInlineEnd: 10, zIndex: 600, display: 'grid',
     justifyItems: 'center', gap: 2, background: 'rgba(15,21,15,.82)', borderRadius: 14, padding: '8px 10px 6px',

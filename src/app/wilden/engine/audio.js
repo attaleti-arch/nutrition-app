@@ -23,6 +23,21 @@ function ac() {
   return ctx
 }
 
+// ── להחזיר לחיים אחרי רקע ──
+// ספארי מקפיא את ה-AudioContext כשהמסך נכבה או כשעוברים אפליקציה, ולא
+// מחזיר אותו לבד. "המטבעות לא עושות צליל, גם התפיסה לא" — זה בדיוק זה.
+// נקרא מכל מגע ומכל חזרה לחלון.
+export function resumeAudio() {
+  const c = ac()
+  if (!c) return false
+  if (c.state !== 'running') c.resume().catch(() => {})
+  return c.state === 'running'
+}
+
+export function audioState() {
+  return ctx ? ctx.state : 'none'
+}
+
 export function unlockAudio() {
   const c = ac()
   if (!c) return false
@@ -125,6 +140,24 @@ export function sfxFinish() {
   const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]
   notes.forEach((f, i) => tone({ freq: f, dur: 0.7, type: 'sine', vol: 0.22, delay: i * 0.11 }))
   noise({ dur: 0.9, freq: 6000, q: 0.6, vol: 0.09, delay: 0.2 })
+}
+
+// ── ספירת מטבעות ──
+// אחרי התפיסה המונה מטפס אחד-אחד; כל צעד גבוה מעט מהקודם, והאחרון
+// מתנגן. זה מה שהופך "+7" למשהו שרואים ושומעים.
+export function sfxTally(i, n) {
+  const k = n > 1 ? i / (n - 1) : 1
+  tone({ freq: 1046.5 * Math.pow(2, k * 0.75), dur: 0.08, type: 'sine', vol: 0.16 })
+  if (i === n - 1) {
+    tone({ freq: 2093.0, dur: 0.35, type: 'sine', vol: 0.16, delay: 0.09 })
+    tone({ freq: 2637.0, dur: 0.5, type: 'sine', vol: 0.12, delay: 0.16 })
+  }
+}
+
+// ── כל הכבוד ──
+export function sfxCheer() {
+  const notes = [783.99, 987.77, 1174.66]
+  notes.forEach((f, i) => tone({ freq: f, dur: 0.22, type: 'triangle', vol: 0.14, delay: i * 0.08 }))
 }
 
 export function buzz(pattern) {

@@ -29,7 +29,8 @@ const PHASE = {
 export const BRANCH = { BACK: 'doubles-back', FADE: 'fades', RUN: 'runs' }
 
 // הענפים נפרשים מראש השביל בקשת שאפשר לקרוא בסיבוב קטן — לא ב-360°.
-const FAN = [-58, -20, 22, 60]
+// צר יותר מבעבר (היה ±60 ואז נימי נחת כמעט מאחור). עכשיו לכל היותר ~65°.
+const FAN = [-48, -18, 18, 50]
 const rnd = (rng, a, b) => a + rng() * (b - a)
 const norm = d => ((d % 360) + 360) % 360
 
@@ -46,8 +47,8 @@ export default {
     // הילד באמת הולך לאנשהו. וטכנית: זה מה שמבטיח שנימי לא ייפול מול
     // הילד בפתיחה. בגרסה שבה הענף החי יכול היה להיות פנימי, הוא נחת
     // לפעמים במרחק כמה מעלות מהמבט — והיצור התקבל בלי לחפש.
-    const outer = FAN.filter(a => Math.abs(a) >= 55)
-    const inner = FAN.filter(a => Math.abs(a) < 55)
+    const outer = FAN.filter(a => Math.abs(a) >= 45)
+    const inner = FAN.filter(a => Math.abs(a) < 45)
     const liveSlot = outer[Math.floor(rng() * outer.length)]
     const rest = [...inner, ...outer.filter(a => a !== liveSlot)]
       .sort(() => rng() - 0.5).slice(0, 2)
@@ -75,7 +76,7 @@ export default {
       phase: PHASE.TRAIL,
       anchor, head, branches,
       // נימי בקשת צרה סביב הכיוון שהשביל מראה. הסיבוב הוא מסקנה.
-      hidden: norm(live.bearing + away * rnd(rng, 4, 26)),
+      hidden: norm(live.bearing + away * rnd(rng, 4, 16)),
       read: 0,
     }
   },
@@ -146,7 +147,7 @@ export default {
       return {
         state: {
           ...s, phase: PHASE.CHASE, streakFrom: from,
-          hidden: norm(from + (rng() < 0.5 ? -1 : 1) * rnd(rng, 52, 84)),
+          hidden: norm(from + (rng() < 0.5 ? -1 : 1) * rnd(rng, 40, 70)),
         },
         feedback: 'flee',
       }

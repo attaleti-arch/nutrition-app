@@ -7,6 +7,7 @@ import { useModelSrc, usePreloadModel } from '../hooks/useModelViewer'
 import { useCamera } from '../hooks/useCamera'
 import { camText } from '../engine/camera'
 import { sfxAppear, sfxRustle, sfxCatch, buzz } from '../engine/audio'
+import { cheer } from '../content/cheers'
 
 // ─── במה המפגש ───
 // שני מצבים, מכניקה אחת. מצלמה שנדחתה אינה דילוג על המפגש אלא רקע אחר
@@ -279,7 +280,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
         <div style={S.doneWrap}>
           <CreatureFigure creature={creature} done scale={1.35} hideSprite={hideSprite} />
           <p style={S.foundName}>{creature?.name}</p>
-          <p style={S.foundLine}>תפסתם אותו!</p>
+          <p style={S.foundLine}>{cheer('catch', Math.floor((cs?.hidden || 0) / 37))} תפסתם אותו!</p>
         </div>
       )}
 

@@ -20,9 +20,10 @@ export function makeFlyer({ id, target, copy, elev = ELEV }) {
     id,
 
     start(ref, rng = Math.random) {
-      // מתחיל מאחור־בצד: צריך להסתובב כדי למצוא מאיפה הקול
+      // מתחיל בצד, לא מאחור: "בסוף הוא היה בניין אחרינו". צריך להסתובב
+      // קצת כדי למצוא מאיפה הקול — לא להסתובב לגמרי.
       const side = rng() < 0.5 ? -1 : 1
-      return { phase: PHASE.HUM, hidden: norm(ref + side * rnd(rng, 70, 120)), streakFrom: null, ready: false }
+      return { phase: PHASE.HUM, hidden: norm(ref + side * rnd(rng, 35, 70)), streakFrom: null, ready: false }
     },
 
     targets(s) {

@@ -7,7 +7,7 @@
 // עכשיו השרשרת כולה היא פונקציה שמקבלת תשובת Overpass ומחזירה מסלול,
 // ואפשר להריץ עליה תשובה שמורה בלי רשת בכלל.
 
-import { buildGraph, planLoop, loopCoords, nearestNode } from './routing.js'
+import { buildGraph, planLoop, loopSteps, nearestNode } from './routing.js'
 import { parseOverpass } from './osm.js'
 import { destination } from './geo.js'
 
@@ -41,12 +41,10 @@ export function buildLoop(input, home, target = TARGET_M) {
   const plan = planLoop(graph, start.idx, target)
   if (!plan?.loop?.length) return { ok: false, reason: 'no-loop' }
 
-  const coords = loopCoords(graph, plan.loop)
-  if (!coords || coords.length < 8) return { ok: false, reason: 'short-loop' }
-
-  // loopCoords מחזיר [lat, lng]. כל שאר המנוע עובד ב-{lat, lng}, וערבוב
-  // בין השניים לא זורק שגיאה — הוא פשוט מייצר מסלול באמצע האוקיינוס.
-  const path = coords.map(([lat, lng]) => ({ lat, lng }))
+  // נקודות {lat, lng, street}. שם הרחוב נוסע עם המסלול כדי שההוראות
+  // יגידו לאן פונים, לא רק לאיזה צד.
+  const path = loopSteps(graph, plan.loop)
+  if (!path || path.length < 8) return { ok: false, reason: 'short-loop' }
 
   return { ok: true, path, meters: plan.len, overlap: plan.overlap }
 }

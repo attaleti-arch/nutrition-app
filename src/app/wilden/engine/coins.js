@@ -88,6 +88,15 @@ export const WALK_PLAN = {
 export function loopTargetM(walks) {
   return walks === 0 ? WALK_PLAN.firstM : WALK_PLAN.laterM
 }
+// כמה זמן מתוכנן למסע, לטיימר שהיא ביקשה: 30 דקות בראשון, 45 אחר כך.
+export function plannedMs(walks) {
+  return (walks === 0 ? 30 : 45) * 60 * 1000
+}
+
+// ── בונוס תפיסה ──
+// "הם רוצים לראות אחרי התפיסה את המטבעות עולות ברצף." תפיסה שווה מטבעות,
+// והמונה מטפס אחד-אחד עם גלינג לכל אחד. חמישה: מספיק כדי לראות ספירה.
+export const CATCH_BONUS = 5
 
 export function canBuyExtra(progress) {
   return (progress.walks || 0) >= WALK_PLAN.extraFromWalk && (progress.coins || 0) >= WALK_PLAN.extraCost

@@ -25,9 +25,11 @@ export function turnsFor(path) {
     const d = delta(din, dout)
     if (Math.abs(d) < TURN_DEG) continue
     const dir = Math.abs(d) >= SHARP_DEG ? 'uturn' : d > 0 ? 'right' : 'left'
+    // הרחוב שאליו פונים: שם הקטע שיוצא מהפנייה.
+    const street = path[i + 1].street || null
     const last = out[out.length - 1]
-    if (last && acc - last.along < MERGE_M) { last.deg += d; last.dir = dirOf(last.deg); continue }
-    out.push({ along: acc, dir, deg: d })
+    if (last && acc - last.along < MERGE_M) { last.deg += d; last.dir = dirOf(last.deg); last.street = street || last.street; continue }
+    out.push({ along: acc, dir, deg: d, street })
   }
   return out
 }
@@ -43,7 +45,27 @@ export function nextCue(turns, along, targetAlong = Infinity, { lead = 8 } = {})
   if (!t || t.along > targetAlong) {
     return { kind: 'target', dist: Math.max(0, targetAlong - along) }
   }
-  return { kind: 'turn', dir: t.dir, dist: t.along - along }
+  return { kind: 'turn', dir: t.dir, dist: t.along - along, street: t.street || null }
+}
+
+// ── חץ גדול ──
+// ילד לא קורא "פנו ימינה" — הוא רואה חץ. ⬆ ישר, ↱ ימינה, ↰ שמאלה, ↩ סיבוב.
+export function cueGlyph(cue) {
+  if (!cue) return '⬆'
+  if (cue.kind === 'target') return cue.dist <= 30 ? '📍' : '⬆'
+  return cue.dir === 'right' ? '↱' : cue.dir === 'left' ? '↰' : '↩'
+}
+
+// ── טיימר ──
+// "טיימר שילך לאחור בטיול." הזמן המתוכנן פחות מה שעבר מרגע שהמסלול נבנה.
+export function timeLeftMs(startedAt, plannedMs, now) {
+  if (!startedAt || !plannedMs) return null
+  return Math.max(0, plannedMs - (now - startedAt))
+}
+export function fmtClock(ms) {
+  const s = Math.max(0, Math.round(ms / 1000))
+  const m = Math.floor(s / 60), r = s % 60
+  return `${m}:${String(r).padStart(2, '0')}`
 }
 
 // ── לא "כאן" כשהוא 200 מ' משם ──
@@ -63,5 +85,6 @@ export function cueText(cue, targetName = 'היעד') {
     return m <= 30 ? `${targetName} כאן.` : `ישר ${m} מ׳ עד ${targetName}.`
   }
   const word = cue.dir === 'left' ? 'פנו שמאלה' : cue.dir === 'right' ? 'פנו ימינה' : 'הסתובבו'
-  return m <= 20 ? `${word} עכשיו.` : `עוד ${m} מ׳ ${word}.`
+  const to = cue.street ? ` ל${cue.street}` : ''
+  return m <= 20 ? `${word}${to} עכשיו.` : `עוד ${m} מ׳ ${word}${to}.`
 }

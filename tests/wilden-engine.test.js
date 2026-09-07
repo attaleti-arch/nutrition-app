@@ -1198,3 +1198,80 @@ test('הוראות: לא "הסימן כאן" כשהוא 200 מ׳ בקו ישר',
   assert.equal(floorCue(turn, 500), turn)
   assert.equal(floorCue(bad, null), bad)
 })
+
+import { cueGlyph, timeLeftMs, fmtClock, turnsFor as turnsFor2, nextCue } from '../src/app/wilden/engine/turns.js'
+import { plannedMs, CATCH_BONUS } from '../src/app/wilden/engine/coins.js'
+import { cheer, milestone, CHEERS } from '../src/app/wilden/content/cheers.js'
+import { buildGraph, planLoop, loopSteps } from '../src/app/wilden/engine/routing.js'
+
+test('הוראות: שם הרחוב נוסע עם הפנייה, וחץ גדול לכל הוראה', () => {
+  // רחוב ישר צפונה ואז פנייה ימינה לרחוב בשם
+  const a = HOME, b = destination(HOME, 0, 200), c = destination(b, 90, 200)
+  const path = [{ ...a, street: 'הרצל' }, { ...b, street: 'הרצל' }, { ...c, street: 'ביאליק' }]
+  const turns = turnsFor2(path)
+  assert.equal(turns.length, 1)
+  assert.equal(turns[0].dir, 'right')
+  assert.equal(turns[0].street, 'ביאליק')
+  const cue = nextCue(turns, 50, 1000)
+  assert.equal(cue.street, 'ביאליק')
+  assert.equal(cueText(cue), 'עוד 150 מ׳ פנו ימינה לביאליק.')
+  assert.equal(cueGlyph(cue), '↱')
+  assert.equal(cueGlyph({ kind: 'turn', dir: 'left', dist: 10 }), '↰')
+  assert.equal(cueGlyph({ kind: 'target', dist: 300 }), '⬆')
+  assert.equal(cueGlyph({ kind: 'target', dist: 10 }), '📍')
+  // בלי שם — כמו קודם
+  assert.equal(cueText({ kind: 'turn', dir: 'left', dist: 100 }), 'עוד 100 מ׳ פנו שמאלה.')
+})
+
+test('הוראות: הגרף שומר את שם הרחוב על הקשת, והלולאה מחזירה אותו', () => {
+  const p = (b, d) => destination(HOME, b, d)
+  const ways = [
+    { tier: 0, name: 'הרצל', nodes: [HOME, p(0, 300), p(0, 600)] },
+    { tier: 0, name: 'ביאליק', nodes: [p(0, 600), p(45, 700)] },
+  ]
+  const g = buildGraph(ways)
+  const steps = loopSteps(g, [0, 1, 2, 3])
+  assert.equal(steps[0].street, null, 'הנקודה הראשונה — עוד לא הלכנו ברחוב')
+  assert.equal(steps[1].street, 'הרצל')
+  assert.equal(steps[3].street, 'ביאליק')
+})
+
+test('טיימר: הזמן המתוכנן פחות מה שעבר, ולא מתחת לאפס', () => {
+  assert.equal(plannedMs(0), 30 * 60000)
+  assert.equal(plannedMs(3), 45 * 60000)
+  assert.equal(timeLeftMs(1000, 60000, 31000), 30000)
+  assert.equal(timeLeftMs(1000, 60000, 99000), 0)
+  assert.equal(timeLeftMs(null, 60000, 5), null)
+  assert.equal(fmtClock(30000), '0:30')
+  assert.equal(fmtClock(23 * 60000 + 5000), '23:05')
+  // ROUTE_READY רושם את שעת ההתחלה
+  let g = initial()
+  g = reduce(g, { type: 'START_RUN', kind: RUN.STORY, day: DAY, t: 0 })
+  g = reduce(g, { type: 'PERMISSION_GRANTED', home: HOME })
+  g = reduce(g, { type: 'ROUTE_READY', path: PATH, home: HOME, t: 4242 })
+  assert.equal(g.run.walkStartedAt, 4242)
+})
+
+test('תפיסה שווה מטבעות, והמונה יודע כמה מהם על התפיסה', () => {
+  let g = started(['nimi'])
+  g = walk(g, 200)
+  const before = g.run.coinsTaken
+  g = catchHere(g, 500000)
+  assert.equal(g.run.coinsTaken, before + CATCH_BONUS)
+  assert.equal(g.run.catchBonus, CATCH_BONUS)
+  g = reduce(g, { type: 'PORTAL_OPEN' })
+  g = reduce(g, { type: 'PORTAL_ENTERED', t: 1 })
+  assert.equal(g.progress.coins, before + CATCH_BONUS, 'הבונוס נכנס לארנק')
+})
+
+test('עידוד: כל 10 מטבעות, חצי דרך פעם אחת, ולא אותו משפט פעמיים', () => {
+  assert.ok(CHEERS.catch.length >= 3)
+  assert.notEqual(cheer('catch', 0), cheer('catch', 1))
+  assert.equal(milestone({ coinsBefore: 8, coinsNow: 9 }), null)
+  const m = milestone({ coinsBefore: 9, coinsNow: 11 })
+  assert.equal(m.kind, 'coins'); assert.ok(m.text.startsWith('10 מטבעות!'))
+  const h = milestone({ alongBefore: 900, alongNow: 1010, total: 2000 })
+  assert.equal(h.kind, 'half')
+  assert.equal(milestone({ alongBefore: 1010, alongNow: 1100, total: 2000 }), null, 'חצי דרך רק פעם אחת')
+  assert.equal(milestone({ coinsBefore: 0, coinsNow: 0 }), null)
+})

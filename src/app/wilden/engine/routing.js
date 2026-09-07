@@ -61,8 +61,8 @@ export function buildGraph(ways, blocked = []) {
       if (d < 0.5) continue
       const ia = idOf(a), ib = idOf(b)
       const e = adj[ia].length, f = adj[ib].length
-      adj[ia].push({ to: ib, d, w: d * cost, tier: w.tier, back: f })
-      adj[ib].push({ to: ia, d, w: d * cost, tier: w.tier, back: e })
+      adj[ia].push({ to: ib, d, w: d * cost, tier: w.tier, back: f, name: w.name || null })
+      adj[ib].push({ to: ia, d, w: d * cost, tier: w.tier, back: e, name: w.name || null })
     }
   }
   return { nodes, adj }
@@ -272,4 +272,18 @@ export function spreadAlong(graph, loop, count) {
 
 export function loopCoords(graph, loop) {
   return loop.map(i => [graph.nodes[i].lat, graph.nodes[i].lng])
+}
+
+// אותה לולאה, כנקודות עם שם הרחוב שמוביל *אל* הנקודה. זה מה שהופך
+// "פנו ימינה" ל"פנו ימינה לרחוב הרצל" — ההוראה שמבינים.
+export function loopSteps(graph, loop) {
+  return loop.map((idx, k) => {
+    const n = graph.nodes[idx]
+    let street = null
+    if (k > 0) {
+      const e = graph.adj[loop[k - 1]].find(x => x.to === idx)
+      street = e?.name || null
+    }
+    return { lat: n.lat, lng: n.lng, street }
+  })
 }
