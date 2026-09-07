@@ -25,42 +25,49 @@ const TIER = {
 // fetch בדפדפן מחכה לנצח אם השרת לא עונה — ו-Overpass הוא שירות מתנדבים
 // שלפעמים מכניס בקשה לתור ארוך. בלי הפסקת זמן מפורשת המשחק פשוט נתקע על
 // "בודקים אילו רחובות יש סביבכם".
-const TIMEOUT_MS = 10000
+const TIMEOUT_MS = 26000
 
 // ── שני השרתים במקביל, לא בזה אחר זה ──
 // Overpass הוא שירות מתנדבים, ולפעמים מכניס בקשה לתור ארוך. בגרסה
 // הקודמת חיכינו לראשון עד סוף הפסקת הזמן ורק אז ניסינו את השני — כלומר
 // במקרה הרע כפול הזמן, וילד עומד ברחוב מול "בודקים אילו רחובות".
 // כאן שניהם יוצאים יחד ומי שעונה ראשון מנצח.
-export async function fetchStreets(lat, lng, radius, { signal, timeoutMs = TIMEOUT_MS } = {}) {
-  const body = buildQuery(lat, lng, radius)
+// חלק אחד (streets | blocked) מכל השרתים במקביל; הראשון שמצליח מנצח.
+async function fetchPart(part, lat, lng, radius, { signal, timeoutMs }) {
+  const body = buildQuery(lat, lng, radius, part)
   const ctl = new AbortController()
   const timer = setTimeout(() => ctl.abort(), timeoutMs)
   const relay = () => ctl.abort()
   signal?.addEventListener('abort', relay)
-
   const ok = res => { if (!res.ok) throw new Error('http ' + res.status); return res.json() }
   const tries = [
     // הפרוקסי שלנו קודם ברשימה, אבל לא לבד: אם Vercel איטי הפעם, הישיר מנצח.
-    fetch(`${PROXY}?lat=${lat}&lng=${lng}&r=${Math.round(radius)}`, { signal: ctl.signal })
-      .then(ok).then(parseOverpass),
-    ...ENDPOINTS.map(url =>
-      fetch(url, { method: 'POST', body, signal: ctl.signal }).then(ok).then(parseOverpass),
-    ),
+    fetch(`${PROXY}?lat=${lat}&lng=${lng}&r=${Math.round(radius)}&part=${part}`, { signal: ctl.signal }).then(ok),
+    ...ENDPOINTS.map(url => fetch(url, { method: 'POST', body, signal: ctl.signal }).then(ok)),
   ]
-
   try {
-    // any: מחזיר את הראשון שהצליח, ולא את הראשון שהסתיים.
     const won = await Promise.any(tries)
-    ctl.abort()          // השני כבר לא מעניין
+    ctl.abort()          // השאר כבר לא מעניינים
     return won
-  } catch (e) {
-    if (signal?.aborted) { const a = new Error('aborted'); a.name = 'AbortError'; throw a }
-    throw new Error('overpass unreachable')
   } finally {
     clearTimeout(timer)
     signal?.removeEventListener('abort', relay)
   }
+}
+
+export async function fetchStreets(lat, lng, radius, { signal, timeoutMs = TIMEOUT_MS } = {}) {
+  // הרחובות חייבים. המצולעים אופציונליים, עם תקציב קצר, במקביל.
+  const blockedP = fetchPart('blocked', lat, lng, radius, { signal, timeoutMs: Math.min(timeoutMs, 9000) })
+    .then(parseOverpass).then(b => b.blocked).catch(() => [])
+  let streets
+  try {
+    streets = parseOverpass(await fetchPart('streets', lat, lng, radius, { signal, timeoutMs }))
+  } catch (e) {
+    if (signal?.aborted) { const a = new Error('aborted'); a.name = 'AbortError'; throw a }
+    throw new Error('overpass unreachable')
+  }
+  const blocked = await blockedP
+  return { ...streets, blocked }
 }
 
 // מפריד את התשובה לשני דברים: נקודות שאפשר לעמוד עליהן, ומצולעים שפוסלים.

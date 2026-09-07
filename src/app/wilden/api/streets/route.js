@@ -9,8 +9,11 @@ import { buildQuery, ENDPOINTS } from '../../engine/overpassQuery'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+// ברירת המחדל של Vercel היא 10 שניות לפונקציה — ואז היא נהרגת באמצע
+// ההמתנה ל-Overpass ומחזירה 504 בדיוק כשהתשובה בדרך.
+export const maxDuration = 28
 
-const TIMEOUT_MS = 20000
+const TIMEOUT_MS = 24000
 const TTL_MS = 24 * 3600 * 1000
 const cache = new Map()            // מפתח → { at, body }. לכל מופע שרת בנפרד.
 
@@ -40,18 +43,19 @@ export async function GET(req) {
   const lat = Number(u.searchParams.get('lat'))
   const lng = Number(u.searchParams.get('lng'))
   const r = Number(u.searchParams.get('r') || 900)
+  const part = u.searchParams.get('part') === 'blocked' ? 'blocked' : 'streets'
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180
       || !Number.isFinite(r) || r < 200 || r > 3000) {
     return Response.json({ error: 'bad params' }, { status: 400 })
   }
 
-  const k = key(lat, lng, r)
+  const k = key(lat, lng, r) + ':' + part
   const hit = cache.get(k)
   if (hit && Date.now() - hit.at < TTL_MS) {
     return Response.json(hit.body, { headers: { 'x-cache': 'hit', 'cache-control': 'public, max-age=86400' } })
   }
 
-  const body = buildQuery(lat, lng, r)
+  const body = buildQuery(lat, lng, r, part)
   try {
     const json = await Promise.any(ENDPOINTS.map(e => ask(e, body)))
     const slim = { elements: json.elements }

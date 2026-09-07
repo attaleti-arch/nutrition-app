@@ -17,8 +17,10 @@ import { getCached, putCached } from '../engine/routeCache'
 // ועוד דבר שנלמד בדרך הקשה: ל-fetch אין timeout כברירת מחדל. בלי
 // AbortController ילד נתקע לנצח על "בודקים אילו רחובות".
 
-const FETCH_TIMEOUT = 12000
-const SOFT_TIMEOUT = 6000    // מתי מציעים "לדלג עכשיו"
+// Overpass לוקח לפעמים 15–20 שניות לשכונה שלמה. 12 שניות היו קצרות מדי,
+// וכל מסע נפל לחלופי — שעל מפה אמיתית נראה כמו מצולע שחוצה שדות.
+const FETCH_TIMEOUT = 26000
+const SOFT_TIMEOUT = 7000    // מתי אומרים "לוקח יותר מהרגיל"
 
 export function useRoute() {
   const [status, setStatus] = useState('idle')   // idle | working | slow | ok
@@ -55,7 +57,9 @@ export function useRoute() {
       // של 0.32 היא נמצאת בשוליים ממש של מה שהורדנו, ובשכונה דלילה
       // פשוט אין מועמדים ואין לולאה. 0.45 עולה קצת בזמן הורדה ונותן
       // למתכנן מרחב אמיתי לעבוד בו.
-      const radius = Math.max(600, Math.min(1400, Math.round(TARGET_M * 0.45)))
+      // רחובות מתפתלים: לולאה של 3.4 ק"מ נכנסת ברדיוס של ~1.1 ק"מ. יותר
+      // מזה — השאילתה כבדה מדי ל-Overpass ונופלת בזמן.
+      const radius = Math.max(600, Math.min(1100, Math.round(TARGET_M * 0.33)))
       const data = await fetchStreets(home.lat, home.lng, radius, {
         signal: ctl.signal, timeoutMs: FETCH_TIMEOUT,
       })
@@ -72,11 +76,21 @@ export function useRoute() {
       setPath(out.path); setStatus('ok')
       return out.path
     }
+    // ── נכשל: לא ממציאים מסלול ──
+    // המצולע הגיאומטרי על מפה אמיתית נראה כמו שקר: קווים ישרים דרך שדות
+    // ונחל. במקום זה אומרים מה קרה ונותנים לבחור: לנסות שוב, או לצאת
+    // בכל זאת עם מסלול כללי — בידיעה.
     setReason(out.reason)
+    setPath(null); setDegraded(false); setStatus('failed')
+    return null
+  }, [])
+
+  // בחירה מפורשת של ההורה: מסלול כללי, לא על רחובות.
+  const useFallback = useCallback(home => {
     const fb = fallbackLoop(home)
     setPath(fb); setDegraded(true); setStatus('ok')
     return fb
   }, [])
 
-  return { status, path, degraded, reason, build, skip }
+  return { status, path, degraded, reason, build, skip, useFallback }
 }

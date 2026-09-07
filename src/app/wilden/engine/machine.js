@@ -152,6 +152,10 @@ export function reduce(g, ev) {
     case 'ROUTE_FAILED':
       return { ...g, state: S.ROUTE_FAILED }
 
+    case 'ROUTE_RETRY':
+      if (g.state !== S.ROUTE_FAILED) return g
+      return { ...g, state: S.ROUTE_BUILDING }
+
     // ── הדופק של המשחק ──
     case 'FIX': {
       if (g.state !== S.SEARCH || !g.run) return g

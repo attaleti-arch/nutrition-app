@@ -22,14 +22,18 @@ export const ENDPOINTS = [
   'https://overpass.private.coffee/api/interpreter',
 ]
 
-export function buildQuery(lat, lng, radius) {
-  const R = Math.round(radius * 1.2)
+// שתי שאילתות נפרדות, לא אחת כבדה. הרחובות הם מה שחייבים; המצולעים
+// (שדות, תעשייה, בית קברות) הם שכבת בטיחות שרצה במקביל בתקציב זמן קצר,
+// ואם לא הגיעה — יוצאים בלי. שאילתה משולבת עם רלציות על רדיוס של 1.7 ק"מ
+// לקחה ל-Overpass יותר מ-20 שניות מהטלפון שלה, וכל מסע נפל לחלופי.
+export function buildQuery(lat, lng, radius, part = 'streets') {
+  const R = Math.round(radius * 1.1)
   const around = `(around:${R},${lat},${lng})`
-  const forbidden = FORBIDDEN_TAGS
-    .flatMap(t => [`way${around}${t};`, `relation${around}${t};`])
-    .join('')
-  return `[out:json][timeout:20];(` +
+  if (part === 'blocked') {
+    const forbidden = FORBIDDEN_TAGS.map(t => `way${around}${t};`).join('')
+    return `[out:json][timeout:12];(${forbidden});out geom;`
+  }
+  return `[out:json][timeout:25];(` +
     `way${around}[highway~"^(${WALKABLE})$"][foot!=no][access!=private];` +
-    forbidden +
     `);out geom;`
 }

@@ -83,7 +83,9 @@ export default function Wilden() {
     if (g.state !== S.ROUTE_BUILDING || !g.run?.home) return
     let dead = false
     route.build(g.run.home).then(path => {
-      if (!dead && path) dispatch({ type: 'ROUTE_READY', path, home: g.run.home })
+      if (dead) return
+      if (path) dispatch({ type: 'ROUTE_READY', path, home: g.run.home })
+      else dispatch({ type: 'ROUTE_FAILED' })
     })
     return () => { dead = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -154,6 +156,24 @@ export default function Wilden() {
                 <button onClick={route.skip} style={{ ...s.cta, ...s.ctaGhost }}>לדלג עכשיו</button>
               </>
             )}
+          </Panel>
+        )}
+
+        {g.state === S.ROUTE_FAILED && (
+          <Panel eyebrow="הרחובות לא הגיעו">
+            <h2 style={s.h2}>לא הצלחנו להביא את מפת הרחובות</h2>
+            <p style={s.body}>
+              שרת המפות לא ענה בזמן. זה קורה, בעיקר מרשת סלולרית. בלי הרחובות אין מסלול
+              אמיתי, ולכן לא ממציאים אחד.
+              {route.reason && <span style={{ opacity: .55 }}> ({route.reason})</span>}
+            </p>
+            <button onClick={() => dispatch({ type: 'ROUTE_RETRY' })} style={s.cta}>לנסות שוב</button>
+            <button onClick={() => {
+              const fb = route.useFallback(g.run.home)
+              dispatch({ type: 'ROUTE_READY', path: fb, home: g.run.home })
+            }} style={{ ...s.cta, ...s.ctaGhost }}>לצאת בכל זאת, עם מסלול כללי</button>
+            <p style={s.note}>מסלול כללי הוא צורה סביב הבית, לא על רחובות. ההורה מחליט אם זה בסדר כאן.</p>
+            <button onClick={() => dispatch({ type: 'ABORT' })} style={{ ...s.cta, ...s.ctaGhost }}>לא עכשיו</button>
           </Panel>
         )}
 
