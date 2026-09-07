@@ -238,7 +238,9 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
         <ModelLayer creature={creature}
           visible={showModel}
           x={done || !ct ? 0 : ct.dx / (FOV / 2)}
-          scale={done ? 1.35 : ct?.scale || 1}
+          // למודל יש פרספקטיבה אמיתית — הרגליים הקרובות כבר גדולות. 1.6 של
+          // הספרייט הופך אותו לענק שחותך את המסך; 1.3 מרגיש "הוא קרוב".
+          scale={done ? 1.2 : Math.min(ct?.scale || 1, 1.3)}
           faceLeft={!done && ctFaceLeft}
           phase={done ? 'catch' : (ct?.scale || 1) > 1.2 ? 'appear' : 'move'}
           done={done}

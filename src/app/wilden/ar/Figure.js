@@ -179,7 +179,10 @@ export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, 
     const halfW = halfH * aspect
     const th = (yaw * Math.PI) / 180
     const right = { x: Math.cos(th), z: -Math.sin(th) }
-    const sx = -x * halfW                        // יעד ימינה = דמות שמאלה
+    // בקצה החרוט הדמות לא יוצאת מהמסך: לכל היותר 60% מחצי הרוחב הצידה.
+    // הילד מסובב את הטלפון אליה בכל מקרה — זה הרגע שבו היא נכנסת למרכז.
+    const xc = Math.max(-0.6, Math.min(0.6, x))
+    const sx = -xc * halfW                       // יעד ימינה = דמות שמאלה
     const tx = base.target.x + right.x * sx
     const tz = base.target.z + right.z * sx
     const ty = base.target.y + halfH * 0.06      // מרכז הדמות מעט מתחת למרכז המסך
