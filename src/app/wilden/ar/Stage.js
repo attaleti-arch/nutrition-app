@@ -283,7 +283,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
             {t.kind === 'trailhead' ? <Trailhead />
               : t.kind === 'trail' ? <Trail branch={t.branch} />
               /* בורח: פונה הלאה מהמקום שממנו הגיע, והפס הטרי נשאר מאחוריו. */
-              : <CreatureFigure creature={creature} scale={t.scale || 1}
+              : <CreatureFigure creature={creature} scale={t.scale || 1} flying={!!t.flying}
                   peeking={t.peeking} approaching={(t.scale || 1) > 1.2}
                   faceLeft={ctFaceLeft} streakSide={ctStreakSide}
                   hideSprite={hideSprite && !t.peeking} />}

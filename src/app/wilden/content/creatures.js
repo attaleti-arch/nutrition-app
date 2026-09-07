@@ -43,6 +43,21 @@ export const CREATURES = {
     clips: { ...CLIPS, special: 'SNIFF' },
     verb: 'TRACK',
   },
+  dabashon: {
+    id: 'dabashon', name: 'דבשון',
+    // המודל שלה מ-Meshy, מוקטן לטלפון (68K משולשים, 1K WebP, 3.1MB). בלי
+    // אנימציות: מרחף בקוד. הוא דבורה — באוויר, לא על הרצפה.
+    model: '/creatures/dabashon/dabashon.glb',
+    ios: null,
+    sprites: null,                        // אין עדיין גזירה דו-ממדית
+    heightM: 0.40,
+    arMode: AR_MODE.SKY,
+    controller: 'buzz',
+    decal: null,
+    clips: { ...CLIPS, special: 'HONEY' },
+    verb: 'HONEY',
+    brings: 'דבש',
+  },
   boldi: {
     id: 'boldi', name: 'בולדי',
     model: null,                          // אין עדיין. לא מציבים יצור אחר במקומו.

@@ -135,7 +135,8 @@ export function reduce(g, ev) {
     // ידוע מהצעד הראשון. (בלי stops — מסע ישן ששמור בטלפון — נשארים
     // בהתנהגות הקודמת: יעד אחד שנולד אחרי 60 מ'.)
     case 'ROUTE_READY': {
-      const stops = placeStops(ev.path, undefined, { creature: g.run.creature || 'nimi' })
+      // מי בדרך: נימי, דבשון, ושוב נימי. כשיגיעו עוד מודלים — מוסיפים לרשימה.
+      const stops = placeStops(ev.path, undefined, { creatures: ev.creatures || ['nimi', 'dabashon'] })
       return {
         ...g,
         state: S.SEARCH,

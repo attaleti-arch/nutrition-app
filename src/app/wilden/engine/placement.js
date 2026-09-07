@@ -40,17 +40,20 @@ export function placeTarget(path, walkedAlong, { ahead, endBufferM = 120 } = {})
 export const STOPS = 3
 export const STOP_BUFFER = 150
 
-export function placeStops(path, count = STOPS, { creature = 'nimi', buffer = STOP_BUFFER } = {}) {
+// creatures: מי מחכה בכל תחנה, לפי הסדר, במחזוריות. נימי תמיד ראשון — הוא
+// מוצא הדרכים, ובלעדיו אין שביל לאחרים.
+export function placeStops(path, count = STOPS, { creatures = ['nimi'], buffer = STOP_BUFFER } = {}) {
   if (!path || path.length < 2) return []
   const total = pathLength(path)
   const usable = Math.max(0, total - 2 * buffer)
   const n = Math.max(1, Math.min(count, Math.floor(usable / 200) || 1))   // לפחות 200 מ' בין תחנות
+  const list = Array.isArray(creatures) && creatures.length ? creatures : ['nimi']
   const stops = []
   for (let i = 0; i < n; i++) {
     const at = buffer + (usable * (i + 1)) / (n + 1)
     const p = pointAlong(path, at)
     if (!p) continue
-    stops.push({ lat: p.point.lat, lng: p.point.lng, along: at, creature, done: false })
+    stops.push({ lat: p.point.lat, lng: p.point.lng, along: at, creature: list[i % list.length], done: false })
   }
   return stops
 }

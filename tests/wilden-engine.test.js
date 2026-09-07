@@ -15,6 +15,7 @@ import { forServer } from '../src/app/wilden/engine/persist.js'
 import { revalidate, PLACE_AFTER } from '../src/app/wilden/engine/placement.js'
 import { STRUCTURE, GUARDIAN_STATE, affordanceOf, isEnterable, KRAAG_AWAKENS } from '../src/app/wilden/content/canon.js'
 import nimi from '../src/app/wilden/ar/controllers/nimi.js'
+import dabashon from '../src/app/wilden/ar/controllers/dabashon.js'
 import { buildLoop, fallbackLoop, normalize } from '../src/app/wilden/engine/loop.js'
 import { getCached, putCached } from '../src/app/wilden/engine/routeCache.js'
 
@@ -256,7 +257,7 @@ test('מסע 1 מקצה לקצה: שלוש תחנות, ואז הפורטל', () 
   ])
 
   assert.equal(g.state, S.CLUE, 'משימה סיפורית נגמרת ברמז, לא במסך ניצחון')
-  assert.deepEqual(g.progress.creatures, ['nimi'])
+  assert.deepEqual(g.progress.creatures, ['nimi', 'dabashon'], 'כל מי שנתפס בדרך, פעם אחת לכל סוג')
   assert.equal(g.progress.res.wood, 1)
   assert.equal(g.progress.missionsCompleted, 1)
   assert.equal(g.progress.story.m01, 'done')
@@ -464,6 +465,29 @@ test('נימי: הפעימות — שביל, מציץ, בורח עם קו, מת�
   r = nimi.onCatch(r.state)
   assert.equal(nimi.isDone(r.state), true)
   assert.equal(r.feedback, 'catch')
+})
+
+test('תחנות: היצורים מתחלפים — נימי, דבשון, נימי', () => {
+  const g = started()
+  assert.deepEqual(g.run.stops.map(s => s.creature), ['nimi', 'dabashon', 'nimi'])
+})
+
+test('דבשון: באוויר, שלוש לחיצות', () => {
+  let s = dabashon.start(0)
+  assert.equal(s.phase, 'HUM')
+  const t = dabashon.targets(s)[0]
+  assert.equal(t.flying, true, 'דבורה — לא על הרצפה')
+  assert.ok(t.elev > 0, 'מעל האופק: צריך להרים את הטלפון')
+  assert.ok(dabashon.copy(s).line.length > 0)
+  let r = dabashon.onTap(s)
+  assert.equal(r.state.phase, 'FLY'); assert.equal(r.feedback, 'flee')
+  assert.notEqual(r.state.hidden, s.hidden, 'עף למקום אחר')
+  r = dabashon.onTap(r.state)
+  assert.equal(r.state.phase, 'HOVER'); assert.ok(dabashon.targets(r.state)[0].scale > 1, 'קרוב יותר')
+  assert.equal(dabashon.isDone(dabashon.onCatch(s).state), false, 'אי אפשר לתפוס לפני שהוא מרחף')
+  r = dabashon.onTap(r.state)
+  assert.equal(dabashon.isDone(r.state), true); assert.equal(r.feedback, 'catch')
+  assert.deepEqual(dabashon.targets(r.state), [])
 })
 
 test('נימי: לוחצים עליו — הדרך שילד מבין מיד', () => {

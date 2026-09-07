@@ -23,7 +23,7 @@ const FOV_DEG = 22          // זווית ראייה אנכית של מצלמת 
 // scale מגיע מהפאזה (0.82 מבצבץ, 1.6 מתקרב, 1.35 בסיום) ומיושם כגובה
 // אמיתי, לא כ-transform — ראה הערה ב-Stage.
 // hideSprite: המודל התלת-ממדי כבר מוצג בשכבה שלו; הצל והפס נשארים כאן.
-export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approaching, done, scale = 1, hideSprite = false }) {
+export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approaching, done, scale = 1, hideSprite = false, flying = false }) {
   const anim = hideSprite ? 'none'
     : approaching ? 'wildenBob 1.1s ease-in-out infinite'
     : done ? 'wildenBreathe 2.6s ease-in-out infinite' : 'none'
@@ -34,7 +34,7 @@ export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approa
       {streakSide && (
         <div style={{ ...F.streak, ...(streakSide === 'left' ? F.streakL : F.streakR) }} />
       )}
-      <div style={F.shadow} />
+      {!flying && <div style={F.shadow} />}
       {!hideSprite && (
         <Sprite sprites={creature?.sprites} peeking={peeking} faceLeft={faceLeft} done={done} scale={scale} />
       )}
@@ -77,6 +77,8 @@ function Sprite({ sprites, peeking, faceLeft, done, scale = 1 }) {
 //             נעלמת: פירוק וחיבור מחדש של model-viewer באמצע רינדור זרק
 //             שגיאות פנימיות וטען את המודל מחדש בכל סיבוב של הטלפון.
 export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, visible = true, onShown, onFailed }) {
+  // יצור מעופף (דבשון): מרחף בגובה העיניים ומעלה, בלי צל על הרצפה.
+  const flying = creature?.arMode === 'sky'
   const src = useModelSrc(creature)
   const ready = useModelViewer(!!src)
   const ref = useRef(null)
@@ -126,7 +128,13 @@ export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, 
       if (!el.isConnected || !el.loaded) { raf = requestAnimationFrame(loop); return }
       const t = (now - t0) / 1000
       let sy = 1, pitch = 0, yawWag = 0
-      if (phase === 'move') {
+      if (flying) {
+        // ריחוף: עולה ויורד לאט, נוטה קצת עם הכנפיים
+        const bob = Math.sin(t * Math.PI * 1.6)
+        sy = 1 + bob * 0.03
+        pitch = -6 + bob * 3
+        yawWag = Math.sin(t * Math.PI * 0.8) * 8 + (phase === 'move' ? Math.sin(t * Math.PI * 6) * 2 : 0)
+      } else if (phase === 'move') {
         // ריצה: קפיצות של ~2.4 בשנייה, הגוף נוטה קדימה
         const hop = Math.abs(Math.sin(t * Math.PI * 2.4))
         sy = 1 + hop * 0.05
@@ -185,7 +193,8 @@ export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, 
     const sx = -xc * halfW                       // יעד ימינה = דמות שמאלה
     const tx = base.target.x + right.x * sx
     const tz = base.target.z + right.z * sx
-    const ty = base.target.y + halfH * 0.06      // מרכז הדמות מעט מתחת למרכז המסך
+    // מרכז הדמות מעט מתחת למרכז המסך; מעופף — מעל המרכז, באוויר.
+    const ty = base.target.y + halfH * (flying ? -0.35 : 0.06)
     target = `${tx.toFixed(3)}m ${ty.toFixed(3)}m ${tz.toFixed(3)}m`
   }
 
@@ -206,7 +215,7 @@ export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, 
       disable-pan=""
       disable-tap=""
       environment-image="neutral"
-      shadow-intensity="0.9"
+      shadow-intensity={flying ? '0' : '0.9'}
       shadow-softness="0.8"
       exposure="1.05"
       style={{ ...F.layer, filter: done ? GLOW_DONE : 'none', opacity: visible ? 1 : 0 }}

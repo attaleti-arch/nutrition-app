@@ -4,8 +4,9 @@
 // מצלמה ובלי חיישנים, וכך אפשר לכתוב את שבעת הנותרים בלי לגעת ב-AR.
 
 import nimi from './nimi'
+import dabashon from './dabashon'
 
-const REGISTRY = { 'tracks-true-or-false': nimi }
+const REGISTRY = { 'tracks-true-or-false': nimi, buzz: dabashon }
 
 export function controllerFor(creature) {
   return REGISTRY[creature?.controller] || null
