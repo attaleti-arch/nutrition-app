@@ -10,6 +10,8 @@
 //          נופלת לספרייט בעצמה. אף פעם לא שמים כאן מודל של יצור אחר
 //          "בינתיים": זה בדיוק איך שילד מקבל כדור ירוק במקום נימי.
 // sprites — גזירות דו-ממדיות מגיליון הדמויות. מה שמוצג היום.
+// clip    — סרטון קצר (MP4, 9:16, ~5 שניות) שמתנגן אחרי התפיסה. null = אין
+//          עדיין, ואז אין מסך קליפ בכלל. אף פעם לא סרטון של יצור אחר.
 //
 // כשה-GLB של נימי יגיע: שמים אותו ב-/public/creatures/nimi/nimi.glb,
 // משנים את model לנתיב הזה, ומעדכנים את שמות הקליפים ב-clips לשמות
@@ -35,6 +37,7 @@ export const CREATURES = {
     // 1.9MB. בלי אנימציות עדיין — הוא עומד ומסתובב עם הטלפון, לא הולך.
     model: '/creatures/nimi/nimi.glb',
     ios: null,
+    clip: null,
     sprites: { hero: '/creatures/nimi/hero.png', peek: '/creatures/nimi/peek.png' },
     heightM: 0.45,
     arMode: AR_MODE.GROUND,
@@ -49,6 +52,7 @@ export const CREATURES = {
     // אנימציות: מרחף בקוד. הוא דבורה — באוויר, לא על הרצפה.
     model: '/creatures/dabashon/dabashon.glb',
     ios: null,
+    clip: null,
     sprites: null,                        // אין עדיין גזירה דו-ממדית
     heightM: 0.40,
     arMode: AR_MODE.SKY,
@@ -65,6 +69,7 @@ export const CREATURES = {
     // משולשים). על הרצפה, גדול, עקבות אבן. "מישהו כאן ידע לבנות" — זה הוא.
     model: '/creatures/bolder/bolder.glb',
     ios: null,
+    clip: null,
     sprites: null,
     heightM: 0.80,
     arMode: AR_MODE.GROUND,
@@ -80,6 +85,7 @@ export const CREATURES = {
     // 1K WebP). באוויר, גבוה יותר מדבשון.
     model: '/creatures/ruchi/ruchi.glb',
     ios: null,
+    clip: null,
     sprites: null,
     heightM: 0.45,
     arMode: AR_MODE.SKY,
@@ -95,6 +101,7 @@ export const CREATURES = {
     // עקבות כמו נימי.
     model: '/creatures/lumi/lumi.glb',
     ios: null,
+    clip: null,
     sprites: null,
     heightM: 0.55,
     arMode: AR_MODE.GROUND,
@@ -110,6 +117,7 @@ export const CREATURES = {
     // עקבות רטובות.
     model: '/creatures/gali/gali.glb',
     ios: null,
+    clip: null,
     sprites: null,
     heightM: 0.50,
     arMode: AR_MODE.GROUND,
@@ -125,6 +133,7 @@ export const CREATURES = {
     // הרצפה, עקבות. הצל שלו הוא מה שהוא משאיר.
     model: '/creatures/tzel/tzel.glb',
     ios: null,
+    clip: null,
     sprites: null,
     heightM: 0.50,
     arMode: AR_MODE.GROUND,
@@ -142,6 +151,7 @@ export const CREATURES = {
     // עם עקבות אבן. ההתעוררות הגדולה נשארת לסיפור, כשנגיע לשם.
     model: '/creatures/kraag/kraag.glb',
     ios: null,
+    clip: null,
     sprites: null,
     heightM: 0.70,
     arMode: AR_MODE.GROUND,

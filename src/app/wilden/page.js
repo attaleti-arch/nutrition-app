@@ -19,6 +19,7 @@ import { loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, plannedMs } fr
 import { cheer, milestone } from './content/cheers'
 import { GoldStage } from './ar/GoldStage'
 import { Hatch } from './ui/Hatch'
+import { CaughtClip, usePreloadClip } from './ui/CaughtClip'
 import { EGG_PRICE, canBuyEgg, eggWarmth, warmthWord, variantById } from './engine/egg'
 import { haversine } from './engine/geo'
 import { sfxCoin, sfxTally, sfxCheer, resumeAudio } from './engine/audio'
@@ -139,6 +140,9 @@ export default function Wilden() {
   // וחוזרים — לא נטפל בילד.
   const [goldOpen, setGoldOpen] = useState(false)
   const [hatchSeen, setHatchSeen] = useState(false)
+  // ── הקליפ אחרי התפיסה ── פעם אחת לכל תפיסה; נטען מראש בזמן המפגש.
+  const [clipSeen, setClipSeen] = useState(false)
+  useEffect(() => { if (g.state !== S.CAUGHT) setClipSeen(false) }, [g.state])
   useEffect(() => { if (g.state === S.BROKEN_WORLD) setHatchSeen(false) }, [g.state])
   const [goldSkipped, setGoldSkipped] = useState(false)
   const nearGold = g.state === S.SEARCH ? goldNearby(g.run?.coins, g.run?.pos) : null
@@ -159,6 +163,10 @@ export default function Wilden() {
   }, [g.run?.lastCoin])
   const [burst, setBurst] = useState(null)
 
+  usePreloadClip(g.state === S.ENCOUNTER || g.state === S.SEARCH
+    ? creatureById(g.run?.target?.creature || g.run?.creature)?.clip || null
+    : null)
+
   function askLocation() {
     geo.request()
     navigator.geolocation?.getCurrentPosition(
@@ -172,6 +180,10 @@ export default function Wilden() {
 
   // היצור של התחנה הנוכחית. (מסע ישן בלי תחנות — היצור של המסע.)
   const creature = creatureById(g.run?.target?.creature || g.run?.creature) || todaysCreature(g.progress)
+  // מי נתפס הרגע: התחנה שסומנה done אחרונה.
+  const justCaught = g.state === S.CAUGHT
+    ? creatureById(g.run.stops?.[Math.max(0, g.run.stop - (g.run.resolved ? 0 : 1))]?.creature || g.run.creature) || creature
+    : null
 
   return (
     <div dir="rtl" style={{ minHeight: '100dvh', background: C.bg, color: C.ink,
@@ -188,6 +200,11 @@ export default function Wilden() {
       {/* הביצה בקעה: מסך אחד מעל הכול, לפני הבית */}
       {g.hatched && (g.state === S.CLUE || g.state === S.RUN_COMPLETE) && !hatchSeen && (
         <Hatch hatched={g.hatched} onClose={() => setHatchSeen(true)} />
+      )}
+
+      {/* הקליפ של היצור, אחרי "תפסתם אותו!" ולפני ספירת המטבעות */}
+      {justCaught?.clip && !clipSeen && (
+        <CaughtClip creature={justCaught} onDone={() => setClipSeen(true)} />
       )}
 
       {g.state === S.ENCOUNTER && (
