@@ -57,7 +57,23 @@ export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = tr
     const at = pos || home
     const m = L.map(el.current, { zoomControl: false, attributionControl: true, scrollWheelZoom: false })
       .setView(at ? [at.lat, at.lng] : [32.08, 34.78], FOLLOW_ZOOM)
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(m)
+    // ── אריחי המפה, עם גיבוי ──
+    // OSM הוא שירות מתנדבים ולפעמים לא עונה מרשת סלולרית. אם האריחים
+    // הראשונים נכשלים ואף אחד לא נטען — עוברים ל-CARTO, שמבוסס על אותם
+    // נתונים. בלי זה "אין לי מפות" ואין למי לשאול למה.
+    const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(m)
+    let ok = 0, bad = 0, swapped = false
+    osm.on('tileload', () => { ok++ })
+    osm.on('tileerror', () => {
+      bad++
+      if (!swapped && ok === 0 && bad >= 3) {
+        swapped = true
+        osm.remove()
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+          maxZoom: 19, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO',
+        }).addTo(m)
+      }
+    })
     m.on('dragstart', () => { follow.current = false; setFollowing(false) })
     map.current = m
     return () => { m.remove(); map.current = null; lay.current = { stops: [] }; fitted.current = false }
