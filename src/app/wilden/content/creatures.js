@@ -58,11 +58,12 @@ export const CREATURES = {
     verb: 'HONEY',
     brings: 'דבש',
   },
-  boldi: {
-    id: 'boldi', name: 'בולדי',
+  bolder: {
+    id: 'bolder', name: 'בולדר',
+    // הבן שלה: "בולדי נשמע כמו איש קירח". מעכשיו בולדר. הבנאי.
     model: null,                          // אין עדיין. לא מציבים יצור אחר במקומו.
     ios: null,
-    sprites: null,                        // הגיליון של בולדי עוד לא נגזר
+    sprites: null,                        // הגיליון של בולדר עוד לא נגזר
     heightM: 0.70,
     arMode: AR_MODE.GROUND,
     controller: 'missing-piece',
