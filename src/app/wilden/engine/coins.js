@@ -45,7 +45,25 @@ export function collectCoins(coins, pos, radius = COLLECT_RADIUS_M) {
   return got.length ? { coins: next, got } : { coins, got }
 }
 
-export const coinsValue = list => (list || []).reduce((s, c) => s + (c.value || 0), 0)
+// הדרך הביתה שווה כפול: היצור הולך איתך. "הוא איתך" צריך להרגיש.
+export const HOME_BONUS = 2
+export const coinsValue = (list, mult = 1) => (list || []).reduce((s, c) => s + (c.value || 0) * mult, 0)
+
+// ── חם־קר ──
+// מרחק ליצור → מילה וחום 0..1. בלי מספרים: ילד לא צריך "620 מ'", הוא צריך
+// "פושר… חמים… רותח!". מתחזק לאט לאורך רוב ההליכה.
+export const HEAT = [
+  { max: 60, key: 'BURNING', word: 'רותח!', t: 1 },
+  { max: 150, key: 'HOT', word: 'חם מאוד', t: 0.85 },
+  { max: 320, key: 'WARM', word: 'חמים', t: 0.65 },
+  { max: 600, key: 'MILD', word: 'פושר', t: 0.45 },
+  { max: 1000, key: 'COOL', word: 'קריר', t: 0.28 },
+  { max: Infinity, key: 'COLD', word: 'קר', t: 0.12 },
+]
+export function heatOf(distM) {
+  if (distM == null) return { key: 'NONE', word: '', t: 0 }
+  return HEAT.find(h => distM <= h.max)
+}
 
 // ── הלוח של הבן שלה ──
 // מסע 1: 30 דקות, יצור אחד. מסע 2: 45 דקות, יצור אחד (אחר). מהמסע השלישי:

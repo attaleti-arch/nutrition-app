@@ -7,7 +7,7 @@
 import { haversine, bearing, advanceWalk, progressAlong } from './geo.js'
 import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL_RADIUS } from './beacon.js'
 import { placeTarget, placeStops, revalidate, PLACE_AFTER } from './placement.js'
-import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk } from './coins.js'
+import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS } from './coins.js'
 
 export const S = {
   BROKEN_WORLD: 'BROKEN_WORLD',     // עולם הבית ההרוס. נקודת הכניסה.
@@ -158,8 +158,9 @@ export function reduce(g, ev) {
     }
 
     // ── תפסנו אחד, ממשיכים לתחנה הבאה ──
+    // אחרי האחרון — גם: חוזרים הביתה ברגל, והוא איתנו. מטבעות כפול.
     case 'CONTINUE':
-      if (g.state !== S.CAUGHT || g.run?.resolved) return g
+      if (g.state !== S.CAUGHT) return g
       return { ...g, state: S.SEARCH, run: { ...g.run, stillMs: 0, encounterMode: null } }
 
     case 'ROUTE_FAILED':
@@ -199,7 +200,7 @@ export function reduce(g, ev) {
       // ── מטבעות ──
       // עוברים דרך מטבע — הוא נאסף. הדף שומע את השינוי ב-coinsTaken ומצלצל.
       const cc = collectCoins(r.coins, pos)
-      const coinsTaken = (r.coinsTaken || 0) + coinsValue(cc.got)
+      const coinsTaken = (r.coinsTaken || 0) + coinsValue(cc.got, r.resolved ? HOME_BONUS : 1)
       const lastCoin = cc.got.length ? { t: ev.t, gold: cc.got.some(c => c.gold), n: cc.got.length } : r.lastCoin
 
       return {
@@ -265,8 +266,8 @@ export function reduce(g, ev) {
     }
 
     case 'PORTAL_OPEN':
-      // הפורטל נפתח רק אחרי התחנה האחרונה. באמצע הדרך — ממשיכים.
-      if (g.state !== S.CAUGHT || !g.run?.resolved) return g
+      // הפורטל נפתח רק אחרי התחנה האחרונה — מיד, או בסוף הדרך הביתה.
+      if (!(g.state === S.CAUGHT || g.state === S.SEARCH) || !g.run?.resolved) return g
       return { ...g, state: S.PORTAL }
 
     case 'PORTAL_ENTERED': {

@@ -13,7 +13,8 @@ import { useRoute } from './hooks/useRoute'
 import { MiniMap } from './ui/MiniMap'
 import { turnsFor, nextCue, cueText } from './engine/turns'
 import { pathLength } from './engine/geo'
-import { loopTargetM, canBuyExtra, WALK_PLAN } from './engine/coins'
+import { loopTargetM, canBuyExtra, WALK_PLAN, heatOf } from './engine/coins'
+import { haversine } from './engine/geo'
 import { sfxCoin } from './engine/audio'
 import 'leaflet/dist/leaflet.css'
 import { unlockAudio, sfxAppear, sfxRustle, sfxCatch, sfxFinish, buzz } from './engine/audio'
@@ -193,6 +194,7 @@ export default function Wilden() {
         {g.state === S.SEARCH && (
           <SearchScreen g={g} view={view} geo={geo} degraded={route.degraded} reason={route.reason} creature={creature}
             onSearch={() => dispatch({ type: 'SEARCH_PRESSED' })}
+            onPortal={() => { sfxAppear(); dispatch({ type: 'PORTAL_OPEN' }) }}
             onAbort={() => dispatch({ type: 'ABORT' })} />
         )}
 
@@ -212,9 +214,14 @@ export default function Wilden() {
               )}
             </div>
             {g.run.resolved ? (
-              <button onClick={() => { sfxAppear(); dispatch({ type: 'PORTAL_OPEN' }) }} style={s.cta}>
-                לפתוח את הפורטל
-              </button>
+              <>
+                <button onClick={() => { sfxAppear(); dispatch({ type: 'CONTINUE' }) }} style={s.cta}>
+                  חוזרים הביתה. הוא איתכם — מטבעות כפול
+                </button>
+                <button onClick={() => { sfxAppear(); dispatch({ type: 'PORTAL_OPEN' }) }} style={{ ...s.cta, ...s.ctaGhost }}>
+                  לפתוח את הפורטל עכשיו
+                </button>
+              </>
             ) : (
               <button onClick={() => { sfxAppear(); dispatch({ type: 'CONTINUE' }) }} style={s.cta}>
                 להמשיך בדרך
@@ -340,7 +347,7 @@ function BrokenWorld({ g, today, onStart }) {
 // המסלול על רחובות אמיתיים, ההתקדמות עליו. הביקון הוא שכבה קטנה בפינה
 // שמתעוררת רק כשקרובים. היצורים לא מצוירים מראש — רק סימנים: עקבות,
 // סימן שאלה, ניצוץ. מגלים מי זה רק כשמגיעים.
-function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, creature }) {
+function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, onPortal, creature }) {
   const r = g.run
   const hot = view.phase === PHASE.VERY_CLOSE || view.phase === PHASE.SAFE_STOP
   const near = hot || view.phase === PHASE.TRACE
@@ -350,8 +357,13 @@ function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, creat
   const cue = r.target ? nextCue(turns, along, r.target.along) : null
   const toTarget = r.target ? Math.max(0, r.target.along - along) : null
   const stopsLeft = r.stops ? r.stops.filter(x => !x.done).length : 1
-  // הסימנים נחשפים רק אחרי שיצאו באמת לדרך — לא בסלון.
-  const reveal = (r.walked || 0) >= PLACE_AFTER
+  // ── חם־קר ──
+  // הסימן על המפה נחשף רק כשמתחממים (מתחת ל-320 מ'). עד אז: מסלול, רחובות,
+  // ומד חום שמתחזק. סיכה מהרגע הראשון הורגת את המתח.
+  const distToTarget = r.target && r.pos ? haversine(r.pos, r.target) : null
+  const heat = r.target && !r.resolved ? heatOf(distToTarget) : null
+  const reveal = (r.walked || 0) >= PLACE_AFTER && !!heat && heat.t >= 0.65
+  const homeward = !!r.resolved
 
   return (
     <>
@@ -361,18 +373,31 @@ function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, creat
           reveal={reveal} known={g.progress.creatures} creatureImg={creature?.sprites?.hero}
           coins={r.coins} height="100%" />
 
-        {/* מונה המטבעות: קופץ בכל גלינג */}
-        <div key={r.coinsTaken || 0} style={s.coinHud}>🪙 {r.coinsTaken || 0}</div>
+        {/* מונה המטבעות: קופץ בכל גלינג. בדרך הביתה — כפול. */}
+        <div key={r.coinsTaken || 0} style={s.coinHud}>🪙 {r.coinsTaken || 0}{homeward && <span style={{ fontSize: 12 }}> ×2</span>}</div>
 
         {/* ההוראה, מעל המפה */}
         <div style={s.navOverlay}>
-          <p style={s.navLine}>{cue ? cueText(cue, 'הסימן') : reveal ? 'ממשיכים לפי המסלול.' : 'יוצאים לדרך.'}</p>
+          <p style={s.navLine}>
+            {homeward ? (cue ? cueText(cue, 'הבית') : 'חוזרים הביתה. הוא איתכם.')
+              : cue ? cueText(cue, reveal ? 'הסימן' : 'הפנייה הבאה')
+              : 'יוצאים לדרך.'}
+          </p>
           <p style={s.navSub}>
-            {toTarget != null && reveal && <>עד הסימן: <b>{fmtM(toTarget)}</b> · </>}
             הביתה: <b>{fmtM(Math.max(0, total - along))}</b>
-            {r.stops && reveal && <> · סימנים בדרך: <b>{stopsLeft}</b></>}
+            {r.stops && !homeward && <> · יצורים בדרך: <b>{stopsLeft}</b></>}
+            {homeward && <> · מטבעות כפול</>}
           </p>
         </div>
+
+        {/* מד החום: קר → רותח. בלי מספרים. */}
+        {heat && (
+          <div style={s.heat}>
+            <div style={s.heatBar}><div style={{ ...s.heatFill, width: `${Math.round(heat.t * 100)}%`,
+              background: heat.t >= 0.85 ? '#E0523A' : heat.t >= 0.65 ? '#E5A342' : heat.t >= 0.45 ? '#D9C25A' : '#6C9BD1' }} /></div>
+            <span style={{ ...s.heatWord, color: heat.t >= 0.85 ? '#F0A08C' : heat.t >= 0.65 ? '#F0C069' : C.ink }}>{heat.word}</span>
+          </div>
+        )}
 
         {/* הביקון: שכבה על המפה, רק כשקרובים */}
         {near && (
@@ -382,8 +407,14 @@ function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, creat
           </div>
         )}
 
-        {view.canSearch && (
+        {view.canSearch && !homeward && (
           <button onClick={onSearch} style={s.searchOverlay}>👁 משהו כאן. לחפש</button>
+        )}
+        {homeward && (
+          <button onClick={onPortal} style={{ ...s.searchOverlay,
+            ...(r.home && r.pos && haversine(r.pos, r.home) > 60 ? { background: 'rgba(15,21,15,.85)', color: C.ink, boxShadow: 'none' } : {}) }}>
+            {r.home && r.pos && haversine(r.pos, r.home) > 60 ? 'לפתוח את הפורטל כבר עכשיו' : '🏠 הגענו. לפתוח את הפורטל'}
+          </button>
         )}
         {!view.canSearch && view.phase === PHASE.VERY_CLOSE && (
           <p style={s.stopOverlay}>הסימן כאן. עצרו במקום בטוח.</p>
@@ -501,6 +532,11 @@ const s = {
   mapWrap: { position: 'relative', height: 'calc(100dvh - 190px)', minHeight: 420, margin: '-6px 0 10px' },
   navOverlay: { position: 'absolute', top: 10, insetInline: 10, zIndex: 600, background: 'rgba(15,21,15,.88)',
     border: `1px solid ${C.line}`, borderRadius: 14, padding: '12px 14px', backdropFilter: 'blur(6px)' },
+  heat: { position: 'absolute', top: 96, insetInlineStart: 12, zIndex: 650, display: 'flex', alignItems: 'center', gap: 8,
+    background: 'rgba(15,21,15,.85)', border: `1px solid ${C.line}`, borderRadius: 999, padding: '6px 12px 6px 8px' },
+  heatBar: { width: 84, height: 10, borderRadius: 999, background: '#243024', overflow: 'hidden' },
+  heatFill: { height: '100%', borderRadius: 999, transition: 'width .8s ease, background .8s ease' },
+  heatWord: { fontSize: 15, fontWeight: 900 },
   coinHud: { position: 'absolute', top: 96, insetInlineEnd: 12, zIndex: 650, padding: '6px 12px', borderRadius: 999,
     background: '#E5A342', color: '#14200F', fontWeight: 900, fontSize: 17, boxShadow: '0 3px 12px rgba(0,0,0,.35)',
     animation: 'wildenCoinPop .35s ease-out' },

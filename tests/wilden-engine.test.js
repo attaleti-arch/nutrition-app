@@ -136,6 +136,27 @@ test('תחנות: כמה יצורים לאורך המסלול, קבועים מה
   }
 })
 
+test('תחנות: היצור בסוף, לא באמצע — רוב ההליכה לפני התפיסה', () => {
+  const one = started()
+  const total = 60 * 20
+  assert.equal(one.run.stops.length, 1)
+  assert.ok(one.run.stops[0].along / total >= 0.7, `יצור יחיד ב-~80% מהדרך, התקבל ${(one.run.stops[0].along / total).toFixed(2)}`)
+  const two = started(['nimi', 'dabashon'])
+  assert.ok(two.run.stops[1].along / total >= 0.75, 'השני עדיין לקראת הסוף')
+  assert.ok(two.run.stops[0].along / total >= 0.4, 'והראשון לא ליד הבית')
+})
+
+test('הדרך הביתה שווה כפול', () => {
+  let g = started()
+  g = walk(g, 100)
+  const before = g.run.coinsTaken
+  g = { ...g, run: { ...g.run, resolved: true } }        // אחרי התפיסה האחרונה
+  g = walk(g, 300, { t0: 999000 })
+  const gained = g.run.coinsTaken - before
+  const taken = g.run.coins.filter(c => c.taken && c.along > 100 && c.along <= 300 && !c.gold).length
+  assert.ok(gained >= taken * 2, `${taken} מטבעות בדרך הביתה שווים לפחות ${taken * 2}, התקבל ${gained}`)
+})
+
 test('תחנות: מסלול קצר מקבל פחות תחנות, לא תחנות צפופות', () => {
   const short = Array.from({ length: 21 }, (_, i) => destination(HOME, 0, i * 20))   // 400 מ'
   let g = initial()
@@ -251,7 +272,9 @@ test('מסע 1 מקצה לקצה: שלוש תחנות, ואז הפורטל', () 
   g = reduce(g, { type: 'CONTINUE' })
   g = catchHere(g, 700000)
   assert.equal(g.run.resolved, true, 'התחנה האחרונה — המסע הושלם')
-  assert.equal(reduce(g, { type: 'CONTINUE' }).state, S.CAUGHT, 'אין לאן להמשיך — רק הפורטל')
+  const home = reduce(g, { type: 'CONTINUE' })
+  assert.equal(home.state, S.SEARCH, 'אפשר לחזור הביתה ברגל, והוא איתנו')
+  assert.equal(reduce(home, { type: 'PORTAL_OPEN' }).state, S.PORTAL, 'והפורטל נפתח גם מהדרך')
 
   g = run(g, [
     { type: 'ADD_LOOT', kind: 'wood' },
@@ -703,7 +726,8 @@ test('הליכה: מטר וחצי בין דגימות עדיין נספר', () =
 })
 
 test('הליכה: הביקון מתעורר תוך כדי, לא אחרי', () => {
-  let g = strollTo(started(), 300)
+  // שלוש תחנות: הראשונה ב-~420 מ'. (יצור יחיד יושב ב-80% — רחוק בכוונה.)
+  let g = strollTo(started(THREE), 300)
   assert.ok(g.run.target, 'היעד הונח')
   const v = beaconView(g)
   assert.notEqual(v.phase, PHASE.SIGNAL_WEAK,

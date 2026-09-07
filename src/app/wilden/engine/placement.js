@@ -48,9 +48,14 @@ export function placeStops(path, count = STOPS, { creatures = ['nimi'], buffer =
   const usable = Math.max(0, total - 2 * buffer)
   const n = Math.max(1, Math.min(count, Math.floor(usable / 200) || 1))   // לפחות 200 מ' בין תחנות
   const list = Array.isArray(creatures) && creatures.length ? creatures : ['nimi']
+  // היצור בסוף, לא באמצע. "הלכתי שבע דקות ומצאתי את נימי — למה שילד ימשיך?"
+  // רוב ההליכה לפני התפיסה, וחם־קר שמתחזק לאורכה. יצור אחד: ב-80% מהדרך.
+  // שניים: 45% ו-85%. שלושה: 30%, 60%, 85%.
+  const FRACS = { 1: [0.8], 2: [0.45, 0.85], 3: [0.3, 0.6, 0.85] }
+  const fr = FRACS[n] || Array.from({ length: n }, (_, i) => (i + 1) / (n + 1))
   const stops = []
   for (let i = 0; i < n; i++) {
-    const at = buffer + (usable * (i + 1)) / (n + 1)
+    const at = buffer + usable * fr[i]
     const p = pointAlong(path, at)
     if (!p) continue
     stops.push({ lat: p.point.lat, lng: p.point.lng, along: at, creature: list[i % list.length], done: false })
