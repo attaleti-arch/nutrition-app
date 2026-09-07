@@ -52,7 +52,7 @@ export const CREATURES = {
     // אנימציות: מרחף בקוד. הוא דבורה — באוויר, לא על הרצפה.
     model: '/creatures/dabashon/dabashon.glb',
     ios: null,
-    clip: null,
+    clip: '/creatures/dabashon/caught.mp4',
     sprites: null,                        // אין עדיין גזירה דו-ממדית
     heightM: 0.40,
     arMode: AR_MODE.SKY,
