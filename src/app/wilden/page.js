@@ -103,8 +103,8 @@ export default function Wilden() {
         <Stage
           creature={creature}
           onMode={m => dispatch({ type: m === 'CAMERA' ? 'CAMERA_READY' : 'CAMERA_DENIED' })}
-          onFound={() => { sfxCatch(); buzz([40, 60, 40, 140]); dispatch({ type: 'ENCOUNTER_RESOLVED', befriended: true }) }}
-          onGiveUp={() => dispatch({ type: 'ENCOUNTER_RESOLVED', befriended: false })}
+          onFound={() => dispatch({ type: 'ENCOUNTER_RESOLVED', caught: true })}
+          onGiveUp={() => dispatch({ type: 'ENCOUNTER_RESOLVED', caught: false })}
         />
       )}
 
@@ -148,11 +148,11 @@ export default function Wilden() {
             onAbort={() => dispatch({ type: 'ABORT' })} />
         )}
 
-        {g.state === S.BEFRIEND && (
-          <Panel eyebrow="מפגש">
+        {g.state === S.CAUGHT && (
+          <Panel eyebrow="נתפס!">
             <div style={{ textAlign: 'center', margin: '10px 0 18px' }}>
               <p style={{ fontSize: 30, fontWeight: 900, margin: 0, color: C.amber }}>{creature?.name}</p>
-              <p style={{ ...s.body, marginTop: 8 }}>הוא לא ברח. הוא הלך אחריכם.</p>
+              <p style={{ ...s.body, marginTop: 8 }}>תפסתם אותו! הוא באוסף שלכם.</p>
             </div>
             <button onClick={() => { sfxAppear(); dispatch({ type: 'PORTAL_OPEN' }) }} style={s.cta}>
               לפתוח את הפורטל

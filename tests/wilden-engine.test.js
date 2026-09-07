@@ -197,7 +197,7 @@ test('מצלמה נדחתה: המפגש קורה בכל זאת, והיצור ל�
   assert.equal(g.run.resolved, false, 'היצור לא התקבל אוטומטית')
 
   // וגם כאן אפשר להיכשל
-  g = reduce(g, { type: 'ENCOUNTER_RESOLVED', befriended: false })
+  g = reduce(g, { type: 'ENCOUNTER_RESOLVED', caught:false })
   assert.equal(g.state, S.SEARCH, 'כישלון מחזיר לחיפוש, לא מוחק כלום')
 })
 
@@ -221,7 +221,7 @@ test('מסע 1 מקצה לקצה', () => {
     { type: 'SEARCH_PRESSED' },
     { type: 'CAMERA_READY' },
     { type: 'ADD_LOOT', kind: 'wood' },
-    { type: 'ENCOUNTER_RESOLVED', befriended: true },
+    { type: 'ENCOUNTER_RESOLVED', caught:true },
     { type: 'PORTAL_OPEN' },
     { type: 'PORTAL_ENTERED' },
   ])
@@ -246,7 +246,7 @@ test('משימה סיפורית אחת ביום — אבל אין נעילה ש�
   g = reduce(g, { type: 'FIX', lat: at.lat, lng: at.lng, acc: 8, t: 505000 })
   g = run(g, [
     { type: 'SEARCH_PRESSED' }, { type: 'CAMERA_READY' },
-    { type: 'ENCOUNTER_RESOLVED', befriended: true },
+    { type: 'ENCOUNTER_RESOLVED', caught:true },
     { type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED' },
     { type: 'CLUE_SEEN' }, { type: 'RUN_CLOSED' },
   ])
@@ -428,8 +428,15 @@ test('נימי: הפעימות — שביל, מציץ, בורח עם קו, מת�
   assert.equal(r.state.phase, 'APPROACH')
   assert.ok(nimi.targets(r.state)[0].scale > 1)
 
+  // תפיסה: הנעילה על היצור הקרוב פותחת את הרגע, לא סוגרת אותו.
   r = nimi.onLock(r.state, 'nimi')
+  assert.equal(nimi.isDone(r.state), false, 'נעילה לבד לא תופסת')
+  assert.equal(r.state.ready, true, 'אבל פותחת את כפתור התפיסה')
+  assert.equal(r.feedback, 'ready')
+  assert.deepEqual(nimi.onCatch(nimi.start(0)).state.phase, 'TRAIL', 'אי אפשר לתפוס לפני שהוא קרוב')
+  r = nimi.onCatch(r.state)
   assert.equal(nimi.isDone(r.state), true)
+  assert.equal(r.feedback, 'catch')
 })
 
 test('נימי: אי אפשר לסיים בלי לקרוא את השביל', () => {

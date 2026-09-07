@@ -15,7 +15,7 @@ export const S = {
   ROUTE_FAILED: 'ROUTE_FAILED',
   SEARCH: 'SEARCH',                 // הליכה. שלב הביקון נגזר, לא נשמר.
   ENCOUNTER: 'ENCOUNTER',           // מצלמה או סיפור — ראה encounterMode
-  BEFRIEND: 'BEFRIEND',
+  CAUGHT: 'CAUGHT',           // היצור נתפס. החלטה שלה: תפיסה, לא ידידות.
   PORTAL: 'PORTAL',
   HOME_RETURN: 'HOME_RETURN',
   CLUE: 'CLUE',
@@ -31,7 +31,7 @@ export const RUN = {
 }
 
 // שני מצבי מפגש. "אין מצלמה" אינו דילוג על המפגש: אותו controller,
-// אותה בעיה, אותו befriending — בסביבה משחקית במקום פיד מצלמה.
+// אותה בעיה, אותה תפיסה — בסביבה משחקית במקום פיד מצלמה.
 // היצור אף פעם לא מתקבל בחינם.
 export const MODE = { CAMERA: 'CAMERA', STORY: 'STORY' }
 
@@ -205,11 +205,11 @@ export function reduce(g, ev) {
 
     case 'ENCOUNTER_RESOLVED': {
       if (g.state !== S.ENCOUNTER) return g
-      if (!ev.befriended) {
+      if (!ev.caught) {
         // נכשל אינו "איבדת" — היצור עדיין שם, והחיפוש ממשיך.
         return { ...g, state: S.SEARCH, run: { ...g.run, stillMs: 0, encounterMode: null } }
       }
-      return { ...g, state: S.BEFRIEND, run: { ...g.run, resolved: true } }
+      return { ...g, state: S.CAUGHT, run: { ...g.run, resolved: true } }
     }
 
     case 'PORTAL_OPEN':

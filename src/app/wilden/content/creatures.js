@@ -23,7 +23,7 @@ export const AR_MODE = {
 
 const CLIPS = {
   idle: 'IDLE', move: 'MOVE', alert: 'ALERT', hide: 'HIDE',
-  appear: 'APPEAR', interact: 'INTERACT', befriend: 'BEFRIEND',
+  appear: 'APPEAR', interact: 'INTERACT', catch: 'CATCH',
   celebrate: 'CELEBRATE', sleep: 'SLEEP',
 }
 

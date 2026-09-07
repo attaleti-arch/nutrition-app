@@ -155,6 +155,27 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
   const done = cs && ctrl ? ctrl.isDone(cs) : false
   const copy = cs && ctrl ? ctrl.copy(cs) : { line: '', sub: '' }
 
+  // ── תפיסה ──
+  // ההחלטה שלה: תפיסה ולא ידידות, כי זה ילדים. הרגע עצמו חייב להיות של
+  // הילד — כפתור גדול, או החלקה כלפי מעלה על המסך כמו זריקה. שניהם
+  // עושים אותו דבר; הכפתור קיים כדי שגם בלי מגע חלק זה יעבוד.
+  const canCatch = !!cs?.ready && !done
+  const doCatch = () => {
+    if (!ctrl?.onCatch) return
+    setCs(prev => {
+      const r = ctrl.onCatch(prev)
+      if (r.state !== prev) fire(r.feedback, setFlash)
+      return r.state
+    })
+  }
+  const touchY = useRef(null)
+  const onTouchStart = e => { touchY.current = e.touches?.[0]?.clientY ?? null }
+  const onTouchEnd = e => {
+    const y0 = touchY.current; touchY.current = null
+    const y1 = e.changedTouches?.[0]?.clientY
+    if (canCatch && y0 != null && y1 != null && y0 - y1 > 70) doCatch()
+  }
+
   // ── היצור עצמו ──
   // מחושב פעם אחת: גם הספרייט בתוך היעד וגם שכבת המודל צריכים את זה.
   const ct = placed.find(t => t.kind === 'creature') || null
@@ -167,7 +188,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
   const hideSprite = showModel && modelShown
 
   return (
-    <div style={S.wrap}>
+    <div style={S.wrap} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       {camState === 'on' && <video ref={videoRef} playsInline muted autoPlay style={S.video} />}
       {camState === 'denied' && <StoryBackdrop />}
       {camState === 'starting' && <div style={S.center}><p style={S.dim}>פותחים מצלמה…</p></div>}
@@ -218,7 +239,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
           x={done ? 0 : ct.dx / (FOV / 2)}
           scale={done ? 1.35 : ct.scale || 1}
           faceLeft={!done && ctFaceLeft}
-          phase={done ? 'befriend' : (ct.scale || 1) > 1.2 ? 'appear' : 'move'}
+          phase={done ? 'catch' : (ct.scale || 1) > 1.2 ? 'appear' : 'move'}
           done={done}
           onShown={() => setModelShown(true)}
           onFailed={() => setModelFailed(true)} />
@@ -228,7 +249,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
         <div style={S.doneWrap}>
           <CreatureFigure creature={creature} done scale={1.35} hideSprite={hideSprite} />
           <p style={S.foundName}>{creature?.name}</p>
-          <p style={S.foundLine}>הוא הלך אחריכם.</p>
+          <p style={S.foundLine}>תפסתם אותו!</p>
         </div>
       )}
 
@@ -236,6 +257,9 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
         <div style={S.hint}>
           <p style={S.hintLine}>{flash || copy.line}</p>
           {copy.sub && !flash && <p style={S.hintSub}>{copy.sub}</p>}
+          {canCatch && (
+            <button onClick={doCatch} style={S.catchBtn}>לתפוס!</button>
+          )}
           {!hasSensors && (
             <input type="range" min="0" max="359" value={swipe} aria-label="סריקה"
               onChange={e => setSwipe(Number(e.target.value))} style={S.scan} />
@@ -258,7 +282,8 @@ function fire(kind, setFlash) {
     run: { t: 'הצעדים מתרחקים — הוא רץ לשם!', buzz: [40, 60, 40], sfx: sfxAppear },
     flee: { t: 'הוא ברח!', buzz: [70, 50, 70], sfx: sfxRustle },
     near: { t: 'הוא נעצר.', buzz: [40], sfx: sfxAppear },
-    befriend: { t: '', buzz: [40, 60, 40, 140], sfx: sfxCatch },
+    ready: { t: 'עכשיו!', buzz: [60, 40, 60], sfx: sfxAppear },
+    catch: { t: '', buzz: [40, 60, 40, 140], sfx: sfxCatch },
   }
   const m = map[kind]
   if (!m) return
@@ -368,6 +393,11 @@ const S = {
   ask: { position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', alignContent: 'center',
     gap: 12, background: 'rgba(15,21,15,.82)', padding: 24, textAlign: 'center', zIndex: 5 },
   askLine: { color: '#E9E5D8', fontSize: 19, fontWeight: 700, margin: 0 },
+  // כפתור התפיסה: גדול, אחד, במרכז. ילד לא צריך לקרוא כדי למצוא אותו.
+  catchBtn: { marginTop: 14, padding: '16px 44px', borderRadius: 999, border: 'none',
+    background: '#E5A342', color: '#14200F', fontFamily: 'inherit', fontSize: 22, fontWeight: 900,
+    cursor: 'pointer', boxShadow: '0 6px 24px rgba(229,163,66,.45)', pointerEvents: 'auto',
+    animation: 'wildenBreathe 1s ease-in-out infinite' },
   askBtn: { padding: '13px 26px', borderRadius: 12, border: 'none', background: '#E5A342',
     color: '#14200F', fontFamily: 'inherit', fontSize: 17, fontWeight: 800, cursor: 'pointer' },
   foundName: { color: '#E5A342', fontSize: 28, fontWeight: 900, margin: '6px 0 0',

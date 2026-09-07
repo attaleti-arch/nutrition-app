@@ -114,7 +114,9 @@ export default {
       case PHASE.CHASE:
         return { line: 'הוא ברח.', sub: 'הוא השאיר קו.' }
       case PHASE.APPROACH:
-        return { line: 'הוא נעצר.', sub: 'הוא מסתכל עליכם.' }
+        return s.ready
+          ? { line: 'עכשיו!', sub: 'תפסו אותו.' }
+          : { line: 'הוא נעצר.', sub: 'תחזיקו אותו במרכז.' }
       default:
         return { line: '', sub: '' }
     }
@@ -153,8 +155,17 @@ export default {
     }
 
     if (s.phase === PHASE.CHASE) return { state: { ...s, phase: PHASE.APPROACH }, feedback: 'near' }
-    if (s.phase === PHASE.APPROACH) return { state: { ...s, phase: PHASE.DONE }, feedback: 'befriend' }
+    // ── תפיסה ──
+    // החלטה שלה, אחרי שראתה ילדים: תפיסה ולא ידידות. הנעילה על היצור
+    // הקרוב לא מסיימת את המפגש — היא פותחת את רגע התפיסה. הילד צריך
+    // לעשות משהו: כפתור או החלקה כלפי מעלה. onCatch סוגר.
+    if (s.phase === PHASE.APPROACH) return { state: { ...s, ready: true }, feedback: s.ready ? null : 'ready' }
     return { state: s }
+  },
+
+  onCatch(s) {
+    if (s.phase !== PHASE.APPROACH) return { state: s }
+    return { state: { ...s, phase: PHASE.DONE }, feedback: 'catch' }
   },
 
   isDone: s => s.phase === PHASE.DONE,
