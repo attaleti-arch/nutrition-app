@@ -234,12 +234,13 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
 
       {/* המודל התלת-ממדי, אם יש: שכבה קבועה על כל הבמה. הדמות ממוקמת
           דרך המצלמה. הצל, הפס וטבעת הנעילה נשארים ביעד עצמו למעלה. */}
-      {showModel && (
+      {useModel && (
         <ModelLayer creature={creature}
-          x={done ? 0 : ct.dx / (FOV / 2)}
-          scale={done ? 1.35 : ct.scale || 1}
+          visible={showModel}
+          x={done || !ct ? 0 : ct.dx / (FOV / 2)}
+          scale={done ? 1.35 : ct?.scale || 1}
           faceLeft={!done && ctFaceLeft}
-          phase={done ? 'catch' : (ct.scale || 1) > 1.2 ? 'appear' : 'move'}
+          phase={done ? 'catch' : (ct?.scale || 1) > 1.2 ? 'appear' : 'move'}
           done={done}
           onShown={() => setModelShown(true)}
           onFailed={() => setModelFailed(true)} />

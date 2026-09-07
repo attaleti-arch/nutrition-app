@@ -73,7 +73,10 @@ function Sprite({ sprites, peeking, faceLeft, done, scale = 1 }) {
 //   scale   — כמו בספרייט. 1.6 = קרוב.
 //   faceLeft, phase, done — כמו בספרייט.
 //   onShown — המודל נטען ומוצג: הספרייט יכול להיעלם.
-export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, onShown, onFailed }) {
+//   visible — היצור בתוך חרוט הראייה. השכבה נשארת מחוברת גם כשלא, ורק
+//             נעלמת: פירוק וחיבור מחדש של model-viewer באמצע רינדור זרק
+//             שגיאות פנימיות וטען את המודל מחדש בכל סיבוב של הטלפון.
+export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, visible = true, onShown, onFailed }) {
   const src = useModelSrc(creature)
   const ready = useModelViewer(!!src)
   const ref = useRef(null)
@@ -104,6 +107,50 @@ export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, 
     const avail = el.availableAnimations || []
     if (avail.length) el.animationName = avail.includes(wanted) ? wanted : avail[0]
   }, [wanted])
+
+  // ── תנועה בלי שלד ──
+  // המודל של Meshy הגיע בלי אנימציות, ואין כלי אוטומטי שעושה שלד ליצור
+  // על ארבע. עד שמאייש יעשה את זה, הגוף כולו זז: נשימה כשעומד, קפיצות
+  // קצרות כשבורח, נדנוד קל של הגוף כשמסתכל על הילד. לא רגליים שהולכות —
+  // אבל יצור חי ולא פסל. נכבה מעצמו ברגע שיש קליפים בקובץ.
+  useEffect(() => {
+    const el = ref.current
+    if (!el || !base || !visible) return
+    if ((el.availableAnimations || []).length) return
+    if (typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    const t0 = performance.now()
+    let raf = 0
+    const loop = now => {
+      // כותבים לרכיב רק כשהוא באמת מחובר ועם מודל: כתיבה אחרי ניתוק
+      // מתפוצצת בתוך model-viewer בפריים הבא, מחוץ ל-try/catch.
+      if (!el.isConnected || !el.loaded) { raf = requestAnimationFrame(loop); return }
+      const t = (now - t0) / 1000
+      let sy = 1, pitch = 0, yawWag = 0
+      if (phase === 'move') {
+        // ריצה: קפיצות של ~2.4 בשנייה, הגוף נוטה קדימה
+        const hop = Math.abs(Math.sin(t * Math.PI * 2.4))
+        sy = 1 + hop * 0.05
+        pitch = -4 + hop * 5
+        yawWag = Math.sin(t * Math.PI * 4.8) * 2
+      } else if (phase === 'appear') {
+        // נעצר ומסתכל: נשימה, וסיבוב קל של הגוף לצדדים כמו שמרחרח
+        sy = 1 + Math.sin(t * Math.PI * 1.2) * 0.02
+        yawWag = Math.sin(t * Math.PI * 0.6) * 6
+        pitch = Math.sin(t * Math.PI * 0.9) * 2
+      } else {
+        // נתפס: נשימה רגועה ושמחה קטנה
+        sy = 1 + Math.sin(t * Math.PI * 1.4) * 0.025
+        yawWag = Math.sin(t * Math.PI * 2.2) * 3
+      }
+      try {
+        el.orientation = `0deg ${pitch.toFixed(2)}deg ${yawWag.toFixed(2)}deg`
+        el.scale = `1 ${sy.toFixed(3)} 1`
+      } catch (e) { /* הרכיב נעלם באמצע פריים */ }
+      raf = requestAnimationFrame(loop)
+    }
+    raf = requestAnimationFrame(loop)
+    return () => cancelAnimationFrame(raf)
+  }, [base, phase, visible])
 
   if (!src || !ready) return null
 
@@ -159,7 +206,7 @@ export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, 
       shadow-intensity="0.9"
       shadow-softness="0.8"
       exposure="1.05"
-      style={{ ...F.layer, filter: done ? GLOW_DONE : 'none' }}
+      style={{ ...F.layer, filter: done ? GLOW_DONE : 'none', opacity: visible ? 1 : 0 }}
     />
   )
 }
@@ -185,7 +232,8 @@ const F = {
   // כפול (DPR 2) זז שמאלה בחצי רוחבו: המודל נעלם או מופיע במקום הלא נכון.
   // שעתיים של חיפוש, שורה אחת של תיקון.
   layer: { position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block',
-    background: 'transparent', pointerEvents: 'none', zIndex: 2, direction: 'ltr' },
+    background: 'transparent', pointerEvents: 'none', zIndex: 2, direction: 'ltr',
+    transition: 'opacity .25s' },
   shadow: { position: 'absolute', bottom: '-1.2vh', left: '18%', right: '18%', height: '4vh',
     borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(0,0,0,.42), rgba(0,0,0,0) 70%)' },
   // הפס שנשאר אחרי ריצה: כיוון, לא ניחוש.
