@@ -466,6 +466,20 @@ test('נימי: הפעימות — שביל, מציץ, בורח עם קו, מת�
   assert.equal(r.feedback, 'catch')
 })
 
+test('נימי: לוחצים עליו — הדרך שילד מבין מיד', () => {
+  let s = nimi.start(0)
+  assert.deepEqual(nimi.onTap(s).state, s, 'על השביל אין על מי ללחוץ')
+  s = nimi.onLock(s, s.branches.find(b => b.live).id).state       // → מציץ
+  let r = nimi.onTap(s)
+  assert.equal(r.state.phase, 'CHASE', 'לחיצה על המציץ — הוא בורח')
+  assert.equal(r.feedback, 'flee')
+  r = nimi.onTap(r.state)
+  assert.equal(r.state.phase, 'APPROACH', 'מצאו אותו ולחצו — הוא נעצר')
+  r = nimi.onTap(r.state)
+  assert.equal(nimi.isDone(r.state), true, 'לחיצה שלישית — נתפס')
+  assert.equal(r.feedback, 'catch')
+})
+
 test('נימי: אי אפשר לסיים בלי לקרוא את השביל', () => {
   let s = nimi.start(0)
   for (const b of s.branches.filter(x => !x.live)) s = nimi.onLock(s, b.id).state

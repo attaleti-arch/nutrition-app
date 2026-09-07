@@ -110,13 +110,11 @@ export default {
           ? { line: 'מישהו עבר כאן.', sub: 'השביל מתפצל. לכו לאורך אחד מהם.' }
           : { line: 'עוד יש שביל אחד.', sub: 'תראו לאן הצעדים ממשיכים.' }
       case PHASE.PEEK:
-        return { line: 'משהו זז שם.', sub: 'לאט.' }
+        return { line: 'משהו מציץ שם.', sub: 'לחצו עליו!' }
       case PHASE.CHASE:
-        return { line: 'הוא ברח.', sub: 'הוא השאיר קו.' }
+        return { line: 'הוא ברח!', sub: 'מצאו אותו ולחצו עליו.' }
       case PHASE.APPROACH:
-        return s.ready
-          ? { line: 'עכשיו!', sub: 'תפסו אותו.' }
-          : { line: 'הוא נעצר.', sub: 'כוונו אליו ולחצו לתפוס.' }
+        return { line: 'הוא נעצר.', sub: 'לחצו עליו כדי לתפוס!' }
       default:
         return { line: '', sub: '' }
     }
@@ -166,6 +164,17 @@ export default {
   onCatch(s) {
     if (s.phase !== PHASE.APPROACH) return { state: s }
     return { state: { ...s, phase: PHASE.DONE }, feedback: 'catch' }
+  },
+
+  // ── לחיצה על היצור ──
+  // "זה חייב להיות יותר פשוט. דרך ללכוד שהילד מיד יבין." — לוחצים עליו.
+  // מציץ → בורח. בורח → נעצר. נעצר → נתפס. שלוש לחיצות, כל אחת עם מרדף
+  // קטן באמצע כי הוא זז. הנעילה במבט נשארת כדרך נוספת, לא כתנאי.
+  onTap(s, rng = Math.random) {
+    if (s.phase === PHASE.PEEK) return this.onLock(s, 'nimi', rng)
+    if (s.phase === PHASE.CHASE) return { state: { ...s, phase: PHASE.APPROACH }, feedback: 'near' }
+    if (s.phase === PHASE.APPROACH) return this.onCatch(s)
+    return { state: s }
   },
 
   isDone: s => s.phase === PHASE.DONE,

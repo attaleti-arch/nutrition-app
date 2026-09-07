@@ -182,6 +182,15 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
       return r.state
     })
   }
+  // לחיצה על היצור עצמו — הדרך הפשוטה. הבקר מחליט מה קורה בכל שלב.
+  const doTap = () => {
+    if (!ctrl?.onTap) return
+    setCs(prev => {
+      const r = ctrl.onTap(prev)
+      if (r.state !== prev) fire(r.feedback, setFlash)
+      return r.state
+    })
+  }
   const touchY = useRef(null)
   const onTouchStart = e => { touchY.current = e.touches?.[0]?.clientY ?? null }
   const onTouchEnd = e => {
@@ -213,6 +222,12 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
     <div style={S.wrap} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
       {camState === 'on' && <video ref={videoRef} playsInline muted autoPlay style={S.video} />}
       {camState === 'denied' && <StoryBackdrop />}
+      {camState === 'denied' && !done && (
+        <p style={S.camNote}>
+          בלי מצלמה הפעם. אם פתחתם את הקישור מוואטסאפ או מאפליקציה אחרת — פתחו אותו בספארי,
+          ושם היצור יופיע בתוך הרחוב שלכם.
+        </p>
+      )}
       {camState === 'starting' && <div style={S.center}><p style={S.dim}>פותחים מצלמה…</p></div>}
 
       {/* הרשאת חיישנים באייפון חייבת לצאת מלחיצה אמיתית, אחרת ספארי
@@ -253,6 +268,16 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
           </div>
         )
       })}
+
+      {/* אזור הלחיצה על היצור: גדול, שקוף, במקום שבו הוא נראה. ילד לוחץ
+          על הדמות — לא על כפתור. */}
+      {!done && ct && ctVisible && (
+        <button aria-label="לחצו על היצור" onClick={doTap} style={{
+          ...S.tapArea,
+          left: `${50 + (Math.max(-0.6, Math.min(0.6, ct.dx / (FOV / 2)))) * 50}%`,
+          top: `${52 - ct.dy * 1.5}%`,
+        }} />
+      )}
 
       {/* המודל התלת-ממדי, אם יש: שכבה קבועה על כל הבמה. הדמות ממוקמת
           דרך המצלמה. הצל, הפס וטבעת הנעילה נשארים ביעד עצמו למעלה. */}
@@ -406,6 +431,9 @@ const S = {
   center: { position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' },
   dim: { color: '#9BA495', fontSize: 15 },
   node: { position: 'absolute', transition: 'opacity .2s, transform .35s', pointerEvents: 'none' },
+  tapArea: { position: 'absolute', width: '54vw', height: '46vh', transform: 'translate(-50%,-50%)',
+    background: 'transparent', border: 'none', padding: 0, zIndex: 4, cursor: 'pointer',
+    WebkitTapHighlightColor: 'transparent' },
   lock: { position: 'absolute', inset: 6, width: 'calc(100% - 12px)', height: 'calc(100% - 12px)' },
   doneWrap: { position: 'absolute', inset: 0, display: 'grid', placeItems: 'center',
     alignContent: 'center', gap: 2, zIndex: 3, pointerEvents: 'none' },
@@ -419,6 +447,9 @@ const S = {
     gap: 12, background: 'rgba(15,21,15,.82)', padding: 24, textAlign: 'center', zIndex: 5 },
   askLine: { color: '#E9E5D8', fontSize: 19, fontWeight: 700, margin: 0 },
   // כפתור התפיסה: גדול, אחד, במרכז. ילד לא צריך לקרוא כדי למצוא אותו.
+  camNote: { position: 'absolute', top: 72, insetInline: 16, zIndex: 5, margin: 0, padding: '8px 12px',
+    borderRadius: 10, background: 'rgba(15,21,15,.7)', color: '#C3C8BA', fontSize: 13, lineHeight: 1.5,
+    textAlign: 'center' },
   catchBtn: { marginTop: 14, padding: '16px 44px', borderRadius: 999, border: 'none',
     background: '#E5A342', color: '#14200F', fontFamily: 'inherit', fontSize: 22, fontWeight: 900,
     cursor: 'pointer', boxShadow: '0 6px 24px rgba(229,163,66,.45)', pointerEvents: 'auto',
