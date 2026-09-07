@@ -35,6 +35,7 @@ export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approa
         <div style={{ ...F.streak, ...(streakSide === 'left' ? F.streakL : F.streakR) }} />
       )}
       {!flying && <div style={F.shadow} />}
+      {done && <div style={F.glow} />}
       {!hideSprite && (
         <Sprite sprites={creature?.sprites} peeking={peeking} faceLeft={faceLeft} done={done} scale={scale} />
       )}
@@ -94,7 +95,10 @@ export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, 
       const t = el.getCameraTarget()
       const o = el.getCameraOrbit()
       const d = el.getDimensions()
-      setBase({ target: { x: t.x, y: t.y, z: t.z }, radius: o.radius, fov: el.getFieldOfView(), height: d.y })
+      // הגודל נמדד לפי הציר הגדול ביותר, לא רק הגובה: דבורה עם כנפיים
+      // רחבה יותר משהיא גבוהה, ולפי גובה בלבד היא נחתכה בקצה המסך.
+      setBase({ target: { x: t.x, y: t.y, z: t.z }, radius: o.radius, fov: el.getFieldOfView(),
+        height: Math.max(d.y, d.x * 0.85, d.z * 0.85) })
       onShown?.()
     }
     const onError = () => onFailed?.()
@@ -189,7 +193,8 @@ export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, 
     const right = { x: Math.cos(th), z: -Math.sin(th) }
     // בקצה החרוט הדמות לא יוצאת מהמסך: לכל היותר 60% מחצי הרוחב הצידה.
     // הילד מסובב את הטלפון אליה בכל מקרה — זה הרגע שבו היא נכנסת למרכז.
-    const xc = Math.max(-0.6, Math.min(0.6, x))
+    const lim = flying ? 0.45 : 0.6
+    const xc = Math.max(-lim, Math.min(lim, x))
     const sx = -xc * halfW                       // יעד ימינה = דמות שמאלה
     const tx = base.target.x + right.x * sx
     const tz = base.target.z + right.z * sx
@@ -218,7 +223,9 @@ export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, 
       shadow-intensity={flying ? '0' : '0.9'}
       shadow-softness="0.8"
       exposure="1.05"
-      style={{ ...F.layer, filter: done ? GLOW_DONE : 'none', opacity: visible ? 1 : 0 }}
+      // בלי filter על הקנבס: drop-shadow על WebGL בגודל מסך מלא תוקע את
+      // הטלפון. הזוהר בסיום מצויר מאחורי הדמות ב-CSS רגיל (ראה CreatureFigure).
+      style={{ ...F.layer, opacity: visible ? 1 : 0 }}
     />
   )
 }
@@ -246,6 +253,10 @@ const F = {
   layer: { position: 'absolute', inset: 0, width: '100%', height: '100%', display: 'block',
     background: 'transparent', pointerEvents: 'none', zIndex: 2, direction: 'ltr',
     transition: 'opacity .25s' },
+  // זוהר הסיום: עיגול רך מאחורי הדמות. זול, ועובד גם מאחורי המודל.
+  glow: { position: 'absolute', inset: '-12%', borderRadius: '50%', zIndex: 0,
+    background: 'radial-gradient(circle, rgba(240,192,105,.45), rgba(240,192,105,.12) 55%, rgba(240,192,105,0) 72%)',
+    animation: 'wildenBreathe 2.6s ease-in-out infinite' },
   shadow: { position: 'absolute', bottom: '-1.2vh', left: '18%', right: '18%', height: '4vh',
     borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(0,0,0,.42), rgba(0,0,0,0) 70%)' },
   // הפס שנשאר אחרי ריצה: כיוון, לא ניחוש.
