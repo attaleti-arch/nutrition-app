@@ -58,8 +58,8 @@ export default function Wilden() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (!new URLSearchParams(window.location.search).has('debug')) return
-    window.__wilden = { state: g, view: beaconView(g), route: { degraded: route.degraded, reason: route.reason, status: route.status } }
-  }, [g, route.degraded, route.reason, route.status])
+    window.__wilden = { state: g, view: beaconView(g), route: { degraded: route.degraded, reason: route.reason, detail: route.detail, source: route.source, status: route.status } }
+  }, [g, route.degraded, route.reason, route.detail, route.source, route.status])
 
   const onFix = useCallback(f => dispatch({ type: 'FIX', ...f }), [])
   const onResume = useCallback(f => dispatch({ type: 'RESUME', ...f }), [])
@@ -220,10 +220,17 @@ export default function Wilden() {
           <Panel eyebrow="הרחובות לא הגיעו">
             <h2 style={s.h2}>לא הצלחנו להביא את מפת הרחובות</h2>
             <p style={s.body}>
-              שרת המפות לא ענה בזמן. זה קורה, בעיקר מרשת סלולרית. בלי הרחובות אין מסלול
-              אמיתי, ולכן לא ממציאים אחד.
-              {route.reason && <span style={{ opacity: .55 }}> ({route.reason})</span>}
+              {route.detail && route.detail.includes('blocked')
+                ? 'שרת המפות חסם אותנו זמנית אחרי כמה ניסיונות ברצף. חכו דקה ונסו שוב.'
+                : 'שרת המפות לא ענה בזמן. זה קורה, בעיקר מרשת סלולרית.'}
+              {' '}בלי הרחובות אין מסלול אמיתי, ולכן לא ממציאים אחד.
             </p>
+            {/* מי נכשל ולמה. זה מה שצריך לצלם ולשלוח לי. */}
+            {(route.detail || route.reason) && (
+              <p style={{ ...s.note, fontFamily: 'ui-monospace, monospace', fontSize: 12.5, direction: 'ltr', textAlign: 'left' }}>
+                {route.reason}{route.detail ? ' — ' + route.detail : ''}
+              </p>
+            )}
             <button onClick={() => dispatch({ type: 'ROUTE_RETRY' })} style={s.cta}>לנסות שוב</button>
             <button onClick={() => {
               const fb = route.useFallback(g.run.home, loopTargetM(g.run.walkIndex || 0))

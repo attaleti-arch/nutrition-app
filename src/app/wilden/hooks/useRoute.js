@@ -27,13 +27,15 @@ export function useRoute() {
   const [path, setPath] = useState(null)
   const [degraded, setDegraded] = useState(false)
   const [reason, setReason] = useState(null)     // למה נפלנו לחלופי, בשמו
+  const [detail, setDetail] = useState(null)     // מי נכשל ולמה: proxy:502 · de:blocked …
+  const [source, setSource] = useState(null)     // מי ענה
   const abort = useRef(null)
   const softTimer = useRef(null)
 
   const skip = useCallback(() => { abort.current?.abort() }, [])
 
   const build = useCallback(async (home, targetM = TARGET_M) => {
-    setStatus('working'); setDegraded(false); setPath(null); setReason(null)
+    setStatus('working'); setDegraded(false); setPath(null); setReason(null); setDetail(null)
 
     // ── מסלול שכבר נבנה מהבית הזה ──
     // ילד בפיילוט יוצא מאותה דלת כל יום. אין סיבה לחכות ל-Overpass בפעם
@@ -63,9 +65,10 @@ export function useRoute() {
       const data = await fetchStreets(home.lat, home.lng, radius, {
         signal: ctl.signal, timeoutMs: FETCH_TIMEOUT,
       })
+      setSource(data.source || null)
       out = buildLoop(data, home, targetM)
     } catch (e) {
-      out = { ok: false, reason: e?.name === 'AbortError' ? 'aborted' : 'network' }
+      out = { ok: false, reason: e?.name === 'AbortError' ? 'aborted' : 'network', detail: e?.detail || null }
     }
 
     clearTimeout(softTimer.current)
@@ -80,7 +83,7 @@ export function useRoute() {
     // המצולע הגיאומטרי על מפה אמיתית נראה כמו שקר: קווים ישרים דרך שדות
     // ונחל. במקום זה אומרים מה קרה ונותנים לבחור: לנסות שוב, או לצאת
     // בכל זאת עם מסלול כללי — בידיעה.
-    setReason(out.reason)
+    setReason(out.reason); setDetail(out.detail || null)
     setPath(null); setDegraded(false); setStatus('failed')
     return null
   }, [])
@@ -92,5 +95,5 @@ export function useRoute() {
     return fb
   }, [])
 
-  return { status, path, degraded, reason, build, skip, useFallback }
+  return { status, path, degraded, reason, detail, source, build, skip, useFallback }
 }

@@ -1,11 +1,16 @@
 // ─── פרוקסי לרחובות ───
-// בשטח, מהטלפון שלה, שני שרתי Overpass לא ענו תוך 12 שניות — ואז המסלול
-// נפל לחלופי הגיאומטרי, שהוא לא מפה שאפשר להבין. השרת של Vercel יושב
-// על רשת טובה יותר מטלפון ברחוב, ומחזיק זיכרון: אותה שכונה נשאלת פעם
-// אחת ביום ולא בכל יציאה. הדפדפן עדיין מנסה במקביל גם ישירות — מי
-// שעונה ראשון מנצח.
+// בשטח, מהטלפון שלה, שרתי Overpass לא ענו בזמן — ואז המסלול נפל לחלופי
+// הגיאומטרי, שהוא לא מפה שאפשר להבין. השרת של Vercel יושב על רשת טובה
+// יותר מטלפון ברחוב. הדפדפן עדיין מנסה במקביל גם ישירות — מי שעונה
+// ראשון מנצח.
+//
+// מה שנלמד מהלוגים: שבוע שלם של 502 בלבד. כלומר הפרוקסי לא עזר אף פעם,
+// והרחובות הגיעו רק ישירות מהטלפון. הסיבה הסבירה: overpass-api.de חוסם
+// כתובות של ספקי ענן. לכן: יותר מראות, רישום של *למה* כל אחת נכשלה
+// (כדי שהפעם הבאה לא תהיה ניחוש), ומטמון בקצה של Vercel — שכונה שהצליחה
+// פעם אחת נשארת שבוע, לכל המופעים.
 
-import { buildQuery, ENDPOINTS } from '../../engine/overpassQuery'
+import { buildQuery, ENDPOINTS, endpointLabel, failureLabel } from '../../engine/overpassQuery'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -17,6 +22,9 @@ const TIMEOUT_MS = 24000
 const TTL_MS = 24 * 3600 * 1000
 const cache = new Map()            // מפתח → { at, body }. לכל מופע שרת בנפרד.
 
+// מטמון בקצה: s-maxage הוא מה ש-Vercel מכבד (max-age לבד הוא רק לדפדפן).
+const EDGE = 'public, max-age=86400, s-maxage=604800, stale-while-revalidate=2592000'
+
 function key(lat, lng, r) {
   // ~110 מ' רזולוציה. שכנים באותו תא מקבלים אותה תשובה — וזה בסדר,
   // הרדיוס גדול פי עשר מהתא.
@@ -26,13 +34,18 @@ function key(lat, lng, r) {
 async function ask(url, body) {
   const ctl = new AbortController()
   const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS)
+  const t0 = Date.now()
   try {
     const res = await fetch(url, { method: 'POST', body, signal: ctl.signal,
-      headers: { 'content-type': 'text/plain' } })
+      headers: { 'content-type': 'text/plain', 'user-agent': 'wilden-walk/1 (kids walking game; contact via repo)' } })
     if (!res.ok) throw new Error('http ' + res.status)
     const json = await res.json()
     if (!Array.isArray(json.elements)) throw new Error('bad body')
-    return json
+    return { json, source: endpointLabel(url), ms: Date.now() - t0 }
+  } catch (e) {
+    const err = new Error(failureLabel(e))
+    err.source = endpointLabel(url); err.ms = Date.now() - t0
+    throw err
   } finally {
     clearTimeout(timer)
   }
@@ -52,16 +65,20 @@ export async function GET(req) {
   const k = key(lat, lng, r) + ':' + part
   const hit = cache.get(k)
   if (hit && Date.now() - hit.at < TTL_MS) {
-    return Response.json(hit.body, { headers: { 'x-cache': 'hit', 'cache-control': 'public, max-age=86400' } })
+    return Response.json(hit.body, { headers: { 'x-cache': 'hit', 'cache-control': EDGE } })
   }
 
   const body = buildQuery(lat, lng, r, part)
   try {
-    const json = await Promise.any(ENDPOINTS.map(e => ask(e, body)))
-    const slim = { elements: json.elements }
+    const won = await Promise.any(ENDPOINTS.map(e => ask(e, body)))
+    const slim = { elements: won.json.elements, source: won.source }
     cache.set(k, { at: Date.now(), body: slim })
-    return Response.json(slim, { headers: { 'x-cache': 'miss', 'cache-control': 'public, max-age=86400' } })
+    console.log(`streets ok part=${part} via=${won.source} ms=${won.ms} n=${slim.elements.length}`)
+    return Response.json(slim, { headers: { 'x-cache': 'miss', 'x-source': won.source, 'cache-control': EDGE } })
   } catch (e) {
-    return Response.json({ error: 'overpass unreachable' }, { status: 502 })
+    // AggregateError: כל אחד למה. זה מה שהיה חסר שבוע שלם.
+    const tried = (e?.errors || []).map(x => `${x.source}:${x.message}@${Math.round((x.ms || 0) / 1000)}s`)
+    console.error(`streets fail part=${part} tried=${tried.join(',')}`)
+    return Response.json({ error: 'overpass unreachable', tried }, { status: 502, headers: { 'cache-control': 'no-store' } })
   }
 }

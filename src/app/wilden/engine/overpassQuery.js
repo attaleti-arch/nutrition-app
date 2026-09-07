@@ -16,16 +16,34 @@ export const FORBIDDEN_TAGS = [
   '[aeroway]',
 ]
 
+// חמישה שרתים, לא שלושה. overpass-api.de חוסם כתובות של ספקי ענן (וזה
+// כנראה מה שקרה לפרוקסי ב-Vercel: 502 על כל קריאה במשך שבוע). fr ו-mail.ru
+// הם מראות עולמיות עם מדיניות אחרת.
 export const ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
   'https://overpass.private.coffee/api/interpreter',
+  'https://overpass.openstreetmap.fr/api/interpreter',
+  'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
 ]
 
+// שם קצר לשרת, ללוג ולמסך: "de", "kumi", "fr"…
+export function endpointLabel(url) {
+  try {
+    const h = new URL(url).hostname
+    if (h.includes('overpass-api.de')) return 'de'
+    if (h.includes('kumi')) return 'kumi'
+    if (h.includes('coffee')) return 'coffee'
+    if (h.includes('openstreetmap.fr')) return 'fr'
+    if (h.includes('mail.ru')) return 'ru'
+    return h.split('.')[0]
+  } catch (e) { return String(url).slice(0, 12) }
+}
+
 // שתי שאילתות נפרדות, לא אחת כבדה. הרחובות הם מה שחייבים; המצולעים
-// (שדות, תעשייה, בית קברות) הם שכבת בטיחות שרצה במקביל בתקציב זמן קצר,
-// ואם לא הגיעה — יוצאים בלי. שאילתה משולבת עם רלציות על רדיוס של 1.7 ק"מ
-// לקחה ל-Overpass יותר מ-20 שניות מהטלפון שלה, וכל מסע נפל לחלופי.
+// (שדות, תעשייה, בית קברות) הם שכבת בטיחות שרצה בתקציב זמן קצר, ואם לא
+// הגיעה — יוצאים בלי. שאילתה משולבת עם רלציות על רדיוס של 1.7 ק"מ לקחה
+// ל-Overpass יותר מ-20 שניות מהטלפון שלה, וכל מסע נפל לחלופי.
 export function buildQuery(lat, lng, radius, part = 'streets') {
   const R = Math.round(radius * 1.1)
   const around = `(around:${R},${lat},${lng})`
@@ -36,4 +54,19 @@ export function buildQuery(lat, lng, radius, part = 'streets') {
   return `[out:json][timeout:25];(` +
     `way${around}[highway~"^(${WALKABLE})$"][foot!=no][access!=private];` +
     `);out geom;`
+}
+
+// ── למה נכשל, במילה ──
+// 429 = השרת חסם אותנו זמנית (יותר מדי בקשות מאותה כתובת — מה שקורה אחרי
+// כמה "לנסות שוב" ברצף). 504/timeout = השרת עמוס. אחרת — מה שהיה.
+export function failureLabel(err) {
+  if (!err) return 'fail'
+  const name = err.name || ''
+  const msg = String(err.message || err)
+  if (name === 'AbortError' || msg === 'timeout') return 'timeout'
+  const m = msg.match(/http (\d{3})/)
+  if (m) return m[1] === '429' ? 'blocked' : m[1]
+  if (msg === 'bad body') return 'bad'
+  if (/fetch|network|Failed/i.test(msg)) return 'net'
+  return msg.slice(0, 12)
 }

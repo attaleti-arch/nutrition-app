@@ -8,10 +8,10 @@
 // Overpass היא ממשק השאילתות הציבורי של OpenStreetMap. חינם, בלי מפתח,
 // ובכל העולם. נקראת פעם אחת לכל מסלול.
 
-import { buildQuery, ENDPOINTS } from './overpassQuery.js'
+import { buildQuery, ENDPOINTS, endpointLabel, failureLabel } from './overpassQuery.js'
 export { buildQuery }
 
-// הפרוקסי שלנו: שרת Vercel עם זיכרון של יום. ראה api/streets/route.js.
+// הפרוקסי שלנו: שרת Vercel עם זיכרון. ראה api/streets/route.js.
 const PROXY = '/wilden/api/streets'
 
 // לא כל דרך שווה. שביל בשדה חקלאי רשום ב-OSM בדיוק כמו מדרכה בשכונה, אבל
@@ -27,28 +27,35 @@ const TIER = {
 // "בודקים אילו רחובות יש סביבכם".
 const TIMEOUT_MS = 26000
 
-// ── שני השרתים במקביל, לא בזה אחר זה ──
-// Overpass הוא שירות מתנדבים, ולפעמים מכניס בקשה לתור ארוך. בגרסה
-// הקודמת חיכינו לראשון עד סוף הפסקת הזמן ורק אז ניסינו את השני — כלומר
-// במקרה הרע כפול הזמן, וילד עומד ברחוב מול "בודקים אילו רחובות".
-// כאן שניהם יוצאים יחד ומי שעונה ראשון מנצח.
-// חלק אחד (streets | blocked) מכל השרתים במקביל; הראשון שמצליח מנצח.
-async function fetchPart(part, lat, lng, radius, { signal, timeoutMs }) {
+// ── כל השרתים במקביל, הראשון שעונה מנצח — וכל השאר נרשמים ──
+// "לא עושה את הרחובות כמו קודם" בלי שום מידע למה. עכשיו כל מקור שנכשל
+// משאיר מילה: proxy:502, de:blocked (429 — חסימה זמנית אחרי כמה "לנסות
+// שוב"), kumi:timeout. זה מה שמופיע על המסך בסוגריים, וזה מה שאני צריך.
+async function fetchPart(part, lat, lng, radius, { signal, timeoutMs, only = null }) {
   const body = buildQuery(lat, lng, radius, part)
   const ctl = new AbortController()
   const timer = setTimeout(() => ctl.abort(), timeoutMs)
   const relay = () => ctl.abort()
   signal?.addEventListener('abort', relay)
   const ok = res => { if (!res.ok) throw new Error('http ' + res.status); return res.json() }
-  const tries = [
-    // הפרוקסי שלנו קודם ברשימה, אבל לא לבד: אם Vercel איטי הפעם, הישיר מנצח.
-    fetch(`${PROXY}?lat=${lat}&lng=${lng}&r=${Math.round(radius)}&part=${part}`, { signal: ctl.signal }).then(ok),
-    ...ENDPOINTS.map(url => fetch(url, { method: 'POST', body, signal: ctl.signal }).then(ok)),
-  ]
+  const failures = []
+  const attempt = (label, run) => run().then(json => {
+    if (!Array.isArray(json?.elements)) throw new Error('bad body')
+    return { json, source: label }
+  }).catch(e => { failures.push(`${label}:${failureLabel(e)}`); throw e })
+
+  const sources = [
+    ['proxy', () => fetch(`${PROXY}?lat=${lat}&lng=${lng}&r=${Math.round(radius)}&part=${part}`, { signal: ctl.signal }).then(ok)],
+    ...ENDPOINTS.map(url => [endpointLabel(url), () => fetch(url, { method: 'POST', body, signal: ctl.signal }).then(ok)]),
+  ].filter(([label]) => !only || label === only)
   try {
-    const won = await Promise.any(tries)
+    const won = await Promise.any(sources.map(([label, run]) => attempt(label, run)))
     ctl.abort()          // השאר כבר לא מעניינים
     return won
+  } catch (e) {
+    const err = new Error('overpass unreachable')
+    err.detail = failures.join(' · ')
+    throw err
   } finally {
     clearTimeout(timer)
     signal?.removeEventListener('abort', relay)
@@ -56,18 +63,26 @@ async function fetchPart(part, lat, lng, radius, { signal, timeoutMs }) {
 }
 
 export async function fetchStreets(lat, lng, radius, { signal, timeoutMs = TIMEOUT_MS } = {}) {
-  // הרחובות חייבים. המצולעים אופציונליים, עם תקציב קצר, במקביל.
-  const blockedP = fetchPart('blocked', lat, lng, radius, { signal, timeoutMs: Math.min(timeoutMs, 9000) })
-    .then(parseOverpass).then(b => b.blocked).catch(() => [])
-  let streets
+  // הרחובות חייבים — קודם, מכל השרתים. המצולעים אחר כך, רק מהשרת שענה,
+  // בתקציב קצר. לא במקביל: שתי שאילתות בו-זמנית לאותו שרת מאותה כתובת
+  // הן בדיוק מה שמכניס טלפון לחסימה זמנית (429) אחרי כמה ניסיונות.
+  let streets, source
   try {
-    streets = parseOverpass(await fetchPart('streets', lat, lng, radius, { signal, timeoutMs }))
+    const won = await fetchPart('streets', lat, lng, radius, { signal, timeoutMs })
+    streets = parseOverpass(won.json)
+    source = won.source
   } catch (e) {
     if (signal?.aborted) { const a = new Error('aborted'); a.name = 'AbortError'; throw a }
-    throw new Error('overpass unreachable')
+    const err = new Error('overpass unreachable')
+    err.detail = e.detail || ''
+    throw err
   }
-  const blocked = await blockedP
-  return { ...streets, blocked }
+  let blocked = []
+  try {
+    const b = await fetchPart('blocked', lat, lng, radius, { signal, timeoutMs: Math.min(timeoutMs, 7000), only: source })
+    blocked = parseOverpass(b.json).blocked
+  } catch (e) { /* בלי שכבת הבטיחות הפעם. עדיף מסלול על רחובות בלי סינון שדות מאשר בלי מסלול. */ }
+  return { ...streets, blocked, source }
 }
 
 // מפריד את התשובה לשני דברים: נקודות שאפשר לעמוד עליהן, ומצולעים שפוסלים.

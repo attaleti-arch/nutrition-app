@@ -1170,3 +1170,16 @@ test('ביצה: נשלחת לשרת ומתמזגת, ומה שבקע לא נעל�
   assert.equal(m.variants.length, 2)
   assert.deepEqual(m.egg, { boughtAt: 9 })
 })
+
+import { endpointLabel, failureLabel, ENDPOINTS } from '../src/app/wilden/engine/overpassQuery.js'
+test('רחובות: כל שרת בשם קצר, וכל כישלון במילה אחת', () => {
+  assert.deepEqual(ENDPOINTS.map(endpointLabel), ['de', 'kumi', 'coffee', 'fr', 'ru'])
+  assert.equal(failureLabel(new Error('http 429')), 'blocked', '429 = חסימה זמנית, וזו הודעה אחרת להורה')
+  assert.equal(failureLabel(new Error('http 502')), '502')
+  assert.equal(failureLabel(new Error('http 504')), '504')
+  assert.equal(failureLabel(Object.assign(new Error('x'), { name: 'AbortError' })), 'timeout')
+  assert.equal(failureLabel(new Error('timeout')), 'timeout')
+  assert.equal(failureLabel(new TypeError('Failed to fetch')), 'net')
+  assert.equal(failureLabel(new Error('bad body')), 'bad')
+  assert.equal(failureLabel(null), 'fail')
+})
