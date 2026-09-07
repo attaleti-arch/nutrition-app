@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { initial, reduce, beaconView, S, RUN, MODE, nextRunKind, canStartStory } from './engine/machine'
 import { PHASE, PHASE_BUZZ, ACC_GATE, ACC_DIRECTION, ACC_COARSE, WALK_GATE } from './engine/beacon'
+import { PLACE_AFTER } from './engine/placement'
 import { save, load, dayKey } from './engine/persist'
 import { creatureById } from './content/creatures'
 import M01 from './content/missions/m01-signal'
@@ -67,6 +68,15 @@ export default function Wilden() {
     const b = PHASE_BUZZ[view.phase]
     if (b) { buzz(b); if (view.phase === PHASE.TRACE) sfxRustle(); else sfxAppear() }
   }, [view.phase, g.state])
+
+  // ── נכנסים לרדיוס — המפה עוברת למפגש ──
+  // הילד לא צריך למצוא כפתור. עצר ליד הסימן, הביקון אמר "כאן", ואחרי
+  // שנייה וחצי המצלמה נפתחת. הכפתור נשאר למי שרוצה ללחוץ בעצמו.
+  useEffect(() => {
+    if (g.state !== S.SEARCH || !view.canSearch) return
+    const id = setTimeout(() => dispatch({ type: 'SEARCH_PRESSED' }), 1500)
+    return () => clearTimeout(id)
+  }, [g.state, view.canSearch])
 
   // בניית המסלול ברגע שיש בית
   useEffect(() => {
@@ -269,9 +279,11 @@ function BrokenWorld({ g, today, onStart }) {
 }
 
 // ── מסך החיפוש ──
-// ── מסך ההליכה ──
-// כמו ניווט: הוראה אחת גדולה למעלה, מפה עם המסלול והתחנות, ומתחתיה
-// הביקון — שמתעורר רק כשקרובים ליצור. המרחקים גלויים. יעד ברור.
+// ── מסך ההליכה: מפת רחובות ──
+// המסך הראשי של המסע הוא מפה, לא ביקון. הוראה אחת גדולה מעל המפה,
+// המסלול על רחובות אמיתיים, ההתקדמות עליו. הביקון הוא שכבה קטנה בפינה
+// שמתעוררת רק כשקרובים. היצורים לא מצוירים מראש — רק סימנים: עקבות,
+// סימן שאלה, ניצוץ. מגלים מי זה רק כשמגיעים.
 function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, creature }) {
   const r = g.run
   const hot = view.phase === PHASE.VERY_CLOSE || view.phase === PHASE.SAFE_STOP
@@ -282,47 +294,42 @@ function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, creat
   const cue = r.target ? nextCue(turns, along, r.target.along) : null
   const toTarget = r.target ? Math.max(0, r.target.along - along) : null
   const stopsLeft = r.stops ? r.stops.filter(x => !x.done).length : 1
-  const name = creature?.name || 'היצור'
+  // הסימנים נחשפים רק אחרי שיצאו באמת לדרך — לא בסלון.
+  const reveal = (r.walked || 0) >= PLACE_AFTER
 
   return (
     <>
-      <p style={s.eyebrow}>{r.kind === RUN.STORY ? 'מסע · האות' : 'יציאה חופשית'}</p>
+      <div style={s.mapWrap}>
+        <MiniMap home={r.home} path={r.path} pos={geo.pos}
+          stops={r.stops || (r.target ? [r.target] : [])} nextStop={r.stops ? r.stop : 0}
+          reveal={reveal} known={g.progress.creatures} creatureImg={creature?.sprites?.hero}
+          height="100%" />
 
-      {/* ההוראה */}
-      <div style={s.nav}>
-        <p style={s.navLine}>{cue ? cueText(cue, name) : 'יוצאים לדרך.'}</p>
-        <p style={s.navSub}>
-          {toTarget != null && <>עד {name}: <b>{fmtM(toTarget)}</b></>}
-          {toTarget != null && ' · '}
-          הביתה: <b>{fmtM(Math.max(0, total - along))}</b>
-          {r.stops && <> · בדרך: <b>{stopsLeft}</b></>}
-        </p>
-      </div>
-
-      <MiniMap home={r.home} path={r.path} pos={geo.pos}
-        stops={r.stops || (r.target ? [r.target] : [])} nextStop={r.stops ? r.stop : 0}
-        creatureImg={creature?.sprites?.hero} creatureName={name} />
-
-      {/* הביקון: הכלי למטרים האחרונים. עד אז המפה מספיקה. */}
-      {near ? (
-        <div style={{ display: 'grid', placeItems: 'center', margin: '14px 0 4px' }}>
-          <Beacon power={view.power} phase={view.phase} arrow={view.arrow} bearing={view.bearing ?? 0} size={120} />
-          <BeaconLine line={view.line} sub={view.sub} tone={hot ? 'hot' : 'calm'} />
+        {/* ההוראה, מעל המפה */}
+        <div style={s.navOverlay}>
+          <p style={s.navLine}>{cue ? cueText(cue, 'הסימן') : reveal ? 'ממשיכים לפי המסלול.' : 'יוצאים לדרך.'}</p>
+          <p style={s.navSub}>
+            {toTarget != null && reveal && <>עד הסימן: <b>{fmtM(toTarget)}</b> · </>}
+            הביתה: <b>{fmtM(Math.max(0, total - along))}</b>
+            {r.stops && reveal && <> · סימנים בדרך: <b>{stopsLeft}</b></>}
+          </p>
         </div>
-      ) : (
-        <p style={{ ...s.note, textAlign: 'center', marginTop: 12 }}>
-          {view.phase === PHASE.SIGNAL_WEAK ? view.line : 'הביקון יתעורר כשתתקרבו.'}
-        </p>
-      )}
 
-      {view.canSearch && (
-        <button onClick={onSearch} style={{ ...s.cta, marginTop: 14, fontSize: 19 }}>
-          👁 חפש אותו
-        </button>
-      )}
-      {!view.canSearch && view.phase === PHASE.VERY_CLOSE && (
-        <p style={s.hintStop}>עצרו במקום בטוח — ואז אפשר לחפש.</p>
-      )}
+        {/* הביקון: שכבה על המפה, רק כשקרובים */}
+        {near && (
+          <div style={s.beaconOverlay}>
+            <Beacon power={view.power} phase={view.phase} arrow={view.arrow} bearing={view.bearing ?? 0} size={84} />
+            <p style={s.beaconOverlayLine}>{view.line}</p>
+          </div>
+        )}
+
+        {view.canSearch && (
+          <button onClick={onSearch} style={s.searchOverlay}>👁 משהו כאן. לחפש</button>
+        )}
+        {!view.canSearch && view.phase === PHASE.VERY_CLOSE && (
+          <p style={s.stopOverlay}>הסימן כאן. עצרו במקום בטוח.</p>
+        )}
+      </div>
 
       <GpsPanel geo={geo} run={g.run} />
       {degraded && (
@@ -431,9 +438,21 @@ function fmtM(m) {
 
 const s = {
   eyebrow: { fontSize: 11.5, fontWeight: 700, letterSpacing: '.16em', color: C.amber, margin: '0 0 10px' },
-  nav: { background: C.card2, border: `1px solid ${C.line}`, borderRadius: 14, padding: '14px 16px', margin: '4px 0 12px' },
-  navLine: { margin: 0, fontSize: 24, fontWeight: 900, color: C.ink, lineHeight: 1.25 },
-  navSub: { margin: '6px 0 0', fontSize: 15, color: C.muted },
+  // המפה תופסת את המסך; כל השאר שכבות עליה.
+  mapWrap: { position: 'relative', height: 'calc(100dvh - 190px)', minHeight: 420, margin: '-6px 0 10px' },
+  navOverlay: { position: 'absolute', top: 10, insetInline: 10, zIndex: 600, background: 'rgba(15,21,15,.88)',
+    border: `1px solid ${C.line}`, borderRadius: 14, padding: '12px 14px', backdropFilter: 'blur(6px)' },
+  navLine: { margin: 0, fontSize: 23, fontWeight: 900, color: C.ink, lineHeight: 1.25 },
+  navSub: { margin: '5px 0 0', fontSize: 14.5, color: C.muted },
+  beaconOverlay: { position: 'absolute', bottom: 54, insetInlineEnd: 10, zIndex: 600, display: 'grid',
+    justifyItems: 'center', gap: 2, background: 'rgba(15,21,15,.82)', borderRadius: 14, padding: '8px 10px 6px',
+    border: `1px solid ${C.line}` },
+  beaconOverlayLine: { margin: 0, fontSize: 12.5, fontWeight: 700, color: C.ink, maxWidth: 110, textAlign: 'center' },
+  searchOverlay: { position: 'absolute', bottom: 12, insetInline: 60, zIndex: 700, padding: '14px 18px', borderRadius: 999,
+    border: 'none', background: C.amber, color: '#14200F', fontFamily: 'inherit', fontSize: 18, fontWeight: 900,
+    cursor: 'pointer', boxShadow: '0 6px 22px rgba(229,163,66,.45)' },
+  stopOverlay: { position: 'absolute', bottom: 14, insetInline: 40, zIndex: 700, margin: 0, textAlign: 'center',
+    padding: '10px 14px', borderRadius: 12, background: 'rgba(15,21,15,.88)', color: C.amber, fontWeight: 800, fontSize: 15 },
   h1: { fontSize: 32, fontWeight: 900, margin: '0 0 8px', lineHeight: 1.15 },
   h2: { fontSize: 23, fontWeight: 800, margin: '0 0 10px', lineHeight: 1.25 },
   lede: { fontSize: 17, color: C.muted, margin: '0 0 4px' },

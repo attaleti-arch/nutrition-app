@@ -25,26 +25,24 @@ function useLeaflet() {
   return ready
 }
 
-function stopIcon(L, s, isNext, img, name) {
+// ── הסימנים על המפה ──
+// לא מפלצות. זה מוריד את המתח. סימן: עקבות בתוך ענן זוהר עם סימן שאלה.
+// מי שכבר נתפס פעם (known) מופיע כצללית — "אני יודע מי זה". מי שנתפס
+// במסע הזה — וי.
+function stopIcon(L, s, isNext, img, known) {
   if (s.done) {
     return L.divIcon({ className: '', iconSize: [26, 26], iconAnchor: [13, 13],
       html: `<div style="width:26px;height:26px;border-radius:50%;background:${GREEN};border:2px solid #fff;display:grid;place-items:center;color:#14200F;font-weight:900;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.4)">✓</div>` })
   }
-  if (!isNext) {
-    return L.divIcon({ className: '', iconSize: [18, 18], iconAnchor: [9, 9],
-      html: `<div style="width:18px;height:18px;border-radius:50%;background:${AMBER};opacity:.75;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>` })
-  }
-  const pic = img
-    ? `<img src="${img}" alt="" style="width:48px;height:48px;object-fit:contain;display:block">`
-    : `<div style="width:40px;height:40px;border-radius:50%;background:${AMBER}"></div>`
-  return L.divIcon({ className: '', iconSize: [64, 76], iconAnchor: [32, 70],
-    html: `<div style="display:grid;justify-items:center;gap:2px;filter:drop-shadow(0 2px 4px rgba(0,0,0,.45))">
-      <div style="width:60px;height:60px;border-radius:50%;background:rgba(229,163,66,.28);border:3px solid ${AMBER};display:grid;place-items:center;animation:wildenPin 1.6s ease-in-out infinite">${pic}</div>
-      <div style="background:${AMBER};color:#14200F;font-weight:900;font-size:12px;padding:1px 7px;border-radius:8px;white-space:nowrap">${name || ''}</div>
-    </div>` })
+  const size = isNext ? 58 : 36
+  const inner = known && img
+    ? `<img src="${img}" alt="" style="width:${size - 14}px;height:${size - 14}px;object-fit:contain;display:block;filter:brightness(0) opacity(.75)">`
+    : `<div style="position:relative;font-size:${isNext ? 26 : 16}px;line-height:1">🐾<span style="position:absolute;top:-8px;inset-inline-end:-12px;font-size:${isNext ? 18 : 12}px;font-weight:900;color:#14200F;background:${AMBER};border-radius:50%;width:${isNext ? 22 : 15}px;height:${isNext ? 22 : 15}px;display:grid;place-items:center">?</span></div>`
+  return L.divIcon({ className: '', iconSize: [size, size], iconAnchor: [size / 2, size / 2],
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:rgba(229,163,66,${isNext ? '.3' : '.18'});border:${isNext ? 3 : 2}px ${isNext ? 'solid' : 'dashed'} ${AMBER};display:grid;place-items:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,.45));${isNext ? 'animation:wildenPin 1.6s ease-in-out infinite' : 'opacity:.85'}">${inner}</div>` })
 }
 
-export function MiniMap({ home, path, pos, stops = [], nextStop = 0, creatureImg, creatureName, height = '46vh' }) {
+export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = true, known = [], creatureImg, height = '46vh' }) {
   const ready = useLeaflet()
   const el = useRef(null)
   const map = useRef(null)
@@ -94,12 +92,14 @@ export function MiniMap({ home, path, pos, stops = [], nextStop = 0, creatureImg
     if (!m) return
     const L = Lmod
     lay.current.stops.forEach(x => x.remove()); lay.current.stops = []
+    if (!reveal) return
     stops.forEach((s, i) => {
-      const mk = L.marker([s.lat, s.lng], { icon: stopIcon(L, s, i === nextStop, creatureImg, creatureName),
+      const isKnown = known.includes(s.creature)
+      const mk = L.marker([s.lat, s.lng], { icon: stopIcon(L, s, i === nextStop, creatureImg, isKnown),
         interactive: false, zIndexOffset: i === nextStop ? 1000 : 0 }).addTo(m)
       lay.current.stops.push(mk)
     })
-  }, [ready, stops, nextStop, creatureImg, creatureName])
+  }, [ready, stops, nextStop, creatureImg, reveal, known])
 
   // אני
   useEffect(() => {
