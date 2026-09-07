@@ -17,6 +17,7 @@ import { useModelViewer, useModelSrc } from '../hooks/useModelViewer'
 // תלת-ממדי בלי עץ אמיתי להסתתר מאחוריו לא יעשה את זה טוב יותר.
 
 const GLOW_DONE = 'drop-shadow(0 0 22px rgba(240,192,105,.55))'
+const FOV_DEG = 22          // זווית ראייה אנכית של מצלמת המודל
 
 // ── ספרייט + צל + פס ──
 // scale מגיע מהפאזה (0.82 מבצבץ, 1.6 מתקרב, 1.35 בסיום) ומיושם כגובה
@@ -115,9 +116,14 @@ export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, 
   // גובה נראה במרחק r הוא 2·r·tan(fov/2), ומכאן r. הרדיוס נמסר באחוזים
   // מהרדיוס האוטומטי, ההיסט האופקי לאורך וקטור "ימינה" של המצלמה כדי
   // שיעבוד בכל yaw, וההיסט למטה מניח את הרגליים בגובה הצל של היעד.
+  // זווית ראייה צרה ממרחק, לא רחבה מקרוב: מצלמה במרחק 1.3 מ' מיצור של
+  // 60 ס"מ מנפחת את הראש ומעוותת. 22° ממרחק של כמה מטרים נראה כמו
+  // יצור שעומד ברחוב, וזה גם פחות או יותר מה שמצלמת הטלפון רואה.
   let radiusPct = Math.round(100 / scale)
   let target = 'auto auto auto'
   if (base) {
+    // field-of-view שקבענו הוא של הציר הצר (הרוחב, בטלפון עומד). הזווית
+    // האנכית בפועל נקראת מהרכיב אחרי הטעינה — היא מה שקובע גובה על המסך.
     const tanH = Math.tan((base.fov * Math.PI) / 360)
     const r = base.height / (0.68 * scale * tanH)
     radiusPct = Math.round((r / base.radius) * 100)
@@ -138,9 +144,12 @@ export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, 
       ref={ref}
       src={src}
       autoplay
-      camera-orbit={`${yaw}deg 80deg ${radiusPct}%`}
+      camera-orbit={`${yaw}deg 82deg ${radiusPct}%`}
       min-camera-orbit="auto auto 5%"
-      max-camera-orbit="auto auto 400%"
+      max-camera-orbit="auto auto 1200%"
+      field-of-view={`${FOV_DEG}deg`}
+      min-field-of-view={`${FOV_DEG}deg`}
+      max-field-of-view={`${FOV_DEG}deg`}
       camera-target={target}
       interaction-prompt="none"
       disable-zoom=""
