@@ -40,7 +40,9 @@ export function Hatch({ hatched, onClose }) {
     if (el.loaded) paint()
     el.addEventListener('load', paint)
     return () => el.removeEventListener('load', paint)
-  }, [ready, variant])
+    // cracked: האלמנט נוצר רק אחרי הסדק. בלי זה ה-effect רץ לפני שיש ref,
+    // המאזין לא נרשם, והיצור נשאר שקוף ובצבע הרגיל.
+  }, [ready, variant, cracked])
 
   if (!creature || !variant) return null
   const name = `${creature.name} ${variant.name}`
