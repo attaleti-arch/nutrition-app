@@ -151,7 +151,7 @@ export const CREATURES = {
     // עם עקבות אבן. ההתעוררות הגדולה נשארת לסיפור, כשנגיע לשם.
     model: '/creatures/kraag/kraag.glb',
     ios: null,
-    clip: null,
+    clip: '/creatures/kraag/caught.mp4',
     sprites: null,
     heightM: 0.70,
     arMode: AR_MODE.GROUND,
