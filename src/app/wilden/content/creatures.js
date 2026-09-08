@@ -110,8 +110,10 @@ export const CREATURES = {
     // עקבות כמו נימי.
     model: '/creatures/lumi/lumi.glb',
     ios: null,
-    clip: null,
-    live: null,
+    // הקליפ שלה מ-Runway: עומד במקום, הזנב נדלק והאור מתפשט על הגוף.
+    // ההשתקפות על הרצפה נחתכת בגזירה (מתחת לכפות).
+    clip: '/creatures/lumi/caught.mp4',
+    live: '/creatures/lumi/live.webp',
     sprites: null,
     heightM: 0.55,
     arMode: AR_MODE.GROUND,
