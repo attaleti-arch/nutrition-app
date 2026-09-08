@@ -125,8 +125,9 @@ export const CREATURES = {
     // עקבות רטובות.
     model: '/creatures/gali/gali.glb',
     ios: null,
-    clip: null,
-    live: null,
+    // הקליפ שלה מ-Runway: מתפרק לטבעת מים מסתחררת, ומתגבש חזרה. 12 שניות.
+    clip: '/creatures/gali/caught.mp4',
+    live: '/creatures/gali/live.webp',
     sprites: null,
     heightM: 0.50,
     arMode: AR_MODE.GROUND,
