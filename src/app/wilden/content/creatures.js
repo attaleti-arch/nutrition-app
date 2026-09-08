@@ -51,7 +51,9 @@ export const CREATURES = {
     verb: 'TRACK',
   },
   dabashon: {
-    id: 'dabashon', name: 'דבשון',
+    // "דבשון שם כבד." הבן שלה והחברים. מעכשיו האני — כמו דבש. המזהה נשאר,
+    // כדי שמי שכבר תפס אותה לא יאבד כלום.
+    id: 'dabashon', name: 'האני',
     // המודל שלה מ-Meshy, מוקטן לטלפון (68K משולשים, 1K WebP, 3.1MB). בלי
     // אנימציות: מרחף בקוד. הוא דבורה — באוויר, לא על הרצפה.
     model: '/creatures/dabashon/dabashon.glb',

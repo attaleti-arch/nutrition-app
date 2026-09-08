@@ -54,7 +54,7 @@ export const QUESTS = [
   { id: 'tree', needs: { honey: 2, leaf: 1 }, flag: 'treeAlive', coins: 25,
     title: 'להחיות את העץ',
     ask: 'העץ הזקן צריך דבש, ועלה אחד ירוק שיזכיר לו. תביאו.',
-    hint: 'דבש מביאה דבשון, עלה מביא נימי.',
+    hint: 'דבש מביאה האני, עלה מביא נימי.',
     done: 'תראו! ניצנים. הוא חוזר. נשאר רק השער.' },
   { id: 'gate', needs: { wind: 2, shadow: 1 }, flag: 'gateOpen', coins: 40,
     title: 'לפתוח את השער',

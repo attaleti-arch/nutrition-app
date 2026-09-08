@@ -1141,7 +1141,7 @@ test('התדריך: לא תמיד נימי', () => {
   const b1 = briefFor({ walks: 1, creatures: ['nimi'] })
   assert.equal(b1.missionId, null, 'מסע 1 הוא סיפור; אחר כך אין משימה קבועה')
   assert.equal(b1.creature, 'dabashon')
-  assert.ok(b1.line.includes('דבשון'), b1.line)
+  assert.ok(b1.line.includes('האני'), b1.line)
   assert.ok(b1.line.includes('מסע 2'))
   assert.ok(b1.sub.includes('דבש'), 'יצור חדש — מה הוא מביא')
 
@@ -1170,7 +1170,7 @@ test('הבית אחרי הפורטל: מסע 1 — הסיפור; אחר כך —
 
   const run = { missionId: null, stops: [{ creature: 'dabashon', done: true }] }
   const h = homeFor(run, { walks: 2 })
-  assert.ok(h.line.includes('דבשון'), h.line)
+  assert.ok(h.line.includes('האני'), h.line)
   assert.ok(h.line.includes('דבש'))
   assert.ok(h.clue.sub.includes('לומי'), 'walks=2 → הבא בסבב הוא לומי')
 
@@ -1263,7 +1263,7 @@ test('שניים בדרך: מהמסע השני תמיד שניים, ובכל מ�
   // התדריך מציג את שניהם
   const b = briefFor({ walks: 1, creatures: ['nimi'] })
   assert.deepEqual(b.creatures, ['dabashon', 'tzel'])
-  assert.ok(b.line.includes('דבשון וצל'), b.line)
+  assert.ok(b.line.includes('האני וצל'), b.line)
 })
 
 test('גודל על המסך: בולדר גדול מנימי, לפי heightM', () => {
