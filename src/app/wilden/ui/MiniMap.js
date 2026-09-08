@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { bearing as bearingOf, haversine } from '../engine/geo'
 import { routeArrows, splitAt, routeDirAt } from '../engine/mapLines'
 import { angleDelta } from '../hooks/useOrient'
+import { kidSvg } from './Wear'
 
 // ─── המפה ───
 // "רציתי מסלול כמו גוגל, של שעה, שמבינים לאן פונים ולאן הולכים, עם יעד
@@ -81,24 +82,9 @@ function stopIcon(L, s, isNext, img, known) {
     html: upright(`<div style="width:${size}px;height:${size}px;border-radius:50%;background:rgba(229,163,66,${isNext ? '.3' : '.18'});border:${isNext ? 3 : 2}px ${isNext ? 'solid' : 'dashed'} ${AMBER};display:grid;place-items:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,.45));${isNext ? 'animation:wildenPin 1.6s ease-in-out infinite' : 'opacity:.85'}">${inner}</div>`) })
 }
 
-// ── הדמות: ילד מלמעלה, עם אלומת מבט ──
-// facing במעלות (0 = צפון): לאן צריך ללכת. האלומה הכחולה לפני הפנים היא
-// מה שקוראים במבט. הראש, הכובע והכתפיים — כדי שזה ילד ולא חץ.
-function kidSvg(facing) {
-  return `<div class="kid" style="transform:rotate(${Math.round(facing)}deg)">
-    <svg width="72" height="72" viewBox="0 0 72 72" style="display:block;overflow:visible">
-      <defs><linearGradient id="wbeam" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="${BLUE}" stop-opacity=".45"/><stop offset="1" stop-color="${BLUE}" stop-opacity="0"/></linearGradient></defs>
-      <path d="M36 36 L14 0 Q36 -8 58 0 Z" fill="url(#wbeam)"/>
-      <ellipse cx="36" cy="40" rx="15" ry="10" fill="#6FA35A" stroke="#fff" stroke-width="2.5"/>
-      <ellipse cx="36" cy="43" rx="6" ry="4" fill="#4E7B3E"/>
-      <circle cx="36" cy="34" r="9.5" fill="#F0C49B" stroke="#fff" stroke-width="2"/>
-      <path d="M26.5 33 Q36 22 45.5 33 Q36 28 26.5 33 Z" fill="#5A3A22"/>
-      <path d="M27 31 Q36 21 45 31 L47 27 Q36 17 25 27 Z" fill="#E0523A"/>
-      <path d="M33 25 L36 19 L39 25 Z" fill="#E0523A"/>
-    </svg></div>`
-}
-function kidIcon(L, facing) {
-  return L.divIcon({ className: '', iconSize: [72, 72], iconAnchor: [36, 36], html: kidSvg(facing == null ? 0 : facing) })
+// ── הדמות: ילד מלמעלה, עם אלומת מבט ── (הציור ב-ui/Wear.js, עם מה שקנו בחנות)
+function kidIcon(L, facing, kid) {
+  return L.divIcon({ className: '', iconSize: [72, 72], iconAnchor: [36, 36], html: kidSvg(facing == null ? 0 : facing, kid) })
 }
 
 function arrowIcon(L, deg) {
@@ -112,7 +98,9 @@ const fitPad = m => { const sz = m.getSize(); return [sz.x / 6 + 28, sz.y / 6 + 
 
 const coinKey = c => `${c.lat.toFixed(6)},${c.lng.toFixed(6)}`
 
-export function MiniMap({ home, path, pos, along = 0, heading = null, stops = [], nextStop = 0, reveal = true, known = [], creatureImg, coins = [], coinRun = null, height = '46vh' }) {
+export function MiniMap({ home, path, pos, along = 0, heading = null, stops = [], nextStop = 0, reveal = true, known = [], creatureImg, coins = [], coinRun = null, height = '46vh', kid = null }) {
+  // מה הילד לובש (חנות) — נקרא כשמציירים את הדמות. לא משתנה באמצע הליכה.
+  const kidRef = useRef(kid); kidRef.current = kid
   const ready = useLeaflet()
   const el = useRef(null)
   const wrap = useRef(null)
@@ -271,7 +259,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
     const face = routeDirAt(path, along) ?? motionDir.current ?? 0
     if (!lay.current.me) {
       lay.current.acc = L.circle(ll, { radius: pos.acc || 0, color: BLUE, weight: 1, opacity: 0.4, fillColor: BLUE, fillOpacity: 0.1, interactive: false }).addTo(m)
-      lay.current.me = L.marker(ll, { interactive: false, zIndexOffset: 2000, icon: kidIcon(L, face) }).addTo(m)
+      lay.current.me = L.marker(ll, { interactive: false, zIndexOffset: 2000, icon: kidIcon(L, face, kidRef.current) }).addTo(m)
       lay.current.meFace = face
     } else {
       lay.current.me.setLatLng(ll)
@@ -279,7 +267,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
       if (Math.abs(angleDelta(lay.current.meFace, face) || 0) >= 2) {
         const kid = lay.current.me.getElement()?.querySelector('.kid')
         if (kid) kid.style.transform = `rotate(${Math.round(face)}deg)`
-        else lay.current.me.setIcon(kidIcon(L, face))
+        else lay.current.me.setIcon(kidIcon(L, face, kidRef.current))
         lay.current.meFace = face
       }
     }

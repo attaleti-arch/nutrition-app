@@ -10,6 +10,8 @@ import { placeTarget, placeStops, revalidate, PLACE_AFTER, freshEnd } from './pl
 import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS, CATCH_BONUS, placeCoinRun } from './coins.js'
 import { mergeProgress } from './profile.js'
 import { EGG_PRICE, HATCH_M, canBuyEgg, hatch } from './egg.js'
+import { buy as buyItem, equip as equipItem } from './shop.js'
+import { grantWeekly, walkSummary } from './weekly.js'
 import { bringsFor, completeQuest } from './world.js'
 import { newlyEarned } from './badges.js'
 
@@ -62,6 +64,12 @@ export function initial() {
       // ── מונים להישגים ── נצברים בפורטל, לא נמחקים אף פעם
       catches: 0, caught: {}, golds: 0, runs: 0, bestRun: 0, bestJumpCm: 0,
       metersTotal: 0, coinsEarned: 0, walkDays: [],
+      // ── החנות ── מה נקנה, ומי לובש מה (ראה engine/shop.js)
+      owned: [], wear: {},
+      // ── הבונוס השבועי ── יום ראשון של השבוע שבו כבר ניתן (ראה engine/weekly.js)
+      weeklyBonus: null,
+      // ── להורה ── ההליכה האחרונה, ודקות בחוץ בסך הכול
+      lastWalk: null, minutesTotal: 0,
     },
   }
 }
@@ -357,7 +365,9 @@ export function reduce(g, ev) {
       const runDone = r.coinRun?.done ? 1 : 0
       const walkDays = [...(g.progress.walkDays || [])]
       if (r.day && !walkDays.includes(r.day)) walkDays.push(r.day)
-      const progress = {
+      // ── להורה ── מרחק, דקות, צעדים משוערים של ההליכה הזאת
+      const lastWalk = { ...walkSummary({ walked: r.walked, startedAt: r.walkStartedAt, t: ev.t }), day: r.day || null }
+      const progress0 = {
           ...g.progress,
           creatures,
           res,
@@ -374,6 +384,8 @@ export function reduce(g, ev) {
           metersTotal: (g.progress.metersTotal || 0) + Math.round(r.walked || 0),
           coinsEarned: (g.progress.coinsEarned || 0) + (r.coinsTaken || 0),
           walkDays: walkDays.slice(-60),
+          lastWalk,
+          minutesTotal: (g.progress.minutesTotal || 0) + lastWalk.minutes,
           // רק משימה סיפורית מקדמת את העולם ואת הביקון.
           missionsCompleted: isStory ? g.progress.missionsCompleted + 1 : g.progress.missionsCompleted,
           lastStoryDay: isStory ? r.day : g.progress.lastStoryDay,
@@ -381,6 +393,9 @@ export function reduce(g, ev) {
             ? { ...g.progress.story, [r.missionId]: 'done' }
             : g.progress.story,
       }
+      // ── הבונוס השבועי ── שלושה מסעות השבוע: ביצה, או מטבעות אם כבר יש ביצה.
+      const weekly = r.day ? grantWeekly(progress0, r.day, ev.t ?? null) : { progress: progress0, gift: null }
+      const progress = weekly.progress
 
       return {
         ...g,
@@ -388,6 +403,7 @@ export function reduce(g, ev) {
         hatched,
         // מה נפתח במסע הזה — למסך הסיום. נמחק ב-RUN_CLOSED, כמו hatched.
         newBadges: newlyEarned(g.progress, progress),
+        weeklyGift: weekly.gift,
         progress,
       }
     }
@@ -396,7 +412,23 @@ export function reduce(g, ev) {
       return { ...g, state: S.RUN_COMPLETE }
 
     case 'RUN_CLOSED':
-      return { ...g, state: S.BROKEN_WORLD, run: null, hatched: null, newBadges: null }
+      return { ...g, state: S.BROKEN_WORLD, run: null, hatched: null, newBadges: null, weeklyGift: null }
+
+    // ── החנות ──
+    // במסך הבית בלבד. קנייה מורידה מטבעות; לבישה חופשית על מה שנקנה.
+    case 'BUY_ITEM': {
+      if (g.state !== S.BROKEN_WORLD) return g
+      let progress = buyItem(g.progress, ev.id)
+      if (progress === g.progress) return g
+      // קנו בשביל מישהו? הוא לובש מיד.
+      if (ev.who && ev.slot) progress = equipItem(progress, ev.who, ev.slot, ev.id)
+      return { ...g, progress }
+    }
+    case 'EQUIP': {
+      if (g.state !== S.BROKEN_WORLD) return g
+      const progress = equipItem(g.progress, ev.who, ev.slot, ev.id ?? null)
+      return progress === g.progress ? g : { ...g, progress }
+    }
 
     // ── קונים ביצה ──
     // במסך הבית בלבד. מטבעות יורדים מיד; הביצה יושבת על הביקון עד המסע.
@@ -410,10 +442,16 @@ export function reduce(g, ev) {
 
     case 'ABORT':
       // "לעצור" שומר הכל. אין עונש על לחזור הביתה — גם המטבעות שנאספו נשארים.
+      // גם מה שהלכו נספר — להורה, ולמטרים.
+      const aborted = g.run ? { ...walkSummary({ walked: g.run.walked, startedAt: g.run.walkStartedAt, t: ev.t }), day: g.run.day || null } : null
       return {
         ...g,
         state: S.ABORTED,
-        progress: { ...g.progress, coins: (g.progress.coins || 0) + (g.run?.coinsTaken || 0) },
+        progress: {
+          ...g.progress,
+          coins: (g.progress.coins || 0) + (g.run?.coinsTaken || 0),
+          ...(aborted ? { lastWalk: aborted, minutesTotal: (g.progress.minutesTotal || 0) + aborted.minutes, metersTotal: (g.progress.metersTotal || 0) + aborted.meters } : {}),
+        },
         run: { ...g.run, resolved: false, coinsTaken: 0 },
       }
 

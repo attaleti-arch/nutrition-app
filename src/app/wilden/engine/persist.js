@@ -67,6 +67,11 @@ export function forServer(g) {
       metersTotal: g.progress?.metersTotal ?? 0,
       coinsEarned: g.progress?.coinsEarned ?? 0,
       walkDays: g.progress?.walkDays ?? [],
+      owned: g.progress?.owned ?? [],
+      wear: g.progress?.wear ?? {},
+      weeklyBonus: g.progress?.weeklyBonus ?? null,
+      minutesTotal: g.progress?.minutesTotal ?? 0,
+      lastWalk: g.progress?.lastWalk ?? null,
     },
   }
 }

@@ -6,6 +6,8 @@ import { RES_OF, RES_NAME, RES_ICON, creatureLine } from '../engine/world'
 import { variantById } from '../engine/egg'
 import { useModelViewer } from '../hooks/useModelViewer'
 import { badgeList } from '../engine/badges'
+import { itemById } from '../engine/shop'
+import { Wear } from './Wear'
 
 // ─── ספר היצורים, והישגים ───
 // עמוד לכל יצור: מי הוא, מה הוא מביא, כמה פעמים נתפס, באילו צבעים. מי
@@ -34,7 +36,10 @@ export function Book({ progress, onClose }) {
             <button key={id} onClick={() => known && setOpen(id)} style={{ ...B.card, opacity: known ? 1 : 0.7, cursor: known ? 'pointer' : 'default' }} aria-label={known ? c.name : 'יצור לא ידוע'}>
               <div style={B.pic}>
                 {known
-                  ? <img src={c.live || c.sprites?.hero} alt="" style={B.img} draggable={false} />
+                  ? <div style={{ position: 'relative', height: 116, width: 'fit-content' }}>
+                      <img src={c.live || c.sprites?.hero} alt="" style={B.img} draggable={false} />
+                      <Wear id={id} wear={progress?.wear?.[id]} />
+                    </div>
                   : <span style={B.unknown}>?</span>}
               </div>
               <p style={B.name}>{known ? c.name : '???'}</p>
@@ -56,19 +61,25 @@ function CreaturePage({ id, progress, onClose }) {
   const [line, setLine] = useState(0)
   const vs = (progress?.variants || []).filter(v => v.creature === id)
   const n = progress?.caught?.[id] || 0
+  const wear = progress?.wear?.[id]
+  const dressed = !!wear && Object.keys(wear).length > 0
   useEffect(() => { setLine(Math.floor(Math.random() * 3)) }, [id])
   if (!c) return null
+  // לובש משהו מהחנות? מראים את הדמות החיה עם הכובע. אחרת — התלת-ממד, לסובב.
   return (
     <div style={B.page} dir="rtl">
       <button onClick={onClose} style={B.back}>חזרה לספר</button>
       <div style={B.stage}>
-        {ready && c.model
+        {ready && c.model && !dressed
           ? <model-viewer ref={ref} src={c.model} camera-controls auto-rotate auto-rotate-delay="800" rotation-per-second="20deg"
               interaction-prompt="none" environment-image="neutral" shadow-intensity="0.7" exposure="1.05"
               style={{ width: '100%', height: '100%', background: 'transparent' }} />
-          : <img src={c.live || c.sprites?.hero} alt="" style={{ height: '80%', width: 'auto' }} draggable={false} />}
+          : <div style={{ position: 'relative', height: '80%', width: 'fit-content' }}>
+              <img src={c.live || c.sprites?.hero} alt="" style={{ height: '100%', width: 'auto', display: 'block' }} draggable={false} />
+              <Wear id={id} wear={wear} />
+            </div>}
       </div>
-      <p style={B.pageHint}>סובבו אותו עם האצבע</p>
+      <p style={B.pageHint}>{dressed ? `${c.name} עם ${Object.values(wear).map(w => itemById(w)?.name).filter(Boolean).join(' ו')}` : 'סובבו אותו עם האצבע'}</p>
       <h3 style={B.pageName}>{c.name}</h3>
       <p style={B.pageLine}>"{creatureLine(id, line)}"</p>
       <div style={B.facts}>

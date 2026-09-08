@@ -6,6 +6,8 @@
 // בלי זה קרה בדיוק מה שהיא ראתה: כל דפדפן הוא עולם חדש, walks חוזר
 // לאפס, והמשחק שולח שוב ושוב לתפוס את נימי.
 
+import { mergeWear } from './shop.js'
+
 // בלי 0/O/1/I/L — הורה מכתיב את הקוד בטלפון ואסור שיהיה ספק
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
 export const CODE_LEN = 5
@@ -85,6 +87,11 @@ export function mergeProgress(local, remote) {
     coinsEarned: Math.max(base.coinsEarned || 0, other.coinsEarned || 0),
     walkDays: [...new Set([...(other.walkDays || []), ...(base.walkDays || [])])].sort().slice(-60),
     egg: base.egg || other.egg || null,
+    // החנות: מה שנקנה נקנה; מי לובש מה — של הבסיס, והשאר מהצד השני.
+    ...mergeWear(base, other),
+    weeklyBonus: [base.weeklyBonus, other.weeklyBonus].filter(Boolean).sort().pop() || null,
+    minutesTotal: Math.max(base.minutesTotal || 0, other.minutesTotal || 0),
+    lastWalk: base.lastWalk || other.lastWalk || null,
     story: { ...(other.story || {}), ...(base.story || {}) },
     walks: Math.max(base.walks || 0, other.walks || 0),
     missionsCompleted: Math.max(base.missionsCompleted || 0, other.missionsCompleted || 0),

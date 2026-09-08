@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useModelViewer, useModelSrc } from '../hooks/useModelViewer'
 import { sizeOf } from '../content/creatures'
+import { Wear } from '../ui/Wear'
 
 // ─── הדמות על הבמה ───
 // שתי דרכים להציג יצור, ומדרגה ברורה ביניהן:
@@ -24,7 +25,7 @@ const FOV_DEG = 22          // זווית ראייה אנכית של מצלמת 
 // scale מגיע מהפאזה (0.82 מבצבץ, 1.6 מתקרב, 1.35 בסיום) ומיושם כגובה
 // אמיתי, לא כ-transform — ראה הערה ב-Stage.
 // hideSprite: המודל התלת-ממדי כבר מוצג בשכבה שלו; הצל והפס נשארים כאן.
-export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approaching, done, scale: phaseScale = 1, hideSprite = false, flying = false, shadow = false }) {
+export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approaching, done, scale: phaseScale = 1, hideSprite = false, flying = false, shadow = false, wear = null }) {
   // הגודל: הפאזה כפול הגובה האמיתי של היצור. בולדר גדול מנימי גם כשהם
   // באותו מרחק.
   const scale = phaseScale * sizeOf(creature)
@@ -44,7 +45,7 @@ export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approa
       {/* צל: רק הצל שלו על הרצפה. שטוח, כהה, מחליק — בלי הדמות. */}
       {shadow ? <ShadowBlob faceLeft={faceLeft} />
         : !hideSprite && (
-        <Sprite sprites={creature?.sprites} live={creature?.live} peeking={peeking} faceLeft={faceLeft} done={done} scale={scale} />
+        <Sprite sprites={creature?.sprites} live={creature?.live} peeking={peeking} faceLeft={faceLeft} done={done} scale={scale} wear={wear} creatureId={creature?.id} />
       )}
     </div>
   )
@@ -96,7 +97,7 @@ export function Burst({ src, scale = 1.45 }) {
 // ── הדמות החיה ──
 // live הוא הקליפ של Runway בלי רקע (WebP מונפש). הוא מנצח את הספרייט
 // הסטטי בכל פאזה חוץ מהצצה, ששם יש ציור ייעודי אם קיים.
-function Sprite({ sprites, live, peeking, faceLeft, done, scale = 1 }) {
+function Sprite({ sprites, live, peeking, faceLeft, done, scale = 1, wear = null, creatureId = null }) {
   if (!sprites && !live) return null
   if (peeking && sprites?.peek) {
     return <img src={sprites.peek} alt="" draggable={false}
@@ -104,16 +105,17 @@ function Sprite({ sprites, live, peeking, faceLeft, done, scale = 1 }) {
   }
   const src = live || sprites?.hero
   if (!src) return null
+  // העוטף הוא תיבת התמונה: הכובע מהחנות יושב עליו באחוזים, ומתהפך איתו.
   return (
-    <img src={src} alt="" draggable={false} style={{
-      ...F.hero,
-      // גובה אמיתי לפי הפאזה, כדי שהשם בסיום ייכתב מתחת לרגליים ולא עליהן
-      height: `${(34 * scale).toFixed(1)}vh`,
-      transform: faceLeft ? 'scaleX(-1)' : 'none',
-      // בלי filter על תמונה מונפשת: drop-shadow שמחושב מחדש 12 פעמים בשנייה
-      // על WebP מונפש תוקע את הדפדפן. הצל והזוהר מצוירים מאחור ב-CSS רגיל.
-      filter: live ? 'none' : done ? GLOW_DONE : 'drop-shadow(0 6px 10px rgba(0,0,0,.35))',
-    }} />
+    <div style={{ ...F.hero, width: 'fit-content', height: `${(34 * scale).toFixed(1)}vh`, transform: faceLeft ? 'scaleX(-1)' : 'none' }}>
+      <img src={src} alt="" draggable={false} style={{
+        height: '100%', width: 'auto', display: 'block', userSelect: 'none', WebkitUserDrag: 'none',
+        // בלי filter על תמונה מונפשת: drop-shadow שמחושב מחדש 12 פעמים בשנייה
+        // על WebP מונפש תוקע את הדפדפן. הצל והזוהר מצוירים מאחור ב-CSS רגיל.
+        filter: live ? 'none' : done ? GLOW_DONE : 'drop-shadow(0 6px 10px rgba(0,0,0,.35))',
+      }} />
+      {wear && creatureId && <Wear id={creatureId} wear={wear} />}
+    </div>
   )
 }
 

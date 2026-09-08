@@ -23,6 +23,9 @@ import { CoinRun } from './ar/CoinRun'
 import { Hatch } from './ui/Hatch'
 import { HomeWorld } from './ui/HomeWorld'
 import { Book, Badges } from './ui/Book'
+import { Shop } from './ui/Shop'
+import { weeklyStatus, WEEKLY_COINS, km } from './engine/weekly'
+import { usePulse } from './hooks/usePulse'
 import { badgeById } from './engine/badges'
 import { RES_NAME as RES_NAMES } from './engine/world'
 import { CaughtClip, usePreloadClip } from './ui/CaughtClip'
@@ -241,6 +244,7 @@ export default function Wilden() {
       {g.state === S.ENCOUNTER && (introSeen || !creature?.clip) && (
         <Stage
           creature={creature}
+          wear={g.progress.wear?.[creature?.id] || null}
           pos={geo.pos}
           anchor={g.run?.target || null}
           onMode={m => dispatch({ type: m === 'CAMERA' ? 'CAMERA_READY' : 'CAMERA_DENIED' })}
@@ -257,7 +261,9 @@ export default function Wilden() {
           <ProfileGate P={P} switching={P.switching} />
         )}
         {g.state === S.BROKEN_WORLD && P.loaded && !P.needsGate && (
-          <BrokenWorld g={g} today={today} onStart={startRun} onEgg={() => { sfxAppear(); dispatch({ type: 'BUY_EGG', t: Date.now() }) }} onQuest={id => dispatch({ type: 'COMPLETE_QUEST', id })} P={P} />
+          <BrokenWorld g={g} today={today} onStart={startRun} onEgg={() => { sfxAppear(); dispatch({ type: 'BUY_EGG', t: Date.now() }) }} onQuest={id => dispatch({ type: 'COMPLETE_QUEST', id })}
+            onBuy={(id, who, slot) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_ITEM', id, who, slot }) }}
+            onEquip={(who, slot, id) => { sfxAppear(); dispatch({ type: 'EQUIP', who, slot, id }) }} P={P} />
         )}
 
         {g.state === S.PERMISSIONS && (
@@ -370,6 +376,7 @@ export default function Wilden() {
           <Panel eyebrow="המסע נגמר">
             <h2 style={s.h2}>{g.progress.creatures.length ? 'הוא חי בעולם שלכם עכשיו.' : 'חזרתם.'}</h2>
             <NewBadges ids={g.newBadges} />
+            <ParentCard walk={g.progress.lastWalk} gift={g.weeklyGift} />
             <Stats g={g} />
             <button onClick={() => dispatch({ type: 'RUN_CLOSED' })} style={s.cta}>לעולם</button>
           </Panel>
@@ -379,6 +386,7 @@ export default function Wilden() {
           <Panel eyebrow="עצרנו">
             <h2 style={s.h2}>הכול נשמר</h2>
             <p style={s.body}>מה שאספתם נשאר. אפשר לצאת שוב מתי שבא לכם.</p>
+            <ParentCard walk={g.progress.lastWalk} />
             <button onClick={() => dispatch({ type: 'RUN_CLOSED' })} style={s.cta}>לעולם</button>
           </Panel>
         )}
@@ -476,6 +484,23 @@ function NewBadges({ ids }) {
   )
 }
 
+// ── להורים ── בסוף הליכה: כמה הלכו, כמה זמן, כמה צעדים בערך. בלי קלוריות.
+function ParentCard({ walk, gift = null }) {
+  if (!walk || (!walk.meters && !walk.minutes)) return null
+  return (
+    <div style={s.parent}>
+      <p style={s.parentEyebrow}>להורים</p>
+      <p style={s.parentLine}>
+        היום הלכתם <b>{km(walk.meters)}</b>
+        {walk.minutes > 0 && <> · <b>{walk.minutes} דקות</b> בחוץ</>}
+        {walk.steps > 0 && <> · כ־<b>{walk.steps.toLocaleString('he-IL')}</b> צעדים</>}.
+      </p>
+      {gift === 'egg' && <p style={s.parentGift}>🥚 שלושה מסעות השבוע — ביצה על הביקון, מתנה.</p>}
+      {gift === 'coins' && <p style={s.parentGift}>🪙 שלושה מסעות השבוע — {WEEKLY_COINS} מטבעות בונוס.</p>}
+    </div>
+  )
+}
+
 // בבית = בתוך 60 מ' מהדלת, או שאין מיקום בכלל (אז לא חוסמים).
 const HOME_M = 60
 function atHome(run) {
@@ -484,8 +509,9 @@ function atHome(run) {
 }
 
 // ── עולם הבית ההרוס ──
-function BrokenWorld({ g, today, onStart, onEgg, onQuest, P }) {
-  const [panel, setPanel] = useState(null)   // book | badges
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, P }) {
+  const [panel, setPanel] = useState(null)   // book | badges | shop
+  const week = weeklyStatus(g.progress, today)
   const storyOpen = canStartStory(g.progress, today)
   const first = g.progress.missionsCompleted === 0
   const walks = g.progress.walks || 0
@@ -513,9 +539,21 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, P }) {
       <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
         <button onClick={() => setPanel('book')} style={s.chip}>📖 ספר היצורים <b>{g.progress.creatures.length}/8</b></button>
         <button onClick={() => setPanel('badges')} style={s.chip}>🏅 הישגים <b>{badgeCount(g.progress)}</b></button>
+        <button onClick={() => setPanel('shop')} style={s.chip}>🛍️ חנות <b>🪙 {g.progress.coins || 0}</b></button>
       </div>
       {panel === 'book' && <Book progress={g.progress} onClose={() => setPanel(null)} />}
       {panel === 'badges' && <Badges progress={g.progress} onClose={() => setPanel(null)} />}
+      {panel === 'shop' && <Shop progress={g.progress} onBuy={onBuy} onEquip={onEquip} onClose={() => setPanel(null)} />}
+
+      {/* השבוע: שלושה מסעות בין ראשון לשבת — ביצה. לא רצף שנשבר: מונה שמתאפס ביום ראשון. */}
+      <div style={s.weekly} aria-label="השבוע">
+        <span style={{ display: 'flex', gap: 5 }}>
+          {Array.from({ length: week.need }, (_, i) => <span key={i} style={{ ...s.weekDot, background: i < week.have ? C.amber : 'transparent' }} />)}
+        </span>
+        <span>{week.done
+          ? 'הבונוס השבועי התקבל. בשבוע הבא — שוב.'
+          : `${week.have}/${week.need} מסעות השבוע · ב־${week.need} מקבלים ${week.gift === 'egg' ? 'ביצה 🥚' : `🪙 ${WEEKLY_COINS}`}`}</span>
+      </div>
 
       {/* הלוח של הבן שלה: מסע 1 — 30 דקות ונימי. אחר כך 45 דקות ושניים
           בדרך. מהשלישי — מטבעות פותחים יצור שלישי. */}
@@ -627,6 +665,9 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
   // ומד חום שמתחזק. סיכה מהרגע הראשון הורגת את המתח.
   const heat = r.target && !r.resolved ? heatOf(distToTarget) : null
   const reveal = (r.walked || 0) >= PLACE_AFTER && !!heat && heat.t >= 0.65
+  // רעידה בדופק כשמתקרבים לתחנה (מ-100 מ'): לאט, ואז מהר. כמו גלאי מתכות.
+  usePulse(!homeward && heat && distToTarget != null && distToTarget < 100 ? distToTarget : null,
+    { base: 300, perM: 18, near: 350, far: 2000 })
 
   return (
     <>
@@ -634,7 +675,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
         <MiniMap home={r.home} path={r.path} pos={geo.pos} along={r.along || 0} heading={orient.heading} coinRun={r.coinRun}
           stops={r.stops || (r.target ? [r.target] : [])} nextStop={r.stops ? r.stop : 0}
           reveal={reveal} known={g.progress.creatures} creatureImg={creature?.sprites?.hero}
-          coins={r.coins} height="100%" />
+          coins={r.coins} height="100%" kid={g.progress.wear?.kid || null} />
 
         {/* מונה המטבעות: קופץ בכל גלינג. בדרך הביתה — כפול. */}
         <div key={r.coinsTaken || 0} style={s.coinHud}>🪙 {r.coinsTaken || 0}{homeward && <span style={{ fontSize: 12 }}> ×2</span>}</div>
@@ -777,6 +818,7 @@ function Stats({ g }) {
     <div style={s.stats}>
       <div><b style={s.statN}>{g.progress.creatures.length}</b><span style={s.statL}>יצורים</span></div>
       <div><b style={s.statN}>{g.progress.missionsCompleted}</b><span style={s.statL}>מסעות</span></div>
+      {(g.progress.minutesTotal || 0) > 0 && <div><b style={s.statN}>{g.progress.minutesTotal}</b><span style={s.statL}>דקות בחוץ</span></div>}
       {kinds.map(([k, v]) => (
         <div key={k}><b style={s.statN}>{v}</b><span style={s.statL}>{RES_NAME[k] || k}</span></div>
       ))}
@@ -885,6 +927,12 @@ const s = {
   newBadges: { display: 'flex', flexWrap: 'wrap', gap: 8, margin: '0 0 14px' },
   newBadge: { padding: '8px 12px', borderRadius: 999, background: '#F0C069', color: '#14200F', fontSize: 14, fontWeight: 900,
     boxShadow: '0 4px 14px rgba(240,192,105,.35)', animation: 'wildenCoinPop .5s ease-out' },
+  weekly: { display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: C.muted, margin: '0 0 14px', padding: '8px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
+  weekDot: { width: 12, height: 12, borderRadius: '50%', border: `2px solid ${C.amber}`, display: 'block' },
+  parent: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '12px 16px', margin: '4px 0 12px' },
+  parentEyebrow: { margin: 0, fontSize: 12, fontWeight: 800, letterSpacing: '.1em', color: C.faint },
+  parentLine: { margin: '4px 0 0', fontSize: 15.5, color: C.muted, lineHeight: 1.6 },
+  parentGift: { margin: '6px 0 0', fontSize: 15, color: '#F0C069', fontWeight: 700 },
   statN: { display: 'block', fontSize: 22, fontWeight: 900, color: C.ink },
   statL: { fontSize: 12.5, color: C.faint },
 }

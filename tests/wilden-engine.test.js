@@ -1837,3 +1837,126 @@ test('הישגים: זהב וקפיצה נספרים בפורטל', () => {
   assert.ok(g.progress.bestJumpCm >= 30 && g.progress.bestJumpCm <= 36, `520ms באוויר ≈ 33 ס"מ: ${g.progress.bestJumpCm}`)
   assert.ok(g.newBadges.includes('gold-first') && g.newBadges.includes('jump-30'))
 })
+
+// ══════════════════════════════════════════════
+// ─── החנות, הבונוס השבועי, הסיכום להורה ───
+import { ITEMS, SLOT, KID, itemById, canBuy, buy, equip, owns, wearOf, wornBy, mergeWear, ANCHORS } from '../src/app/wilden/engine/shop.js'
+import { weekStart, walksInWeekOf, weeklyBonusDue, grantWeekly, weeklyStatus, walkSummary, WEEKLY_GOAL, WEEKLY_COINS, km } from '../src/app/wilden/engine/weekly.js'
+import { pulsePeriod } from '../src/app/wilden/engine/pulse.js'
+import { AVAILABLE as AVAIL2 } from '../src/app/wilden/engine/coins.js'
+
+test('חנות: קונים רק עם מטבעות, פעם אחת, ולובשים רק מה שנקנה ובחריץ הנכון', () => {
+  const p0 = { ...initial().progress, coins: 30, creatures: ['nimi'] }
+  assert.ok(ITEMS.length >= 10)
+  assert.ok(canBuy(p0, 'cap')); assert.ok(!canBuy(p0, 'crown'), 'כתר 70 — אין מספיק')
+  const p1 = buy(p0, 'cap')
+  assert.equal(p1.coins, 30 - itemById('cap').price)
+  assert.ok(owns(p1, 'cap'))
+  assert.equal(buy(p1, 'cap'), p1, 'לא קונים פעמיים')
+  assert.equal(equip(p1, 'nimi', SLOT.HEAD, 'crown'), p1, 'לא לובשים מה שלא נקנה')
+  assert.equal(equip(p1, 'nimi', SLOT.FACE, 'cap'), p1, 'כובע לא על הפנים')
+  const p2 = equip(p1, 'nimi', SLOT.HEAD, 'cap')
+  assert.deepEqual(wearOf(p2, 'nimi'), { head: 'cap' })
+  // אותו פריט על שניים — מותר; חולצה — רק לילד
+  const p3 = equip(p2, KID, SLOT.HEAD, 'cap')
+  assert.deepEqual(wornBy(p3, 'cap').sort(), ['kid', 'nimi'])
+  const p4 = buy({ ...p3, coins: 10 }, 'shirt-red')
+  assert.equal(equip(p4, 'nimi', SLOT.SHIRT, 'shirt-red'), p4, 'יצור בלי חולצה')
+  assert.deepEqual(wearOf(equip(p4, KID, SLOT.SHIRT, 'shirt-red'), KID), { head: 'cap', shirt: 'shirt-red' })
+  // מורידים
+  const p5 = equip(p3, 'nimi', SLOT.HEAD, null)
+  assert.equal(p5.wear.nimi, undefined)
+  // לכל יצור יש עוגן לכובע ולפנים
+  for (const id of AVAIL2) assert.ok(ANCHORS[id]?.head && ANCHORS[id]?.face, id)
+})
+
+test('חנות במכונה: רק בבית, קנייה עם "בשביל מי" מלבישה מיד, ונשמר לשרת ובמיזוג', () => {
+  let g = { ...initial(), progress: { ...initial().progress, coins: 50, creatures: ['nimi', 'gali'] } }
+  g = reduce(g, { type: 'BUY_ITEM', id: 'shades', who: 'gali', slot: SLOT.FACE })
+  assert.equal(g.progress.coins, 20)
+  assert.deepEqual(g.progress.owned, ['shades'])
+  assert.deepEqual(g.progress.wear, { gali: { face: 'shades' } })
+  g = reduce(g, { type: 'EQUIP', who: 'nimi', slot: SLOT.FACE, id: 'shades' })
+  assert.deepEqual(wornBy(g.progress, 'shades').sort(), ['gali', 'nimi'])
+  // באמצע הליכה — לא
+  const walking = started(['nimi'], { ...g, progress: { ...g.progress, coins: 100 } })
+  assert.equal(reduce(walking, { type: 'BUY_ITEM', id: 'cap' }), walking)
+  // שרת
+  const srv = forServer(g).progress
+  assert.deepEqual(srv.owned, ['shades']); assert.deepEqual(srv.wear.gali, { face: 'shades' })
+  // מיזוג: מה שנקנה — איחוד; מה שלובשים — הבסיס קודם
+  const m = mergeWear({ owned: ['cap'], wear: { nimi: { head: 'cap' } } }, { owned: ['shades'], wear: { nimi: { face: 'shades' }, gali: { face: 'shades' } } })
+  assert.deepEqual(m.owned.sort(), ['cap', 'shades'])
+  assert.deepEqual(m.wear, { nimi: { head: 'cap' }, gali: { face: 'shades' } })
+  const merged = mergeProgress2({ ...g.progress, walks: 3 }, { ...initial().progress, owned: ['cap'], wear: { kid: { head: 'cap' } } })
+  assert.ok(merged.owned.includes('cap') && merged.owned.includes('shades'))
+  assert.deepEqual(merged.wear.kid, { head: 'cap' })
+})
+
+test('שבוע: ראשון עד שבת, שלושה מסעות — ביצה, ואם יש ביצה — מטבעות; פעם בשבוע', () => {
+  assert.equal(weekStart('2026-09-06'), '2026-09-06', 'ראשון')
+  assert.equal(weekStart('2026-09-12'), '2026-09-06', 'שבת — אותו שבוע')
+  assert.equal(weekStart('2026-09-13'), '2026-09-13', 'ראשון הבא')
+  const p = { ...initial().progress, walkDays: ['2026-09-01', '2026-09-07', '2026-09-08'] }
+  assert.equal(walksInWeekOf(p, '2026-09-08'), 2)
+  assert.ok(!weeklyBonusDue(p, '2026-09-08'))
+  const p3 = { ...p, walkDays: [...p.walkDays, '2026-09-10'] }
+  assert.ok(weeklyBonusDue(p3, '2026-09-10'))
+  const g1 = grantWeekly(p3, '2026-09-10', 5)
+  assert.equal(g1.gift, 'egg'); assert.deepEqual(g1.progress.egg, { boughtAt: 5, gift: true }); assert.equal(g1.progress.weeklyBonus, '2026-09-06')
+  assert.ok(!weeklyBonusDue(g1.progress, '2026-09-11'), 'לא פעמיים באותו שבוע')
+  const g2 = grantWeekly({ ...p3, egg: { boughtAt: 1 } }, '2026-09-10')
+  assert.equal(g2.gift, 'coins'); assert.equal(g2.progress.coins, WEEKLY_COINS)
+  // מונה שמתאפס ולא נשבר
+  const st = weeklyStatus(p, '2026-09-08')
+  assert.deepEqual(st, { have: 2, need: WEEKLY_GOAL, done: false, gift: 'egg' })
+  assert.equal(weeklyStatus(g1.progress, '2026-09-14').have, 0, 'שבוע חדש — מאפס')
+  assert.equal(weeklyStatus(g1.progress, '2026-09-14').done, false)
+})
+
+test('שבוע במכונה: המסע השלישי בפורטל נותן ביצה, ומסך הסיום יודע', () => {
+  const p0 = { ...initial().progress, walkDays: ['2026-09-07', '2026-09-08'] }
+  let g = started(['nimi'], { ...initial(), progress: p0 })
+  g = walk(g, 200); g = catchHere(g, 500000)
+  g = run(g, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED', t: 600000 }])
+  assert.equal(g.weeklyGift, 'egg')
+  assert.ok(g.progress.egg?.gift)
+  assert.equal(g.progress.weeklyBonus, '2026-09-06')
+  const closed = reduce(reduce(g, { type: 'CLUE_SEEN' }), { type: 'RUN_CLOSED' })
+  assert.equal(closed.weeklyGift, null)
+  assert.ok(forServer(g).progress.weeklyBonus === '2026-09-06')
+  // מסע רביעי באותו שבוע — כלום
+  let g4 = started(['nimi'], { ...closed, progress: { ...closed.progress, egg: null } })
+  g4 = walk(g4, 200); g4 = catchHere(g4, 500000)
+  g4 = run(g4, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED' }])
+  assert.equal(g4.weeklyGift, null); assert.equal(g4.progress.egg, null)
+})
+
+test('להורה: מרחק, דקות, צעדים משוערים — בפורטל וגם כשעוצרים', () => {
+  assert.deepEqual(walkSummary({ walked: 1834, startedAt: 0, t: 24.4 * 60000 }), { meters: 1834, minutes: 24, steps: 3350 })
+  assert.deepEqual(walkSummary({}), { meters: 0, minutes: 0, steps: 0 })
+  assert.equal(km(1834), '1.8 ק״מ'); assert.equal(km(640), '640 מ׳')
+  let g = started(['nimi'])
+  g = { ...g, run: { ...g.run, walkStartedAt: 0 } }     // ROUTE_READY בבדיקות בלי שעון
+  g = walk(g, 200); g = catchHere(g, 500000)
+  g = run(g, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED', t: 20 * 60000 }])
+  const lw = g.progress.lastWalk
+  assert.ok(lw.meters >= 150 && lw.minutes === 20 && lw.steps > 200, JSON.stringify(lw))
+  assert.equal(g.progress.minutesTotal, 20)
+  assert.equal(forServer(g).progress.lastWalk.minutes, 20)
+  // עוצרים באמצע — גם נספר
+  let a = started(['nimi']); a = { ...a, run: { ...a.run, walkStartedAt: 0 } }; a = walk(a, 300)
+  a = reduce(a, { type: 'ABORT', t: 9 * 60000 })
+  assert.ok(a.progress.lastWalk.meters >= 250 && a.progress.lastWalk.minutes === 9)
+  assert.ok(a.progress.metersTotal >= 250)
+})
+
+test('דופק: רחוק — לאט, קרוב — מהר, בלי מרחק — שקט', () => {
+  assert.equal(pulsePeriod(null), null)
+  assert.equal(pulsePeriod(13), 1890)
+  assert.equal(pulsePeriod(20), 1900, 'תקרה')
+  assert.ok(pulsePeriod(3) < pulsePeriod(8))
+  assert.equal(pulsePeriod(0.2), 250)
+  assert.equal(pulsePeriod(95, { base: 300, perM: 18, near: 350, far: 2000 }), 2000)
+  assert.equal(pulsePeriod(5, { base: 300, perM: 18, near: 350, far: 2000 }), 390)
+})

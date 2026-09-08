@@ -6,6 +6,7 @@ import { controllerFor } from './controllers'
 import { CreatureFigure, ModelLayer, Dust, Burst } from './Figure'
 import { useModelSrc, usePreloadModel } from '../hooks/useModelViewer'
 import { useBurst } from '../hooks/useBurst'
+import { usePulse } from '../hooks/usePulse'
 import { useCamera } from '../hooks/useCamera'
 import { camText } from '../engine/camera'
 import { sfxAppear, sfxRustle, sfxCatch, buzz, startVoice, sfxVoice } from '../engine/audio'
@@ -36,7 +37,7 @@ const DECAY = 0.6
 const TICK = 80
 const TICK_CHASE = 250     // הדופק של המרדף: צעדים וזמן
 
-export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor = null }) {
+export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor = null, wear = null }) {
   // ── המצלמה ──
   // התוצאה מדווחת החוצה למכונה. בלי זה "מצלמה נדחתה ← Story Mode" נשאר
   // כלל שנבדק במנוע ולא מתקיים במציאות. הפתיחה עצמה, הזמן הקצוב והניסיון
@@ -268,6 +269,8 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   // המרדף: כמה רחוק הוא עכשיו. מוצג כפס שמתקצר כשרצים.
   const chasing = !done && (cs?.phase === 'FAR' || cs?.phase === 'FLEE') && cs?.dist != null
   canCatchRef.current = canCatch
+  // חם/קר בדופק: רועד לאט כשרחוק, מהר כשקרוב — גם ההורה שלידו מרגיש.
+  usePulse(chasing ? cs.dist : null)
 
   return (
     <div style={{ ...S.wrap, animation: shake ? 'wildenShake .5s ease-out' : 'none' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
@@ -327,7 +330,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
                   ? (burst.url ? <Burst src={burst.url} scale={t.scale} /> : null)
                   : <Dust />)
               /* בורח: פונה הלאה מהמקום שממנו הגיע, והפס הטרי נשאר מאחוריו. */
-              : <CreatureFigure creature={creature} scale={t.scale || 1} flying={!!t.flying} shadow={!!t.shadow}
+              : <CreatureFigure creature={creature} scale={t.scale || 1} flying={!!t.flying} shadow={!!t.shadow} wear={wear}
                   peeking={t.peeking} approaching={(t.scale || 1) > 1.2}
                   faceLeft={ctFaceLeft} streakSide={ctStreakSide}
                   hideSprite={hideSprite && !t.peeking} />}
@@ -365,7 +368,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
 
       {done && (
         <div style={S.doneWrap}>
-          <CreatureFigure creature={creature} done scale={1.35} hideSprite={hideSprite} />
+          <CreatureFigure creature={creature} done scale={1.35} hideSprite={hideSprite} wear={wear} />
           <p style={S.foundName}>{creature?.name}</p>
           <p style={S.foundLine}>{cheer('catch', Math.floor((cs?.hidden || 0) / 37))} תפסתם אותו!</p>
         </div>
