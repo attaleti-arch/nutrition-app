@@ -1216,7 +1216,7 @@ test('המצלמה: כל שגיאה הופכת לסיבה אחת עם פעולה
 
 import ruchi from '../src/app/wilden/ar/controllers/ruchi.js'
 import { controllerFor } from '../src/app/wilden/ar/controllers/index.js'
-import { CREATURES, hasModel } from '../src/app/wilden/content/creatures.js'
+import { CREATURES, hasModel, sizeOf } from '../src/app/wilden/content/creatures.js'
 import { AVAILABLE, creaturesForWalk } from '../src/app/wilden/engine/coins.js'
 
 test('רוחי: באוויר, גבוה מדבשון, שלוש לחיצות, ואותו מבנה', () => {
@@ -1262,6 +1262,15 @@ test('שניים בדרך: מהמסע השני תמיד שניים, ובכל מ�
   const b = briefFor({ walks: 1, creatures: ['nimi'] })
   assert.deepEqual(b.creatures, ['dabashon', 'tzel'])
   assert.ok(b.line.includes('דבשון וצל'), b.line)
+})
+
+test('גודל על המסך: בולדר גדול מנימי, לפי heightM', () => {
+  assert.ok(sizeOf(CREATURES.bolder) > 1.5 && sizeOf(CREATURES.bolder) <= 1.7, 'בולדר: פי 1.6')
+  assert.ok(sizeOf(CREATURES.kraag) > sizeOf(CREATURES.lumi), 'קראג גדול מלומי')
+  assert.ok(sizeOf(CREATURES.nimi) < 1 && sizeOf(CREATURES.nimi) >= 0.85, 'נימי קטן מהייחוס')
+  assert.ok(sizeOf(CREATURES.dabashon) < sizeOf(CREATURES.nimi), 'דבשון הכי קטנה')
+  assert.equal(sizeOf(null), 1, 'בלי יצור — 1')
+  assert.equal(sizeOf({ heightM: 5 }), 1.7, 'תקרה, שלא יחתוך את המסך')
 })
 
 test('שמונה יצורים: לכולם מודל אמיתי, controller רשום, ומצב AR שהבמה מכירה', () => {

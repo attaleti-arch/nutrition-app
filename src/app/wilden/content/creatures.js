@@ -183,6 +183,13 @@ export const CREATURES = {
 
 export const creatureById = id => CREATURES[id] || null
 
+// ── כמה גדול על המסך ──
+// heightM ישב במרשם מהיום הראשון ואף אחד לא קרא אותו: כולם יצאו באותו
+// גובה, ובולדר, "גדול מול הילד", היה בגודל של נימי. הבמה מכפילה בזה את
+// הגובה שלה. 0.5 מ' = 1. בולדר 1.6, קראג 1.4, נימי 0.9, דבשון 0.8.
+export const REF_HEIGHT_M = 0.5
+export const sizeOf = c => Math.min(1.7, Math.max(0.7, (c?.heightM || REF_HEIGHT_M) / REF_HEIGHT_M))
+
 // היצור מוכן להצגה רק אם יש לו מודל. קראג במכוון בלי — הוא נוף עד
 // מסע 10, ושכבת ה-AR צריכה לדעת את זה בלי להתרסק.
 export const hasModel = id => !!CREATURES[id]?.model

@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useModelViewer, useModelSrc } from '../hooks/useModelViewer'
+import { sizeOf } from '../content/creatures'
 
 // ─── הדמות על הבמה ───
 // שתי דרכים להציג יצור, ומדרגה ברורה ביניהן:
@@ -23,7 +24,10 @@ const FOV_DEG = 22          // זווית ראייה אנכית של מצלמת 
 // scale מגיע מהפאזה (0.82 מבצבץ, 1.6 מתקרב, 1.35 בסיום) ומיושם כגובה
 // אמיתי, לא כ-transform — ראה הערה ב-Stage.
 // hideSprite: המודל התלת-ממדי כבר מוצג בשכבה שלו; הצל והפס נשארים כאן.
-export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approaching, done, scale = 1, hideSprite = false, flying = false }) {
+export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approaching, done, scale: phaseScale = 1, hideSprite = false, flying = false }) {
+  // הגודל: הפאזה כפול הגובה האמיתי של היצור. בולדר גדול מנימי גם כשהם
+  // באותו מרחק.
+  const scale = phaseScale * sizeOf(creature)
   // דמות חיה כבר זזה בעצמה; אנימציית CSS מעליה רק מכבידה.
   const anim = hideSprite || creature?.live ? 'none'
     : approaching ? 'wildenBob 1.1s ease-in-out infinite'
@@ -85,7 +89,9 @@ function Sprite({ sprites, live, peeking, faceLeft, done, scale = 1 }) {
 //   visible — היצור בתוך חרוט הראייה. השכבה נשארת מחוברת גם כשלא, ורק
 //             נעלמת: פירוק וחיבור מחדש של model-viewer באמצע רינדור זרק
 //             שגיאות פנימיות וטען את המודל מחדש בכל סיבוב של הטלפון.
-export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, visible = true, orbit = 0, onShown, onFailed }) {
+export function ModelLayer({ creature, x = 0, scale: phaseScale = 1, faceLeft, phase, done, visible = true, orbit = 0, onShown, onFailed }) {
+  // גובה אמיתי: אותו מכפיל כמו הספרייט, כדי שהמעבר ביניהם לא יקפוץ.
+  const scale = phaseScale * sizeOf(creature)
   // יצור מעופף (דבשון): מרחף בגובה העיניים ומעלה, בלי צל על הרצפה.
   const flying = creature?.arMode === 'sky'
   const src = useModelSrc(creature)
