@@ -53,6 +53,33 @@ export function collectCoins(coins, pos, radius = COLLECT_RADIUS_M, along = null
   return got.length ? { coins: next, got } : { coins, got }
 }
 
+// ── ריצת המטבעות: איפה ──
+// נקודה אחת על המסלול, בשליש הראשון של החלק ה"חדש" (לא בדרך חזרה של
+// הלוך ושוב), לא צמודה לתחנה של יצור ולא לבית. מסלול קצר מדי — בלי.
+export const COIN_RUN_MIN_PATH_M = 900
+export const COIN_RUN_NEAR_M = 20
+export const COIN_RUN_CLEAR_M = 140
+export function placeCoinRun(path, { stops = [], freshEndM = null } = {}) {
+  if (!path || path.length < 2) return null
+  const total = pathLength(path)
+  if (total < COIN_RUN_MIN_PATH_M) return null
+  const end = freshEndM != null ? Math.min(total, freshEndM) : total
+  for (const frac of [0.3, 0.45, 0.2, 0.6]) {
+    const at = end * frac
+    if (at < 200 || at > end - 150) continue
+    if (stops.some(s => Math.abs(s.along - at) < COIN_RUN_CLEAR_M)) continue
+    const p = pointAlong(path, at)
+    if (!p) continue
+    return { lat: p.point.lat, lng: p.point.lng, along: at, done: false }
+  }
+  return null
+}
+export function coinRunNearby(run, pos) {
+  const cr = run?.coinRun
+  if (!cr || cr.done || !pos) return null
+  return haversine(cr, pos) <= COIN_RUN_NEAR_M ? cr : null
+}
+
 export const GOLD_NEAR_M = 22
 export function goldNearby(coins, pos) {
   const g = (coins || []).find(c => c.gold && !c.taken)

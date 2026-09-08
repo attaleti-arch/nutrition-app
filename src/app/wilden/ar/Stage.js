@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useOrient, angleDelta } from '../hooks/useOrient'
-import { useMotion } from '../hooks/useMotion'
+import { useSteps } from '../hooks/useSteps'
 import { controllerFor } from './controllers'
 import { CreatureFigure, ModelLayer, Dust } from './Figure'
 import { useModelSrc, usePreloadModel } from '../hooks/useModelViewer'
@@ -34,8 +34,6 @@ const HOLD_MS = 700
 const DECAY = 0.6
 const TICK = 80
 const TICK_CHASE = 250     // הדופק של המרדף: צעדים וזמן
-const STEP_G = 11.6        // תאוצה (עם כוח המשיכה) שמעליה זה צעד
-const STEP_MIN_MS = 280    // לא יותר מ-3.5 צעדים בשנייה
 
 export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor = null }) {
   // ── המצלמה ──
@@ -51,23 +49,13 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   const hasSensors = heading != null
 
   // ── צעדים ──
-  // המרדף רץ על צעדים, לא על GPS: עשרים שניות של ריצה הן שלוש-ארבע
-  // דגימות GPS, וכל אחת עם 5 מ' רעש. מד התאוצה נותן כל צעד. צעד = שיא
-  // של תאוצה מעל הסף, לא יותר מ-3.5 בשנייה.
-  const stepRef = useRef({ lastT: 0, above: false })
-  const motion = useMotion({ active: true, onSample: ({ t, a }) => {
-    const st = stepRef.current
-    const now = Date.now()
-    if (a > STEP_G && !st.above) {
-      st.above = true
-      if (now - st.lastT > STEP_MIN_MS) { st.lastT = now; stepRef.current.pending = (stepRef.current.pending || 0) + 1 }
-    } else if (a < STEP_G - 1.2) st.above = false
-  } })
+  // המרדף רץ על צעדים, לא על GPS (ראה hooks/useSteps).
+  const steps = useSteps({ active: true })
   // ההרשאות באייפון (כיוון + תנועה) יוצאות מאותה לחיצה.
-  const askNeeded = (needsAsk && perm === 'unknown') || (motion.needsAsk && motion.perm === 'unknown')
-  const askAll = () => { request(); motion.request() }
+  const askNeeded = (needsAsk && perm === 'unknown') || (steps.needsAsk && steps.perm === 'unknown')
+  const askAll = () => { request(); steps.request() }
   // יש מד צעדים חי? אז לחיצה ומבט לא מחליפים ריצה.
-  const stepsLiveRef = useRef(false); stepsLiveRef.current = motion.live
+  const stepsLiveRef = useRef(false); stepsLiveRef.current = steps.live
 
   const ctrl = controllerFor(creature)
   const modelSrc = useModelSrc(creature)
@@ -105,11 +93,10 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
     const id = setInterval(() => {
       const t = Date.now()
       setNow(t)
-      const steps = stepRef.current.pending || 0
-      stepRef.current.pending = 0
+      const n = steps.take()
       setCs(prev => {
         let next = prev
-        for (let i = 0; i < steps && ctrl.onStep; i++) {
+        for (let i = 0; i < n && ctrl.onStep; i++) {
           const r = ctrl.onStep(next, t)
           if (r.state !== next) { next = r.state; if (r.feedback) fire(r.feedback, setFlash, setShake) }
         }
@@ -118,7 +105,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
       })
     }, TICK_CHASE)
     return () => clearInterval(id)
-  }, [cs?.phase, ctrl])
+  }, [cs?.phase, ctrl, steps.take])
 
   // מיקום כל יעד ביחס למה שרואים עכשיו. בלי חיישנים אין גובה, ולכן
   // החיפוש אופקי בלבד — אחרת יעד שנקבע לו גובה בלתי ניתן למציאה.

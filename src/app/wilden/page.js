@@ -16,9 +16,10 @@ import { useRoute } from './hooks/useRoute'
 import { MiniMap } from './ui/MiniMap'
 import { turnsFor, nextCue, cueText, floorCue, cueGlyph, timeLeftMs, fmtClock } from './engine/turns'
 import { pathLength } from './engine/geo'
-import { loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, plannedMs } from './engine/coins'
+import { loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, coinRunNearby, plannedMs } from './engine/coins'
 import { cheer, milestone } from './content/cheers'
 import { GoldStage } from './ar/GoldStage'
+import { CoinRun } from './ar/CoinRun'
 import { Hatch } from './ui/Hatch'
 import { CaughtClip, usePreloadClip } from './ui/CaughtClip'
 import { EGG_PRICE, canBuyEgg, eggWarmth, warmthWord, variantById } from './engine/egg'
@@ -154,6 +155,14 @@ export default function Wilden() {
     if (nearGold && !goldSkipped && !goldOpen) setGoldOpen(true)
     if (!nearGold && goldSkipped) setGoldSkipped(false)
   }, [nearGold, goldSkipped, goldOpen])
+  // ── ריצת המטבעות ── נקודה אחת במסלול: בטווח 20 מ' המצלמה נפתחת ל-20 שניות.
+  const [runOpen, setRunOpen] = useState(false)
+  const [runSkipped, setRunSkipped] = useState(false)
+  const nearRun = g.state === S.SEARCH && !goldOpen ? coinRunNearby(g.run, g.run?.pos) : null
+  useEffect(() => {
+    if (nearRun && !runSkipped && !runOpen) { unlockAudio(); setRunOpen(true) }
+    if (!nearRun && runSkipped) setRunSkipped(false)
+  }, [nearRun, runSkipped, runOpen])
 
   // ── גלינג ──
   // המנוע אוסף, הדף מצלצל. lastCoin משתנה בכל איסוף; זהב מצלצל יותר.
@@ -202,6 +211,13 @@ export default function Wilden() {
         <GoldStage value={10}
           onTaken={res => { dispatch({ type: 'GOLD_TAKEN', t: Date.now(), jump: res }); setGoldOpen(false); setGoldSkipped(false) }}
           onClose={() => { setGoldOpen(false); setGoldSkipped(true) }} />
+      )}
+
+      {/* ריצת המטבעות: עשרים שניות של ריצה, מעל המפה */}
+      {g.state === S.SEARCH && runOpen && (
+        <CoinRun
+          onDone={sum => { dispatch({ type: 'COIN_RUN_DONE', got: sum.value, t: Date.now() }); setRunOpen(false) }}
+          onClose={() => { setRunOpen(false); setRunSkipped(true) }} />
       )}
 
       {/* הביצה בקעה: מסך אחד מעל הכול, לפני הבית */}
@@ -578,7 +594,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
   return (
     <>
       <div style={s.mapWrap}>
-        <MiniMap home={r.home} path={r.path} pos={geo.pos} along={r.along || 0} heading={orient.heading}
+        <MiniMap home={r.home} path={r.path} pos={geo.pos} along={r.along || 0} heading={orient.heading} coinRun={r.coinRun}
           stops={r.stops || (r.target ? [r.target] : [])} nextStop={r.stops ? r.stop : 0}
           reveal={reveal} known={g.progress.creatures} creatureImg={creature?.sprites?.hero}
           coins={r.coins} height="100%" />

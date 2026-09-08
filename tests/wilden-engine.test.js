@@ -1621,3 +1621,106 @@ test('מרדף: כל שמונת היצורים מקבלים בקר מרדף, מ�
   assert.equal(controllerFor(CREATURES.tzel).style, 'shadow')
   assert.equal(controllerFor(CREATURES.bolder).style, 'stomp')
 })
+
+// ═══════════════════════════════════════════════════════════════
+// ריצת המטבעות
+// "המצלמה נפתחת שוב ויש כמו 20 שניות לאסוף כמה שיותר בריצה ויד מורמת."
+// ═══════════════════════════════════════════════════════════════
+import * as CR from '../src/app/wilden/engine/coinRun.js'
+import { placeCoinRun, coinRunNearby, COIN_RUN_NEAR_M } from '../src/app/wilden/engine/coins.js'
+const pathLength = pathLength2
+
+test('ריצה: שביל של 16 מטבעות לפני הילד, חלקם גבוה, וכל צעד מקרב', () => {
+  const s = CR.startRun(90, seq(0.5), 1000)
+  assert.equal(s.coins.length, CR.COINS)
+  assert.ok(s.coins.every(c => Math.abs(angleDelta(90, c.bearing)) <= 45), 'כולם בקשת של ±45° מהכיוון ההתחלתי')
+  assert.equal(s.coins.filter(c => c.high).length, 4, 'כל רביעי גבוה — יד מורמת')
+  assert.ok(s.coins.filter(c => c.high).every(c => c.elev >= 26))
+  assert.ok(s.coins.some(c => c.value === 2), 'ויש מטבעות של 2')
+  assert.equal(s.endT, 1000 + CR.DURATION_MS)
+  const v0 = CR.visibleCoins(s)
+  assert.ok(v0.length >= 5 && v0.length < CR.COINS, `רואים את הקרובים בלבד: ${v0.length}`)
+  assert.equal(v0[0].rel, 2.5, 'הראשון 2.5 מ׳ לפנינו')
+  const s2 = CR.onStep(s, 1400)
+  assert.equal(s2.progress, CR.STEP_M)
+  assert.ok(CR.coinScale(1) > CR.coinScale(5), 'קרוב = גדול')
+})
+
+test('ריצה: מטבע נאסף רק כשהוא בהישג יד ומכוונים אליו; גבוה — צריך להרים', () => {
+  let s = CR.startRun(0, seq(0.5), 0)
+  const c0 = s.coins[0]
+  // רחוק מדי — אפילו בכיוון מדויק לא נאסף (הגבוה הראשון, 7.6 מ׳ וגבוה;
+  // הראשון כבר בהישג יד אבל נמוך, אז המבט למעלה לא תופס אותו)
+  const c3 = s.coins[3]
+  assert.equal(CR.aim(s, c3.bearing, c3.elev, 10).got.length, 0)
+  // מתקרבים עד הישג יד
+  while (c0.d - s.progress > CR.REACH_M) s = CR.onStep(s, 100)
+  assert.equal(CR.aim(s, c0.bearing + 40, c0.elev, 200).got.length, 0, 'מכוונים הצידה — לא')
+  const a = CR.aim(s, c0.bearing + 5, c0.elev + 3, 200)
+  assert.equal(a.got.length, 1, 'בערך בכיוון — כן')
+  assert.equal(a.state.got, c0.value)
+  assert.equal(a.state.coins[0].taken, true)
+  assert.equal(CR.aim(a.state, c0.bearing, c0.elev, 300).got.length, 0, 'פעם אחת')
+  // הגבוה: בגובה העיניים לא נאסף, עם היד למעלה כן
+  s = a.state
+  const hi = s.coins.find(c => c.high)
+  while (hi.d - s.progress > CR.REACH_M) s = CR.onStep(s, 400)
+  assert.ok(!CR.aim(s, hi.bearing, 4, 500).got.some(c => c.high), 'טלפון ישר — הגבוה לא נאסף (נמוך שבדרך כן)')
+  assert.equal(CR.aim(s, hi.bearing, hi.elev - 5, 500).got.length, 1, 'מרימים — נאסף')
+  // בלי חיישן גובה (pitch=null) — הגובה לא נספר
+  const s3 = CR.startRun(0, seq(0.5), 0)
+  let s4 = s3; while (s3.coins[0].d - s4.progress > CR.REACH_M) s4 = CR.onStep(s4, 100)
+  assert.equal(CR.aim(s4, s3.coins[0].bearing, null, 100).got.length, 1)
+})
+
+test('ריצה: מה שעברנו הלך, הזמן נגמר אחרי 20 שניות, והסיכום סופר ערך', () => {
+  let s = CR.startRun(0, seq(0.5), 0)
+  for (let i = 0; i < 8; i++) s = CR.onStep(s, 100 * i)
+  assert.equal(s.coins[0].missed, true, 'הראשון נשאר מאחור')
+  assert.ok(CR.visibleCoins(s).every(c => !c.missed))
+  assert.equal(CR.tick(s, 5000).done, false)
+  const over = CR.tick(s, CR.DURATION_MS + 1)
+  assert.equal(over.done, true)
+  assert.equal(CR.onStep(over, 99999), over, 'אחרי הסיום כלום לא זז')
+  assert.equal(CR.aim(over, 0, 0, 99999).got.length, 0)
+  const sum = CR.summary({ ...over, got: 7, coins: over.coins.map((c, i) => ({ ...c, taken: i < 5 })) })
+  assert.deepEqual(sum, { taken: 5, total: CR.COINS, value: 7 })
+  // בלי חיישנים: לחיצה = שני צעדים
+  assert.equal(CR.onTap(CR.startRun(0, seq(0.5), 0), 1).progress, CR.TAP_M)
+  // נגמרו המטבעות — גם נגמר
+  const all = { ...s, coins: s.coins.map(c => ({ ...c, taken: true })) }
+  assert.equal(CR.tick(all, 3000).done, true)
+})
+
+test('ריצה: הנקודה בשליש הראשון של המסלול, לא על תחנה, ונפתחת בטווח 20 מ׳', () => {
+  const stops = [{ along: 480 }, { along: 900 }]
+  const cr = placeCoinRun(PATH, { stops })
+  assert.ok(cr, 'יש נקודה על מסלול של ' + Math.round(pathLength(PATH)) + ' מ׳')
+  assert.ok(cr.along >= 200 && cr.along < pathLength(PATH) * 0.65, `בחלק הראשון: ${Math.round(cr.along)}`)
+  assert.ok(stops.every(st => Math.abs(st.along - cr.along) >= 140), 'רחוק מהתחנות')
+  assert.equal(placeCoinRun([HOME, destination(HOME, 0, 400)], {}), null, 'מסלול קצר — בלי')
+  // הלוך ושוב: בחלק ה"חדש" בלבד
+  const tb = thereAndBack(1000, 50)
+  const crb = placeCoinRun(tb, { stops: [{ along: 900 }], freshEndM: freshEnd(tb) })
+  assert.ok(crb && crb.along < 1000, 'לא בדרך חזרה')
+  const run = { coinRun: cr }
+  assert.equal(coinRunNearby(run, destination(cr, 0, COIN_RUN_NEAR_M + 30)), null)
+  assert.deepEqual(coinRunNearby(run, destination(cr, 0, 5)), cr)
+  assert.equal(coinRunNearby({ coinRun: { ...cr, done: true } }, cr), null, 'נעשה — לא נפתח שוב')
+})
+
+test('ריצה: ROUTE_READY מניח את הנקודה, ו-COIN_RUN_DONE מכניס את המטבעות למונה (כפול בדרך הביתה)', () => {
+  let g = started(['nimi'])
+  assert.ok(g.run.coinRun && !g.run.coinRun.done, 'יש ריצה במסלול')
+  const before = g.run.coinsTaken
+  g = reduce(g, { type: 'COIN_RUN_DONE', got: 9, t: 5 })
+  assert.equal(g.run.coinsTaken, before + 9)
+  assert.equal(g.run.coinRun.done, true)
+  assert.equal(g.run.lastCoin.n, 9, 'ויש גלינג')
+  assert.equal(reduce(g, { type: 'COIN_RUN_DONE', got: 9, t: 6 }).run.coinsTaken, before + 9, 'פעם אחת בלבד')
+  // בדרך הביתה — כפול
+  let h = started(['nimi'])
+  h = { ...h, run: { ...h.run, resolved: true } }
+  h = reduce(h, { type: 'COIN_RUN_DONE', got: 4, t: 5 })
+  assert.equal(h.run.coinsTaken, 8)
+})

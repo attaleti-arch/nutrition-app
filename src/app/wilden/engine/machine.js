@@ -6,8 +6,8 @@
 
 import { haversine, bearing, advanceWalk, progressAlong } from './geo.js'
 import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL_RADIUS } from './beacon.js'
-import { placeTarget, placeStops, revalidate, PLACE_AFTER } from './placement.js'
-import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS, CATCH_BONUS } from './coins.js'
+import { placeTarget, placeStops, revalidate, PLACE_AFTER, freshEnd } from './placement.js'
+import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS, CATCH_BONUS, placeCoinRun } from './coins.js'
 import { mergeProgress } from './profile.js'
 import { EGG_PRICE, HATCH_M, canBuyEgg, hatch } from './egg.js'
 
@@ -153,11 +153,13 @@ export function reduce(g, ev) {
       const who = ev.creatures || g.run.wantCreatures || ['nimi']
       const stops = placeStops(ev.path, who.length, { creatures: who })
       const coins = placeCoins(ev.path, { stops })
+      // ריצת המטבעות: נקודה אחת בשליש הראשון, רחוק מהתחנות.
+      const coinRun = placeCoinRun(ev.path, { stops, freshEndM: freshEnd(ev.path) })
       return {
         ...g,
         state: S.SEARCH,
         run: { ...g.run, path: ev.path, home: ev.home ?? g.run.home, stops, stop: 0,
-          target: stops[0] || null, resolved: false, coins, coinsTaken: g.run.coinsTaken || 0,
+          target: stops[0] || null, resolved: false, coins, coinRun, coinsTaken: g.run.coinsTaken || 0,
           walkStartedAt: ev.t ?? g.run.walkStartedAt ?? null },
       }
     }
@@ -288,6 +290,24 @@ export function reduce(g, ev) {
           coins: r.coins.map(c => (c === gold ? { ...c, taken: true } : c)),
           coinsTaken: (r.coinsTaken || 0) + gold.value * mult,
           lastCoin: { t: ev.t ?? Date.now(), gold: true, n: 1, jump: ev.jump || null },
+        },
+      }
+    }
+
+    // ── ריצת המטבעות נגמרה ──
+    // מה שנאסף בריצה נכנס למונה (כפול בדרך הביתה), והנקודה נסגרת.
+    case 'COIN_RUN_DONE': {
+      const r = g.run
+      if (!r?.coinRun || r.coinRun.done) return g
+      const mult = r.resolved ? HOME_BONUS : 1
+      const got = Math.max(0, ev.got || 0)
+      return {
+        ...g,
+        run: {
+          ...r,
+          coinRun: { ...r.coinRun, done: true, got },
+          coinsTaken: (r.coinsTaken || 0) + got * mult,
+          lastCoin: got ? { t: ev.t ?? Date.now(), gold: false, n: got, run: true } : r.lastCoin,
         },
       }
     }
