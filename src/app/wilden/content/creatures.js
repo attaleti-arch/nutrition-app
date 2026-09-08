@@ -142,8 +142,10 @@ export const CREATURES = {
     // הרצפה, עקבות. הצל שלו הוא מה שהוא משאיר.
     model: '/creatures/tzel/tzel.glb',
     ios: null,
-    clip: null,
-    live: null,
+    // הקליפ שלה מ-Runway: נמס לצל שטוח, מחליק הצידה, וקם. רקע ירוק-אפור
+    // (#3D4C3D) כי הוא כהה מדי לרקע הכהה — נגזר לשקוף כאן.
+    clip: '/creatures/tzel/caught.mp4',
+    live: '/creatures/tzel/live.webp',
     sprites: null,
     heightM: 0.50,
     arMode: AR_MODE.GROUND,
