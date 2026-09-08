@@ -26,6 +26,20 @@ export function routeArrows(path, everyM = ARROW_EVERY_M) {
   return out
 }
 
+// לאן פונים עכשיו: הכיוון של המסלול בנקודה שאנחנו בה (along), במבט
+// lookAhead מטרים קדימה. זה מה שהדמות על המפה מסתכלת אליו — "לכיוון
+// הנכון", לא לכיוון שהילד הולך בו במקרה. null כשאין מסלול.
+export function routeDirAt(path, along, lookAhead = 25) {
+  if (!path || path.length < 2) return null
+  const total = path.reduce((s, p, i) => (i ? s + haversine(path[i - 1], p) : 0), 0)
+  const a = Math.max(0, Math.min(total - 1, along || 0))
+  const b = Math.min(total, a + lookAhead)
+  const from = splitAt(path, a).todo[0]
+  const to = splitAt(path, b).todo[0] || path[path.length - 1]
+  if (!from || !to || haversine(from, to) < 0.5) return null
+  return bearing(from, to)
+}
+
 // חותך את המסלול במרחק along מהתחלה: { done, todo }. נקודת החיתוך
 // מופיעה בשניהם, כדי שהקווים ייפגשו בלי חור.
 export function splitAt(path, along) {

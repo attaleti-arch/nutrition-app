@@ -19,7 +19,8 @@ import dabashon from '../src/app/wilden/ar/controllers/dabashon.js'
 import { loopTargetM, canBuyExtra, WALK_PLAN, goldNearby } from '../src/app/wilden/engine/coins.js'
 import { createJumpDetector, jumpHeightCm, G } from '../src/app/wilden/engine/jump.js'
 import { buildLoop, fallbackLoop, normalize, routeNote } from '../src/app/wilden/engine/loop.js'
-import { routeArrows, splitAt } from '../src/app/wilden/engine/mapLines.js'
+import { routeArrows, splitAt, routeDirAt } from '../src/app/wilden/engine/mapLines.js'
+import { angleDelta } from '../src/app/wilden/hooks/useOrient.js'
 import { getCached, putCached } from '../src/app/wilden/engine/routeCache.js'
 
 const HOME = { lat: 32.0853, lng: 34.7818 }
@@ -793,6 +794,21 @@ test('מפה: חיצים כל ~110 מ׳ לכיוון ההליכה, והמסלו�
   assert.ok(haversine(done[2], destination(b, 90, 100)) < 2, 'החיתוך 100 מ׳ אחרי הפנייה')
   assert.deepEqual(splitAt(path, 0).done, [])
   assert.equal(splitAt(path, 5000).todo.length, 0, 'מעבר לסוף — הכול הלכנו')
+})
+
+test('מפה: הדמות פונה לכיוון הנכון — המסלול מהמקום שבו אנחנו, לא לאן שהלכנו', () => {
+  const a = HOME, b = destination(HOME, 0, 400), c = destination(b, 90, 300)
+  const path = [a, b, c]
+  const near = (x, y) => Math.abs(angleDelta(x, y)) < 1.5
+  assert.ok(near(routeDirAt(path, 0), 0), 'ביציאה — צפונה')
+  assert.ok(near(routeDirAt(path, 200), 0), 'באמצע הרחוב — עדיין צפונה')
+  // 15 מ' לפני הפנייה, המבט 25 מ' קדימה כבר מתחיל לפנות מזרחה
+  const d = routeDirAt(path, 385)
+  assert.ok(d > 5 && d < 85, `לפני הפנייה: ${Math.round(d)}°`)
+  assert.ok(near(routeDirAt(path, 450), 90), 'אחרי הפנייה — מזרחה')
+  assert.ok(near(routeDirAt(path, 5000), 90), 'מעבר לסוף — הכיוון האחרון')
+  assert.equal(routeDirAt(null, 0), null)
+  assert.equal(routeDirAt([a], 0), null)
 })
 
 test('מסלול: החלופי תמיד קיים, וסגור', () => {

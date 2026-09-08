@@ -11,6 +11,7 @@ import { ProfileGate, ProfileBar } from './ui/ProfileGate'
 import { Beacon, BeaconLine, BEACON_CSS } from './ui/Beacon'
 import { Stage } from './ar/Stage'
 import { useGeo } from './hooks/useGeo'
+import { useOrient, requestOrientation } from './hooks/useOrient'
 import { useRoute } from './hooks/useRoute'
 import { MiniMap } from './ui/MiniMap'
 import { turnsFor, nextCue, cueText, floorCue, cueGlyph, timeLeftMs, fmtClock } from './engine/turns'
@@ -172,6 +173,9 @@ export default function Wilden() {
 
   function askLocation() {
     geo.request()
+    // באותה לחיצה גם המצפן: ב-iOS הוא ניתן רק מתוך לחיצה, וזו הלחיצה.
+    // ככה המפה יודעת לאן הטלפון פונה בלי כפתור נוסף.
+    requestOrientation()
     navigator.geolocation?.getCurrentPosition(
       p => dispatch({ type: 'PERMISSION_GRANTED', home: { lat: p.coords.latitude, lng: p.coords.longitude } }),
       e => { if (e.code === 1) dispatch({ type: 'PERMISSION_DENIED' }) },
@@ -533,6 +537,8 @@ function BrokenWorld({ g, today, onStart, onEgg, P }) {
 // סימן שאלה, ניצוץ. מגלים מי זה רק כשמגיעים.
 function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort, onPortal, creature, burst }) {
   const r = g.run
+  // המצפן, מדולל: המפה מסתובבת איתו כדי שלמעלה = קדימה.
+  const orient = useOrient({ active: true, everyMs: 120, minDeg: 2 })
   // ── טיימר לאחור ──
   const [now, setNow] = useState(Date.now())
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id) }, [])
@@ -572,7 +578,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
   return (
     <>
       <div style={s.mapWrap}>
-        <MiniMap home={r.home} path={r.path} pos={geo.pos} along={r.along || 0}
+        <MiniMap home={r.home} path={r.path} pos={geo.pos} along={r.along || 0} heading={orient.heading}
           stops={r.stops || (r.target ? [r.target] : [])} nextStop={r.stops ? r.stop : 0}
           reveal={reveal} known={g.progress.creatures} creatureImg={creature?.sprites?.hero}
           coins={r.coins} height="100%" />
