@@ -143,6 +143,9 @@ export default function Wilden() {
   // ── הקליפ אחרי התפיסה ── פעם אחת לכל תפיסה; נטען מראש בזמן המפגש.
   const [clipSeen, setClipSeen] = useState(false)
   useEffect(() => { if (g.state !== S.CAUGHT) setClipSeen(false) }, [g.state])
+  // ── הגילוי ── מגיעים לנקודה: פלאש, הקליפ של היצור, פלאש, ואז המצלמה.
+  const [introSeen, setIntroSeen] = useState(false)
+  useEffect(() => { if (g.state !== S.ENCOUNTER) setIntroSeen(false) }, [g.state])
   useEffect(() => { if (g.state === S.BROKEN_WORLD) setHatchSeen(false) }, [g.state])
   const [goldSkipped, setGoldSkipped] = useState(false)
   const nearGold = g.state === S.SEARCH ? goldNearby(g.run?.coins, g.run?.pos) : null
@@ -207,7 +210,11 @@ export default function Wilden() {
         <CaughtClip creature={justCaught} onDone={() => setClipSeen(true)} />
       )}
 
-      {g.state === S.ENCOUNTER && (
+      {g.state === S.ENCOUNTER && creature?.clip && !introSeen && (
+        <CaughtClip creature={creature} variant="reveal" onDone={() => { sfxAppear(); buzz([40, 30, 80]); setIntroSeen(true) }} />
+      )}
+
+      {g.state === S.ENCOUNTER && (introSeen || !creature?.clip) && (
         <Stage
           creature={creature}
           pos={geo.pos}

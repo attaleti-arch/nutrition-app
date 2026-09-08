@@ -10,11 +10,22 @@ import { useEffect, useRef, useState } from 'react'
 // לחיצה מדלגת. הסרטון מושתק (ספארי לא מנגן אוטומטית עם קול); הגלינג
 // שלנו כבר נשמע על הבמה.
 
-export function CaughtClip({ creature, onDone }) {
+// variant: 'caught' (אחרי התפיסה) או 'reveal' (כשמגיעים לנקודה: פלאש,
+// הקליפ, פלאש, ואז המצלמה נפתחת והוא ברחוב). הרעיון שלה.
+export function CaughtClip({ creature, onDone, variant = 'caught' }) {
   const ref = useRef(null)
   const [ready, setReady] = useState(false)
+  const [closing, setClosing] = useState(false)
   const doneRef = useRef(false)
-  const finish = () => { if (doneRef.current) return; doneRef.current = true; onDone?.() }
+  const reveal = variant === 'reveal'
+  const finish = () => {
+    if (doneRef.current) return
+    doneRef.current = true
+    if (!reveal) { onDone?.(); return }
+    // פלאש יציאה, ואז המצלמה
+    setClosing(true)
+    setTimeout(() => onDone?.(), 420)
+  }
 
   useEffect(() => {
     const v = ref.current
@@ -35,8 +46,11 @@ export function CaughtClip({ creature, onDone }) {
       <div style={S.vignette} />
       <div style={S.text}>
         <p style={S.name}>{creature.name}</p>
-        <p style={S.sub}>{creature.brings ? `הוא מביא ${creature.brings} לעולם.` : 'הוא באוסף שלכם.'}</p>
+        <p style={S.sub}>{reveal ? 'הוא כאן. הביטו סביב.' : creature.brings ? `הוא מביא ${creature.brings} לעולם.` : 'הוא באוסף שלכם.'}</p>
       </div>
+      {/* הפלאש: לבן-ענבר שנעלם בכניסה, וחוזר ביציאה לפני המצלמה */}
+      {reveal && <div key={closing ? 'out' : 'in'} style={{ ...S.flash, animation: closing ? 'wildenFlashOut .42s ease-in forwards' : 'wildenFlashIn .6s ease-out forwards' }} />}
+      <style>{CSS}</style>
       <button onClick={finish} style={S.skip}>לדלג</button>
     </div>
   )
@@ -52,7 +66,13 @@ export function usePreloadClip(src) {
   }, [src])
 }
 
+const CSS = `
+@keyframes wildenFlashIn { 0% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes wildenFlashOut { 0% { opacity: 0 } 60% { opacity: 1 } 100% { opacity: 1 } }
+`
+
 const S = {
+  flash: { position: 'absolute', inset: 0, background: '#FFF4D6', pointerEvents: 'none', zIndex: 7 },
   wrap: { position: 'fixed', inset: 0, background: '#0F150F', zIndex: 3150, overflow: 'hidden' },
   video: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity .5s' },
   vignette: { position: 'absolute', inset: 0, pointerEvents: 'none',
