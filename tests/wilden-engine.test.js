@@ -546,7 +546,7 @@ test('תחנות: היצורים מתחלפים — נימי, דבשון, נימ
 })
 
 // ══════════════════════════════════════════════
-// הלוח של הבן שלה: מטבעות, 30 ואז 45 דקות, יצור שני בתשלום.
+// הלוח של הבן שלה: מטבעות, 30 ואז 45 דקות, שניים בדרך, שלישי בתשלום.
 test('לוח: מסע ראשון — 30 דקות, נימי לבד, בלי אפשרות לקנות', () => {
   const g = started()
   assert.equal(g.run.walkIndex, 0)
@@ -581,7 +581,7 @@ test('לוח: אחרי שני מסעות אפשר לקנות יצור שני, ו
   assert.equal(canBuyExtra(g.progress), true)
   g = started(undefined, g)
   assert.equal(g.run.walkIndex, 2)
-  assert.deepEqual(g.run.stops.map(s => s.creature), ['lumi'], 'בלי תשלום — אחד; המסע השלישי הוא של לומי')
+  assert.deepEqual(g.run.stops.map(s => s.creature), ['lumi', 'bolder'], 'בלי תשלום — שניים; המסע השלישי הוא של לומי, ובולדר מהצד השני של הסבב')
 
   let h = initial()
   h = { ...h, progress: { ...h.progress, walks: 2, coins: 100 } }
@@ -589,7 +589,7 @@ test('לוח: אחרי שני מסעות אפשר לקנות יצור שני, ו
   assert.equal(h.progress.coins, 100 - WALK_PLAN.extraCost, 'שולם מראש')
   h = reduce(h, { type: 'PERMISSION_GRANTED', home: HOME })
   h = reduce(h, { type: 'ROUTE_READY', path: PATH, home: HOME })
-  assert.deepEqual(h.run.stops.map(s => s.creature), ['lumi', 'nimi'], 'שניים בדרך — והשני הוא מישהו אחר')
+  assert.deepEqual(h.run.stops.map(s => s.creature), ['lumi', 'bolder', 'gali'], 'שלושה בדרך — והשלישי הוא מישהו אחר')
 })
 
 test('דבשון: באוויר, שלוש לחיצות', () => {
@@ -1189,7 +1189,7 @@ test('המסע השלם: אחרי נימי, המסע הבא מציע דבשון 
   const b = briefFor(g.progress)
   assert.equal(b.creature, 'dabashon')
   g = reduce(g, { type: 'START_RUN', kind: RUN.STORY, day: '2026-09-07', t: 1 })
-  assert.deepEqual(g.run.wantCreatures, ['dabashon'])
+  assert.deepEqual(g.run.wantCreatures, ['dabashon', 'tzel'], 'מהמסע השני — שניים: דבשון באוויר, צל על הרצפה')
 })
 
 test('המצלמה: כל שגיאה הופכת לסיבה אחת עם פעולה אחת', () => {
@@ -1217,7 +1217,7 @@ test('המצלמה: כל שגיאה הופכת לסיבה אחת עם פעולה
 import ruchi from '../src/app/wilden/ar/controllers/ruchi.js'
 import { controllerFor } from '../src/app/wilden/ar/controllers/index.js'
 import { CREATURES, hasModel } from '../src/app/wilden/content/creatures.js'
-import { AVAILABLE } from '../src/app/wilden/engine/coins.js'
+import { AVAILABLE, creaturesForWalk } from '../src/app/wilden/engine/coins.js'
 
 test('רוחי: באוויר, גבוה מדבשון, שלוש לחיצות, ואותו מבנה', () => {
   const rng = () => 0.3
@@ -1239,6 +1239,29 @@ test('רוחי: באוויר, גבוה מדבשון, שלוש לחיצות, וא
   assert.deepEqual(ruchi.targets(s), [])
   // נעילה במבט על יעד אחר לא עושה כלום
   assert.equal(ruchi.onLock(ruchi.start(0, rng), 'dabashon').state.phase, 'HUM')
+})
+
+test('שניים בדרך: מהמסע השני תמיד שניים, ובכל מסע לפחות אחד על הרצפה', () => {
+  assert.deepEqual(creaturesForWalk(0, false), ['nimi'], 'מסע 1: נימי לבד')
+  assert.deepEqual(creaturesForWalk(0, true), ['nimi'])
+  for (let w = 1; w < 12; w++) {
+    const two = creaturesForWalk(w, false)
+    assert.equal(two.length, 2, `מסע ${w + 1}`)
+    assert.notEqual(two[0], two[1])
+    assert.ok(two.some(id => CREATURES[id].arMode === 'ground'), 'אחד על הרצפה')
+    const three = creaturesForWalk(w, true)
+    assert.equal(three.length, 3)
+    assert.equal(new Set(three).size, 3, 'שלושה שונים')
+  }
+  // בשמונה מסעות רואים את כולם, כל אחד לפחות פעמיים
+  const seen = {}
+  for (let w = 1; w <= 8; w++) for (const id of creaturesForWalk(w, false)) seen[id] = (seen[id] || 0) + 1
+  assert.equal(Object.keys(seen).length, 8)
+  assert.ok(Object.values(seen).every(n => n >= 2))
+  // התדריך מציג את שניהם
+  const b = briefFor({ walks: 1, creatures: ['nimi'] })
+  assert.deepEqual(b.creatures, ['dabashon', 'tzel'])
+  assert.ok(b.line.includes('דבשון וצל'), b.line)
 })
 
 test('שמונה יצורים: לכולם מודל אמיתי, controller רשום, ומצב AR שהבמה מכירה', () => {

@@ -81,12 +81,12 @@ export function heatOf(distM) {
 }
 
 // ── הלוח של הבן שלה ──
-// מסע 1: 30 דקות, יצור אחד. מסע 2: 45 דקות, יצור אחד (אחר). מהמסע השלישי:
-// 45 דקות, ומטבעות פותחים יצור שני. ארבעה מסלולים בשבוע.
+// מסע 1: 30 דקות, נימי לבד (הסיפור). מהמסע השני: 45 דקות ושני יצורים
+// בדרך. מהמסע השלישי: מטבעות פותחים שלישי. ארבעה מסלולים בשבוע.
 export const WALK_PLAN = {
   firstM: 2200,       // ~30 דקות
   laterM: 3200,       // ~45 דקות
-  extraCost: 60,      // מטבעות ליצור שני
+  extraCost: 60,      // מטבעות ליצור נוסף
   extraFromWalk: 2,   // אינדקס 0 = המסע הראשון; מהשלישי (2) אפשר לשלם
 }
 
@@ -112,9 +112,19 @@ export function canBuyExtra(progress) {
 // ירגיש אחרת: עקבות, ואז להרים את הראש, ואז שוב עקבות. בולדר הבנאי
 // לפני קראג — הרמז של מסע 1 ("מישהו כאן ידע לבנות") מוביל אליו.
 export const AVAILABLE = ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'tzel', 'bolder', 'kraag']
+// "אולי צריך 2 דמויות מינימום." מסע 1 הוא הסיפור של נימי, לבד. מהמסע
+// השני — שניים בדרך תמיד: הראשון לפי הסבב, השני מהצד השני של הרשימה
+// (כך שכמעט תמיד אחד על הרצפה ואחד באוויר). המטבעות פותחים שלישי.
+export const BASE_FROM_WALK = 1
 export function creaturesForWalk(walks, extra, available = AVAILABLE) {
-  const first = available[walks % available.length]
-  if (!extra) return [first]
-  const second = available.find(c => c !== first) || first
-  return [first, second]
+  const n = available.length
+  const first = available[walks % n]
+  if (walks < BASE_FROM_WALK || n < 2) return [first]
+  const second = available[(walks + Math.floor(n / 2)) % n]
+  const out = [first, second]
+  if (extra) {
+    const third = available.find((c, i) => i === (walks + Math.floor(n / 4)) % n && !out.includes(c)) || available.find(c => !out.includes(c))
+    if (third) out.push(third)
+  }
+  return out
 }

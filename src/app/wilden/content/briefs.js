@@ -13,6 +13,12 @@ export function todaysCreature(progress) {
   const walks = progress?.walks || 0
   return creatureById(creaturesForWalk(walks, false)[0])
 }
+// כולם, לפי הסדר. מהמסע השני — שניים.
+export function todaysCreatures(progress) {
+  const walks = progress?.walks || 0
+  return creaturesForWalk(walks, false).map(creatureById).filter(Boolean)
+}
+const namesOf = list => list.map(c => c.name).join(' ו')
 
 export function briefFor(progress) {
   const walks = progress?.walks || 0
@@ -20,16 +26,22 @@ export function briefFor(progress) {
   if (walks === 0 || !who) {
     return { missionId: M01.id, creature: M01.creature, line: M01.brief.line, sub: M01.brief.sub, cta: M01.brief.cta }
   }
-  const known = (progress?.creatures || []).includes(who.id)
+  const all = todaysCreatures(progress)
+  const caught = progress?.creatures || []
+  const fresh = all.filter(c => !caught.includes(c.id))
+  const known = !fresh.includes(who)
   return {
     missionId: null,
     creature: who.id,
-    line: `מסע ${walks + 1}: היום בדרך ${who.name}.`,
-    sub: known
-      ? `${who.name} שוב בחוץ. הביקון מרגיש אותו.`
-      : who.brings
-        ? `יצור חדש. הוא מביא ${who.brings} לעולם.`
-        : 'יצור חדש. הביקון כבר מרגיש אותו.',
+    creatures: all.map(c => c.id),
+    line: `מסע ${walks + 1}: היום בדרך ${namesOf(all)}.`,
+    sub: fresh.length === 0
+      ? `${all.length > 1 ? 'שניהם' : who.name} שוב בחוץ. הביקון מרגיש ${all.length > 1 ? 'אותם' : 'אותו'}.`
+      : known
+        ? `${fresh[0].name} חדש${fresh[0].brings ? ` — מביא ${fresh[0].brings} לעולם` : ''}. ${who.name} שוב בחוץ.`
+        : who.brings
+          ? `יצור חדש. הוא מביא ${who.brings} לעולם.${fresh.length > 1 && fresh[1].brings ? ` ${fresh[1].name} מביא ${fresh[1].brings}.` : ''}`
+          : 'יצור חדש. הביקון כבר מרגיש אותו.',
     cta: 'צא למסע',
   }
 }
@@ -44,12 +56,12 @@ export function homeFor(run, progress) {
     ? `${names.join(' ו')} ${names.length > 1 ? 'נכנסים' : 'נכנס'} לעולם${brings.length ? `, ומביא${names.length > 1 ? 'ים' : ''} ${brings.join(' ו')}` : ''}.`
     : 'חזרתם הביתה.'
   // progress כבר אחרי PORTAL_ENTERED — walks קודם, אז זה מי שמחכה מחר.
-  const next = todaysCreature(progress)
+  const next = todaysCreatures(progress)
   return {
     line,
     clue: {
-      line: 'הביקון מרגיש עוד אחד בחוץ.',
-      sub: next ? `${next.name} מחכה למסע הבא.` : 'המסע הבא ייפתח מחר.',
+      line: next.length > 1 ? 'הביקון מרגיש עוד שניים בחוץ.' : 'הביקון מרגיש עוד אחד בחוץ.',
+      sub: next.length ? `${namesOf(next)} ${next.length > 1 ? 'מחכים' : 'מחכה'} למסע הבא.` : 'המסע הבא ייפתח מחר.',
     },
   }
 }

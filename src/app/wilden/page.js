@@ -464,12 +464,12 @@ function BrokenWorld({ g, today, onStart, onEgg, P }) {
         <Beacon power={beaconView(g).power} phase={PHASE.IDLE} size={120} />
       </div>
 
-      {/* הלוח של הבן שלה: מסע 1 — 30 דקות ויצור. אחר כך 45 דקות. מהשלישי —
-          מטבעות פותחים יצור שני. */}
+      {/* הלוח של הבן שלה: מסע 1 — 30 דקות ונימי. אחר כך 45 דקות ושניים
+          בדרך. מהשלישי — מטבעות פותחים יצור שלישי. */}
       <div style={s.plan}>
         <span>🚶 {walks === 0 ? '30 דק׳' : '45 דק׳'}</span>
         <span>🪙 <b>{g.progress.coins || 0}</b></span>
-        <span>{walks === 0 ? 'יצור אחד בדרך' : `${who?.name || 'יצור'} בדרך`}</span>
+        <span>{walks === 0 ? 'יצור אחד בדרך' : `${(brief.creatures || []).map(id => creatureById(id)?.name).filter(Boolean).join(' ו') || who?.name || 'יצורים'} בדרך`}</span>
       </div>
 
       {storyOpen ? (
@@ -481,7 +481,7 @@ function BrokenWorld({ g, today, onStart, onEgg, P }) {
           <button onClick={() => onStart(RUN.STORY)} style={s.cta}>{brief.cta}</button>
           {extraOk && (
             <button onClick={() => onStart(RUN.STORY, true)} style={{ ...s.cta, ...s.ctaGold }}>
-              🪙 {WALK_PLAN.extraCost} — לפתוח יצור שני בדרך
+              🪙 {WALK_PLAN.extraCost} — לפתוח יצור שלישי בדרך
             </button>
           )}
           <button onClick={() => onStart(RUN.FREE)} style={{ ...s.cta, ...s.ctaGhost }}>צא לחקור</button>
@@ -495,13 +495,13 @@ function BrokenWorld({ g, today, onStart, onEgg, P }) {
           <button onClick={() => onStart(RUN.FREE)} style={s.cta}>צא לחקור</button>
           {extraOk && (
             <button onClick={() => onStart(RUN.FREE, true)} style={{ ...s.cta, ...s.ctaGold }}>
-              🪙 {WALK_PLAN.extraCost} — לפתוח יצור שני בדרך
+              🪙 {WALK_PLAN.extraCost} — לפתוח יצור שלישי בדרך
             </button>
           )}
         </>
       )}
       {walks >= WALK_PLAN.extraFromWalk && !extraOk && (
-        <p style={s.note}>יצור שני בדרך עולה {WALK_PLAN.extraCost} מטבעות. יש לכם {g.progress.coins || 0}.</p>
+        <p style={s.note}>יצור שלישי בדרך עולה {WALK_PLAN.extraCost} מטבעות. יש לכם {g.progress.coins || 0}.</p>
       )}
 
       {/* הביצה: קונים במטבעות, היא מתחממת בהליכה, בוקעת בפורטל. מי ובאיזה
