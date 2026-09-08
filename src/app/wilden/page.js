@@ -163,9 +163,9 @@ export default function Wilden() {
   }, [g.run?.lastCoin])
   const [burst, setBurst] = useState(null)
 
-  usePreloadClip(g.state === S.ENCOUNTER || g.state === S.SEARCH
-    ? creatureById(g.run?.target?.creature || g.run?.creature)?.clip || null
-    : null)
+  const nextC = g.state === S.ENCOUNTER || g.state === S.SEARCH ? creatureById(g.run?.target?.creature || g.run?.creature) : null
+  usePreloadClip(nextC?.clip || null)
+  usePreloadClip(nextC?.live || null)
 
   function askLocation() {
     geo.request()

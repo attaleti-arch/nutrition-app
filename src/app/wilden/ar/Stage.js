@@ -175,7 +175,8 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
   const ctFaceLeft = !!ct && ct.streak != null && angleDelta(ct.streak, ct.bearing) < 0
   const ctStreakSide = !ct || ct.streak == null ? null
     : angleDelta(ct.streak, ct.bearing) < 0 ? 'right' : 'left'
-  const useModel = !!modelSrc && !modelFailed
+  // יש דמות חיה (קליפ בלי רקע)? היא מנצחת את המודל הקפוא, וגם חוסכת WebGL.
+  const useModel = !!modelSrc && !modelFailed && !creature?.live
   const showModel = useModel && (done || (ctVisible && !ct.peeking))
   const hideSprite = showModel && modelShown
 

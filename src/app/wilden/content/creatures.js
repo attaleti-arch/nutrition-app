@@ -12,6 +12,9 @@
 // sprites — גזירות דו-ממדיות מגיליון הדמויות. מה שמוצג היום.
 // clip    — סרטון קצר (MP4, 9:16, ~5 שניות) שמתנגן אחרי התפיסה. null = אין
 //          עדיין, ואז אין מסך קליפ בכלל. אף פעם לא סרטון של יצור אחר.
+// live    — אותו קליפ בלי הרקע, כ-WebP מונפש שקוף. זו הדמות החיה ב-AR:
+//          כשיש live, הבמה מציגה אותו במקום המודל התלת-ממדי הקפוא.
+//          "עם כל התלת-ממד זה לא מרגיש דמות" — זה התיקון, באפס כסף.
 //
 // כשה-GLB של נימי יגיע: שמים אותו ב-/public/creatures/nimi/nimi.glb,
 // משנים את model לנתיב הזה, ומעדכנים את שמות הקליפים ב-clips לשמות
@@ -38,6 +41,7 @@ export const CREATURES = {
     model: '/creatures/nimi/nimi.glb',
     ios: null,
     clip: '/creatures/nimi/caught.mp4',
+    live: '/creatures/nimi/live.webp',
     sprites: { hero: '/creatures/nimi/hero.png', peek: '/creatures/nimi/peek.png' },
     heightM: 0.45,
     arMode: AR_MODE.GROUND,
@@ -53,6 +57,7 @@ export const CREATURES = {
     model: '/creatures/dabashon/dabashon.glb',
     ios: null,
     clip: '/creatures/dabashon/caught.mp4',
+    live: '/creatures/dabashon/live.webp',
     sprites: null,                        // אין עדיין גזירה דו-ממדית
     heightM: 0.40,
     arMode: AR_MODE.SKY,
@@ -70,6 +75,7 @@ export const CREATURES = {
     model: '/creatures/bolder/bolder.glb',
     ios: null,
     clip: null,
+    live: null,
     sprites: null,
     heightM: 0.80,
     arMode: AR_MODE.GROUND,
@@ -86,6 +92,7 @@ export const CREATURES = {
     model: '/creatures/ruchi/ruchi.glb',
     ios: null,
     clip: null,
+    live: null,
     sprites: null,
     heightM: 0.45,
     arMode: AR_MODE.SKY,
@@ -102,6 +109,7 @@ export const CREATURES = {
     model: '/creatures/lumi/lumi.glb',
     ios: null,
     clip: null,
+    live: null,
     sprites: null,
     heightM: 0.55,
     arMode: AR_MODE.GROUND,
@@ -118,6 +126,7 @@ export const CREATURES = {
     model: '/creatures/gali/gali.glb',
     ios: null,
     clip: null,
+    live: null,
     sprites: null,
     heightM: 0.50,
     arMode: AR_MODE.GROUND,
@@ -134,6 +143,7 @@ export const CREATURES = {
     model: '/creatures/tzel/tzel.glb',
     ios: null,
     clip: null,
+    live: null,
     sprites: null,
     heightM: 0.50,
     arMode: AR_MODE.GROUND,
@@ -152,6 +162,7 @@ export const CREATURES = {
     model: '/creatures/kraag/kraag.glb',
     ios: null,
     clip: '/creatures/kraag/caught.mp4',
+    live: '/creatures/kraag/live.webp',
     sprites: null,
     heightM: 0.70,
     arMode: AR_MODE.GROUND,

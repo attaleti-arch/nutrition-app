@@ -24,7 +24,8 @@ const FOV_DEG = 22          // זווית ראייה אנכית של מצלמת 
 // אמיתי, לא כ-transform — ראה הערה ב-Stage.
 // hideSprite: המודל התלת-ממדי כבר מוצג בשכבה שלו; הצל והפס נשארים כאן.
 export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approaching, done, scale = 1, hideSprite = false, flying = false }) {
-  const anim = hideSprite ? 'none'
+  // דמות חיה כבר זזה בעצמה; אנימציית CSS מעליה רק מכבידה.
+  const anim = hideSprite || creature?.live ? 'none'
     : approaching ? 'wildenBob 1.1s ease-in-out infinite'
     : done ? 'wildenBreathe 2.6s ease-in-out infinite' : 'none'
   return (
@@ -37,25 +38,32 @@ export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approa
       {!flying && <div style={F.shadow} />}
       {done && <div style={F.glow} />}
       {!hideSprite && (
-        <Sprite sprites={creature?.sprites} peeking={peeking} faceLeft={faceLeft} done={done} scale={scale} />
+        <Sprite sprites={creature?.sprites} live={creature?.live} peeking={peeking} faceLeft={faceLeft} done={done} scale={scale} />
       )}
     </div>
   )
 }
 
-function Sprite({ sprites, peeking, faceLeft, done, scale = 1 }) {
-  if (!sprites) return null
-  if (peeking && sprites.peek) {
+// ── הדמות החיה ──
+// live הוא הקליפ של Runway בלי רקע (WebP מונפש). הוא מנצח את הספרייט
+// הסטטי בכל פאזה חוץ מהצצה, ששם יש ציור ייעודי אם קיים.
+function Sprite({ sprites, live, peeking, faceLeft, done, scale = 1 }) {
+  if (!sprites && !live) return null
+  if (peeking && sprites?.peek) {
     return <img src={sprites.peek} alt="" draggable={false}
       style={{ ...F.peek, height: `${(36 * scale).toFixed(1)}vh` }} />
   }
+  const src = live || sprites?.hero
+  if (!src) return null
   return (
-    <img src={sprites.hero} alt="" draggable={false} style={{
+    <img src={src} alt="" draggable={false} style={{
       ...F.hero,
       // גובה אמיתי לפי הפאזה, כדי שהשם בסיום ייכתב מתחת לרגליים ולא עליהן
       height: `${(34 * scale).toFixed(1)}vh`,
       transform: faceLeft ? 'scaleX(-1)' : 'none',
-      filter: done ? GLOW_DONE : 'drop-shadow(0 6px 10px rgba(0,0,0,.35))',
+      // בלי filter על תמונה מונפשת: drop-shadow שמחושב מחדש 12 פעמים בשנייה
+      // על WebP מונפש תוקע את הדפדפן. הצל והזוהר מצוירים מאחור ב-CSS רגיל.
+      filter: live ? 'none' : done ? GLOW_DONE : 'drop-shadow(0 6px 10px rgba(0,0,0,.35))',
     }} />
   )
 }
