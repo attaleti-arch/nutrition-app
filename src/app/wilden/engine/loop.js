@@ -74,11 +74,12 @@ export function buildLoop(input, home, target = TARGET_M) {
     return { ok: true, path, meters: plan.len, overlap: plan.overlap, shape, scale, unblocked: v.unblocked }
   }
 
-  // סיבוב ראשון: רק לולאות אמיתיות (החזרה ברחובות אחרים). סיבוב שני:
-  // גם כאלה שחוזרות באותם רחובות — הלוך ושוב באורך המלא עדיין עדיף על
-  // כלום, אבל לולאה אמיתית קצרה יותר עדיפה עליו.
-  for (const maxOverlap of [0.5, 1]) {
-    for (const step of LADDER) {
+  // הסדר: לולאה אמיתית (חזרה ברחובות אחרים) באורך מלא או כמעט מלא;
+  // אחר כך הלוך ושוב באורך המלא; רק אז לולאות קצרות באמת. "הלכנו 7
+  // דקות וזהו" — לולאה של חצי אורך היא חצי מסע, והלוך ושוב מלא עדיף
+  // עליה. בסוף: לולאות שחוזרות באותם רחובות, בכל אורך.
+  const tryLoops = (steps, maxOverlap) => {
+    for (const step of steps) {
       for (const v of variants) {
         const plan = planLoop(v.graph, v.start.idx, target * step.scale, { ...(step.relaxed ? RELAXED : {}), maxOverlap, out: v.out })
         if (!plan?.loop?.length) continue
@@ -87,14 +88,20 @@ export function buildLoop(input, home, target = TARGET_M) {
         if (r) return r
       }
     }
+    return null
   }
-  for (const v of variants) {
-    const plan = planThereAndBack(v.graph, v.start.idx, target, { out: v.out })
-    if (!plan) continue
-    const r = finish(v, plan, 'there-and-back', plan.len / target)
-    if (r) return r
+  const tryBack = minLen => {
+    for (const v of variants) {
+      const plan = planThereAndBack(v.graph, v.start.idx, target, { out: v.out })
+      if (!plan || plan.len < minLen) continue
+      const r = finish(v, plan, 'there-and-back', plan.len / target)
+      if (r) return r
+    }
+    return null
   }
-  return { ok: false, reason: 'no-loop' }
+  const long = LADDER.filter(s => s.scale >= 0.8), short = LADDER.filter(s => s.scale < 0.8)
+  return tryLoops(long, 0.5) || tryBack(target * 0.8) || tryLoops(short, 0.5) || tryBack(0) || tryLoops(LADDER, 1)
+    || { ok: false, reason: 'no-loop' }
 }
 
 // מה אומרים להורה כשהמסלול הוא לא הלולאה שתוכננה. null = הכול כרגיל.

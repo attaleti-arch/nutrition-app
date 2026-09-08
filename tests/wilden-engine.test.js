@@ -20,6 +20,9 @@ import { loopTargetM, canBuyExtra, WALK_PLAN, goldNearby } from '../src/app/wild
 import { createJumpDetector, jumpHeightCm, G } from '../src/app/wilden/engine/jump.js'
 import { buildLoop, fallbackLoop, normalize, routeNote } from '../src/app/wilden/engine/loop.js'
 import { routeArrows, splitAt, routeDirAt } from '../src/app/wilden/engine/mapLines.js'
+import { freshEnd, placeStops as placeStops2 } from '../src/app/wilden/engine/placement.js'
+import { collectCoins as collectCoins2 } from '../src/app/wilden/engine/coins.js'
+import { pathLength as pathLength2 } from '../src/app/wilden/engine/geo.js'
 import { angleDelta } from '../src/app/wilden/hooks/useOrient.js'
 import { getCached, putCached } from '../src/app/wilden/engine/routeCache.js'
 
@@ -775,6 +778,98 @@ test('סולם: הלולאה הרגילה עדיין ראשונה, בלי הער
   assert.equal(r.unblocked, false)
   assert.equal(routeNote(r), null)
   assert.equal(routeNote({ ok: false, reason: 'no-loop' }), null)
+})
+
+// ══════════════════════════════════════════════
+// "הלכנו 7 דקות, דבשון היה וזהו."
+// המסלול היה הלוך ושוב, והיצור הונח ב-80% ממנו — שזה פיזית 600 מ' מהבית,
+// על הרחוב שהולכים בו החוצה. הילד פגש אותו בדרך החוצה, אחרי שבע דקות.
+
+// הלוך ושוב: 1000 מ' צפונה ובחזרה, נקודה כל 50 מ'.
+function thereAndBack(meters = 1000, step = 50) {
+  const out = []
+  for (let d = 0; d <= meters; d += step) out.push({ ...destination(HOME, 0, d), street: 'הראשי' })
+  return out.concat(out.slice(0, -1).reverse())
+}
+
+test('הלוך ושוב: היצור מחכה בקצה, לא על הרחוב שכבר הלכנו בו', () => {
+  const path = thereAndBack()
+  assert.ok(freshEnd(path) >= 950 && freshEnd(path) <= 1010, `הקצה החדש ליד נקודת המפנה: ${freshEnd(path)}`)
+  const [stop] = placeStops2(path, 1, { creatures: ['dabashon'] })
+  assert.ok(stop.along >= 800, `התחנה ליד המפנה, לא ב-80% מהדרך: ${Math.round(stop.along)}`)
+  assert.ok(haversine(stop, destination(HOME, 0, 1000)) < 220, 'ופיזית רחוק מהבית, לא 7 דקות')
+  // שתי תחנות — שתיהן בדרך החוצה
+  const two = placeStops2(path, 2, { creatures: ['nimi', 'dabashon'] })
+  assert.equal(two.length, 2)
+  assert.ok(two.every(s => s.along <= 1010), 'אף אחת לא בדרך חזרה')
+  assert.ok(two[1].along - two[0].along >= 150, 'ומרווח ביניהן')
+  // לולאה רגילה: כמעט הכול "חדש", והתחנה ב-80% כרגיל
+  const loop = PATH
+  assert.ok(freshEnd(loop) > pathLength2(loop) * 0.85, 'בלולאה הקצה החדש הוא כמעט הסוף')
+})
+
+test('הלוך ושוב: המונה לאורך יודע אם אנחנו בדרך החוצה או בדרך חזרה', () => {
+  const path = thereAndBack()
+  const at600 = destination(HOME, 0, 600)
+  assert.ok(Math.abs(progressAlong(path, at600, 550).along - 600) < 5, 'בדרך החוצה')
+  assert.ok(Math.abs(progressAlong(path, at600, 1350).along - 1400) < 5, 'אותה נקודה בדרך חזרה = 1400')
+  // רגע המפנה: מ-1000 ממשיכים קדימה, לא חוזרים אחורה לאורך
+  const at980 = destination(HOME, 0, 980)
+  assert.ok(progressAlong(path, at980, 1000).along >= 1000, 'אחרי המפנה המונה ממשיך לעלות')
+  // בלי prevAlong — כמו קודם, הקטע הראשון
+  assert.ok(Math.abs(progressAlong(path, at600).along - 600) < 5)
+})
+
+test('הלוך ושוב: מטבע של הדרך חזרה לא נאסף בדרך החוצה', () => {
+  const at600 = destination(HOME, 0, 600)
+  const coins = [{ id: 'a', ...at600, along: 600, value: 1, taken: false }, { id: 'b', ...at600, along: 1400, value: 1, taken: false }]
+  const out = collectCoins2(coins, at600, undefined, 600)
+  assert.deepEqual(out.got.map(c => c.id), ['a'], 'רק מטבע הדרך החוצה')
+  const back = collectCoins2(out.coins, at600, undefined, 1395)
+  assert.deepEqual(back.got.map(c => c.id), ['b'], 'ובדרך חזרה — השני')
+  assert.equal(collectCoins2(coins, at600).got.length, 2, 'בלי along — כמו קודם')
+})
+
+test('הלוך ושוב מקצה לקצה: בדרך החוצה אין מפגש, בקצה יש, ובדרך חזרה מטבעות כפול', () => {
+  const path = thereAndBack(1000, 50)
+  let g = initial()
+  g = reduce(g, { type: 'START_RUN', kind: RUN.STORY, missionId: 'm01', day: DAY, t: 0 })
+  g = reduce(g, { type: 'PERMISSION_GRANTED', home: HOME })
+  g = reduce(g, { type: 'ROUTE_READY', path, home: HOME, creatures: ['dabashon'], t: 0 })
+  assert.equal(g.run.stops.length, 1)
+  assert.ok(g.run.target.along >= 800, `היצור ליד המפנה: ${Math.round(g.run.target.along)}`)
+  // 700 מ' החוצה: עדיין לא "כאן"
+  g = walk(g, 700)
+  assert.equal(g.state, S.SEARCH)
+  assert.ok(haversine(g.run.pos, g.run.target) > 100, 'בדרך החוצה היצור עוד רחוק')
+  assert.ok(Math.abs(g.run.along - 700) < 30, `המונה לאורך: ${Math.round(g.run.along)}`)
+  const coinsOut = g.run.coinsTaken
+  assert.ok(coinsOut >= 4 && coinsOut <= 9, `מטבעות בדרך החוצה בלבד: ${coinsOut}`)
+  // עד הקצה, ותפיסה
+  let t = 1000 + 47 * 10000
+  for (let d = 715; d <= 1000; d += 15) { const p = destination(HOME, 0, d); g = reduce(g, { type: 'FIX', lat: p.lat, lng: p.lng, acc: 10, t }); t += 10000 }
+  g = catchHere(g, t + 1000)
+  assert.equal(g.state, S.CAUGHT)
+  assert.equal(g.run.resolved, true, 'יצור אחד — המסע נפתר, חוזרים הביתה')
+  g = reduce(g, { type: 'CONTINUE' })
+  assert.equal(g.state, S.SEARCH)
+  // הדרך חזרה: המונה ממשיך מעל 1000, והמטבעות של החזרה נאספים כפול
+  t += 200000
+  const before = g.run.coinsTaken
+  for (let d = 985; d >= 0; d -= 15) { const p = destination(HOME, 0, d); g = reduce(g, { type: 'FIX', lat: p.lat, lng: p.lng, acc: 10, t }); t += 10000 }
+  assert.ok(g.run.along > 1900, `המונה בסוף הדרך חזרה: ${Math.round(g.run.along)}`)
+  assert.ok(g.run.coinsTaken - before >= 6, `מטבעות בדרך חזרה: ${g.run.coinsTaken - before}`)
+})
+
+test('סולם: הלוך ושוב מלא עדיף על לולאה של חצי אורך', () => {
+  // רחוב ארוך אחד ובלוק קטן לידו: יש לולאה של ~800 מ', ויש הלוך ושוב של 3.2 ק"מ
+  const base = oneStreet(HOME, 2000, 100)
+  const a = destination(HOME, 0, 200), b = destination(a, 90, 200), c = destination(b, 180, 200)
+  base.elements.push({ type: 'way', id: 2, tags: { highway: 'residential', name: 'סמטה' },
+    geometry: [{ lat: a.lat, lon: a.lng }, { lat: b.lat, lon: b.lng }, { lat: c.lat, lon: c.lng }, { lat: HOME.lat, lon: HOME.lng }] })
+  const r = buildLoop(base, HOME, 3200)
+  assert.equal(r.ok, true)
+  assert.ok(r.meters >= 2400, `מסע מלא, לא ${Math.round(r.meters)} מ'`)
 })
 
 test('סולם: הלוך ושוב צריך לפחות 250 מ׳ — אחרת באמת אין מסלול', () => {

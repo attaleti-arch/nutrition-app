@@ -37,11 +37,16 @@ export function placeCoins(path, { stops = [], every = COIN_EVERY_M, rng = Math.
 
 // מחזירה את המטבעות המעודכנים ואת מה שנאסף עכשיו. לא משנה את הקלט.
 // הזהב לא נאסף בהליכה: הוא רגע של קפיצה (GOLD_TAKEN), לא של מעבר.
-export function collectCoins(coins, pos, radius = COLLECT_RADIUS_M) {
+// along: איפה הילד על המסלול. מטבע של הדרך חזרה יושב, בהלוך ושוב, על
+// אותה נקודה כמו מטבע של הדרך החוצה — ובלי זה שניהם היו נאספים ביציאה,
+// והדרך חזרה (הכפולה!) נשארת ריקה. מטבע נאסף רק כשמגיעים אליו לאורך.
+export const COLLECT_SLACK_M = 60
+export function collectCoins(coins, pos, radius = COLLECT_RADIUS_M, along = null) {
   if (!coins?.length || !pos) return { coins, got: [] }
   const got = []
   const next = coins.map(c => {
     if (c.taken || c.gold) return c
+    if (along != null && c.along != null && along < c.along - COLLECT_SLACK_M) return c
     if (haversine(c, pos) <= radius) { got.push(c); return { ...c, taken: true } }
     return c
   })

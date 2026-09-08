@@ -42,10 +42,51 @@ export const STOP_BUFFER = 150
 
 // creatures: מי מחכה בכל תחנה, לפי הסדר, במחזוריות. נימי תמיד ראשון — הוא
 // מוצא הדרכים, ובלעדיו אין שביל לאחרים.
+// ── עד איפה המסלול "חדש" ──
+// מסלול שחוזר באותו רחוב (הלוך ושוב) עובר בכל נקודה של הדרך חזרה כבר
+// בדרך החוצה. יצור שמונח ב-80% של מסלול כזה יושב פיזית 600 מ' מהבית —
+// והילד פוגש אותו אחרי שבע דקות, בדרך החוצה. "הלכנו 7 דקות, דבשון היה
+// וזהו." לכן: מחזירה את המרחק-לאורך האחרון שהנקודה שלו לא נראתה קודם.
+// בלולאה רגילה זה כמעט הסוף; בהלוך ושוב — נקודת המפנה.
+export function freshEnd(path, { near = 35, gap = 80, step = 10 } = {}) {
+  if (!path || path.length < 2) return 0
+  const total = pathLength(path)
+  const cum = [0]
+  for (let i = 1; i < path.length; i++) cum.push(cum[i - 1] + haversine(path[i - 1], path[i]))
+  const seen = (pt, before) => {
+    for (let i = 1; i < path.length; i++) {
+      if (cum[i - 1] > before) break
+      if (haversine(pt, path[i - 1]) <= near || haversine(pt, path[i]) <= near) return true
+      const d = distToSeg(pt, path[i - 1], path[i])
+      if (d <= near) return true
+    }
+    return false
+  }
+  for (let at = total; at > 0; at -= step) {
+    const p = pointAlong(path, at)
+    if (!p) continue
+    if (!seen(p.point, at - gap)) return at
+  }
+  return 0
+}
+
+function distToSeg(pt, a, b) {
+  const mLat = 111320, mLng = 111320 * Math.cos((pt.lat * Math.PI) / 180)
+  const ax = (a.lng - pt.lng) * mLng, ay = (a.lat - pt.lat) * mLat
+  const bx = (b.lng - pt.lng) * mLng, by = (b.lat - pt.lat) * mLat
+  const dx = bx - ax, dy = by - ay
+  const len2 = dx * dx + dy * dy
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, -(ax * dx + ay * dy) / len2))
+  return Math.hypot(ax + t * dx, ay + t * dy)
+}
+
 export function placeStops(path, count = STOPS, { creatures = ['nimi'], buffer = STOP_BUFFER } = {}) {
   if (!path || path.length < 2) return []
   const total = pathLength(path)
-  const usable = Math.max(0, total - 2 * buffer)
+  // התחנות רק בחלק ה"חדש" של המסלול: בהלוך ושוב — עד נקודת המפנה, ואז
+  // היצור מחכה בקצה והדרך חזרה היא איתו, עם מטבעות כפול.
+  const end = Math.min(total - buffer, Math.max(freshEnd(path), buffer + 200))
+  const usable = Math.max(0, end - buffer)
   const n = Math.max(1, Math.min(count, Math.floor(usable / 200) || 1))   // לפחות 200 מ' בין תחנות
   const list = Array.isArray(creatures) && creatures.length ? creatures : ['nimi']
   // היצור בסוף, לא באמצע. "הלכתי שבע דקות ומצאתי את נימי — למה שילד ימשיך?"

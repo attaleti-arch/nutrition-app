@@ -8,7 +8,9 @@
 
 import { haversine } from './geo.js'
 
-const KEY = 'wilden_routes_v1'
+// v2: הגרסה הקודמת שמרה גם הלוך-ושוב ולולאות של חצי אורך, והמסע הבא
+// מאותו בית פשוט חזר עליהן. זיכרון ישן נשכח, ורק לולאות מלאות נשמרות.
+const KEY = 'wilden_routes_v2'
 const MAX = 6                       // כמה נקודות בית לזכור
 const TTL_DAYS = 30                 // רחובות לא זזים, אבל בית כן
 

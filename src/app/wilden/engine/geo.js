@@ -113,7 +113,13 @@ export function pointAlong(path, metersAlong) {
 //
 // ההטלה נעשית במטרים מקומיים סביב הנקודה, ולא על קואורדינטות גולמיות:
 // חיסור של ערכי קו־אורך גדולים מאבד דיוק בדיוק בקנה מידה שמעניין אותנו.
-export function progressAlong(path, pos) {
+//
+// prevAlong: איפה היינו בדגימה הקודמת. מסלול שחוזר באותו רחוב (הלוך
+// ושוב, או לולאה שהקטע האחרון שלה הוא הקטע הראשון) עובר באותה נקודה
+// פעמיים — והקטע הקרוב ביותר לבדו לא יודע אם זו הדרך החוצה או הדרך
+// חזרה. עם prevAlong בוחרים, מבין הקטעים הקרובים באותה מידה, את זה
+// שממשיך את מה שהלכנו: קדימה בעדיפות, אחורה קצת אם חייבים.
+export function progressAlong(path, pos, prevAlong = null) {
   if (!path || path.length < 2) return { along: 0, offPath: 0, index: 0 }
   const mPerLat = 111320
   const mPerLng = 111320 * Math.cos(rad(pos.lat))
@@ -122,6 +128,7 @@ export function progressAlong(path, pos) {
 
   let acc = 0
   let best = { along: 0, offPath: Infinity, index: 0 }
+  const all = []
   for (let i = 1; i < path.length; i++) {
     const ax = X(path[i - 1]), ay = Y(path[i - 1])
     const bx = X(path[i]), by = Y(path[i])
@@ -131,8 +138,15 @@ export function progressAlong(path, pos) {
     const px = ax + t * dx, py = ay + t * dy
     const off = Math.hypot(px, py)
     const seg = haversine(path[i - 1], path[i])
-    if (off < best.offPath) best = { along: acc + t * seg, offPath: off, index: i - 1 }
+    const cand = { along: acc + t * seg, offPath: off, index: i - 1 }
+    if (off < best.offPath) best = cand
+    if (prevAlong != null) all.push(cand)
     acc += seg
   }
-  return best
+  if (prevAlong == null) return best
+  // כל מי שקרוב כמעט כמו הטוב ביותר — ומביניהם, מי שממשיך את הדרך
+  const near = all.filter(c => c.offPath <= best.offPath + 12)
+  const cost = c => (c.along >= prevAlong ? c.along - prevAlong : (prevAlong - c.along) * 3)
+  near.sort((a, b) => cost(a) - cost(b))
+  return near[0] || best
 }

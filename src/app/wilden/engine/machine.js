@@ -195,7 +195,9 @@ export function reduce(g, ev) {
       const stillRef = staying ? r.stillRef : pos
 
       let target = r.target
-      const along = r.path ? progressAlong(r.path, pos).along : 0
+      // עם המיקום הקודם לאורך: במסלול שחוזר באותו רחוב, זה מה שמבדיל
+      // בין הדרך החוצה לדרך חזרה.
+      const along = r.path ? progressAlong(r.path, pos, r.along ?? 0).along : 0
 
       // מסע ישן בלי תחנות: היעד נוצר אחרי שהילד יצא לדרך, קדימה על המסלול.
       if (!target && !r.stops && r.path && walked >= PLACE_AFTER) {
@@ -204,7 +206,7 @@ export function reduce(g, ev) {
 
       // ── מטבעות ──
       // עוברים דרך מטבע — הוא נאסף. הדף שומע את השינוי ב-coinsTaken ומצלצל.
-      const cc = collectCoins(r.coins, pos)
+      const cc = collectCoins(r.coins, pos, undefined, along)
       const coinsTaken = (r.coinsTaken || 0) + coinsValue(cc.got, r.resolved ? HOME_BONUS : 1)
       const lastCoin = cc.got.length ? { t: ev.t, gold: cc.got.some(c => c.gold), n: cc.got.length } : r.lastCoin
 

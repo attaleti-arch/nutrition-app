@@ -86,7 +86,9 @@ export function useRoute() {
     abort.current = null
 
     if (out.ok) {
-      putCached(home, out.path)      // כדי שהפעם הבאה תהיה מיידית
+      // כדי שהפעם הבאה תהיה מיידית — אבל רק לולאה של ממש. הלוך ושוב או
+      // לולאה קצרה הם פשרה של היום, לא מה שרוצים לחזור עליו מחר.
+      if (out.shape === 'loop' && (out.scale ?? 1) >= 0.8) putCached(home, out.path)
       setNote(routeNote(out))
       setPath(out.path); setStatus('ok')
       return out.path
