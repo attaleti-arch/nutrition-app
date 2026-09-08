@@ -320,9 +320,12 @@ export default function Wilden() {
                 <button onClick={() => { sfxAppear(); dispatch({ type: 'CONTINUE' }) }} style={s.cta}>
                   חוזרים הביתה. הוא איתכם — מטבעות כפול
                 </button>
-                <button onClick={() => { sfxAppear(); dispatch({ type: 'PORTAL_OPEN' }) }} style={{ ...s.cta, ...s.ctaGhost }}>
-                  לפתוח את הפורטל עכשיו
-                </button>
+                {/* "שאחרי התפיסה הסיבוב ממשיך עד הבית": הפורטל נפתח רק ליד הבית. */}
+                {atHome(g.run) && (
+                  <button onClick={() => { sfxAppear(); dispatch({ type: 'PORTAL_OPEN' }) }} style={{ ...s.cta, ...s.ctaGhost }}>
+                    🏠 הגענו. לפתוח את הפורטל
+                  </button>
+                )}
               </>
             ) : (
               <button onClick={() => { sfxAppear(); dispatch({ type: 'CONTINUE' }) }} style={s.cta}>
@@ -452,6 +455,13 @@ function RouteFailed({ route, detail, onRetry, onAbort }) {
       <button onClick={onAbort} style={{ ...s.cta, ...s.ctaGhost }}>לא עכשיו</button>
     </Panel>
   )
+}
+
+// בבית = בתוך 60 מ' מהדלת, או שאין מיקום בכלל (אז לא חוסמים).
+const HOME_M = 60
+function atHome(run) {
+  if (!run?.home || !run?.pos) return true
+  return haversine(run.pos, run.home) <= HOME_M
 }
 
 // ── עולם הבית ההרוס ──
@@ -651,12 +661,10 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
         {view.canSearch && !homeward && (
           <button onClick={onSearch} style={s.searchOverlay}>👁 משהו כאן. לחפש</button>
         )}
-        {homeward && (
-          <button onClick={onPortal} style={{ ...s.searchOverlay,
-            ...(r.home && r.pos && haversine(r.pos, r.home) > 60 ? { background: 'rgba(15,21,15,.85)', color: C.ink, boxShadow: 'none' } : {}) }}>
-            {r.home && r.pos && haversine(r.pos, r.home) > 60 ? 'לפתוח את הפורטל כבר עכשיו' : '🏠 הגענו. לפתוח את הפורטל'}
-          </button>
-        )}
+        {/* הדרך הביתה היא חלק מהמסע: הפורטל נפתח רק כשמגיעים. עד אז — כמה נשאר. */}
+        {homeward && (atHome(r)
+          ? <button onClick={onPortal} style={s.searchOverlay}>🏠 הגענו. לפתוח את הפורטל</button>
+          : <p style={s.stopOverlay}>🏠 עוד {fmtM(Math.max(0, total - along))} הביתה. הוא איתכם.</p>)}
         {!view.canSearch && view.phase === PHASE.VERY_CLOSE && (
           <p style={s.stopOverlay}>הסימן כאן. עצרו במקום בטוח.</p>
         )}

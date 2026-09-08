@@ -7,7 +7,7 @@ import { CreatureFigure, ModelLayer, Dust } from './Figure'
 import { useModelSrc, usePreloadModel } from '../hooks/useModelViewer'
 import { useCamera } from '../hooks/useCamera'
 import { camText } from '../engine/camera'
-import { sfxAppear, sfxRustle, sfxCatch, buzz } from '../engine/audio'
+import { sfxAppear, sfxRustle, sfxCatch, buzz, startVoice, sfxVoice } from '../engine/audio'
 import { bearing, haversine } from '../engine/geo'
 import { cheer } from '../content/cheers'
 
@@ -70,6 +70,15 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
 
   const onFoundRef = useRef(); onFoundRef.current = onFound
 
+  // ── הקול שלו ──
+  // "זמזום לדבורה." מהרגע שהבמה נפתחת היצור נשמע, חלש; מתחזק כשמכוונים
+  // אליו וכשמתקרבים. נפסק כשתפסו. ראה engine/audio.js.
+  const voiceRef = useRef(null)
+  useEffect(() => {
+    voiceRef.current = startVoice(creature?.id)
+    return () => { voiceRef.current?.stop(); voiceRef.current = null }
+  }, [creature?.id])
+
   // ── עוגן ──
   // הכוריאוגרפיה נמדדת ביחס לכיוון שאליו הטלפון מכוון ברגע הפתיחה, ולא
   // בזוויות מוחלטות. הגרלה מוחלטת נופלת לפעמים בדיוק מול הילד, והוא מוצא
@@ -98,7 +107,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
         let next = prev
         for (let i = 0; i < n && ctrl.onStep; i++) {
           const r = ctrl.onStep(next, t)
-          if (r.state !== next) { next = r.state; if (r.feedback) fire(r.feedback, setFlash, setShake) }
+          if (r.state !== next) { next = r.state; if (r.feedback) fire(r.feedback, setFlash, setShake, creatureIdRef.current) }
         }
         if (ctrl.onTick) next = ctrl.onTick(next, t)
         return next
@@ -154,7 +163,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
         holdRef.current = 0; lockedRef.current = null; setHold(0)
         setCs(prev => {
           const r = ctrl.onLock(prev, id2, Math.random, Date.now(), { steps: stepsLiveRef.current })
-          fire(r.feedback, setFlash, setShake)
+          fire(r.feedback, setFlash, setShake, creatureIdRef.current)
           return r.state
         })
       }
@@ -171,6 +180,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
 
   const done = cs && ctrl ? ctrl.isDone(cs) : false
   const copy = cs && ctrl ? ctrl.copy(cs) : { line: '', sub: '' }
+  const creatureIdRef = useRef(creature?.id); creatureIdRef.current = creature?.id
 
   // ── תפיסה ──
   // ההחלטה שלה: תפיסה ולא ידידות, כי זה ילדים. הרגע עצמו חייב להיות של
@@ -182,7 +192,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
     if (!ctrl?.onCatch) return
     setCs(prev => {
       const r = ctrl.onCatch(prev)
-      if (r.state !== prev) fire(r.feedback, setFlash, setShake)
+      if (r.state !== prev) fire(r.feedback, setFlash, setShake, creatureIdRef.current)
       return r.state
     })
   }
@@ -191,7 +201,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
     if (!ctrl?.onTap) return
     setCs(prev => {
       const r = ctrl.onTap(prev, Math.random, Date.now(), { steps: stepsLiveRef.current })
-      if (r.state !== prev) fire(r.feedback, setFlash, setShake)
+      if (r.state !== prev) fire(r.feedback, setFlash, setShake, creatureIdRef.current)
       return r.state
     })
   }
@@ -210,6 +220,15 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   const ctFaceLeft = !!ct && ct.streak != null && angleDelta(ct.streak, ct.bearing) < 0
   const ctStreakSide = !ct || ct.streak == null ? null
     : angleDelta(ct.streak, ct.bearing) < 0 ? 'right' : 'left'
+  // עוצמת הקול: קרוב = חזק, על המסך = חזק יותר, נתפס = שקט.
+  useEffect(() => {
+    const v = voiceRef.current
+    if (!v) return
+    if (done) { v.stop(); return }
+    const d = cs?.dist != null ? Math.max(0, 1 - cs.dist / 13) : 0.5
+    v.setLevel(Math.min(1, d * 0.7 + (ctVisible ? 0.35 : 0)))
+  }, [cs?.dist, ctVisible, done])
+
   // ── להקיף אותו ──
   // היצור עומד בנקודה אמיתית (התחנה). מהמיקום של הטלפון יחסית אליה
   // יודעים מאיזה צד הילד מסתכל, והמודל מסתובב בהתאם: הילד הולך סביבו
@@ -371,16 +390,20 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
 }
 
 // משוב רגעי. "טעית" אף פעם לא נאמר — נאמר מה ראינו.
-function fire(kind, setFlash, setShake) {
+function fire(kind, setFlash, setShake, creatureId = null) {
   if (!kind) return
   if (kind === 'stomp' && setShake) { setShake(true); setTimeout(() => setShake(false), 520) }
+  // הקול של היצור לרגע הזה, לפני הצליל הכללי
+  if (creatureId && (kind === 'flee' || kind === 'near' || kind === 'stomp')) {
+    try { sfxVoice(creatureId, kind) } catch (e) { /* לא קריטי */ }
+  }
   const map = {
-    stomp: { t: 'הוא רקע!', buzz: [90, 40, 130], sfx: sfxRustle },
+    stomp: { t: 'הוא רקע!', buzz: [90, 40, 130], sfx: null },
     back: { t: 'כאן הוא הסתובב וחזר.', buzz: [50], sfx: sfxRustle },
     fade: { t: 'כאן העקבות נגמרות. הוא קפץ.', buzz: [50], sfx: sfxRustle },
     run: { t: 'רוצו אליו!', buzz: [40], sfx: null },
-    flee: { t: 'הוא ברח!', buzz: [70, 50, 70], sfx: sfxRustle },
-    near: { t: 'הוא נעצר.', buzz: [40], sfx: sfxAppear },
+    flee: { t: 'הוא ברח!', buzz: [70, 50, 70], sfx: creatureId ? null : sfxRustle },
+    near: { t: 'הוא נעצר.', buzz: [40], sfx: creatureId ? null : sfxAppear },
     ready: { t: 'עכשיו!', buzz: [60, 40, 60], sfx: sfxAppear },
     catch: { t: '', buzz: [40, 60, 40, 140], sfx: sfxCatch },
   }

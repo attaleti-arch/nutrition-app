@@ -163,3 +163,157 @@ export function sfxCheer() {
 export function buzz(pattern) {
   try { if (navigator.vibrate) navigator.vibrate(pattern) } catch (e) { /* לא נתמך — לא נורא */ }
 }
+
+// ═══════════════════════════════════════════════════════════════
+// ── הקולות של היצורים ──
+// "זמזום לדבורה, ולא יודעת מה עוד. שזה ירגיש חוויה." לכל יצור קול
+// מתמשך בזמן המפגש, שמתחזק כשמכוונים אליו ומתקרבים (setLevel 0..1),
+// וקול קצר לרגעי הבריחה, העצירה והרקיעה. הכול מסונתז כאן, בלי קבצים.
+// ═══════════════════════════════════════════════════════════════
+
+const VOICES = {
+  // דבורה: מסור נמוך עם ריצוד מהיר — זמזום.
+  dabashon: c => {
+    const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 175
+    const o2 = c.createOscillator(); o2.type = 'square'; o2.frequency.value = 176.5
+    const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 900
+    const trem = c.createOscillator(); trem.frequency.value = 27
+    const tg = c.createGain(); tg.gain.value = 0.35
+    const amp = c.createGain(); amp.gain.value = 0.65
+    trem.connect(tg); tg.connect(amp.gain)
+    o.connect(lp); o2.connect(lp); lp.connect(amp)
+    return { out: amp, start: () => { o.start(); o2.start(); trem.start() }, stop: () => { o.stop(); o2.stop(); trem.stop() }, base: 0.16 }
+  },
+  // ציפור רוח: רעש מסונן שנושם לאט, וציוץ מדי פעם.
+  ruchi: c => {
+    const src = loopNoise(c); const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700; bp.Q.value = 0.6
+    const amp = c.createGain(); amp.gain.value = 0.6
+    const lfo = c.createOscillator(); lfo.frequency.value = 0.35; const lg = c.createGain(); lg.gain.value = 0.35
+    lfo.connect(lg); lg.connect(amp.gain)
+    src.connect(bp); bp.connect(amp)
+    const chirp = setInterval(() => { if (!muted) tone({ freq: 1800, glideTo: 2600, dur: 0.12, type: 'sine', vol: 0.05 }) }, 2600)
+    return { out: amp, start: () => { src.start(); lfo.start() }, stop: () => { src.stop(); lfo.stop(); clearInterval(chirp) }, base: 0.2 }
+  },
+  // לומי: נצנוץ — שני סינוסים גבוהים כמעט זהים, פעימה איטית.
+  lumi: c => {
+    const o = c.createOscillator(); o.frequency.value = 1568
+    const o2 = c.createOscillator(); o2.frequency.value = 1571.5
+    const amp = c.createGain(); amp.gain.value = 0.5
+    o.connect(amp); o2.connect(amp)
+    const sparkle = setInterval(() => { if (!muted) tone({ freq: 2093 + Math.random() * 1400, dur: 0.14, type: 'sine', vol: 0.04 }) }, 900)
+    return { out: amp, start: () => { o.start(); o2.start() }, stop: () => { o.stop(); o2.stop(); clearInterval(sparkle) }, base: 0.05 }
+  },
+  // גלי: בועות — בליפים יורדים, אקראיים.
+  gali: c => {
+    const amp = c.createGain(); amp.gain.value = 1
+    const src = loopNoise(c); const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 500
+    src.connect(lp); lp.connect(amp)
+    const drip = setInterval(() => { if (!muted) tone({ freq: 900 + Math.random() * 700, glideTo: 400, dur: 0.11, type: 'sine', vol: 0.07 }) }, 700 + Math.random() * 500)
+    return { out: amp, start: () => src.start(), stop: () => { src.stop(); clearInterval(drip) }, base: 0.06 }
+  },
+  // צל: לחישה — רעש נמוך שמתנשם לאט, וסינוס עמוק.
+  tzel: c => {
+    const src = loopNoise(c); const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2400; bp.Q.value = 1.4
+    const amp = c.createGain(); amp.gain.value = 0.5
+    const lfo = c.createOscillator(); lfo.frequency.value = 0.6; const lg = c.createGain(); lg.gain.value = 0.45
+    lfo.connect(lg); lg.connect(amp.gain)
+    const o = c.createOscillator(); o.frequency.value = 82; const og = c.createGain(); og.gain.value = 0.35; o.connect(og); og.connect(amp)
+    src.connect(bp); bp.connect(amp)
+    return { out: amp, start: () => { src.start(); lfo.start(); o.start() }, stop: () => { src.stop(); lfo.stop(); o.stop() }, base: 0.14 }
+  },
+  // בולדר וקראג: רעם אבן — רעש נמוך מאוד.
+  bolder: c => stoneVoice(c, 0.22),
+  kraag: c => stoneVoice(c, 0.16),
+  // נימי: רשרוש בשיחים כל כמה שניות, וטפיפה.
+  nimi: c => {
+    const amp = c.createGain(); amp.gain.value = 1
+    const src = loopNoise(c); const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 3600; bp.Q.value = 1.2
+    const lfo = c.createOscillator(); lfo.frequency.value = 1.1; const lg = c.createGain(); lg.gain.value = 0.5
+    const g2 = c.createGain(); g2.gain.value = 0.5
+    lfo.connect(lg); lg.connect(g2.gain)
+    src.connect(bp); bp.connect(g2); g2.connect(amp)
+    return { out: amp, start: () => { src.start(); lfo.start() }, stop: () => { src.stop(); lfo.stop() }, base: 0.07 }
+  },
+}
+
+function stoneVoice(c, base) {
+  const src = loopNoise(c); const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 110
+  const amp = c.createGain(); amp.gain.value = 1
+  const lfo = c.createOscillator(); lfo.frequency.value = 0.25; const lg = c.createGain(); lg.gain.value = 0.4
+  lfo.connect(lg); lg.connect(amp.gain)
+  src.connect(lp); lp.connect(amp)
+  return { out: amp, start: () => { src.start(); lfo.start() }, stop: () => { src.stop(); lfo.stop() }, base }
+}
+
+function loopNoise(c) {
+  const frames = c.sampleRate * 2
+  const buf = c.createBuffer(1, frames, c.sampleRate)
+  const d = buf.getChannelData(0)
+  for (let i = 0; i < frames; i++) d[i] = Math.random() * 2 - 1
+  const src = c.createBufferSource(); src.buffer = buf; src.loop = true
+  return src
+}
+
+// מתחיל את הקול של היצור. מחזיר { setLevel(0..1), stop() }. בלי אודיו —
+// ידית ריקה, כדי שהבמה לא תצטרך לבדוק.
+export function startVoice(id) {
+  const c = ac()
+  const make = VOICES[id]
+  if (!c || !make) return { setLevel() {}, stop() {} }
+  let v
+  try { v = make(c) } catch (e) { return { setLevel() {}, stop() {} } }
+  const level = c.createGain(); level.gain.value = 0.0001
+  v.out.connect(level); level.connect(master)
+  try { v.start() } catch (e) { /* כבר התחיל */ }
+  let stopped = false
+  return {
+    setLevel(k) {
+      if (stopped) return
+      const target = muted ? 0.0001 : Math.max(0.0001, v.base * (0.25 + 0.75 * Math.max(0, Math.min(1, k))))
+      level.gain.setTargetAtTime(target, c.currentTime, 0.25)
+    },
+    stop() {
+      if (stopped) return
+      stopped = true
+      level.gain.setTargetAtTime(0.0001, c.currentTime, 0.12)
+      setTimeout(() => { try { v.stop(); level.disconnect() } catch (e) { /* כבר נעצר */ } }, 500)
+    },
+  }
+}
+
+// ── רגעים: בריחה, עצירה, רקיעה — בקול של היצור ──
+export function sfxVoice(id, kind) {
+  if (muted) return
+  if (kind === 'stomp' || (kind === 'flee' && (id === 'bolder' || id === 'kraag'))) {
+    tone({ freq: 90, glideTo: 28, dur: 0.38, type: 'sine', vol: 0.5 })             // הרעם
+    noise({ dur: 0.5, freq: 160, q: 0.5, vol: 0.35, delay: 0.02 })
+    noise({ dur: 0.7, freq: 1200, q: 0.4, vol: 0.12, delay: 0.1 })                 // אבק
+    return
+  }
+  if (kind === 'flee') {
+    switch (id) {
+      case 'dabashon': tone({ freq: 170, glideTo: 420, dur: 0.5, type: 'sawtooth', vol: 0.14 }); break
+      case 'ruchi': noise({ dur: 0.6, freq: 900, q: 0.5, vol: 0.22 }); tone({ freq: 2400, glideTo: 3200, dur: 0.14, type: 'sine', vol: 0.06, delay: 0.1 }); break
+      case 'tzel': noise({ dur: 0.7, freq: 2600, q: 1.6, vol: 0.14 }); tone({ freq: 140, glideTo: 60, dur: 0.6, type: 'sine', vol: 0.12 }); break
+      case 'gali': noise({ dur: 0.35, freq: 2200, q: 0.7, vol: 0.2 }); [0, 0.07, 0.15].forEach(d => tone({ freq: 1200, glideTo: 500, dur: 0.12, type: 'sine', vol: 0.08, delay: d })); break
+      case 'lumi': [0, 0.06, 0.12, 0.18].forEach((d, i) => tone({ freq: 1568 * Math.pow(2, i / 6), dur: 0.16, type: 'sine', vol: 0.09, delay: d })); break
+      default: // נימי וחברים: רשרוש וטפיפה מהירה
+        noise({ dur: 0.45, freq: 3400, q: 0.9, vol: 0.16 })
+        ;[0, 0.09, 0.18, 0.27].forEach(d => noise({ dur: 0.05, freq: 1400, q: 2, vol: 0.12, delay: d }))
+    }
+    return
+  }
+  if (kind === 'near') {
+    switch (id) {
+      case 'dabashon': tone({ freq: 175, dur: 0.35, type: 'sawtooth', vol: 0.1 }); break
+      case 'tzel': tone({ freq: 60, glideTo: 160, dur: 0.5, type: 'sine', vol: 0.14 }); break
+      default: tone({ freq: 660, dur: 0.16, type: 'triangle', vol: 0.14 }); tone({ freq: 990, dur: 0.28, type: 'sine', vol: 0.12, delay: 0.09 })
+    }
+  }
+}
+
+// ── ריצת המטבעות: ספירה לאחור ויציאה ──
+export function sfxCount(n) {
+  if (n > 0) tone({ freq: 660, dur: 0.12, type: 'square', vol: 0.09 })
+  else { tone({ freq: 990, dur: 0.35, type: 'square', vol: 0.11 }); tone({ freq: 1320, dur: 0.3, type: 'sine', vol: 0.1, delay: 0.12 }) }
+}

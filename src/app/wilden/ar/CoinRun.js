@@ -4,7 +4,7 @@ import { useOrient, angleDelta } from '../hooks/useOrient'
 import { useSteps } from '../hooks/useSteps'
 import { useCamera } from '../hooks/useCamera'
 import { camText } from '../engine/camera'
-import { sfxCoin, sfxCheer, sfxFinish, buzz } from '../engine/audio'
+import { sfxCoin, sfxCheer, sfxFinish, sfxCount, buzz } from '../engine/audio'
 import * as CR from '../engine/coinRun'
 
 // ─── ריצת המטבעות: הבמה ───
@@ -48,7 +48,9 @@ export function CoinRun({ onDone, onClose }) {
 
   // 3, 2, 1
   useEffect(() => {
-    if (countdown <= 0) return
+    if (countdown < 0) return
+    try { sfxCount(countdown); if (countdown === 0) buzz([60, 30, 60]) } catch (e) { /* לא קריטי */ }
+    if (countdown === 0) return
     const id = setTimeout(() => setCountdown(c => c - 1), 900)
     return () => clearTimeout(id)
   }, [countdown])
