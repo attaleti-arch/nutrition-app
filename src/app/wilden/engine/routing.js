@@ -188,12 +188,15 @@ function roundness(graph, loop) {
 }
 
 // מתכנן לולאה שאורכה קרוב ל-target מטרים.
-export function planLoop(graph, homeIdx, target, { candidates = 14 } = {}) {
-  const out = dijkstra(graph, homeIdx)
+// window: איפה נקודת המפנה יושבת, כחלק מאורך המסלול. minLen: מתחת לזה
+// הלולאה נפסלת. ברירת המחדל קפדנית; loop.js מרפה אותה בהדרגה כשבשכונה
+// קטנה אין מה למצוא — במקום להחזיר null ולהשאיר ילד בלי מסלול.
+export function planLoop(graph, homeIdx, target, { candidates = 14, window = [0.3, 0.62], minLen = 0.55, maxOverlap = 1, out: outGiven = null } = {}) {
+  const out = outGiven || dijkstra(graph, homeIdx)
   // נקודת המפנה צריכה לשבת בערך בחצי המסלול: הדרך אליה והדרך חזרה, שהיא
   // רחובות אחרים ולכן ארוכה במקצת, מסתכמות לאורך המבוקש.
-  const lo = target * 0.3, hi = target * 0.62
-  const ideal = target * 0.46
+  const lo = target * window[0], hi = target * window[1]
+  const ideal = target * ((window[0] + window[1]) / 2)
 
   // מועמדים לנקודת המפנה, מפוזרים לפי כיוון כדי לא לבחון 14 נקודות
   // שכולן באותו רחוב
@@ -224,13 +227,14 @@ export function planLoop(graph, homeIdx, target, { candidates = 14 } = {}) {
 
     const loop = outPath.concat(backPath.slice(1))
     const len = pathLength(graph, loop)
-    if (len < target * 0.55) continue
+    if (len < target * minLen) continue
 
     let shared = 0
     for (let i = 1; i < backPath.length; i++) {
       if (used.has(edgeId(backPath[i - 1], backPath[i]))) shared++
     }
     const overlap = shared / Math.max(1, backPath.length - 1)
+    if (overlap > maxOverlap) continue
     // אורך נכון, בלי לחזור באותם רחובות, ו"עגול" ולא נחש דק: לולאה שיוצאת
     // ברחוב אחד וחוזרת ברחוב המקביל לו עומדת בשני התנאים הראשונים אבל היא
     // הלוך-ושוב, לא סיבוב בשכונה.
@@ -242,6 +246,29 @@ export function planLoop(graph, homeIdx, target, { candidates = 14 } = {}) {
   // מבין השלושה הטובים — אחד אקראי, כדי ש"מסלול אחר" באמת ייתן מסלול אחר
   const pool = scored.slice(0, Math.min(3, scored.length))
   return pool[Math.floor(Math.random() * pool.length)]
+}
+
+// ── הלוך ושוב ──
+// כשאין לולאה בכלל — מושב עם רחוב ראשי אחד, שכונה בקצה של עיר — הולכים
+// עד נקודה רחוקה וחוזרים באותו רחוב. לא מסלול חלומי, אבל מסלול על
+// רחובות אמיתיים, בלי מצולע מומצא. נקודת המפנה: הרחוקה ביותר שאפשר
+// עד חצי האורך המבוקש, ולפחות minOut מטרים מהבית.
+export function planThereAndBack(graph, homeIdx, target, { minOut = 250, out: outGiven = null } = {}) {
+  const out = outGiven || dijkstra(graph, homeIdx)
+  const want = target / 2
+  let far = -1, best = Infinity
+  for (let i = 0; i < graph.nodes.length; i++) {
+    const r = out.real[i]
+    if (!isFinite(out.dist[i]) || r < minOut || r > want * 1.15) continue
+    const gap = Math.abs(r - want)
+    if (gap < best) { best = gap; far = i }
+  }
+  if (far < 0) return null
+  const outPath = tracePath(out.prev, homeIdx, far)
+  if (!outPath || outPath.length < 2) return null
+  const loop = outPath.concat(outPath.slice(0, -1).reverse())
+  const len = pathLength(graph, loop)
+  return { loop, len, overlap: 1, score: Infinity, shape: 'there-and-back' }
 }
 
 // פורס את היצורים לאורך המסלול במרווחים שווים. הראשון לא בדלת והאחרון

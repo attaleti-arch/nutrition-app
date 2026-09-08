@@ -3,7 +3,7 @@ import { useCallback, useRef, useState } from 'react'
 import { fetchStreets } from '../engine/osm'
 // loop.js ולא route.js: קובץ בשם route.js בתוך app/ הוא API route
 // מבחינת Next, והוא נבנה כנתיב /wilden/engine בלי שאף אחד התכוון.
-import { buildLoop, fallbackLoop, TARGET_M } from '../engine/loop'
+import { buildLoop, fallbackLoop, routeNote, TARGET_M } from '../engine/loop'
 import { getCached, putCached } from '../engine/routeCache'
 
 // ─── בניית הלולאה ───
@@ -21,6 +21,7 @@ import { getCached, putCached } from '../engine/routeCache'
 // וכל מסע נפל לחלופי — שעל מפה אמיתית נראה כמו מצולע שחוצה שדות.
 const FETCH_TIMEOUT = 26000
 const SOFT_TIMEOUT = 7000    // מתי אומרים "לוקח יותר מהרגיל"
+const WIDE_RADIUS = 1500     // ניסיון שני, רק כשהראשון לא מצא לולאה
 
 export function useRoute() {
   const [status, setStatus] = useState('idle')   // idle | working | slow | ok
@@ -29,13 +30,14 @@ export function useRoute() {
   const [reason, setReason] = useState(null)     // למה נפלנו לחלופי, בשמו
   const [detail, setDetail] = useState(null)     // מי נכשל ולמה: proxy:502 · de:blocked …
   const [source, setSource] = useState(null)     // מי ענה
+  const [note, setNote] = useState(null)         // מסלול שהוא לא הלולאה שתוכננה, במילים
   const abort = useRef(null)
   const softTimer = useRef(null)
 
   const skip = useCallback(() => { abort.current?.abort() }, [])
 
   const build = useCallback(async (home, targetM = TARGET_M) => {
-    setStatus('working'); setDegraded(false); setPath(null); setReason(null); setDetail(null)
+    setStatus('working'); setDegraded(false); setPath(null); setReason(null); setDetail(null); setNote(null)
 
     // ── מסלול שכבר נבנה מהבית הזה ──
     // ילד בפיילוט יוצא מאותה דלת כל יום. אין סיבה לחכות ל-Overpass בפעם
@@ -55,18 +57,27 @@ export function useRoute() {
     let out = null
     try {
       // ── כמה רחוק להוריד ──
-      // planLoop מחפש נקודת מפנה במרחק 0.3–0.62 מאורך הלולאה. עם רדיוס
-      // של 0.32 היא נמצאת בשוליים ממש של מה שהורדנו, ובשכונה דלילה
-      // פשוט אין מועמדים ואין לולאה. 0.45 עולה קצת בזמן הורדה ונותן
-      // למתכנן מרחב אמיתי לעבוד בו.
-      // רחובות מתפתלים: לולאה של 3.4 ק"מ נכנסת ברדיוס של ~1.1 ק"מ. יותר
-      // מזה — השאילתה כבדה מדי ל-Overpass ונופלת בזמן.
-      const radius = Math.max(600, Math.min(1100, Math.round(targetM * 0.33)))
+      // planLoop מחפש נקודת מפנה במרחק הליכה של 0.3–0.62 מאורך הלולאה.
+      // מרחק הליכה תמיד ארוך ממרחק אווירי, אז רדיוס של 0.33 (726 מ'
+      // ללולאה של 2.2 ק"מ) השאיר למתכנן רצועה דקה בשוליים — וביישוב
+      // קטן: "no-loop". 0.45 נותן לו מרחב. יותר מ-1.2 ק"מ בעיר צפופה
+      // השאילתה כבדה ונופלת בזמן, אז זה התקרה — חוץ מניסיון שני,
+      // כשהראשון לא מצא כלום: אז שווה לשלם על רדיוס גדול יותר.
+      const radius = Math.max(700, Math.min(1200, Math.round(targetM * 0.45)))
       const data = await fetchStreets(home.lat, home.lng, radius, {
         signal: ctl.signal, timeoutMs: FETCH_TIMEOUT,
       })
       setSource(data.source || null)
       out = buildLoop(data, home, targetM)
+      if (!out.ok && (out.reason === 'no-loop' || out.reason === 'no-node') && !ctl.signal.aborted) {
+        const wider = await fetchStreets(home.lat, home.lng, WIDE_RADIUS, {
+          signal: ctl.signal, timeoutMs: FETCH_TIMEOUT,
+        })
+        setSource(wider.source || null)
+        const again = buildLoop(wider, home, targetM)
+        if (again.ok) out = again
+        else out = { ...out, detail: `r=${radius}:${out.reason} · r=${WIDE_RADIUS}:${again.reason} · ${wider.source || ''}` }
+      }
     } catch (e) {
       out = { ok: false, reason: e?.name === 'AbortError' ? 'aborted' : 'network', detail: e?.detail || null }
     }
@@ -76,6 +87,7 @@ export function useRoute() {
 
     if (out.ok) {
       putCached(home, out.path)      // כדי שהפעם הבאה תהיה מיידית
+      setNote(routeNote(out))
       setPath(out.path); setStatus('ok')
       return out.path
     }
@@ -95,5 +107,5 @@ export function useRoute() {
     return fb
   }, [])
 
-  return { status, path, degraded, reason, detail, source, build, skip, useFallback }
+  return { status, path, degraded, reason, detail, source, note, build, skip, useFallback }
 }

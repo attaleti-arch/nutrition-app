@@ -49,7 +49,7 @@ export function getCached(home, now = Date.now()) {
 }
 
 export function putCached(home, path, now = Date.now()) {
-  if (!Array.isArray(path) || path.length < 8) return false
+  if (!Array.isArray(path) || path.length < 4) return false
   const list = read()
   const i = findNear(list, home)
   const paths = i >= 0 ? [path, ...list[i].paths].slice(0, 3) : [path]

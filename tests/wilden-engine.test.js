@@ -18,7 +18,8 @@ import nimi from '../src/app/wilden/ar/controllers/nimi.js'
 import dabashon from '../src/app/wilden/ar/controllers/dabashon.js'
 import { loopTargetM, canBuyExtra, WALK_PLAN, goldNearby } from '../src/app/wilden/engine/coins.js'
 import { createJumpDetector, jumpHeightCm, G } from '../src/app/wilden/engine/jump.js'
-import { buildLoop, fallbackLoop, normalize } from '../src/app/wilden/engine/loop.js'
+import { buildLoop, fallbackLoop, normalize, routeNote } from '../src/app/wilden/engine/loop.js'
+import { routeArrows, splitAt } from '../src/app/wilden/engine/mapLines.js'
 import { getCached, putCached } from '../src/app/wilden/engine/routeCache.js'
 
 const HOME = { lat: 32.0853, lng: 34.7818 }
@@ -715,6 +716,83 @@ test('מסלול: כל כשל מקבל שם משלו', () => {
   const one = { elements: [{ type: 'way', id: 1, tags: { highway: 'residential' },
     geometry: [{ lat: HOME.lat, lon: HOME.lng }, { lat: HOME.lat + 0.002, lon: HOME.lng }] }] }
   assert.ok(['no-loop', 'short-loop'].includes(buildLoop(one, HOME).reason))
+})
+
+// ══════════════════════════════════════════════
+// הסולם: "no-loop" על הטלפון שלה — הרחובות הגיעו והמתכנן לא מצא לולאה.
+// ביישוב קטן זה קורה. עכשיו יורדים בסולם עד שיש מסלול על רחובות אמיתיים.
+
+// רחוב אחד ארוך, בלי שום צומת: אין לולאה בשום אורך.
+function oneStreet(home, meters = 1400, step = 100) {
+  const geometry = []
+  for (let d = 0; d <= meters; d += step) { const p = destination(home, 0, d); geometry.push({ lat: p.lat, lon: p.lng }) }
+  return { elements: [{ type: 'way', id: 1, tags: { highway: 'residential', name: 'הראשי' }, geometry }] }
+}
+
+test('סולם: רחוב אחד בלי צמתים — הלוך ושוב, לא כישלון', () => {
+  const r = buildLoop(oneStreet(HOME), HOME, 2200)
+  assert.equal(r.ok, true, `נכשל עם ${r.reason} — בדיוק מה שהיא צילמה`)
+  assert.equal(r.shape, 'there-and-back')
+  assert.ok(haversine(r.path[0], HOME) < 50 && haversine(r.path[r.path.length - 1], HOME) < 50, 'מתחיל ונגמר בבית')
+  assert.ok(r.meters >= 1600 && r.meters <= 2600, `אורך סביר: ${r.meters}`)
+  assert.equal(r.path[1].street, 'הראשי', 'ושם הרחוב נוסע עם ההוראות')
+  assert.match(routeNote(r), /הלוך ושוב|באותה דרך/)
+})
+
+test('סולם: שכונה קטנה — לולאה קצרה מהמתוכנן, לא כישלון', () => {
+  // 3×3 בלוקים במרווח 200 מ': ההיקף החיצוני 1.6 ק"מ. מבקשים 3.2.
+  const r = buildLoop(fakeOverpass(HOME, 3, 200), HOME, 3200)
+  assert.equal(r.ok, true, `נכשל עם ${r.reason}`)
+  assert.equal(r.shape, 'short')
+  assert.ok(r.scale < 1)
+  assert.ok(r.meters >= 500, `לפחות חצי ק"מ: ${r.meters}`)
+  assert.match(routeNote(r), /קצר/)
+})
+
+test('סולם: שדה שחותך את הרשת — מנסים בלי הסינון, ואומרים', () => {
+  // מטע שמכסה את כל הרשת חוץ מהבלוק של הבית: עם הסינון נשארים שני
+  // רחובות; בלעדיו יש שכונה שלמה.
+  const base = fakeOverpass(HOME, 9, 220)
+  const c1 = destination(destination(HOME, 0, 130), 90, 130)
+  const c2 = destination(destination(HOME, 0, 1100), 90, 1100)
+  base.elements.push({ type: 'way', id: 998, tags: { landuse: 'orchard' },
+    geometry: [{ lat: c1.lat, lon: c1.lng }, { lat: c2.lat, lon: c1.lng }, { lat: c2.lat, lon: c2.lng }, { lat: c1.lat, lon: c2.lng }, { lat: c1.lat, lon: c1.lng }] })
+  const c3 = destination(destination(HOME, 180, 130), 270, 130)
+  const c4 = destination(destination(HOME, 180, 1100), 270, 1100)
+  base.elements.push({ type: 'way', id: 997, tags: { landuse: 'orchard' },
+    geometry: [{ lat: c3.lat, lon: c3.lng }, { lat: c4.lat, lon: c3.lng }, { lat: c4.lat, lon: c4.lng }, { lat: c3.lat, lon: c4.lng }, { lat: c3.lat, lon: c3.lng }] })
+  const r = buildLoop(base, HOME, 3200)
+  assert.equal(r.ok, true, `נכשל עם ${r.reason}`)
+  if (r.unblocked) assert.match(routeNote(r), /שטחים פתוחים/)
+  else assert.ok(r.meters >= 500)
+})
+
+test('סולם: הלולאה הרגילה עדיין ראשונה, בלי הערות', () => {
+  const r = buildLoop(fakeOverpass(HOME), HOME)
+  assert.equal(r.shape, 'loop')
+  assert.equal(r.scale, 1)
+  assert.equal(r.unblocked, false)
+  assert.equal(routeNote(r), null)
+  assert.equal(routeNote({ ok: false, reason: 'no-loop' }), null)
+})
+
+test('סולם: הלוך ושוב צריך לפחות 250 מ׳ — אחרת באמת אין מסלול', () => {
+  assert.equal(buildLoop(oneStreet(HOME, 200, 50), HOME, 2200).reason, 'no-loop')
+})
+
+test('מפה: חיצים כל ~110 מ׳ לכיוון ההליכה, והמסלול נחתך במקום שהלכנו', () => {
+  const a = HOME, b = destination(HOME, 0, 400), c = destination(b, 90, 300)
+  const path = [a, b, c]
+  const arrows = routeArrows(path)
+  assert.ok(arrows.length >= 5 && arrows.length <= 7, `${arrows.length} חיצים על 700 מ'`)
+  assert.ok(Math.abs(arrows[0].deg) < 1 || Math.abs(arrows[0].deg - 360) < 1, 'הראשון מצביע צפונה')
+  assert.ok(Math.abs(arrows[arrows.length - 1].deg - 90) < 1, 'האחרון מזרחה')
+  const { done, todo } = splitAt(path, 500)
+  assert.equal(done.length, 3, 'בית, הפנייה, ונקודת החיתוך')
+  assert.equal(todo.length, 2)
+  assert.ok(haversine(done[2], destination(b, 90, 100)) < 2, 'החיתוך 100 מ׳ אחרי הפנייה')
+  assert.deepEqual(splitAt(path, 0).done, [])
+  assert.equal(splitAt(path, 5000).todo.length, 0, 'מעבר לסוף — הכול הלכנו')
 })
 
 test('מסלול: החלופי תמיד קיים, וסגור', () => {

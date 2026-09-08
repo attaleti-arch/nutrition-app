@@ -1,17 +1,23 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { bearing as bearingOf, haversine } from '../engine/geo'
+import { routeArrows, splitAt } from '../engine/mapLines'
 
 // ─── המפה ───
 // "רציתי מסלול כמו גוגל, של שעה, שמבינים לאן פונים ולאן הולכים, עם יעד
 // ברור וכמה דמויות שפוגשים בדרך." זה המסך הראשי של ההליכה.
 //
-// מה שיש: הרחובות האמיתיים, הבית, המסלול, אני עם עיגול הדיוק, והתחנות —
-// היצור הבא כסמן גדול עם התמונה שלו, הבאים אחריו כנקודות, מי שנתפס
-// כסימון וי. מעקב אחרי הילד בזום של רחוב; כפתור לראות את כל הלולאה.
+// "הדבר היחיד שלא נפתר זה ממשק המפות, הייתי שמחה שיהיה יותר ברור." אז:
+// אריחים נקיים עם שמות רחובות (CARTO Voyager, אותם נתונים של OSM אבל
+// מעוצבים כמו מפת ניווט), מסלול עבה עם מסגרת לבנה וחיצים לכיוון
+// ההליכה, מה שכבר הלכנו באפור ומה שנשאר בכחול, ואני כחץ שמצביע לאן
+// אני הולך — לא נקודה.
 
 let Lmod = null
 const AMBER = '#E5A342'
 const GREEN = '#8FB57C'
+const BLUE = '#2F7BE5'
+const WALKED = '#9AA39E'
 const FOLLOW_ZOOM = 17
 
 function useLeaflet() {
@@ -59,13 +65,35 @@ function stopIcon(L, s, isNext, img, known) {
     html: `<div style="width:${size}px;height:${size}px;border-radius:50%;background:rgba(229,163,66,${isNext ? '.3' : '.18'});border:${isNext ? 3 : 2}px ${isNext ? 'solid' : 'dashed'} ${AMBER};display:grid;place-items:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,.45));${isNext ? 'animation:wildenPin 1.6s ease-in-out infinite' : 'opacity:.85'}">${inner}</div>` })
 }
 
-export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = true, known = [], creatureImg, coins = [], height = '46vh' }) {
+// ── אני: חץ, לא נקודה ──
+// heading במעלות (0 = צפון). בלי heading — עיגול, כמו קודם.
+function meIcon(L, heading) {
+  const arrow = heading == null ? '' :
+    `<div style="position:absolute;inset:0;display:grid;place-items:center;transform:rotate(${Math.round(heading)}deg)">
+       <svg width="46" height="46" viewBox="0 0 46 46" style="display:block"><path d="M23 4 L34 30 L23 24 L12 30 Z" fill="${BLUE}" stroke="#fff" stroke-width="2.5" stroke-linejoin="round"/></svg>
+     </div>`
+  const dot = heading == null
+    ? `<div style="width:18px;height:18px;border-radius:50%;background:${BLUE};border:3px solid #fff;box-shadow:0 0 0 2px rgba(47,123,229,.35),0 2px 6px rgba(0,0,0,.4)"></div>`
+    : ''
+  return L.divIcon({ className: '', iconSize: [46, 46], iconAnchor: [23, 23],
+    html: `<div style="position:relative;width:46px;height:46px;display:grid;place-items:center;filter:drop-shadow(0 2px 4px rgba(0,0,0,.45))">${dot}${arrow}</div>` })
+}
+
+function arrowIcon(L, deg) {
+  return L.divIcon({ className: '', iconSize: [16, 16], iconAnchor: [8, 8],
+    html: `<svg width="16" height="16" viewBox="0 0 16 16" style="display:block;transform:rotate(${Math.round(deg)}deg)"><path d="M8 2 L13 12 L8 9.5 L3 12 Z" fill="#fff" stroke="${BLUE}" stroke-width="1.2" stroke-linejoin="round"/></svg>` })
+}
+
+export function MiniMap({ home, path, pos, along = 0, stops = [], nextStop = 0, reveal = true, known = [], creatureImg, coins = [], height = '46vh' }) {
   const ready = useLeaflet()
   const el = useRef(null)
   const map = useRef(null)
-  const lay = useRef({ stops: [] })
+  const lay = useRef({ stops: [], arrows: [] })
   const follow = useRef(true)
   const fitted = useRef(false)
+  const intro = useRef(0)           // עד מתי מראים את כל הלולאה לפני שעוקבים
+  const lastPos = useRef(null)      // לחישוב הכיוון מהתנועה
+  const heading = useRef(null)
   const [following, setFollowing] = useState(true)
 
   useEffect(() => {
@@ -75,25 +103,25 @@ export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = tr
     const m = L.map(el.current, { zoomControl: false, attributionControl: true, scrollWheelZoom: false })
       .setView(at ? [at.lat, at.lng] : [32.08, 34.78], FOLLOW_ZOOM)
     // ── אריחי המפה, עם גיבוי ──
-    // OSM הוא שירות מתנדבים ולפעמים לא עונה מרשת סלולרית. אם האריחים
-    // הראשונים נכשלים ואף אחד לא נטען — עוברים ל-CARTO, שמבוסס על אותם
-    // נתונים. בלי זה "אין לי מפות" ואין למי לשאול למה.
-    const osm = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(m)
+    // CARTO Voyager: אותם נתונים של OpenStreetMap, מעוצבים כמו מפת ניווט —
+    // רחובות לבנים ורחבים, שמות ברורים, פחות רעש. אם השרת שלהם לא עונה
+    // מרשת סלולרית ואף אריח לא נטען — עוברים לאריחי OSM עצמם.
+    const main = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO',
+    }).addTo(m)
     let ok = 0, bad = 0, swapped = false
-    osm.on('tileload', () => { ok++ })
-    osm.on('tileerror', () => {
+    main.on('tileload', () => { ok++ })
+    main.on('tileerror', () => {
       bad++
       if (!swapped && ok === 0 && bad >= 3) {
         swapped = true
-        osm.remove()
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-          maxZoom: 19, subdomains: 'abcd', attribution: '&copy; OpenStreetMap &copy; CARTO',
-        }).addTo(m)
+        main.remove()
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(m)
       }
     })
     m.on('dragstart', () => { follow.current = false; setFollowing(false) })
     map.current = m
-    return () => { m.remove(); map.current = null; lay.current = { stops: [] }; fitted.current = false }
+    return () => { m.remove(); map.current = null; lay.current = { stops: [], arrows: [] }; fitted.current = false }
   }, [ready])
 
   // המסלול והבית. בפעם הראשונה — כל הלולאה על המסך, שיראו לאן הולכים.
@@ -101,23 +129,44 @@ export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = tr
     const m = map.current
     if (!m) return
     const L = Lmod
-    lay.current.path?.remove(); lay.current.home?.remove()
+    lay.current.casing?.remove(); lay.current.home?.remove()
+    lay.current.arrows.forEach(x => x.remove()); lay.current.arrows = []
     if (path?.length) {
-      lay.current.path = L.polyline(path.map(p => [p.lat, p.lng]),
-        { color: '#4C8DE8', weight: 6, opacity: 0.75, lineJoin: 'round', lineCap: 'round' }).addTo(m)
+      const ll = path.map(p => [p.lat, p.lng])
+      // מסגרת לבנה מתחת לקו — ככה הוא נקרא גם על רחוב לבן וגם על פארק ירוק
+      lay.current.casing = L.polyline(ll, { color: '#fff', weight: 12, opacity: 0.95, lineJoin: 'round', lineCap: 'round', interactive: false }).addTo(m)
+      for (const a of routeArrows(path)) {
+        lay.current.arrows.push(L.marker([a.lat, a.lng], { interactive: false, icon: arrowIcon(L, a.deg), zIndexOffset: 200 }).addTo(m))
+      }
       if (!fitted.current) {
-        m.fitBounds(lay.current.path.getBounds(), { padding: [24, 24] })
+        m.fitBounds(lay.current.casing.getBounds(), { padding: [28, 28] })
         fitted.current = true
         // אחרי כמה שניות של "הנה כל המסלול" — חוזרים לעקוב אחרי הילד.
-        setTimeout(() => { if (map.current && follow.current && pos) map.current.setView([pos.lat, pos.lng], FOLLOW_ZOOM, { animate: true }) }, 4000)
+        // (בלי intro, המיקום הבא היה גורר את המפה חזרה תוך שבריר שנייה,
+        // והלולאה השלמה לא נראתה אף פעם.)
+        intro.current = Date.now() + 4000
+        setTimeout(() => { intro.current = 0; if (map.current && follow.current && pos) map.current.setView([pos.lat, pos.lng], FOLLOW_ZOOM, { animate: true }) }, 4000)
       }
     }
     if (home) {
-      lay.current.home = L.marker([home.lat, home.lng], { interactive: false,
-        icon: L.divIcon({ className: '', iconSize: [28, 28], iconAnchor: [14, 14],
-          html: '<div style="font-size:26px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,.4))">🏠</div>' }) }).addTo(m)
+      lay.current.home = L.marker([home.lat, home.lng], { interactive: false, zIndexOffset: 300,
+        icon: L.divIcon({ className: '', iconSize: [36, 36], iconAnchor: [18, 18],
+          html: '<div style="width:36px;height:36px;border-radius:50%;background:#fff;border:3px solid #2B382B;display:grid;place-items:center;font-size:20px;line-height:1;box-shadow:0 2px 6px rgba(0,0,0,.4)">🏠</div>' }) }).addTo(m)
     }
   }, [ready, path, home])
+
+  // ── הלכנו / נשאר ──
+  // אפור למה שמאחורינו, כחול למה שלפנינו. מצויר מחדש כל ~15 מ'.
+  const alongStep = Math.floor((along || 0) / 15)
+  useEffect(() => {
+    const m = map.current
+    if (!m || !path?.length) return
+    const L = Lmod
+    lay.current.done?.remove(); lay.current.todo?.remove()
+    const { done, todo } = splitAt(path, along)
+    if (done.length > 1) lay.current.done = L.polyline(done.map(p => [p.lat, p.lng]), { color: WALKED, weight: 7, opacity: 1, lineJoin: 'round', lineCap: 'round', interactive: false }).addTo(m)
+    if (todo.length > 1) lay.current.todo = L.polyline(todo.map(p => [p.lat, p.lng]), { color: BLUE, weight: 7, opacity: 1, lineJoin: 'round', lineCap: 'round', interactive: false }).addTo(m)
+  }, [ready, path, alongStep])
 
   // התחנות
   useEffect(() => {
@@ -129,7 +178,7 @@ export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = tr
     stops.forEach((s, i) => {
       const isKnown = known.includes(s.creature)
       const mk = L.marker([s.lat, s.lng], { icon: stopIcon(L, s, i === nextStop, creatureImg, isKnown),
-        interactive: false, zIndexOffset: i === nextStop ? 1000 : 0 }).addTo(m)
+        interactive: false, zIndexOffset: i === nextStop ? 1000 : 400 }).addTo(m)
       lay.current.stops.push(mk)
     })
   }, [ready, stops, nextStop, creatureImg, reveal, known])
@@ -145,7 +194,7 @@ export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = tr
     for (const c of coins || []) {
       if (c.taken) continue
       const size = c.gold ? 30 : 18
-      L.marker([c.lat, c.lng], { interactive: false, icon: L.divIcon({ className: '', iconSize: [size, size],
+      L.marker([c.lat, c.lng], { interactive: false, zIndexOffset: 500, icon: L.divIcon({ className: '', iconSize: [size, size],
         iconAnchor: [size / 2, size / 2], html: coinSvg(size, c.gold) }) }).addTo(group)
     }
     group.addTo(m)
@@ -158,14 +207,21 @@ export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = tr
     if (!m || !pos) return
     const L = Lmod
     const ll = [pos.lat, pos.lng]
+    // הכיוון מהתנועה: מהנקודה הקודמת שהתרחקנו ממנה לפחות 4 מ'. פחות מזה
+    // זה רעש GPS והחץ היה מסתובב במקום.
+    const prev = lastPos.current
+    if (!prev) lastPos.current = pos
+    else if (haversine(prev, pos) >= 4) { heading.current = bearingOf(prev, pos); lastPos.current = pos }
     if (!lay.current.me) {
-      lay.current.acc = L.circle(ll, { radius: pos.acc || 0, color: GREEN, weight: 1, opacity: 0.5, fillColor: GREEN, fillOpacity: 0.12, interactive: false }).addTo(m)
-      lay.current.me = L.circleMarker(ll, { radius: 9, color: '#fff', weight: 3, fillColor: '#1E66D0', fillOpacity: 1, interactive: false }).addTo(m)
+      lay.current.acc = L.circle(ll, { radius: pos.acc || 0, color: BLUE, weight: 1, opacity: 0.4, fillColor: BLUE, fillOpacity: 0.1, interactive: false }).addTo(m)
+      lay.current.me = L.marker(ll, { interactive: false, zIndexOffset: 2000, icon: meIcon(L, heading.current) }).addTo(m)
+      lay.current.meHeading = heading.current
     } else {
       lay.current.me.setLatLng(ll)
       lay.current.acc.setLatLng(ll).setRadius(pos.acc || 0)
+      if (lay.current.meHeading !== heading.current) { lay.current.me.setIcon(meIcon(L, heading.current)); lay.current.meHeading = heading.current }
     }
-    if (follow.current && fitted.current) m.panTo(ll, { animate: true, duration: 0.5 })
+    if (follow.current && fitted.current && Date.now() >= intro.current) m.panTo(ll, { animate: true, duration: 0.5 })
   }, [ready, pos?.lat, pos?.lng, pos?.acc])
 
   const recenter = () => {
@@ -175,18 +231,25 @@ export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = tr
   }
   const showAll = () => {
     follow.current = false; setFollowing(false)
-    if (map.current && lay.current.path) map.current.fitBounds(lay.current.path.getBounds(), { padding: [24, 24] })
+    if (map.current && lay.current.casing) map.current.fitBounds(lay.current.casing.getBounds(), { padding: [28, 28] })
   }
 
   return (
-    <div style={{ position: 'relative', height, borderRadius: 16, overflow: 'hidden', border: '1px solid #2B382B', background: '#1C261D' }}>
+    <div style={{ position: 'relative', height, borderRadius: 16, overflow: 'hidden', border: '1px solid #2B382B', background: '#E8ECE6' }}>
       <style>{`@keyframes wildenPin{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
-@keyframes wildenCoinPop{0%{transform:scale(1.35)}100%{transform:scale(1)}}`}</style>
+@keyframes wildenCoinPop{0%{transform:scale(1.35)}100%{transform:scale(1)}}
+.leaflet-container{font-family:inherit}
+.leaflet-control-attribution{font-size:9px;opacity:.7}`}</style>
       <div ref={el} style={{ position: 'absolute', inset: 0 }} />
-      {!ready && <p style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', margin: 0, color: '#9BA495', fontSize: 14 }}>טוענים מפה…</p>}
+      {!ready && <p style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', margin: 0, color: '#4B554B', fontSize: 14 }}>טוענים מפה…</p>}
       <div style={{ position: 'absolute', bottom: 10, insetInlineStart: 10, zIndex: 500, display: 'flex', gap: 8 }}>
         {!following && <button onClick={recenter} style={btn}>לאיפה שאני</button>}
         <button onClick={showAll} style={{ ...btn, background: 'rgba(15,21,15,.8)', color: '#E9E5D8' }}>כל המסלול</button>
+      </div>
+      {/* מקרא קטן: כחול = לאן, אפור = מאיפה. פעם אחת ולתמיד, בלי מילים רבות. */}
+      <div style={legend} aria-hidden="true">
+        <span style={{ ...swatch, background: BLUE }} /> הדרך
+        <span style={{ ...swatch, background: WALKED, marginInlineStart: 8 }} /> הלכנו
       </div>
     </div>
   )
@@ -194,3 +257,6 @@ export function MiniMap({ home, path, pos, stops = [], nextStop = 0, reveal = tr
 
 const btn = { padding: '9px 13px', borderRadius: 10, border: 'none', background: '#E5A342', color: '#14200F',
   fontFamily: 'inherit', fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,.35)' }
+const legend = { position: 'absolute', bottom: 10, insetInlineEnd: 10, zIndex: 500, display: 'flex', alignItems: 'center', gap: 5,
+  padding: '5px 9px', borderRadius: 999, background: 'rgba(255,255,255,.9)', color: '#23302A', fontSize: 12, fontWeight: 700, pointerEvents: 'none' }
+const swatch = { display: 'inline-block', width: 14, height: 5, borderRadius: 3 }

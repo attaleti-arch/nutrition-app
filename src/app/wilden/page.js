@@ -272,7 +272,7 @@ export default function Wilden() {
         )}
 
         {g.state === S.SEARCH && (
-          <SearchScreen g={g} view={view} geo={geo} degraded={route.degraded} reason={route.reason} creature={creature} burst={burst}
+          <SearchScreen g={g} view={view} geo={geo} degraded={route.degraded} reason={route.reason} note={route.note} creature={creature} burst={burst}
             onSearch={() => dispatch({ type: 'SEARCH_PRESSED' })}
             onPortal={() => { sfxAppear(); dispatch({ type: 'PORTAL_OPEN' }) }}
             onAbort={() => dispatch({ type: 'ABORT' })} />
@@ -394,6 +394,7 @@ const RETRY_BLOCKED_S = 60
 const MAX_AUTO = 3
 function RouteFailed({ route, detail, onRetry, onAbort }) {
   const blocked = !!detail && detail.includes('blocked')
+  const planner = route.reason === 'no-loop' || route.reason === 'no-node' || route.reason === 'short-loop'
   const wait = blocked ? RETRY_BLOCKED_S : RETRY_S
   const [left, setLeft] = useState(wait)
   const autoRef = useRef(0)
@@ -408,12 +409,14 @@ function RouteFailed({ route, detail, onRetry, onAbort }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detail])
   return (
-    <Panel eyebrow="הרחובות לא הגיעו">
-      <h2 style={s.h2}>לא הצלחנו להביא את מפת הרחובות</h2>
+    <Panel eyebrow={planner ? 'אין מסלול כאן' : 'הרחובות לא הגיעו'}>
+      <h2 style={s.h2}>{planner ? 'לא מצאנו מסלול ברחובות שכאן' : 'לא הצלחנו להביא את מפת הרחובות'}</h2>
       <p style={s.body}>
-        {blocked
-          ? 'שרת המפות חסם אותנו זמנית אחרי כמה ניסיונות ברצף. זה עובר תוך דקה.'
-          : 'שרת המפות לא ענה בזמן. זה קורה, בעיקר מרשת סלולרית.'}
+        {planner
+          ? 'הרחובות הגיעו, אבל אין בהם דרך שיוצאת מהבית וחוזרת אליו, גם לא הלוך ושוב. אולי הבית רחוק מרחוב ממופה. נסו להתחיל מפינת רחוב קרובה.'
+          : blocked
+            ? 'שרת המפות חסם אותנו זמנית אחרי כמה ניסיונות ברצף. זה עובר תוך דקה.'
+            : 'שרת המפות לא ענה בזמן. זה קורה, בעיקר מרשת סלולרית.'}
         {' '}המסלול הוא רק על רחובות אמיתיים, ולכן לא ממציאים אחד.
       </p>
       {autoRef.current < MAX_AUTO && left > 0 && (
@@ -528,7 +531,7 @@ function BrokenWorld({ g, today, onStart, onEgg, P }) {
 // המסלול על רחובות אמיתיים, ההתקדמות עליו. הביקון הוא שכבה קטנה בפינה
 // שמתעוררת רק כשקרובים. היצורים לא מצוירים מראש — רק סימנים: עקבות,
 // סימן שאלה, ניצוץ. מגלים מי זה רק כשמגיעים.
-function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, onPortal, creature, burst }) {
+function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort, onPortal, creature, burst }) {
   const r = g.run
   // ── טיימר לאחור ──
   const [now, setNow] = useState(Date.now())
@@ -569,7 +572,7 @@ function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, onPor
   return (
     <>
       <div style={s.mapWrap}>
-        <MiniMap home={r.home} path={r.path} pos={geo.pos}
+        <MiniMap home={r.home} path={r.path} pos={geo.pos} along={r.along || 0}
           stops={r.stops || (r.target ? [r.target] : [])} nextStop={r.stops ? r.stop : 0}
           reveal={reveal} known={g.progress.creatures} creatureImg={creature?.sprites?.hero}
           coins={r.coins} height="100%" />
@@ -638,6 +641,8 @@ function SearchScreen({ g, view, geo, degraded, reason, onSearch, onAbort, onPor
       </div>
 
       <GpsPanel geo={geo} run={g.run} />
+      {/* מסלול שהוא לא הלולאה שתוכננה: הלוך ושוב, או קצר יותר. אומרים. */}
+      {note && !degraded && <p style={s.note}>{note}</p>}
       {degraded && (
         <p style={s.note}>
           {reason === 'no-loop' || reason === 'short-loop'
