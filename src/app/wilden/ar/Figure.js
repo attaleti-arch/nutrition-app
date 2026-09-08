@@ -24,7 +24,7 @@ const FOV_DEG = 22          // זווית ראייה אנכית של מצלמת 
 // scale מגיע מהפאזה (0.82 מבצבץ, 1.6 מתקרב, 1.35 בסיום) ומיושם כגובה
 // אמיתי, לא כ-transform — ראה הערה ב-Stage.
 // hideSprite: המודל התלת-ממדי כבר מוצג בשכבה שלו; הצל והפס נשארים כאן.
-export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approaching, done, scale: phaseScale = 1, hideSprite = false, flying = false }) {
+export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approaching, done, scale: phaseScale = 1, hideSprite = false, flying = false, shadow = false }) {
   // הגודל: הפאזה כפול הגובה האמיתי של היצור. בולדר גדול מנימי גם כשהם
   // באותו מרחק.
   const scale = phaseScale * sizeOf(creature)
@@ -39,11 +39,44 @@ export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approa
       {streakSide && (
         <div style={{ ...F.streak, ...(streakSide === 'left' ? F.streakL : F.streakR) }} />
       )}
-      {!flying && <div style={F.shadow} />}
+      {!flying && !shadow && <div style={F.shadow} />}
       {done && <div style={F.glow} />}
-      {!hideSprite && (
+      {/* צל: רק הצל שלו על הרצפה. שטוח, כהה, מחליק — בלי הדמות. */}
+      {shadow ? <ShadowBlob faceLeft={faceLeft} />
+        : !hideSprite && (
         <Sprite sprites={creature?.sprites} live={creature?.live} peeking={peeking} faceLeft={faceLeft} done={done} scale={scale} />
       )}
+    </div>
+  )
+}
+
+// ── הצל של צל ──
+// כתם כהה שטוח בצורת שועל, על הרצפה, עם קצה סגול שזוהר. זה מה שרואים
+// כשצל "כאן" אבל עוד לא קם. SVG סטטי, כדי שלא לעבד תמונה מונפשת.
+export function ShadowBlob({ faceLeft }) {
+  return (
+    <svg viewBox="0 0 200 70" aria-hidden="true" style={{ ...F.blob, transform: `translateX(-50%) ${faceLeft ? 'scaleX(-1)' : ''}` }}>
+      <defs>
+        <radialGradient id="wshadow" cx="50%" cy="50%" r="55%">
+          <stop offset="0" stopColor="#120A1E" stopOpacity=".92" />
+          <stop offset=".8" stopColor="#120A1E" stopOpacity=".7" />
+          <stop offset="1" stopColor="#120A1E" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <path d="M12 44 C30 22 70 18 110 24 L128 8 L134 26 L152 12 L154 30 C176 34 190 42 188 50 C180 62 120 66 70 62 C34 60 8 56 12 44 Z" fill="url(#wshadow)" />
+      <path d="M40 48 C70 38 120 40 160 46" fill="none" stroke="#8A5CF6" strokeWidth="2" strokeLinecap="round" opacity=".55" style={{ animation: 'wildenShadowPulse 1.6s ease-in-out infinite' }} />
+    </svg>
+  )
+}
+
+// ── אבק ──
+// בולדר רקע: ענן אבק במקום שבו הוא היה, שמתפשט ונעלם.
+export function Dust() {
+  return (
+    <div style={F.dustWrap} aria-hidden="true">
+      {[0, 1, 2, 3, 4, 5, 6].map(i => (
+        <span key={i} style={{ ...F.dust, left: `${18 + i * 11}%`, animationDelay: `${i * 60}ms`, width: 34 + (i % 3) * 14, height: 34 + (i % 3) * 14 }} />
+      ))}
     </div>
   )
 }
@@ -254,6 +287,8 @@ export function ModelLayer({ creature, x = 0, scale: phaseScale = 1, faceLeft, p
 const FIGURE_CSS = `
 @keyframes wildenBob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-3.5%) } }
 @keyframes wildenBreathe { 0%,100% { transform: scale(1) } 50% { transform: scale(1.03) } }
+@keyframes wildenShadowPulse { 0%,100% { opacity: .35 } 50% { opacity: .8 } }
+@keyframes wildenDust { 0% { transform: translate(-50%, 0) scale(.4); opacity: .95 } 60% { opacity: .7 } 100% { transform: translate(-50%, -70px) scale(1.9); opacity: 0 } }
 @media (prefers-reduced-motion: reduce) { .wilden-figure { animation: none !important } }
 model-viewer { --poster-color: transparent; --progress-bar-color: transparent; background: transparent; }
 `
@@ -281,6 +316,10 @@ const F = {
   shadow: { position: 'absolute', bottom: '-1.2vh', left: '18%', right: '18%', height: '4vh',
     borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(0,0,0,.42), rgba(0,0,0,0) 70%)' },
   // הפס שנשאר אחרי ריצה: כיוון, לא ניחוש.
+  blob: { position: 'absolute', bottom: '4%', left: '50%', width: '92%', height: 'auto', filter: 'blur(1.5px)' },
+  dustWrap: { position: 'relative', width: '52vw', height: '24vh', pointerEvents: 'none' },
+  dust: { position: 'absolute', bottom: 0, borderRadius: '50%', background: 'radial-gradient(circle at 40% 40%, rgba(214,200,170,.95), rgba(170,150,120,.55) 60%, rgba(150,130,100,0) 100%)',
+    animation: 'wildenDust 1.3s ease-out forwards', transform: 'translateX(-50%)' },
   streak: { position: 'absolute', bottom: '6%', width: '55%', height: '2.4vh', borderRadius: '50%',
     filter: 'blur(3px)', opacity: 0.7 },
   streakL: { right: '80%', background: 'linear-gradient(90deg, rgba(240,192,105,0), rgba(240,192,105,.75))' },

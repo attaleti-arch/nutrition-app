@@ -80,7 +80,7 @@ export const CREATURES = {
     sprites: null,
     heightM: 0.80,
     arMode: AR_MODE.GROUND,
-    controller: 'tracks-true-or-false',   // 'missing-piece' (הרכבה) עוד לא נכתב
+    controller: 'stomp',                  // לא בורח: רוקע, נעלם באבק, ומאחוריכם
     decal: null,
     clips: { ...CLIPS, special: 'BUILD' },
     verb: 'BUILD',
@@ -154,7 +154,7 @@ export const CREATURES = {
     sprites: null,
     heightM: 0.50,
     arMode: AR_MODE.GROUND,
-    controller: 'tracks-true-or-false',
+    controller: 'shadow',                 // רק הצל שלו מחליק על הרצפה, עד שקם
     decal: null,
     clips: { ...CLIPS, special: 'VANISH' },
     verb: 'VANISH',

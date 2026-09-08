@@ -1496,3 +1496,128 @@ test('עידוד: כל 10 מטבעות, חצי דרך פעם אחת, ולא או
   assert.equal(milestone({ alongBefore: 1010, alongNow: 1100, total: 2000 }), null, 'חצי דרך רק פעם אחת')
   assert.equal(milestone({ coinsBefore: 0, coinsNow: 0 }), null)
 })
+
+// ═══════════════════════════════════════════════════════════════
+// המרדף
+// "הדמות תהיה טיפה מרוחקת והוא ירוץ אליה, 'תמהר להתקרב שלא תברח', ואז
+// 2 בריחות קטנות ותפיסה." אותו שלד לכולם, סגנון בריחה לפי האופי.
+// ═══════════════════════════════════════════════════════════════
+import { makeChase, PHASE as CH, START_M, FLEE_AT_M, STEP_M, TAP_M, IDLE_MS, MAX_M, STOMP_HIDE_MS, scaleFor } from '../src/app/wilden/ar/controllers/chase.js'
+
+const runCtl = makeChase({ id: 'run', target: 'creature', style: 'run' })
+const seq = (...vals) => { let i = 0; return () => vals[i++ % vals.length] }
+// רצים: צעד אחרי צעד עד שמשהו קורה
+function runUntil(ctl, s, pred, t0 = 0, maxSteps = 60) {
+  let t = t0, last = null
+  for (let i = 0; i < maxSteps; i++) {
+    t += 400
+    const r = ctl.onStep(s, t, seq(0.3))
+    last = r
+    s = r.state
+    if (pred(r)) return { s, r, t }
+  }
+  return { s, r: last, t }
+}
+
+test('מרדף: מתחיל רחוק וקטן, כל צעד מקרב, בגודל שגדל', () => {
+  const s = runCtl.start(0, seq(0.2, 0.5))
+  assert.equal(s.phase, CH.FAR)
+  assert.equal(s.dist, START_M)
+  const t0 = runCtl.targets(s)[0]
+  assert.equal(t0.kind, 'creature')
+  assert.ok(t0.scale <= 0.55, `רחוק = קטן: ${t0.scale}`)
+  assert.ok(Math.abs(t0.bearing) >= 25 && Math.abs(t0.bearing) <= 55 || Math.abs(t0.bearing - 360) <= 55, 'בצד, לא מול ולא מאחור')
+  const s2 = runCtl.onStep(s, 400).state
+  assert.equal(s2.dist, START_M - STEP_M)
+  assert.ok(runCtl.targets(s2)[0].scale > t0.scale, 'צעד = גדל')
+  assert.ok(scaleFor(3) > scaleFor(6) && scaleFor(6) > scaleFor(9))
+  assert.equal(scaleFor(0.1), 1.6, 'תקרה')
+})
+
+test('מרדף: שתי בריחות לכיוון אחר, ובפעם השלישית נעצר ואפשר לתפוס', () => {
+  let s = runCtl.start(0, seq(0.2, 0.5))
+  const b0 = s.hidden
+  let { s: s1, r: r1 } = runUntil(runCtl, s, r => r.feedback === 'flee')
+  assert.equal(s1.phase, CH.FLEE)
+  assert.equal(s1.flees, 1)
+  assert.ok(Math.abs(angleDelta(b0, s1.hidden)) >= 40, 'ברח לכיוון אחר')
+  assert.ok(s1.dist < START_M && s1.dist > FLEE_AT_M, `פחות רחוק מבהתחלה: ${s1.dist}`)
+  assert.equal(runCtl.targets(s1)[0].streak, b0, 'ומשאיר פס מאיפה שברח')
+  // "הוא ברח!" חוזר ל"רוצו" אחרי רגע
+  const back = runCtl.onTick(s1, s1.fleeT + 2000)
+  assert.equal(back.phase, CH.FAR)
+  ;({ s: s1, r: r1 } = runUntil(runCtl, back, r => r.feedback === 'flee', back.tickT))
+  assert.equal(s1.flees, 2)
+  const { s: s2, r: r2 } = runUntil(runCtl, runCtl.onTick(s1, s1.fleeT + 2000), r => r.feedback === 'near', s1.fleeT + 2000)
+  assert.equal(r2.feedback, 'near', 'בפעם השלישית — נעצר')
+  assert.equal(s2.phase, CH.NEAR)
+  assert.equal(s2.ready, true)
+  assert.equal(runCtl.targets(s2)[0].scale, 1.6, 'גדול, מולכם')
+  assert.equal(runCtl.onStep(s2, 99999).state, s2, 'צעדים כבר לא משנים')
+  const c = runCtl.onTap(s2)
+  assert.equal(c.feedback, 'catch')
+  assert.equal(runCtl.isDone(c.state), true)
+  assert.deepEqual(runCtl.targets(c.state), [])
+})
+
+test('מרדף: עומדים — הוא מתרחק לאט. בלי חיישנים — לחיצה מקרבת', () => {
+  const s = runCtl.start(0)
+  const s1 = runCtl.onTick(s, 1000)
+  assert.equal(s1.dist, START_M, 'בשניות הראשונות לא מתרחק')
+  const s2 = runCtl.onTick(s1, IDLE_MS + 3000)
+  assert.ok(s2.dist > START_M && s2.dist <= MAX_M, `אחרי עמידה מתרחק: ${s2.dist}`)
+  const s3 = runCtl.onTick(s2, IDLE_MS + 60000)
+  assert.equal(s3.dist, MAX_M, 'ולא מעבר לתקרה')
+  const tapped = runCtl.onTap(s, Math.random, 500).state
+  assert.equal(tapped.dist, START_M - TAP_M, 'לחיצה מקרבת')
+  assert.equal(tapped.lastMoveT, 500, 'ונחשבת כתנועה')
+  // עם מד צעדים — לחיצה מרחוק לא מקרבת, רק מזכירה לרוץ
+  const withSteps = runCtl.onTap(s, Math.random, 500, { steps: true })
+  assert.equal(withSteps.state, s)
+  assert.equal(withSteps.feedback, 'run')
+  assert.equal(runCtl.onLock(s, 'creature', Math.random, 500, { steps: true }).state, s, 'וגם מבט לא')
+})
+
+test('מרדף: כל יצור בסגנון שלו — צל כצל, בולדר רוקע ונעלם, מעופפים באוויר', () => {
+  const shadow = makeChase({ id: 'shadow', target: 'creature', style: 'shadow' })
+  let s = shadow.start(0)
+  assert.equal(shadow.targets(s)[0].shadow, true, 'צל: רק הצל שלו')
+  assert.ok(shadow.targets(s)[0].elev < -10, 'על הרצפה, נמוך')
+  assert.ok(shadow.copy(s).line.includes('צל'))
+  s = { ...s, phase: CH.NEAR }
+  assert.equal(shadow.targets(s)[0].shadow, false, 'כשנעצר — קם')
+
+  const fly = makeChase({ id: 'fly', target: 'creature', style: 'fly' })
+  const f = fly.start(0)
+  assert.equal(fly.targets(f)[0].flying, true)
+  assert.ok(fly.targets(f)[0].elev > 0, 'באוויר')
+  const fled = runUntil(fly, f, r => r.feedback === 'flee').s
+  assert.ok(fly.targets(fled)[0].elev > fly.targets(f)[0].elev, 'בורח — גבוה יותר')
+
+  const stomp = makeChase({ id: 'stomp', target: 'creature', style: 'stomp' })
+  const b = stomp.start(0, seq(0.5))
+  const { s: bs, r: br, t } = runUntil(stomp, b, r => r.feedback === 'stomp', 0)
+  assert.equal(br.feedback, 'stomp', 'בולדר רוקע')
+  const behind = Math.abs(angleDelta(b.hidden + 180, bs.hidden))
+  assert.ok(behind <= 30, `ומופיע מאחור: ${behind}`)
+  const during = stomp.targets(bs, t + 100)
+  assert.equal(during.length, 1); assert.equal(during[0].kind, 'dust', 'בזמן האבק — רק אבק, בכיוון הישן')
+  assert.equal(during[0].bearing, b.hidden)
+  const after = stomp.targets(bs, t + STOMP_HIDE_MS + 10)
+  assert.equal(after[0].kind, 'creature', 'האבק שקע — הוא שם')
+  assert.equal(after[0].streak, null, 'בלי פס: הוא לא רץ')
+  assert.equal(stomp.onTap(bs, Math.random, t + 100).state, bs, 'מתחת לאבק אי אפשר ללחוץ עליו')
+})
+
+test('מרדף: כל שמונת היצורים מקבלים בקר מרדף, מעופפים באוויר', () => {
+  for (const id of AVAILABLE) {
+    const c = CREATURES[id]
+    const ctl = controllerFor(c)
+    assert.ok(ctl?.onStep, id + ': בקר מרדף')
+    const t = ctl.targets(ctl.start(0))[0]
+    assert.equal(t.kind, 'creature')
+    assert.equal(!!t.flying, c.arMode === 'sky', id)
+  }
+  assert.equal(controllerFor(CREATURES.tzel).style, 'shadow')
+  assert.equal(controllerFor(CREATURES.bolder).style, 'stomp')
+})

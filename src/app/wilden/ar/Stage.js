@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { useOrient, angleDelta } from '../hooks/useOrient'
+import { useMotion } from '../hooks/useMotion'
 import { controllerFor } from './controllers'
-import { CreatureFigure, ModelLayer } from './Figure'
+import { CreatureFigure, ModelLayer, Dust } from './Figure'
 import { useModelSrc, usePreloadModel } from '../hooks/useModelViewer'
 import { useCamera } from '../hooks/useCamera'
 import { camText } from '../engine/camera'
@@ -32,6 +33,9 @@ const EXIT_DEG = 30
 const HOLD_MS = 700
 const DECAY = 0.6
 const TICK = 80
+const TICK_CHASE = 250     // הדופק של המרדף: צעדים וזמן
+const STEP_G = 11.6        // תאוצה (עם כוח המשיכה) שמעליה זה צעד
+const STEP_MIN_MS = 280    // לא יותר מ-3.5 צעדים בשנייה
 
 export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor = null }) {
   // ── המצלמה ──
@@ -46,6 +50,25 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   const { heading, pitch, perm, absolute, needsAsk, request } = useOrient({ active: true })
   const hasSensors = heading != null
 
+  // ── צעדים ──
+  // המרדף רץ על צעדים, לא על GPS: עשרים שניות של ריצה הן שלוש-ארבע
+  // דגימות GPS, וכל אחת עם 5 מ' רעש. מד התאוצה נותן כל צעד. צעד = שיא
+  // של תאוצה מעל הסף, לא יותר מ-3.5 בשנייה.
+  const stepRef = useRef({ lastT: 0, above: false })
+  const motion = useMotion({ active: true, onSample: ({ t, a }) => {
+    const st = stepRef.current
+    const now = Date.now()
+    if (a > STEP_G && !st.above) {
+      st.above = true
+      if (now - st.lastT > STEP_MIN_MS) { st.lastT = now; stepRef.current.pending = (stepRef.current.pending || 0) + 1 }
+    } else if (a < STEP_G - 1.2) st.above = false
+  } })
+  // ההרשאות באייפון (כיוון + תנועה) יוצאות מאותה לחיצה.
+  const askNeeded = (needsAsk && perm === 'unknown') || (motion.needsAsk && motion.perm === 'unknown')
+  const askAll = () => { request(); motion.request() }
+  // יש מד צעדים חי? אז לחיצה ומבט לא מחליפים ריצה.
+  const stepsLiveRef = useRef(false); stepsLiveRef.current = motion.live
+
   const ctrl = controllerFor(creature)
   const modelSrc = useModelSrc(creature)
   usePreloadModel(modelSrc)                 // המודל מתחיל לרדת כבר על שביל העקבות
@@ -55,6 +78,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   const anchored = useRef(false)
   const [swipe, setSwipe] = useState(0)
   const [flash, setFlash] = useState(null)
+  const [shake, setShake] = useState(false)   // בולדר רקע: המסך רועד
 
   const onFoundRef = useRef(); onFoundRef.current = onFound
 
@@ -67,11 +91,34 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
     const ref = heading != null ? heading : (needsAsk && perm === 'unknown' ? null : 0)
     if (ref == null) return
     anchored.current = true
-    setCs(ctrl.start(ref))
+    setCs(ctrl.start(ref, Math.random, Date.now()))
   }, [heading, needsAsk, perm, ctrl])
 
   const live = hasSensors ? heading : swipe
-  const targets = cs && ctrl ? ctrl.targets(cs) : []
+  const [now, setNow] = useState(() => Date.now())
+  const targets = cs && ctrl ? ctrl.targets(cs, now) : []
+
+  // ── הדופק של המרדף ──
+  // כל רבע שנייה: הצעדים שנצברו מקרבים, והזמן שעובר מרחיק. הבקר מחליט.
+  useEffect(() => {
+    if (!cs || !ctrl || ctrl.isDone(cs)) return
+    const id = setInterval(() => {
+      const t = Date.now()
+      setNow(t)
+      const steps = stepRef.current.pending || 0
+      stepRef.current.pending = 0
+      setCs(prev => {
+        let next = prev
+        for (let i = 0; i < steps && ctrl.onStep; i++) {
+          const r = ctrl.onStep(next, t)
+          if (r.state !== next) { next = r.state; if (r.feedback) fire(r.feedback, setFlash, setShake) }
+        }
+        if (ctrl.onTick) next = ctrl.onTick(next, t)
+        return next
+      })
+    }, TICK_CHASE)
+    return () => clearInterval(id)
+  }, [cs?.phase, ctrl])
 
   // מיקום כל יעד ביחס למה שרואים עכשיו. בלי חיישנים אין גובה, ולכן
   // החיפוש אופקי בלבד — אחרת יעד שנקבע לו גובה בלתי ניתן למציאה.
@@ -119,8 +166,8 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
         const id2 = lockedRef.current
         holdRef.current = 0; lockedRef.current = null; setHold(0)
         setCs(prev => {
-          const r = ctrl.onLock(prev, id2)
-          fire(r.feedback, setFlash)
+          const r = ctrl.onLock(prev, id2, Math.random, Date.now(), { steps: stepsLiveRef.current })
+          fire(r.feedback, setFlash, setShake)
           return r.state
         })
       }
@@ -148,7 +195,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
     if (!ctrl?.onCatch) return
     setCs(prev => {
       const r = ctrl.onCatch(prev)
-      if (r.state !== prev) fire(r.feedback, setFlash)
+      if (r.state !== prev) fire(r.feedback, setFlash, setShake)
       return r.state
     })
   }
@@ -156,8 +203,8 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   const doTap = () => {
     if (!ctrl?.onTap) return
     setCs(prev => {
-      const r = ctrl.onTap(prev)
-      if (r.state !== prev) fire(r.feedback, setFlash)
+      const r = ctrl.onTap(prev, Math.random, Date.now(), { steps: stepsLiveRef.current })
+      if (r.state !== prev) fire(r.feedback, setFlash, setShake)
       return r.state
     })
   }
@@ -182,7 +229,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   // ורואה צד, גב, וחוזר לפנים. GPS של 5 מ' — לכן מחליקים, ומתעלמים
   // כשקרובים מדי (הכיוון לא מוגדר). הפנים "ננעלות" לכיוון הילד ברגע שהוא
   // נעצר, ומשם הכול יחסי.
-  const stopped = done || (ct?.scale || 1) > 1.2
+  const stopped = done || cs?.phase === 'NEAR' || cs?.phase === 'APPROACH'
   const viewRef = useRef({ face: null, orbit: 0, last: null })
   if (pos && anchor && haversine(anchor, pos) >= 3) {
     const vb = bearing(anchor, pos)
@@ -204,12 +251,15 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   // "זה חמוד, אבל איך תופסים?" — מהרחוב. הנעילה המדויקת (14°, שנייה)
   // הייתה קשה מדי ביד של ילד, והכפתור לא הופיע. עכשיו: הוא נעצר, הוא על
   // המסך פחות או יותר במרכז — הכפתור שם. לכוון בערך וללחוץ.
-  const canCatch = !done && cs?.phase === 'APPROACH'
+  const canCatch = !done && (cs?.phase === 'NEAR' || cs?.phase === 'APPROACH')
     && (!!cs?.ready || (ctVisible && Math.abs(ct.dx) < 30))
+  // המרדף: כמה רחוק הוא עכשיו. מוצג כפס שמתקצר כשרצים.
+  const chasing = !done && (cs?.phase === 'FAR' || cs?.phase === 'FLEE') && cs?.dist != null
   canCatchRef.current = canCatch
 
   return (
-    <div style={S.wrap} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+    <div style={{ ...S.wrap, animation: shake ? 'wildenShake .5s ease-out' : 'none' }} onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      <style>{STAGE_CSS}</style>
       {/* הווידאו קיים תמיד. קודם הוא נוצר רק אחרי שהמצלמה אושרה — אבל הזרם
           חובר אליו *לפני* זה, כשעוד לא היה אלמנט. היא אישרה מצלמה וקיבלה
           מסך שחור. עכשיו האלמנט תמיד שם, והזרם מתחבר גם מאוחר יותר. */}
@@ -234,10 +284,10 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
 
       {/* הרשאת חיישנים באייפון חייבת לצאת מלחיצה אמיתית, אחרת ספארי
           מתעלמת בשקט ואף אחד לא יודע למה כלום לא זז. */}
-      {needsAsk && perm === 'unknown' && (
+      {askNeeded && (
         <div style={S.ask}>
           <p style={S.askLine}>הרימו את הטלפון וסובבו כדי לחפש</p>
-          <button onClick={request} style={S.askBtn}>אפשר לי לחפש</button>
+          <button onClick={askAll} style={S.askBtn}>אפשר לי לחפש</button>
         </div>
       )}
 
@@ -261,8 +311,9 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
           }}>
             {t.kind === 'trailhead' ? <Trailhead />
               : t.kind === 'trail' ? <Trail branch={t.branch} />
+              : t.kind === 'dust' ? <Dust />
               /* בורח: פונה הלאה מהמקום שממנו הגיע, והפס הטרי נשאר מאחוריו. */
-              : <CreatureFigure creature={creature} scale={t.scale || 1} flying={!!t.flying}
+              : <CreatureFigure creature={creature} scale={t.scale || 1} flying={!!t.flying} shadow={!!t.shadow}
                   peeking={t.peeking} approaching={(t.scale || 1) > 1.2}
                   faceLeft={ctFaceLeft} streakSide={ctStreakSide}
                   hideSprite={hideSprite && !t.peeking} />}
@@ -310,6 +361,12 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
         <div style={S.hint}>
           <p style={S.hintLine}>{flash || copy.line}</p>
           {copy.sub && !flash && <p style={S.hintSub}>{copy.sub}</p>}
+          {chasing && (
+            <div style={S.distWrap} aria-label="מרחק">
+              <div style={S.distBar}><div style={{ ...S.distFill, width: `${Math.round(100 * (1 - Math.min(1, cs.dist / 12)))}%` }} /></div>
+              <span style={S.distNum}>{Math.max(1, Math.round(cs.dist))} מ׳</span>
+            </div>
+          )}
           {canCatch && (
             <button onClick={doCatch} style={S.catchBtn}>לתפוס!</button>
           )}
@@ -327,12 +384,14 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
 }
 
 // משוב רגעי. "טעית" אף פעם לא נאמר — נאמר מה ראינו.
-function fire(kind, setFlash) {
+function fire(kind, setFlash, setShake) {
   if (!kind) return
+  if (kind === 'stomp' && setShake) { setShake(true); setTimeout(() => setShake(false), 520) }
   const map = {
+    stomp: { t: 'הוא רקע!', buzz: [90, 40, 130], sfx: sfxRustle },
     back: { t: 'כאן הוא הסתובב וחזר.', buzz: [50], sfx: sfxRustle },
     fade: { t: 'כאן העקבות נגמרות. הוא קפץ.', buzz: [50], sfx: sfxRustle },
-    run: { t: 'הצעדים מתרחקים — הוא רץ לשם!', buzz: [40, 60, 40], sfx: sfxAppear },
+    run: { t: 'רוצו אליו!', buzz: [40], sfx: null },
     flee: { t: 'הוא ברח!', buzz: [70, 50, 70], sfx: sfxRustle },
     near: { t: 'הוא נעצר.', buzz: [40], sfx: sfxAppear },
     ready: { t: 'עכשיו!', buzz: [60, 40, 60], sfx: sfxAppear },
@@ -424,6 +483,10 @@ function StoryBackdrop() {
   )
 }
 
+const STAGE_CSS = `
+@keyframes wildenShake { 0%,100% { transform: translate(0,0) } 15% { transform: translate(-7px,4px) } 30% { transform: translate(6px,-5px) } 45% { transform: translate(-5px,-3px) } 60% { transform: translate(4px,4px) } 80% { transform: translate(-2px,1px) } }
+`
+
 const S = {
   wrap: { position: 'fixed', inset: 0, background: '#0F150F', overflow: 'hidden', zIndex: 3000 },
   video: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' },
@@ -446,6 +509,10 @@ const S = {
   hintSub: { color: '#C3C8BA', fontSize: 15, margin: '4px 0 0',
     textShadow: '0 2px 10px rgba(0,0,0,.8)' },
   scan: { width: '100%', maxWidth: 320, marginTop: 12, accentColor: '#E5A342' },
+  distWrap: { display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', marginTop: 10 },
+  distBar: { width: 160, height: 10, borderRadius: 999, background: 'rgba(15,21,15,.6)', overflow: 'hidden', border: '1px solid rgba(233,229,216,.25)' },
+  distFill: { height: '100%', background: '#E5A342', borderRadius: 999, transition: 'width .3s' },
+  distNum: { color: '#E9E5D8', fontSize: 16, fontWeight: 800, textShadow: '0 2px 10px rgba(0,0,0,.8)', minWidth: 44, textAlign: 'start' },
   ask: { position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', alignContent: 'center',
     gap: 12, background: 'rgba(15,21,15,.82)', padding: 24, textAlign: 'center', zIndex: 5 },
   askLine: { color: '#E9E5D8', fontSize: 19, fontWeight: 700, margin: 0 },
