@@ -28,7 +28,7 @@ export const IDLE_MS = 2500       // אחרי כמה זמן עמידה מתחי�
 export const MAX_M = 13
 export const FLEES = 2            // שתי בריחות, ואז נעצר
 export const FLEE_SHOW_MS = 1400  // כמה זמן "הוא ברח!" לפני שחוזרים ל"רוצו"
-export const STOMP_HIDE_MS = 1300 // בולדר: כמה זמן האבק מכסה אותו
+export const STOMP_HIDE_MS = 1700 // בולדר: כמה זמן ההתפוצצות והאבק מכסים אותו (אורך הקליפ)
 
 const norm = a => ((a % 360) + 360) % 360
 const rnd = (rng, a, b) => a + rng() * (b - a)
@@ -128,7 +128,8 @@ export function makeChase({ id, target, style = 'run', copy = null }) {
       const out = []
       // בולדר מתחת לאבק: אין יצור, יש אבק במקום שבו היה.
       if (s.hiddenUntil && t < s.hiddenUntil) {
-        if (s.dustAt != null) out.push({ id: 'dust', bearing: s.dustAt, elev: elev.FAR, kind: 'dust', passive: true })
+        // בגודל שבו הוא היה כשרקע — קרוב, גדול.
+        if (s.dustAt != null) out.push({ id: 'dust', bearing: s.dustAt, elev: elev.FAR, kind: 'dust', passive: true, scale: scaleFor(FLEE_AT_M), at: s.fleeT })
         return out
       }
       out.push({

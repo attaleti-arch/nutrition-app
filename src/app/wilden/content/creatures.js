@@ -77,6 +77,9 @@ export const CREATURES = {
     // הקליפ שלה מ-Runway: מרים רגל כבדה ורוקע, הקווים הזהובים מהבהבים, מהנהן.
     clip: '/creatures/bolder/caught.mp4',
     live: '/creatures/bolder/live.webp',
+    // הקליפ השני שלה: הוא רוקע ומתפוצץ באור, ברקים, אבנים עפות, עשן. זה
+    // רגע הבריחה שלו במרדף — מוצג פעם אחת במקום שבו עמד, ואז הוא מאחוריכם.
+    burst: '/creatures/bolder/burst.webp',
     sprites: null,
     heightM: 0.80,
     arMode: AR_MODE.GROUND,

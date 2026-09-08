@@ -81,6 +81,18 @@ export function Dust() {
   )
 }
 
+// ── ההתפוצצות של בולדר ──
+// הקליפ שלה: רוקע, אור, ברקים, אבנים, עשן — פעם אחת (WebP בלי לופ), בגודל
+// שבו הוא עמד. src הוא כתובת טרייה לכל פעם (ראה hooks/useBurst), אחרת
+// הדפדפן ממשיך אנימציה שכבר נגמרה ומראים פריים אחרון קפוא.
+export function Burst({ src, scale = 1.45 }) {
+  return (
+    <div style={{ ...F.figure, width: `${(60 * scale).toFixed(1)}vw`, height: `${(36 * scale).toFixed(1)}vh`, pointerEvents: 'none' }} aria-hidden="true">
+      <img src={src} alt="" draggable={false} style={{ ...F.hero, height: `${(40 * scale).toFixed(1)}vh`, transition: 'none' }} />
+    </div>
+  )
+}
+
 // ── הדמות החיה ──
 // live הוא הקליפ של Runway בלי רקע (WebP מונפש). הוא מנצח את הספרייט
 // הסטטי בכל פאזה חוץ מהצצה, ששם יש ציור ייעודי אם קיים.

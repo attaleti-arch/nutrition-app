@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 import { useOrient, angleDelta } from '../hooks/useOrient'
 import { useSteps } from '../hooks/useSteps'
 import { controllerFor } from './controllers'
-import { CreatureFigure, ModelLayer, Dust } from './Figure'
+import { CreatureFigure, ModelLayer, Dust, Burst } from './Figure'
 import { useModelSrc, usePreloadModel } from '../hooks/useModelViewer'
+import { useBurst } from '../hooks/useBurst'
 import { useCamera } from '../hooks/useCamera'
 import { camText } from '../engine/camera'
 import { sfxAppear, sfxRustle, sfxCatch, buzz, startVoice, sfxVoice } from '../engine/audio'
@@ -94,6 +95,11 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   const live = hasSensors ? heading : swipe
   const [now, setNow] = useState(() => Date.now())
   const targets = cs && ctrl ? ctrl.targets(cs, now) : []
+
+  // ── ההתפוצצות של בולדר ──
+  // הקליפ יורד כשהבמה נפתחת; בכל רקיעה (hiddenUntil חדש) — הפעלה טרייה.
+  // אם אין קליפ, או שעוד לא הגיע — ענן האבק המצויר.
+  const burst = useBurst(creature?.burst, cs?.hiddenUntil || 0)
 
   // ── הדופק של המרדף ──
   // כל רבע שנייה: הצעדים שנצברו מקרבים, והזמן שעובר מרחיק. הבקר מחליט.
@@ -317,7 +323,9 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
           }}>
             {t.kind === 'trailhead' ? <Trailhead />
               : t.kind === 'trail' ? <Trail branch={t.branch} />
-              : t.kind === 'dust' ? <Dust />
+              : t.kind === 'dust' ? (creature?.burst && burst.loaded
+                  ? (burst.url ? <Burst src={burst.url} scale={t.scale} /> : null)
+                  : <Dust />)
               /* בורח: פונה הלאה מהמקום שממנו הגיע, והפס הטרי נשאר מאחוריו. */
               : <CreatureFigure creature={creature} scale={t.scale || 1} flying={!!t.flying} shadow={!!t.shadow}
                   peeking={t.peeking} approaching={(t.scale || 1) > 1.2}

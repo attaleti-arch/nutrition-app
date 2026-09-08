@@ -43,6 +43,9 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
 
   const have = progress?.creatures || []
   const seed = useMemo(() => Math.floor(Math.random() * 100), [])
+  // כמה מהעולם נרפא: 0 — החורבה שלה; 1 — התמונה המתוקנת שלה, לגמרי.
+  const heal = world.total ? Math.min(1, world.built / world.total) : 0
+  const healed = heal >= 1
 
   const give = () => {
     if (!quest || !ready || giving) return
@@ -62,14 +65,18 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
       <style>{CSS}</style>
       {/* התפאורה: סרטון בלופ. ילד לא מחכה לסרטון — התמונה קודם, הסרטון מעליה כשמוכן. */}
       <img src="/world/broken.jpg" alt="" style={W.bg} draggable={false} />
-      <video src="/world/broken.mp4" autoPlay muted loop playsInline style={W.bg} />
-      <div style={W.dusk} />
+      {!healed && <video src="/world/broken.mp4" autoPlay muted loop playsInline style={W.bg} />}
+      {/* העולם המתוקן — התמונה שלה, אותה חורבה בבוקר: דשא, פריחה, אור בשער.
+          עולה בהדרגה עם כל בקשה שנענתה, עד שמכסה את החורבה לגמרי. */}
+      <img src="/world/healed.jpg" alt="" draggable={false}
+        style={{ ...W.bg, opacity: heal, transition: 'opacity 2.4s ease-in-out' }} />
+      <div style={{ ...W.dusk, opacity: 1 - heal * 0.5 }} />
 
-      {/* מה נבנה: שכבות על התפאורה */}
-      {world.basinFull && <div style={W.basinWater} aria-hidden="true" />}
-      {world.beaconLit && <div style={W.beaconGlow} aria-hidden="true" />}
-      {world.treeAlive && <div style={W.treeLeaves} aria-hidden="true">🌿🌸🌿</div>}
-      {world.gateOpen && <div style={W.gateLight} aria-hidden="true" />}
+      {/* מה נבנה: שכבות על התפאורה — עד שהתמונה המתוקנת כבר מראה הכול בעצמה */}
+      {!healed && world.basinFull && <div style={W.basinWater} aria-hidden="true" />}
+      {!healed && world.beaconLit && <div style={W.beaconGlow} aria-hidden="true" />}
+      {!healed && world.treeAlive && <div style={W.treeLeaves} aria-hidden="true">🌿🌸🌿</div>}
+      {!healed && world.gateOpen && <div style={W.gateLight} aria-hidden="true" />}
 
       {/* השומר: פסל כבוי, או ער */}
       <button onClick={() => { setGuardOpen(v => !v); try { sfxAppear() } catch (e) { /* */ } }} aria-label="השומר"
@@ -117,7 +124,7 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
         </div>
       )}
       {!quest && (
-        <div style={W.builtAll}>העולם נבנה מחדש. כל הכבוד. השער פתוח — ההמשך בקרוב.</div>
+        <div style={W.builtAll}>העולם נבנה מחדש. הבוקר חזר. כל הכבוד — השער פתוח, ההמשך בקרוב.</div>
       )}
 
       {/* כמה נבנה */}
