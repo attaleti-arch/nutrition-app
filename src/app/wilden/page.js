@@ -16,7 +16,7 @@ import { useRoute } from './hooks/useRoute'
 import { MiniMap } from './ui/MiniMap'
 import { turnsFor, nextCue, cueText, floorCue, cueGlyph, timeLeftMs, fmtClock } from './engine/turns'
 import { pathLength } from './engine/geo'
-import { loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, coinRunNearby, plannedMs } from './engine/coins'
+import { loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, coinRunNearby, plannedMs, AVAILABLE } from './engine/coins'
 import { cheer, milestone } from './content/cheers'
 import { GoldStage } from './ar/GoldStage'
 import { CoinRun } from './ar/CoinRun'
@@ -537,7 +537,7 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, P }) {
         <HomeWorld progress={g.progress} walks={walks} onQuest={onQuest} />
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-        <button onClick={() => setPanel('book')} style={s.chip}>📖 ספר היצורים <b>{g.progress.creatures.length}/8</b></button>
+        <button onClick={() => setPanel('book')} style={s.chip}>📖 ספר היצורים <b>{g.progress.creatures.length}/{AVAILABLE.length}</b></button>
         <button onClick={() => setPanel('badges')} style={s.chip}>🏅 הישגים <b>{badgeCount(g.progress)}</b></button>
         <button onClick={() => setPanel('shop')} style={s.chip}>🛍️ חנות <b>🪙 {g.progress.coins || 0}</b></button>
       </div>

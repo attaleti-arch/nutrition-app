@@ -24,6 +24,7 @@ const SPOTS = {
   tzel: { x: 88, y: 77, h: 15 },
   dabashon: { x: 20, y: 30, h: 11, air: true },
   ruchi: { x: 72, y: 24, h: 12, air: true, flip: true },
+  noga: { x: 47, y: 84, h: 19 },
 }
 const GUARDIAN = { x: 52, y: 41, h: 24 }
 

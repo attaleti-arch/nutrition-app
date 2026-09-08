@@ -10,7 +10,7 @@ export const BADGES = [
   { id: 'first-walk', icon: '🚶', name: 'המסע הראשון', desc: 'יצאתם וחזרתם.', of: p => p.walks || 0, need: 1 },
   { id: 'first-catch', icon: '🎯', name: 'התפיסה הראשונה', desc: 'יצור אחד בבית.', of: p => (p.creatures || []).length, need: 1 },
   { id: 'three-creatures', icon: '🐾', name: 'שלושה בבית', desc: 'שלושה יצורים שונים.', of: p => (p.creatures || []).length, need: 3 },
-  { id: 'all-eight', icon: '👑', name: 'כל השמונה', desc: 'כל יצור בעולם נתפס לפחות פעם אחת.', of: p => AVAILABLE.filter(id => (p.creatures || []).includes(id)).length, need: AVAILABLE.length },
+  { id: 'all-eight', icon: '👑', name: 'כל היצורים', desc: 'כל יצור בעולם נתפס לפחות פעם אחת.', of: p => AVAILABLE.filter(id => (p.creatures || []).includes(id)).length, need: AVAILABLE.length },
   { id: 'walks-5', icon: '🥾', name: '5 מסעות', desc: 'חמישה מסעות הושלמו.', of: p => p.walks || 0, need: 5 },
   { id: 'walks-10', icon: '🏔️', name: '10 מסעות', desc: 'עשרה מסעות.', of: p => p.walks || 0, need: 10 },
   { id: 'walks-25', icon: '🌍', name: '25 מסעות', desc: 'עשרים וחמישה מסעות. זה כבר הרגל.', of: p => p.walks || 0, need: 25 },

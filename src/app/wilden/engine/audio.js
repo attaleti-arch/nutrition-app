@@ -221,6 +221,18 @@ const VOICES = {
     src.connect(bp); bp.connect(amp)
     return { out: amp, start: () => { src.start(); lfo.start(); o.start() }, stop: () => { src.stop(); lfo.stop(); o.stop() }, base: 0.14 }
   },
+  // נוגה: פעמון רחוק — שני סינוסים בקווינטה, נושמים לאט, וצליל פעמון קטן מדי פעם.
+  noga: c => {
+    const o = c.createOscillator(); o.frequency.value = 880
+    const o2 = c.createOscillator(); o2.frequency.value = 1318.5
+    const g2 = c.createGain(); g2.gain.value = 0.45; o2.connect(g2)
+    const amp = c.createGain(); amp.gain.value = 0.5
+    const lfo = c.createOscillator(); lfo.frequency.value = 0.22; const lg = c.createGain(); lg.gain.value = 0.3
+    lfo.connect(lg); lg.connect(amp.gain)
+    o.connect(amp); g2.connect(amp)
+    const bell = setInterval(() => { if (!muted) tone({ freq: [1760, 2637, 3520][Math.floor(Math.random() * 3)], dur: 0.6, type: 'sine', vol: 0.035 }) }, 1700)
+    return { out: amp, start: () => { o.start(); o2.start(); lfo.start() }, stop: () => { o.stop(); o2.stop(); lfo.stop(); clearInterval(bell) }, base: 0.045 }
+  },
   // בולדר וקראג: רעם אבן — רעש נמוך מאוד.
   bolder: c => stoneVoice(c, 0.22),
   kraag: c => stoneVoice(c, 0.16),

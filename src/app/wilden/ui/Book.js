@@ -127,7 +127,8 @@ const B = {
   close: { padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(233,229,216,.3)', background: 'transparent', color: '#E9E5D8', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer' },
   grid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 },
   card: { background: '#161E17', border: '1px solid #2B382B', borderRadius: 14, padding: 10, textAlign: 'center', color: '#E9E5D8', fontFamily: 'inherit' },
-  pic: { height: 120, display: 'grid', placeItems: 'center' },
+  // רקע בהיר מעט מאחורי הדמות — צל, השחור, נעלם אחרת על כרטיס כהה.
+  pic: { height: 120, display: 'grid', placeItems: 'center', background: 'radial-gradient(ellipse at 50% 60%, #33423A, rgba(51,66,58,0) 72%)', borderRadius: 12 },
   img: { maxHeight: 116, maxWidth: '100%', objectFit: 'contain' },
   unknown: { fontSize: 54, fontWeight: 900, color: '#3A473A' },
   name: { margin: '6px 0 0', fontSize: 17, fontWeight: 900 },

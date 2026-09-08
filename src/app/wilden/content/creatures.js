@@ -182,6 +182,25 @@ export const CREATURES = {
     verb: 'CARRY',
     brings: 'אבנים',
   },
+  noga: {
+    id: 'noga', name: 'נוגה',
+    // "כל הילדים אמרו לי ש-8 יצורים זה לא מספיק." התשיעית: איילת אור —
+    // קרניים של עלים זוהרים, זנב של עלי כותרת. המודל שלה מ-Meshy
+    // (19.1MB → 2.5MB, 60K משולשים, WebP 1K). הקליפ שלה מ-Runway: עומדת,
+    // ממצמצת, מסובבת את הראש, האוזניים זעות, הזוהר נושם. על הרצפה, שקטה.
+    model: '/creatures/noga/noga.glb',
+    ios: null,
+    clip: '/creatures/noga/caught.mp4',
+    live: '/creatures/noga/live.webp',
+    sprites: null,
+    heightM: 0.55,
+    arMode: AR_MODE.GROUND,
+    controller: 'glow',                   // נמוגה לאור ומופיעה במקום אחר
+    decal: null,
+    clips: { ...CLIPS, special: 'SHINE' },
+    verb: 'SHINE',
+    brings: 'אור',
+  },
 }
 
 export const creatureById = id => CREATURES[id] || null

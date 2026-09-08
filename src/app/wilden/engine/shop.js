@@ -41,6 +41,7 @@ export const ANCHORS = {
   gali: { head: { x: 53, y: 30, h: 11 }, face: { x: 54, y: 42, h: 7 } },
   tzel: { head: { x: 62, y: 34, h: 10 }, face: { x: 63, y: 44, h: 6 } },
   kraag: { head: { x: 62, y: 14, h: 12 }, face: { x: 62, y: 26, h: 8 } },
+  noga: { head: { x: 60, y: 29, h: 11 }, face: { x: 61, y: 40, h: 6 } },
 }
 
 export const owns = (progress, id) => (progress?.owned || []).includes(id)

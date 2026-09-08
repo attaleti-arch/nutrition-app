@@ -14,13 +14,13 @@ import { CREATURES } from '../content/creatures.js'
 // מה כל יצור מביא הביתה. פעם אחת לכל תפיסה, גם חוזרת.
 export const RES_OF = {
   nimi: 'leaf', dabashon: 'honey', bolder: 'stone', ruchi: 'wind',
-  lumi: 'spark', gali: 'water', tzel: 'shadow', kraag: 'stone',
+  lumi: 'spark', gali: 'water', tzel: 'shadow', kraag: 'stone', noga: 'light',
 }
 export const RES_NAME = {
   wood: 'קרשים', stone: 'אבן', flowers: 'פרחים', spark: 'ניצוץ', honey: 'דבש',
-  water: 'מים', wind: 'רוח', shadow: 'צללים', leaf: 'עלים',
+  water: 'מים', wind: 'רוח', shadow: 'צללים', leaf: 'עלים', light: 'אור',
 }
-export const RES_ICON = { stone: '🪨', honey: '🍯', water: '💧', wind: '🌬️', spark: '✨', shadow: '🌑', leaf: '🍃', wood: '🪵', flowers: '🌸' }
+export const RES_ICON = { stone: '🪨', honey: '🍯', water: '💧', wind: '🌬️', spark: '✨', shadow: '🌑', leaf: '🍃', wood: '🪵', flowers: '🌸', light: '🌟' }
 
 // מה נכנס לעולם כשחוזרים דרך הפורטל עם היצורים האלה.
 export function bringsFor(creatureIds) {
@@ -113,6 +113,7 @@ const LINES = {
   gali: ['הכד… ריק. אני יכולה לתקן את זה.', 'שמעתם? זה המים. הם חוזרים.', 'ספלאש!'],
   tzel: ['אני כאן. לא, כאן. לא… כאן.', 'מעבר לשער יש צל שאני מכיר.', 'ששש. הלילה שומע.'],
   kraag: ['אבן… זוכרת… הכול.', 'פעם הייתי גדול. אהיה שוב.', 'השער. אני זוכר מה מאחוריו.'],
+  noga: ['כשחשוך, תסתכלו עליי.', 'העלים שלי זוהרים כשמישהו שמח. עכשיו, למשל.', 'הבוקר? אני מביאה אותו.'],
 }
 export function creatureLine(id, seed = 0) {
   const arr = LINES[id] || ['…']

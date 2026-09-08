@@ -21,8 +21,14 @@ const gust = makeChase({ id: 'gust', target: 'creature', style: 'fly', copy: {
 } })
 const shadow = makeChase({ id: 'shadow', target: 'creature', style: 'shadow' })
 const stomp = makeChase({ id: 'stomp', target: 'creature', style: 'stomp' })
+// נוגה: לא רצה — נמוגה לאור ומופיעה במקום אחר. הפס שנשאר הוא שביל האור.
+const glow = makeChase({ id: 'glow', target: 'creature', style: 'run', copy: {
+  FAR: { line: 'משהו זוהר שם. התקרבו בשקט.', sub: 'רוצו אליה!' },
+  FLEE: { line: 'היא נמוגה לאור!', sub: 'עקבו אחרי הניצוצות ורוצו שוב!' },
+  NEAR: { line: 'היא נעצרה. האור שלה מולכם.', sub: 'לחצו עליה כדי לתפוס!' },
+} })
 
-const REGISTRY = { 'tracks-true-or-false': run, buzz, gust, shadow, stomp }
+const REGISTRY = { 'tracks-true-or-false': run, buzz, gust, shadow, stomp, glow }
 
 export function controllerFor(creature) {
   return REGISTRY[creature?.controller] || null

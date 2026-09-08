@@ -1154,12 +1154,13 @@ test('התדריך: לא תמיד נימי', () => {
   assert.deepEqual([0, 1, 2, 3, 4, 5, 6, 7].map(w => todaysCreature({ walks: w }).arMode), ['ground', 'sky', 'ground', 'sky', 'ground', 'ground', 'ground', 'ground'])
   assert.ok(briefFor({ walks: 6, creatures: [] }).sub.includes('אבן'), 'בולדר מביא אבן')
 
-  // הסבב חוזר: מסע 9 — שוב נימי, אבל כ"שוב בחוץ" ולא כמסע 1
-  const b8 = briefFor({ walks: 8, creatures: ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'tzel', 'bolder', 'kraag'] })
-  assert.equal(b8.creature, 'nimi')
-  assert.equal(b8.missionId, null)
-  assert.ok(b8.sub.includes('שוב'))
-  assert.equal(todaysCreature({ walks: 9 }).id, 'dabashon')
+  // מסע 9 — נוגה, התשיעית. הסבב חוזר: מסע 10 — שוב נימי, כ"שוב בחוץ" ולא כמסע 1
+  assert.equal(todaysCreature({ walks: 8 }).id, 'noga')
+  const b9 = briefFor({ walks: 9, creatures: ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'tzel', 'bolder', 'kraag', 'noga'] })
+  assert.equal(b9.creature, 'nimi')
+  assert.equal(b9.missionId, null)
+  assert.ok(b9.sub.includes('שוב'))
+  assert.equal(todaysCreature({ walks: 10 }).id, 'dabashon')
 })
 
 test('הבית אחרי הפורטל: מסע 1 — הסיפור; אחר כך — מי שנתפס ומי שמחכה', () => {
@@ -1254,10 +1255,10 @@ test('שניים בדרך: מהמסע השני תמיד שניים, ובכל מ�
     assert.equal(three.length, 3)
     assert.equal(new Set(three).size, 3, 'שלושה שונים')
   }
-  // בשמונה מסעות רואים את כולם, כל אחד לפחות פעמיים
+  // בסבב אחד (9 מסעות) רואים את כולם, כל אחד לפחות פעמיים
   const seen = {}
-  for (let w = 1; w <= 8; w++) for (const id of creaturesForWalk(w, false)) seen[id] = (seen[id] || 0) + 1
-  assert.equal(Object.keys(seen).length, 8)
+  for (let w = 1; w <= AVAILABLE.length; w++) for (const id of creaturesForWalk(w, false)) seen[id] = (seen[id] || 0) + 1
+  assert.equal(Object.keys(seen).length, AVAILABLE.length)
   assert.ok(Object.values(seen).every(n => n >= 2))
   // התדריך מציג את שניהם
   const b = briefFor({ walks: 1, creatures: ['nimi'] })
@@ -1274,8 +1275,8 @@ test('גודל על המסך: בולדר גדול מנימי, לפי heightM', (
   assert.equal(sizeOf({ heightM: 5 }), 1.7, 'תקרה, שלא יחתוך את המסך')
 })
 
-test('שמונה יצורים: לכולם מודל אמיתי, controller רשום, ומצב AR שהבמה מכירה', () => {
-  assert.equal(AVAILABLE.length, 8)
+test('תשעה יצורים: לכולם מודל אמיתי, controller רשום, ומצב AR שהבמה מכירה', () => {
+  assert.equal(AVAILABLE.length, 9)
   for (const id of AVAILABLE) {
     const c = CREATURES[id]
     assert.ok(c, id)
@@ -1285,7 +1286,7 @@ test('שמונה יצורים: לכולם מודל אמיתי, controller רשו
     assert.ok(['ground', 'sky'].includes(c.arMode), id)
     if (c.arMode === 'sky') assert.ok(controllerFor(c).targets(controllerFor(c).start(0))[0].flying, id + ': בשמיים → flying')
   }
-  assert.equal(new Set(AVAILABLE).size, 8, 'בלי כפילויות')
+  assert.equal(new Set(AVAILABLE).size, 9, 'בלי כפילויות')
 })
 
 // ═══════════════════════════════════════════════════════════════
