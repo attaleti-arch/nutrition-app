@@ -21,6 +21,8 @@ import { cheer, milestone } from './content/cheers'
 import { GoldStage } from './ar/GoldStage'
 import { CoinRun } from './ar/CoinRun'
 import { Hatch } from './ui/Hatch'
+import { HomeWorld } from './ui/HomeWorld'
+import { RES_NAME as RES_NAMES } from './engine/world'
 import { CaughtClip, usePreloadClip } from './ui/CaughtClip'
 import { EGG_PRICE, canBuyEgg, eggWarmth, warmthWord, variantById } from './engine/egg'
 import { haversine } from './engine/geo'
@@ -253,7 +255,7 @@ export default function Wilden() {
           <ProfileGate P={P} switching={P.switching} />
         )}
         {g.state === S.BROKEN_WORLD && P.loaded && !P.needsGate && (
-          <BrokenWorld g={g} today={today} onStart={startRun} onEgg={() => { sfxAppear(); dispatch({ type: 'BUY_EGG', t: Date.now() }) }} P={P} />
+          <BrokenWorld g={g} today={today} onStart={startRun} onEgg={() => { sfxAppear(); dispatch({ type: 'BUY_EGG', t: Date.now() }) }} onQuest={id => dispatch({ type: 'COMPLETE_QUEST', id })} P={P} />
         )}
 
         {g.state === S.PERMISSIONS && (
@@ -465,7 +467,7 @@ function atHome(run) {
 }
 
 // ── עולם הבית ההרוס ──
-function BrokenWorld({ g, today, onStart, onEgg, P }) {
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, P }) {
   const storyOpen = canStartStory(g.progress, today)
   const first = g.progress.missionsCompleted === 0
   const walks = g.progress.walks || 0
@@ -486,8 +488,9 @@ function BrokenWorld({ g, today, onStart, onEgg, P }) {
             : `${g.progress.creatures.length} כבר חיים כאן. עוד מחכים בחוץ.`}
       </p>
 
-      <div style={{ display: 'grid', placeItems: 'center', margin: '24px 0 20px' }}>
-        <Beacon power={beaconView(g).power} phase={PHASE.IDLE} size={120} />
+      {/* העולם עצמו: התפאורה שלה, היצורים החיים, והשומר שמבקש. */}
+      <div style={{ margin: '16px 0 18px' }}>
+        <HomeWorld progress={g.progress} walks={walks} onQuest={onQuest} />
       </div>
 
       {/* הלוח של הבן שלה: מסע 1 — 30 דקות ונימי. אחר כך 45 דקות ושניים
@@ -763,7 +766,7 @@ function Stats({ g }) {
     </div>
   )
 }
-const RES_NAME = { wood: 'קרשים', stone: 'אבן', flowers: 'פרחים', spark: 'ניצוץ', honey: 'דבש', water: 'מים', wind: 'רוח' }
+const RES_NAME = RES_NAMES
 
 function Panel({ eyebrow, children }) {
   return (

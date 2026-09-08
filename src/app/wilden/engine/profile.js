@@ -66,6 +66,8 @@ export function mergeProgress(local, remote) {
     creatures,
     res,
     variants,
+    // מה שנבנה בעולם — איחוד. בקשה שנסגרה נסגרה.
+    quests: [...new Set([...(base.quests || []), ...(other.quests || [])])],
     egg: base.egg || other.egg || null,
     story: { ...(other.story || {}), ...(base.story || {}) },
     walks: Math.max(base.walks || 0, other.walks || 0),

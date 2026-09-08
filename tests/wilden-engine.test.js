@@ -11,7 +11,7 @@ import assert from 'node:assert/strict'
 import { destination, haversine, stepBetween, progressAlong } from '../src/app/wilden/engine/geo.js'
 import { phaseOf, powerOf, PHASE, ACC_GATE, ACC_DIRECTION, WALK_GATE, STILL_MS, STILL_RADIUS } from '../src/app/wilden/engine/beacon.js'
 import { initial, reduce, run, beaconView, S, RUN, MODE, canStartStory } from '../src/app/wilden/engine/machine.js'
-import { forServer } from '../src/app/wilden/engine/persist.js'
+
 import { revalidate, PLACE_AFTER } from '../src/app/wilden/engine/placement.js'
 import { STRUCTURE, GUARDIAN_STATE, affordanceOf, isEnterable, KRAAG_AWAKENS } from '../src/app/wilden/content/canon.js'
 import nimi from '../src/app/wilden/ar/controllers/nimi.js'
@@ -1054,6 +1054,7 @@ test('זיכרון: מסלול פגום לא נשמר', () => {
 // ═══════════════════════════════════════════════════════════════
 // מי משחק, מה נשמר, ומי היום בדרך
 // ═══════════════════════════════════════════════════════════════
+import { forServer } from '../src/app/wilden/engine/persist.js'
 import { makeCode, normCode, validCode, newProfile, mergeProgress, remoteAdds, richer } from '../src/app/wilden/engine/profile.js'
 import { briefFor, homeFor, todaysCreature } from '../src/app/wilden/content/briefs.js'
 import { reasonOf, camText, CAM_REASON } from '../src/app/wilden/engine/camera.js'
@@ -1723,4 +1724,65 @@ test('ריצה: ROUTE_READY מניח את הנקודה, ו-COIN_RUN_DONE מכנ�
   h = { ...h, run: { ...h.run, resolved: true } }
   h = reduce(h, { type: 'COIN_RUN_DONE', got: 4, t: 5 })
   assert.equal(h.run.coinsTaken, 8)
+})
+
+// ═══════════════════════════════════════════════════════════════
+// עולם הבית: משאבים, השומר, הבקשות
+// ═══════════════════════════════════════════════════════════════
+import { QUESTS, RES_OF, bringsFor, activeQuest, questProgress, canComplete, completeQuest, worldState, creatureLine } from '../src/app/wilden/engine/world.js'
+
+import { mergeProgress as mergeProgress2 } from '../src/app/wilden/engine/profile.js'
+
+test('עולם: כל יצור מביא משאב, והפורטל מכניס אותו הביתה גם בתפיסה חוזרת', () => {
+  for (const id of AVAILABLE) assert.ok(RES_OF[id], id + ' מביא משהו')
+  assert.deepEqual(bringsFor(['dabashon', 'bolder', 'kraag']), { honey: 1, stone: 2 })
+  let g = started(['dabashon', 'bolder'])
+  g = walk(g, 200); g = catchHere(g, 500000); g = reduce(g, { type: 'CONTINUE' }); g = catchHere(g, 600000)
+  g = run(g, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED' }])
+  assert.equal(g.progress.res.honey, 1); assert.equal(g.progress.res.stone, 1)
+  assert.deepEqual(g.progress.quests, [], 'עוד לא נבנה כלום')
+})
+
+test('עולם: הבקשות לפי הסדר — נותנים רק כשיש, המשאבים יורדים, המטבעות נכנסים, העולם נבנה', () => {
+  assert.equal(QUESTS.length, 5)
+  let p = { ...initial().progress, res: { stone: 1 }, coins: 10 }
+  assert.equal(activeQuest(p).id, 'wake')
+  assert.equal(canComplete(p, activeQuest(p)), false)
+  assert.deepEqual(questProgress(p, activeQuest(p)), [{ res: 'stone', need: 2, have: 1 }])
+  assert.equal(completeQuest(p, 'wake'), p, 'בלי מספיק — כלום לא קורה')
+  p = { ...p, res: { stone: 3, water: 2 } }
+  assert.equal(canComplete(p, activeQuest(p)), true)
+  const q1 = completeQuest(p, 'wake')
+  assert.equal(q1.res.stone, 1, 'שתיים ירדו')
+  assert.equal(q1.coins, 25)
+  assert.deepEqual(q1.quests, ['wake'])
+  assert.equal(worldState(q1).guardianAwake, true)
+  assert.equal(worldState(q1).basinFull, false)
+  assert.equal(worldState(q1).built, 1)
+  assert.equal(activeQuest(q1).id, 'basin', 'הבאה בתור')
+  assert.equal(completeQuest(q1, 'beacon'), q1, 'לא מדלגים')
+  assert.equal(completeQuest(q1, 'wake'), q1, 'לא פעמיים')
+  const q2 = completeQuest(q1, 'basin')
+  assert.equal(worldState(q2).basinFull, true)
+  assert.equal(q2.res.water, 0)
+  // כולן
+  let all = { ...q2, res: { spark: 2, honey: 2, leaf: 1, wind: 2, shadow: 1 } }
+  for (const q of QUESTS) all = completeQuest(all, q.id)
+  assert.equal(activeQuest(all), null)
+  assert.equal(worldState(all).gateOpen, true)
+  assert.equal(worldState(all).built, 5)
+})
+
+test('עולם: COMPLETE_QUEST רק בבית, ונשמר ומתמזג', () => {
+  let g = { ...initial(), progress: { ...initial().progress, res: { stone: 2 }, coins: 0 } }
+  const inRun = reduce({ ...g, state: S.SEARCH }, { type: 'COMPLETE_QUEST', id: 'wake' })
+  assert.deepEqual(inRun.progress.quests, [], 'בדרך — לא')
+  g = reduce(g, { type: 'COMPLETE_QUEST', id: 'wake' })
+  assert.deepEqual(g.progress.quests, ['wake'])
+  assert.equal(g.progress.coins, 15)
+  assert.deepEqual(forServer(g).progress.quests, ['wake'], 'עולה לשרת')
+  const merged = mergeProgress2({ ...g.progress, walks: 3 }, { ...initial().progress, quests: ['wake', 'basin'], walks: 1 })
+  assert.deepEqual(merged.quests.sort(), ['basin', 'wake'], 'איחוד')
+  assert.ok(creatureLine('nimi', 0).length > 0)
+  assert.notEqual(creatureLine('nimi', 0), creatureLine('nimi', 1))
 })

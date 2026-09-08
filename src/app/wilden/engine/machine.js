@@ -10,6 +10,7 @@ import { placeTarget, placeStops, revalidate, PLACE_AFTER, freshEnd } from './pl
 import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS, CATCH_BONUS, placeCoinRun } from './coins.js'
 import { mergeProgress } from './profile.js'
 import { EGG_PRICE, HATCH_M, canBuyEgg, hatch } from './egg.js'
+import { bringsFor, completeQuest } from './world.js'
 
 export const S = {
   BROKEN_WORLD: 'BROKEN_WORLD',     // עולם הבית ההרוס. נקודת הכניסה.
@@ -53,6 +54,7 @@ export function initial() {
       walks: 0,           // כמה מסלולים הושלמו, מכל סוג — קובע את הלוח
       egg: null,          // { boughtAt } — ביצה על הביקון, מחכה למסע
       variants: [],       // [{ creature, variant, at }] — מה שבקע
+      quests: [],         // מזהי הבקשות של השומר שנסגרו — מה נבנה בעולם
     },
   }
 }
@@ -326,6 +328,9 @@ export function reduce(g, ev) {
       for (const id of caughtIds) if (id && !creatures.includes(id)) creatures.push(id)
       const res = { ...g.progress.res }
       for (const k of r.loot || []) res[k] = (res[k] || 0) + 1
+      // כל יצור שנתפס מביא הביתה את מה שהוא מביא: דבש, אבן, מים…
+      // גם בפעם השנייה — זה מה שהשומר מבקש, וזו הסיבה לצאת שוב.
+      for (const [k, n] of Object.entries(bringsFor(caughtIds))) res[k] = (res[k] || 0) + n
 
       // ── הביצה בוקעת ──
       // רק אם הלכו מספיק כדי לחמם אותה. אחרת היא נשארת למסע הבא — לא
@@ -402,6 +407,14 @@ export function reduce(g, ev) {
 
     case 'ADD_LOOT':
       return { ...g, run: { ...g.run, loot: [...(g.run.loot || []), ev.kind] } }
+
+    // ── נותנים לשומר ──
+    // בעולם הבית בלבד. המשאבים יורדים, הבקשה נסגרת, משהו בעולם נבנה.
+    case 'COMPLETE_QUEST': {
+      if (g.state !== S.BROKEN_WORLD) return g
+      const progress = completeQuest(g.progress, ev.id)
+      return progress === g.progress ? g : { ...g, progress }
+    }
 
     default:
       return g

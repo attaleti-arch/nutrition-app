@@ -57,6 +57,7 @@ export function forServer(g) {
       walks: g.progress?.walks ?? 0,
       egg: g.progress?.egg ?? null,
       variants: g.progress?.variants ?? [],
+      quests: g.progress?.quests ?? [],
     },
   }
 }
