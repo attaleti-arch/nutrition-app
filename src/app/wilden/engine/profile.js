@@ -46,6 +46,12 @@ export function richer(a, b) {
   return (a.missionsCompleted || 0) >= (b.missionsCompleted || 0) ? a : b
 }
 
+function mergeMax(a, b) {
+  const out = { ...(b || {}) }
+  for (const [k, v] of Object.entries(a || {})) out[k] = Math.max(v || 0, out[k] || 0)
+  return out
+}
+
 export function mergeProgress(local, remote) {
   if (!remote) return local
   if (!local) return remote
@@ -68,6 +74,16 @@ export function mergeProgress(local, remote) {
     variants,
     // מה שנבנה בעולם — איחוד. בקשה שנסגרה נסגרה.
     quests: [...new Set([...(base.quests || []), ...(other.quests || [])])],
+    // מונים להישגים: המקסימום מכל צד, ימים — איחוד. תג שהושג לא נעלם.
+    catches: Math.max(base.catches || 0, other.catches || 0),
+    caught: mergeMax(base.caught, other.caught),
+    golds: Math.max(base.golds || 0, other.golds || 0),
+    runs: Math.max(base.runs || 0, other.runs || 0),
+    bestRun: Math.max(base.bestRun || 0, other.bestRun || 0),
+    bestJumpCm: Math.max(base.bestJumpCm || 0, other.bestJumpCm || 0),
+    metersTotal: Math.max(base.metersTotal || 0, other.metersTotal || 0),
+    coinsEarned: Math.max(base.coinsEarned || 0, other.coinsEarned || 0),
+    walkDays: [...new Set([...(other.walkDays || []), ...(base.walkDays || [])])].sort().slice(-60),
     egg: base.egg || other.egg || null,
     story: { ...(other.story || {}), ...(base.story || {}) },
     walks: Math.max(base.walks || 0, other.walks || 0),
@@ -84,7 +100,8 @@ export function remoteAdds(local, remote) {
 
 // השוואה בלי תלות בסדר המפתחות — המיזוג בונה אובייקט חדש. שדה ריק
 // (null, []) ושדה שלא קיים הם אותו דבר: סכימה חדשה לא נחשבת "שינוי".
-const empty = v => v == null || (Array.isArray(v) && v.length === 0)
+// גם 0 ו-{}: מונים חדשים להישגים שעוד לא זזו אינם "שינוי מהשרת".
+const empty = v => v == null || v === 0 || (Array.isArray(v) && v.length === 0) || (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0)
 function stable(o) {
   if (Array.isArray(o)) return '[' + o.map(stable).join(',') + ']'
   if (o && typeof o === 'object') {

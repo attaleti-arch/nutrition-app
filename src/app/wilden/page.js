@@ -22,6 +22,8 @@ import { GoldStage } from './ar/GoldStage'
 import { CoinRun } from './ar/CoinRun'
 import { Hatch } from './ui/Hatch'
 import { HomeWorld } from './ui/HomeWorld'
+import { Book, Badges } from './ui/Book'
+import { badgeById } from './engine/badges'
 import { RES_NAME as RES_NAMES } from './engine/world'
 import { CaughtClip, usePreloadClip } from './ui/CaughtClip'
 import { EGG_PRICE, canBuyEgg, eggWarmth, warmthWord, variantById } from './engine/egg'
@@ -358,6 +360,7 @@ export default function Wilden() {
                 <p style={s.clueLine}>{h.clue.line}</p>
                 <p style={s.clueSub}>{h.clue.sub}</p>
               </div>
+              <NewBadges ids={g.newBadges} />
               <button onClick={() => dispatch({ type: 'CLUE_SEEN' })} style={s.cta}>הבנתי</button>
             </Panel>
           )
@@ -366,6 +369,7 @@ export default function Wilden() {
         {g.state === S.RUN_COMPLETE && (
           <Panel eyebrow="המסע נגמר">
             <h2 style={s.h2}>{g.progress.creatures.length ? 'הוא חי בעולם שלכם עכשיו.' : 'חזרתם.'}</h2>
+            <NewBadges ids={g.newBadges} />
             <Stats g={g} />
             <button onClick={() => dispatch({ type: 'RUN_CLOSED' })} style={s.cta}>לעולם</button>
           </Panel>
@@ -459,6 +463,19 @@ function RouteFailed({ route, detail, onRetry, onAbort }) {
   )
 }
 
+import { earned as earnedBadges } from './engine/badges'
+const badgeCount = p => earnedBadges(p || {}).length
+
+// ── הישג חדש ── מוצג במסך הסיום, מה שנפתח במסע הזה.
+function NewBadges({ ids }) {
+  if (!ids?.length) return null
+  return (
+    <div style={s.newBadges}>
+      {ids.map(id => { const b = badgeById(id); return b ? <span key={id} style={s.newBadge}>{b.icon} {b.name}</span> : null })}
+    </div>
+  )
+}
+
 // בבית = בתוך 60 מ' מהדלת, או שאין מיקום בכלל (אז לא חוסמים).
 const HOME_M = 60
 function atHome(run) {
@@ -468,6 +485,7 @@ function atHome(run) {
 
 // ── עולם הבית ההרוס ──
 function BrokenWorld({ g, today, onStart, onEgg, onQuest, P }) {
+  const [panel, setPanel] = useState(null)   // book | badges
   const storyOpen = canStartStory(g.progress, today)
   const first = g.progress.missionsCompleted === 0
   const walks = g.progress.walks || 0
@@ -489,9 +507,15 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, P }) {
       </p>
 
       {/* העולם עצמו: התפאורה שלה, היצורים החיים, והשומר שמבקש. */}
-      <div style={{ margin: '16px 0 18px' }}>
+      <div style={{ margin: '16px 0 10px' }}>
         <HomeWorld progress={g.progress} walks={walks} onQuest={onQuest} />
       </div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
+        <button onClick={() => setPanel('book')} style={s.chip}>📖 ספר היצורים <b>{g.progress.creatures.length}/8</b></button>
+        <button onClick={() => setPanel('badges')} style={s.chip}>🏅 הישגים <b>{badgeCount(g.progress)}</b></button>
+      </div>
+      {panel === 'book' && <Book progress={g.progress} onClose={() => setPanel(null)} />}
+      {panel === 'badges' && <Badges progress={g.progress} onClose={() => setPanel(null)} />}
 
       {/* הלוח של הבן שלה: מסע 1 — 30 דקות ונימי. אחר כך 45 דקות ושניים
           בדרך. מהשלישי — מטבעות פותחים יצור שלישי. */}
@@ -856,6 +880,11 @@ const s = {
   eggCard: { display: 'flex', alignItems: 'center', gap: 12, background: C.card, border: `1px solid ${C.line}`, borderRadius: 14,
     padding: '14px 16px', marginTop: 12 },
   eggIcon: { fontSize: 30, lineHeight: 1 },
+  chip: { flex: 1, padding: '10px 12px', borderRadius: 12, border: `1px solid ${C.line}`, background: C.card, color: C.ink,
+    fontFamily: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 },
+  newBadges: { display: 'flex', flexWrap: 'wrap', gap: 8, margin: '0 0 14px' },
+  newBadge: { padding: '8px 12px', borderRadius: 999, background: '#F0C069', color: '#14200F', fontSize: 14, fontWeight: 900,
+    boxShadow: '0 4px 14px rgba(240,192,105,.35)', animation: 'wildenCoinPop .5s ease-out' },
   statN: { display: 'block', fontSize: 22, fontWeight: 900, color: C.ink },
   statL: { fontSize: 12.5, color: C.faint },
 }

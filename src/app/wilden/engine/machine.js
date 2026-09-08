@@ -11,6 +11,10 @@ import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME
 import { mergeProgress } from './profile.js'
 import { EGG_PRICE, HATCH_M, canBuyEgg, hatch } from './egg.js'
 import { bringsFor, completeQuest } from './world.js'
+import { newlyEarned } from './badges.js'
+
+// גובה קפיצה ממשך זמן באוויר: h = g·t²/8, בס"מ.
+const jumpCm = airMs => (airMs ? Math.round((9.81 * (airMs / 1000) ** 2 / 8) * 100) : 0)
 
 export const S = {
   BROKEN_WORLD: 'BROKEN_WORLD',     // עולם הבית ההרוס. נקודת הכניסה.
@@ -55,6 +59,9 @@ export function initial() {
       egg: null,          // { boughtAt } — ביצה על הביקון, מחכה למסע
       variants: [],       // [{ creature, variant, at }] — מה שבקע
       quests: [],         // מזהי הבקשות של השומר שנסגרו — מה נבנה בעולם
+      // ── מונים להישגים ── נצברים בפורטל, לא נמחקים אף פעם
+      catches: 0, caught: {}, golds: 0, runs: 0, bestRun: 0, bestJumpCm: 0,
+      metersTotal: 0, coinsEarned: 0, walkDays: [],
     },
   }
 }
@@ -292,6 +299,7 @@ export function reduce(g, ev) {
           coins: r.coins.map(c => (c === gold ? { ...c, taken: true } : c)),
           coinsTaken: (r.coinsTaken || 0) + gold.value * mult,
           lastCoin: { t: ev.t ?? Date.now(), gold: true, n: 1, jump: ev.jump || null },
+          goldJumpMs: Math.max(r.goldJumpMs || 0, ev.jump?.airMs || 0),
         },
       }
     }
@@ -342,11 +350,14 @@ export function reduce(g, ev) {
         ? [...(g.progress.variants || []), { ...hatched, at: ev.t ?? null }]
         : g.progress.variants || []
 
-      return {
-        ...g,
-        state: isStory ? S.CLUE : S.RUN_COMPLETE,
-        hatched,
-        progress: {
+      // ── מונים להישגים ──
+      const caught = { ...(g.progress.caught || {}) }
+      for (const id of caughtIds) if (id) caught[id] = (caught[id] || 0) + 1
+      const goldTaken = (r.coins || []).some(c => c.gold && c.taken) ? 1 : 0
+      const runDone = r.coinRun?.done ? 1 : 0
+      const walkDays = [...(g.progress.walkDays || [])]
+      if (r.day && !walkDays.includes(r.day)) walkDays.push(r.day)
+      const progress = {
           ...g.progress,
           creatures,
           res,
@@ -354,13 +365,30 @@ export function reduce(g, ev) {
           variants,
           coins: (g.progress.coins || 0) + (r.coinsTaken || 0),
           walks: (g.progress.walks || 0) + 1,
+          catches: (g.progress.catches || 0) + caughtIds.filter(Boolean).length,
+          caught,
+          golds: (g.progress.golds || 0) + goldTaken,
+          runs: (g.progress.runs || 0) + runDone,
+          bestRun: Math.max(g.progress.bestRun || 0, r.coinRun?.got || 0),
+          bestJumpCm: Math.max(g.progress.bestJumpCm || 0, jumpCm(r.goldJumpMs)),
+          metersTotal: (g.progress.metersTotal || 0) + Math.round(r.walked || 0),
+          coinsEarned: (g.progress.coinsEarned || 0) + (r.coinsTaken || 0),
+          walkDays: walkDays.slice(-60),
           // רק משימה סיפורית מקדמת את העולם ואת הביקון.
           missionsCompleted: isStory ? g.progress.missionsCompleted + 1 : g.progress.missionsCompleted,
           lastStoryDay: isStory ? r.day : g.progress.lastStoryDay,
           story: isStory && r.missionId
             ? { ...g.progress.story, [r.missionId]: 'done' }
             : g.progress.story,
-        },
+      }
+
+      return {
+        ...g,
+        state: isStory ? S.CLUE : S.RUN_COMPLETE,
+        hatched,
+        // מה נפתח במסע הזה — למסך הסיום. נמחק ב-RUN_CLOSED, כמו hatched.
+        newBadges: newlyEarned(g.progress, progress),
+        progress,
       }
     }
 
@@ -368,7 +396,7 @@ export function reduce(g, ev) {
       return { ...g, state: S.RUN_COMPLETE }
 
     case 'RUN_CLOSED':
-      return { ...g, state: S.BROKEN_WORLD, run: null, hatched: null }
+      return { ...g, state: S.BROKEN_WORLD, run: null, hatched: null, newBadges: null }
 
     // ── קונים ביצה ──
     // במסך הבית בלבד. מטבעות יורדים מיד; הביצה יושבת על הביקון עד המסע.

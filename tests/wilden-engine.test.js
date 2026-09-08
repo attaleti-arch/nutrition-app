@@ -1786,3 +1786,54 @@ test('עולם: COMPLETE_QUEST רק בבית, ונשמר ומתמזג', () => {
   assert.ok(creatureLine('nimi', 0).length > 0)
   assert.notEqual(creatureLine('nimi', 0), creatureLine('nimi', 1))
 })
+
+// ═══════════════════════════════════════════════════════════════
+// הישגים
+// ═══════════════════════════════════════════════════════════════
+import { BADGES, earned, newlyEarned, badgeList, walksInWeek } from '../src/app/wilden/engine/badges.js'
+
+test('הישגים: נגזרים מההתקדמות, נפתחים במסע, ולא נעלמים במיזוג', () => {
+  const p0 = initial().progress
+  assert.deepEqual(earned(p0), [])
+  assert.ok(BADGES.length >= 20)
+  let g = started(['nimi'])
+  g = walk(g, 200); g = catchHere(g, 500000)
+  g = reduce(g, { type: 'COIN_RUN_DONE', got: 13, t: 1 })
+  g = run(g, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED' }])
+  assert.equal(g.progress.catches, 1)
+  assert.deepEqual(g.progress.caught, { nimi: 1 })
+  assert.equal(g.progress.runs, 1)
+  assert.equal(g.progress.bestRun, 13)
+  assert.ok(g.progress.metersTotal >= 150, 'מטרים נצברים: ' + g.progress.metersTotal)
+  assert.ok(g.progress.coinsEarned > 13)
+  assert.deepEqual(g.progress.walkDays, [DAY])
+  const ids = g.newBadges
+  assert.ok(ids.includes('first-walk') && ids.includes('first-catch') && ids.includes('run-first') && ids.includes('run-12'), ids.join(','))
+  assert.ok(!ids.includes('gold-first'))
+  const closed = reduce(reduce(g, { type: 'CLUE_SEEN' }), { type: 'RUN_CLOSED' })
+  assert.equal(closed.newBadges, null, 'נמחק כשסוגרים')
+  assert.deepEqual(newlyEarned(g.progress, g.progress), [], 'בלי שינוי — כלום חדש')
+  // רשימה עם התקדמות
+  const list = badgeList(g.progress)
+  const w5 = list.find(b => b.id === 'walks-5')
+  assert.equal(w5.done, false); assert.equal(w5.have, 1); assert.equal(w5.need, 5)
+  // ארבעה בשבוע
+  assert.equal(walksInWeek({ walkDays: ['2026-09-01', '2026-09-03', '2026-09-05', '2026-09-07'] }), 4)
+  assert.equal(walksInWeek({ walkDays: ['2026-08-20', '2026-09-03', '2026-09-05', '2026-09-07'] }), 3)
+  // מיזוג: מקסימום, לא סכום; ימים מתאחדים
+  const merged = mergeProgress2({ ...g.progress, golds: 2, walks: 4 }, { ...initial().progress, golds: 5, runs: 3, walkDays: ['2026-01-01'], walks: 1 })
+  assert.equal(merged.golds, 5); assert.equal(merged.runs, 3); assert.ok(merged.walkDays.includes('2026-01-01') && merged.walkDays.includes(DAY))
+  assert.ok(forServer(g).progress.walkDays.length === 1, 'עולה לשרת')
+})
+
+test('הישגים: זהב וקפיצה נספרים בפורטל', () => {
+  let g = started(['nimi'])
+  g = walk(g, 200)
+  g = reduce(g, { type: 'GOLD_TAKEN', t: 5, jump: { airMs: 520, peakG: 2 } })
+  assert.equal(g.run.goldJumpMs, 520)
+  g = catchHere(g, 500000)
+  g = run(g, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED' }])
+  assert.equal(g.progress.golds, 1)
+  assert.ok(g.progress.bestJumpCm >= 30 && g.progress.bestJumpCm <= 36, `520ms באוויר ≈ 33 ס"מ: ${g.progress.bestJumpCm}`)
+  assert.ok(g.newBadges.includes('gold-first') && g.newBadges.includes('jump-30'))
+})

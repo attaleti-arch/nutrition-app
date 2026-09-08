@@ -58,6 +58,15 @@ export function forServer(g) {
       egg: g.progress?.egg ?? null,
       variants: g.progress?.variants ?? [],
       quests: g.progress?.quests ?? [],
+      catches: g.progress?.catches ?? 0,
+      caught: g.progress?.caught ?? {},
+      golds: g.progress?.golds ?? 0,
+      runs: g.progress?.runs ?? 0,
+      bestRun: g.progress?.bestRun ?? 0,
+      bestJumpCm: g.progress?.bestJumpCm ?? 0,
+      metersTotal: g.progress?.metersTotal ?? 0,
+      coinsEarned: g.progress?.coinsEarned ?? 0,
+      walkDays: g.progress?.walkDays ?? [],
     },
   }
 }
