@@ -74,8 +74,9 @@ export const CREATURES = {
     // משולשים). על הרצפה, גדול, עקבות אבן. "מישהו כאן ידע לבנות" — זה הוא.
     model: '/creatures/bolder/bolder.glb',
     ios: null,
-    clip: null,
-    live: null,
+    // הקליפ שלה מ-Runway: מרים רגל כבדה ורוקע, הקווים הזהובים מהבהבים, מהנהן.
+    clip: '/creatures/bolder/caught.mp4',
+    live: '/creatures/bolder/live.webp',
     sprites: null,
     heightM: 0.80,
     arMode: AR_MODE.GROUND,
@@ -91,8 +92,9 @@ export const CREATURES = {
     // 1K WebP). באוויר, גבוה יותר מדבשון.
     model: '/creatures/ruchi/ruchi.glb',
     ios: null,
-    clip: null,
-    live: null,
+    // הקליפ שלה מ-Runway: פורש כנפיים, מנפנף, עולה קצת וצף חזרה.
+    clip: '/creatures/ruchi/caught.mp4',
+    live: '/creatures/ruchi/live.webp',
     sprites: null,
     heightM: 0.45,
     arMode: AR_MODE.SKY,
