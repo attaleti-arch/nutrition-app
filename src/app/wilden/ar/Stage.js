@@ -7,6 +7,7 @@ import { useModelSrc, usePreloadModel } from '../hooks/useModelViewer'
 import { useCamera } from '../hooks/useCamera'
 import { camText } from '../engine/camera'
 import { sfxAppear, sfxRustle, sfxCatch, buzz } from '../engine/audio'
+import { bearing, haversine } from '../engine/geo'
 import { cheer } from '../content/cheers'
 
 // ─── במה המפגש ───
@@ -32,7 +33,7 @@ const HOLD_MS = 700
 const DECAY = 0.6
 const TICK = 80
 
-export function Stage({ creature, onMode, onFound, onGiveUp }) {
+export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor = null }) {
   // ── המצלמה ──
   // התוצאה מדווחת החוצה למכונה. בלי זה "מצלמה נדחתה ← Story Mode" נשאר
   // כלל שנבדק במנוע ולא מתקיים במציאות. הפתיחה עצמה, הזמן הקצוב והניסיון
@@ -175,8 +176,27 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
   const ctFaceLeft = !!ct && ct.streak != null && angleDelta(ct.streak, ct.bearing) < 0
   const ctStreakSide = !ct || ct.streak == null ? null
     : angleDelta(ct.streak, ct.bearing) < 0 ? 'right' : 'left'
-  // יש דמות חיה (קליפ בלי רקע)? היא מנצחת את המודל הקפוא, וגם חוסכת WebGL.
-  const useModel = !!modelSrc && !modelFailed && !creature?.live
+  // ── להקיף אותו ──
+  // היצור עומד בנקודה אמיתית (התחנה). מהמיקום של הטלפון יחסית אליה
+  // יודעים מאיזה צד הילד מסתכל, והמודל מסתובב בהתאם: הילד הולך סביבו
+  // ורואה צד, גב, וחוזר לפנים. GPS של 5 מ' — לכן מחליקים, ומתעלמים
+  // כשקרובים מדי (הכיוון לא מוגדר). הפנים "ננעלות" לכיוון הילד ברגע שהוא
+  // נעצר, ומשם הכול יחסי.
+  const stopped = done || (ct?.scale || 1) > 1.2
+  const viewRef = useRef({ face: null, orbit: 0, last: null })
+  if (pos && anchor && haversine(anchor, pos) >= 3) {
+    const vb = bearing(anchor, pos)
+    const v = viewRef.current
+    if (v.last == null) v.last = vb
+    else v.last = v.last + (angleDelta(v.last, vb) || 0) * 0.35     // החלקה
+    if (stopped && v.face == null) v.face = v.last
+    if (v.face != null) v.orbit = angleDelta(v.face, v.last) || 0
+  }
+  const orbit = stopped ? viewRef.current.orbit : 0
+
+  // יש דמות חיה (קליפ בלי רקע)? היא מוצגת כשהוא זז ומציץ. כשהוא נעצר —
+  // המודל התלת-ממדי, כי אותו אפשר להקיף.
+  const useModel = !!modelSrc && !modelFailed && (!creature?.live || stopped)
   const showModel = useModel && (done || (ctVisible && !ct.peeking))
   const hideSprite = showModel && modelShown
 
@@ -273,6 +293,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp }) {
           faceLeft={!done && ctFaceLeft}
           phase={done ? 'catch' : (ct?.scale || 1) > 1.2 ? 'appear' : 'move'}
           done={done}
+          orbit={orbit}
           onShown={() => setModelShown(true)}
           onFailed={() => setModelFailed(true)} />
       )}

@@ -85,7 +85,7 @@ function Sprite({ sprites, live, peeking, faceLeft, done, scale = 1 }) {
 //   visible — היצור בתוך חרוט הראייה. השכבה נשארת מחוברת גם כשלא, ורק
 //             נעלמת: פירוק וחיבור מחדש של model-viewer באמצע רינדור זרק
 //             שגיאות פנימיות וטען את המודל מחדש בכל סיבוב של הטלפון.
-export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, visible = true, onShown, onFailed }) {
+export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, visible = true, orbit = 0, onShown, onFailed }) {
   // יצור מעופף (דבשון): מרחף בגובה העיניים ומעלה, בלי צל על הרצפה.
   const flying = creature?.arMode === 'sky'
   const src = useModelSrc(creature)
@@ -179,8 +179,10 @@ export function ModelLayer({ creature, x = 0, scale = 1, faceLeft, phase, done, 
   // נעצר או נתפס: כמעט חזיתי, מסתכל על הילד. "הדמות מונחת על צידה, אי
   // אפשר להיות לפניה" — עכשיו ברגע שהוא עוצר הוא מסתובב אליך.
   // model-viewer מחליק את שינוי הזווית, אז הסיבוב עצמו נראה כתנועה.
+  // orbit: כמה הילד הלך סביבו (לפי GPS). "לפחות שהילד יסתובב סביבו" —
+  // הוא עומד במקום, והילד שמקיף אותו רואה צד, גב, וחוזר לפנים.
   const side = faceLeft ? 1 : -1
-  const yaw = done ? 0 : phase === 'move' ? side * 55 : side * 14
+  const yaw = done ? orbit : phase === 'move' ? side * 55 : side * 14 + orbit
 
   // ── גודל ומיקום דרך המצלמה ──
   // המסגור האוטומטי של model-viewer בתיבה על כל המסך ממלא את הרוחב —

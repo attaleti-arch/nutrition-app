@@ -210,6 +210,8 @@ export default function Wilden() {
       {g.state === S.ENCOUNTER && (
         <Stage
           creature={creature}
+          pos={geo.pos}
+          anchor={g.run?.target || null}
           onMode={m => dispatch({ type: m === 'CAMERA' ? 'CAMERA_READY' : 'CAMERA_DENIED' })}
           onFound={() => dispatch({ type: 'ENCOUNTER_RESOLVED', caught: true })}
           onGiveUp={() => dispatch({ type: 'ENCOUNTER_RESOLVED', caught: false })}
