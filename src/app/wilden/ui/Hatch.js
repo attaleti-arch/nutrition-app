@@ -32,7 +32,9 @@ export function Hatch({ hatched, onClose }) {
   const ready = useModelViewer(!!creature?.model && !art && !tint)
   const ref = useRef(null)
   const videoRef = useRef(null)
-  const [phase, setPhase] = useState('egg')     // egg → flash → creature
+  // משרוקית זהב: אין ביצה — ישר הבזק, והיצור בצבע עולה.
+  const whistle = hatched?.source === 'whistle'
+  const [phase, setPhase] = useState(whistle ? 'flash' : 'egg')     // egg → flash → creature
   const [clip, setClip] = useState('loading')   // loading | on | off
   const [cracks, setCracks] = useState(0)       // כמה סדקים כבר
   const [shake, setShake] = useState(0)         // מונה — כל שינוי מפעיל זעזוע
@@ -59,8 +61,19 @@ export function Hatch({ hatched, onClose }) {
     setTimeout(() => { try { sfxCheer() } catch (e) { /* */ } }, FLASH_MS + 700)
   }
 
+  // משרוקית: בלי ביצה. הבזק, ואז היצור.
+  useEffect(() => {
+    if (!whistle || doneRef.current) return
+    doneRef.current = true
+    try { sfxHatch(); buzz([80, 40, 160]) } catch (e) { /* */ }
+    const t1 = setTimeout(() => { setPhase('creature'); try { sfxCatch() } catch (e) { /* */ } }, FLASH_MS)
+    const t2 = setTimeout(() => { try { sfxCheer() } catch (e) { /* */ } }, FLASH_MS + 700)
+    return () => { clearTimeout(t1); clearTimeout(t2) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   // הסרטון: מתחיל → 'on'; לא התחיל בזמן / שגיאה → 'off' והביצה המצוירת.
   useEffect(() => {
+    if (whistle) return
     const v = videoRef.current
     if (!v) { setClip('off'); return }
     v.play().catch(() => {})
@@ -174,7 +187,7 @@ export function Hatch({ hatched, onClose }) {
       )}
 
       <div style={S.text}>
-        <p style={S.eyebrow}>{rising ? 'הביצה בקעה!' : eggLine}</p>
+        <p style={S.eyebrow}>{rising ? (whistle ? 'משרוקית הזהב קראה!' : 'הביצה בקעה!') : whistle ? '' : eggLine}</p>
         {rising && <p style={S.name}>{name}</p>}
         {rising && <p style={S.sub}>{variant.id === 'ice' ? 'נדיר מאוד. כמעט אף אחד לא ראה כזה.' : variant.id === 'night' ? (f ? 'נדיר. היא זוהרת בחושך.' : 'נדיר. הוא זוהר בחושך.') : variant.id === 'glow' ? (f ? 'הסימנים שלה דולקים.' : 'הסימנים שלו דולקים.') : (f ? 'היא נוצצת.' : 'הוא נוצץ.')}</p>}
         {rising && <button onClick={onClose} style={S.cta}>לעולם</button>}

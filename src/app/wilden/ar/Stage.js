@@ -269,6 +269,9 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   // המרדף: כמה רחוק הוא עכשיו. מוצג כפס שמתקצר כשרצים.
   const chasing = !done && (cs?.phase === 'FAR' || cs?.phase === 'FLEE') && cs?.dist != null
   canCatchRef.current = canCatch
+  // חשוך: צל תמיד; כולם אחרי 18:00 ולפני 6:00.
+  const hour = new Date().getHours()
+  const dark = !done && (creature?.id === 'tzel' || hour >= 18 || hour < 6)
   // חם/קר בדופק: רועד לאט כשרחוק, מהר כשקרוב — גם ההורה שלידו מרגיש.
   usePulse(chasing ? cs.dist : null)
 
@@ -280,6 +283,9 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
           מסך שחור. עכשיו האלמנט תמיד שם, והזרם מתחבר גם מאוחר יותר. */}
       <video ref={videoRef} playsInline muted autoPlay
         style={{ ...S.video, opacity: camState === 'on' ? 1 : 0 }} />
+      {/* רחוב חשוך: לצל תמיד, ולכולם בערב. הפנס (מפתח מהחנות) פותח קונוס אור
+          רחב; בלעדיו רואים רק במרכז, עמום. צל בלי פנס לא מגיע לכאן (הלוח מחליף אותו). */}
+      {dark && <div style={S.dark(!!mods?.lantern)} aria-hidden="true" />}
       {camState === 'on' && !videoLive && (
         <div style={S.camNote}>
           המצלמה אושרה אבל התמונה לא הגיעה.
@@ -518,6 +524,11 @@ const S = {
   center: { position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' },
   dim: { color: '#9BA495', fontSize: 15 },
   node: { position: 'absolute', transition: 'opacity .2s, transform .35s', pointerEvents: 'none' },
+  // חושך עם חור אור במרכז: עם פנס — רחב וחם; בלי — צר ועמום.
+  dark: lantern => ({ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
+    background: lantern
+      ? 'radial-gradient(circle at 50% 52%, rgba(255,230,170,.08) 0, rgba(5,8,5,0) 30%, rgba(5,8,5,.55) 58%, rgba(5,8,5,.9) 100%)'
+      : 'radial-gradient(circle at 50% 52%, rgba(5,8,5,.15) 0, rgba(5,8,5,.6) 22%, rgba(5,8,5,.92) 55%, rgba(5,8,5,.98) 100%)' }),
   tapArea: { position: 'absolute', width: '54vw', height: '46vh', transform: 'translate(-50%,-50%)',
     background: 'transparent', border: 'none', padding: 0, zIndex: 4, cursor: 'pointer',
     WebkitTapHighlightColor: 'transparent' },

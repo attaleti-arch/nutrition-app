@@ -119,3 +119,28 @@ export function creatureLine(id, seed = 0) {
   const arr = LINES[id] || ['…']
   return arr[Math.abs(seed) % arr.length]
 }
+
+// ── מבנים ──
+// "7 דבורים = הכוורת עובדת." תפיסות חוזרות בונות נחיל, והנחיל בונה מבנה
+// שמייצר משאב בכל מסע. הכוורת ראשונה; השאר כשהתמונות שלה יגיעו (img).
+export const BUILDINGS = [
+  { id: 'hive', name: 'כוורת', creature: 'dabashon', need: 7, product: 'honey', spot: { x: 17, y: 30, w: 12 }, img: null,
+    line: 'שבע דבורים — והכוורת עובדת. דבש בכל מסע.' },
+  { id: 'pond', name: 'שלולית', creature: 'gali', need: 7, product: 'water', spot: { x: 56, y: 60, w: 18 }, img: null,
+    line: 'שבע גלי — והשלולית מלאה. מים בכל מסע.' },
+  { id: 'quarry', name: 'ערמת אבנים', creature: 'bolder', need: 7, product: 'stone', spot: { x: 82, y: 64, w: 16 }, img: null,
+    line: 'שבעה בולדר — וערמת האבנים גדלה. אבן בכל מסע.' },
+  { id: 'nest', name: 'קן', creature: 'ruchi', need: 7, product: 'wind', spot: { x: 74, y: 22, w: 12 }, img: null,
+    line: 'שבעה רוחי — והקן שלם. רוח בכל מסע.' },
+]
+export const SWARM_MAX = 6      // כמה קטנים מסביב לגדול, לכל היותר
+export const swarmOf = (progress, id) => Math.max(0, Math.min(SWARM_MAX, (progress?.caught?.[id] || 0) - 1))
+export const buildingState = (progress, b) => ({ ...b, have: Math.min(b.need, progress?.caught?.[b.creature] || 0), built: (progress?.caught?.[b.creature] || 0) >= b.need })
+export const buildings = progress => BUILDINGS.map(b => buildingState(progress, b))
+// בסוף מסע: כל מבנה שעובד מייצר אחד. מחזיר { res, made: [{ id, product }] }.
+export function produce(progress) {
+  const res = { ...(progress?.res || {}) }
+  const made = []
+  for (const b of buildings(progress)) if (b.built) { res[b.product] = (res[b.product] || 0) + 1; made.push({ id: b.id, product: b.product }) }
+  return { res, made }
+}

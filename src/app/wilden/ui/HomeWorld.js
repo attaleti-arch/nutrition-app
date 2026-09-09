@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { creatureById } from '../content/creatures'
-import { activeQuest, questProgress, canComplete, worldState, creatureLine, RES_NAME, RES_ICON } from '../engine/world'
+import { activeQuest, questProgress, canComplete, worldState, creatureLine, RES_NAME, RES_ICON, swarmOf, buildings } from '../engine/world'
 import { sfxAppear, sfxCheer, sfxFinish, buzz } from '../engine/audio'
 import { Wear } from './Wear'
 import { CreatureAura } from './Aura'
@@ -29,6 +29,21 @@ const SPOTS = {
   noga: { x: 47, y: 84, h: 19 },
 }
 const GUARDIAN = { x: 52, y: 41, h: 24 }
+// הנחיל: היסטים באחוזי עולם מהמקום של הגדול, ומכפיל גודל (הרחוקים קטנים יותר — עומק).
+const SWARM_OFFS = [[-9, -3, 0.45], [9, -2, 0.45], [-14, 4, 0.4], [14, 5, 0.4], [-5, 7, 0.5], [6, 8, 0.5]]
+const SWARM_BUDGET = 12
+
+// כוורת מצוירת, עד שהתמונה שלה תגיע
+function HiveSvg() {
+  return (
+    <svg viewBox="0 0 100 110" style={{ display: 'block', width: '100%', filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5))' }} aria-hidden="true">
+      <path d="M50 4 Q10 6 12 28 Q6 34 12 46 Q6 54 12 66 Q6 74 14 84 Q20 100 50 104 Q80 100 86 84 Q94 74 88 66 Q94 54 88 46 Q94 34 88 28 Q90 6 50 4 Z" fill="#E9B44C" />
+      <path d="M12 28 H88 M12 46 H88 M12 66 H88 M14 84 H86" stroke="#B8842A" strokeWidth="4" />
+      <ellipse cx="50" cy="76" rx="9" ry="8" fill="#3A2A1A" />
+      <path d="M40 60 L50 52 L60 60 L56 68 L44 68 Z" fill="#F7D27A" opacity=".7" />
+    </svg>
+  )
+}
 
 export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
   const world = worldState(progress)
@@ -116,6 +131,34 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
           </button>
         )
       })}
+      {/* ── הנחיל ── תפיסות חוזרות: אותו קליפ בקטן, בקשת סביב הגדול, עד שש. לכל
+          היותר 12 בכל העולם, כדי שטלפון לא ייחנק. */}
+      {(() => {
+        let budget = SWARM_BUDGET
+        return have.flatMap(id => {
+          const c = creatureById(id); const sp = SPOTS[id]
+          const n = Math.min(swarmOf(progress, id), budget)
+          if (!c?.live || !sp || n <= 0) return []
+          budget -= n
+          return SWARM_OFFS.slice(0, n).map(([dx, dy, k], i) => (
+            <img key={`${id}-m${i}`} src={c.live} alt="" draggable={false} aria-hidden="true"
+              style={{ ...W.mini, left: `${sp.x + dx}%`, top: `${sp.y + dy}%`, height: `${sp.h * k}%`,
+                transform: `translate(-50%,-100%) ${i % 2 ? 'scaleX(-1)' : ''}`,
+                animation: sp.air ? `wildenHover ${2.6 + i * 0.35}s ease-in-out infinite` : 'none', animationDelay: `${i * 0.2}s`,
+                filter: c.tint || 'none' }} />
+          ))
+        })
+      })()}
+
+      {/* ── מבנים ── שבע מאותו יצור: המבנה שלו מופיע ומייצר בכל מסע. התמונה
+          שלה כשתגיע (img); עד אז — ציור. */}
+      {buildings(progress).filter(b => b.built).map(b => (
+        <div key={b.id} style={{ ...W.building, left: `${b.spot.x}%`, top: `${b.spot.y}%`, width: `${b.spot.w}%` }} aria-label={b.name}>
+          {b.img ? <img src={b.img} alt="" style={{ width: '100%', display: 'block' }} draggable={false} /> : b.id === 'hive' ? <HiveSvg /> : null}
+          <span style={W.buildingTag}>{RES_ICON[b.product]} +1 בכל מסע</span>
+        </div>
+      ))}
+
       {bubble?.id === 'guardian' && (
         <span style={{ ...W.bubble, position: 'absolute', bottom: 'auto', left: `${GUARDIAN.x}%`, top: `${GUARDIAN.y - GUARDIAN.h - 12}%`, display: 'block' }}>{bubble.text}</span>
       )}
@@ -165,6 +208,9 @@ const W = {
   figure: { height: '100%', width: 'auto', display: 'block' },
   groundShadow: { position: 'absolute', left: '15%', right: '15%', bottom: -4, height: 8, borderRadius: '50%', background: 'rgba(0,0,0,.35)', filter: 'blur(3px)', zIndex: -1 },
   zz: { position: 'absolute', top: -6, insetInlineEnd: -10, fontSize: 18 },
+  mini: { position: 'absolute', pointerEvents: 'none', zIndex: 1, opacity: 0.96 },
+  building: { position: 'absolute', transform: 'translate(-50%,-100%)', zIndex: 1, pointerEvents: 'none' },
+  buildingTag: { position: 'absolute', left: '50%', top: '-10px', transform: 'translate(-50%,-100%)', whiteSpace: 'nowrap', background: 'rgba(15,21,15,.85)', border: '1px solid #F0C069', color: '#F0C069', borderRadius: 999, padding: '2px 8px', fontSize: 11.5, fontWeight: 800 },
   mark: { position: 'absolute', top: -8, insetInlineStart: -8, width: 24, height: 24, borderRadius: '50%', color: '#14200F', fontWeight: 900, fontSize: 15, display: 'grid', placeItems: 'center', boxShadow: '0 2px 6px rgba(0,0,0,.4)' },
   bubble: { position: 'absolute', display: 'block', bottom: '104%', left: '50%', transform: 'translateX(-50%)', minWidth: 150, maxWidth: 230, padding: '8px 12px', borderRadius: 12, background: 'rgba(233,229,216,.96)', color: '#14200F', fontSize: 13.5, fontWeight: 700, lineHeight: 1.4, textAlign: 'center', boxShadow: '0 4px 14px rgba(0,0,0,.35)', animation: 'wildenBubble 3.6s ease-out forwards', pointerEvents: 'none', zIndex: 5, whiteSpace: 'normal' },
   basinWater: { position: 'absolute', left: '39%', top: '43%', width: '23%', height: '6%', borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(120,190,230,.75), rgba(60,120,180,.4) 70%, rgba(60,120,180,0))', animation: 'wildenWater 3s ease-in-out infinite', pointerEvents: 'none' },

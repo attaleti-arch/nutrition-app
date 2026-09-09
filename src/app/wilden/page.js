@@ -29,7 +29,8 @@ import { Shop } from './ui/Shop'
 import { weeklyStatus, WEEKLY_COINS, km } from './engine/weekly'
 import { bondOf, buddyLine, BOND_M } from './engine/buddy'
 import { ROUTE_KM, routeKm, poisFor, creatureCount, plannedMsKm, plannedMin } from './engine/plan'
-import { armed, gearById } from './engine/gear'
+import { armed, gearById, withKeys, lockLine } from './engine/gear'
+import { BUILDINGS, RES_ICON as RES_ICONS } from './engine/world'
 import { boosting, streakFill, boostLeftMs, BOOST_REVEAL } from './engine/streak'
 import { usePulse } from './hooks/usePulse'
 import { badgeById } from './engine/badges'
@@ -283,7 +284,7 @@ export default function Wilden() {
             onBuddy={id => { sfxAppear(); dispatch({ type: 'SET_BUDDY', id }) }}
             onKm={km => dispatch({ type: 'SET_ROUTE_KM', km })}
             onLook={(id, look) => { sfxAppear(); dispatch({ type: 'SET_LOOK', id, look }) }}
-            onGear={id => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_GEAR', id }) }}
+            onGear={(id, pay) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_GEAR', id, pay }) }}
             onSkin={(creature, skin) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_SKIN', creature, skin }) }}
             onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }} P={P} />
         )}
@@ -398,6 +399,9 @@ export default function Wilden() {
           <Panel eyebrow="המסע נגמר">
             <h2 style={s.h2}>{g.progress.creatures.length ? 'הוא חי בעולם שלכם עכשיו.' : 'חזרתם.'}</h2>
             <NewBadges ids={g.newBadges} />
+            {g.made?.length > 0 && (
+              <p style={s.made}>🏠 {g.made.map(m => `${BUILDINGS.find(b => b.id === m.id)?.name || m.id} ${RES_ICONS[m.product] || ''} +1`).join(' · ')}</p>
+            )}
             <ParentCard walk={g.progress.lastWalk && { ...g.progress.lastWalk, buddy: g.progress.buddy, stageProgress: g.progress.buddy ? stageProgress(g.progress, g.progress.buddy) : null }} gift={g.weeklyGift} />
             <Stats g={g} />
             <button onClick={() => dispatch({ type: 'RUN_CLOSED' })} style={s.cta}>לעולם</button>
@@ -558,6 +562,8 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
   // התדריך של היום: מסע 1 — הסיפור. אחר כך — מי בדרך לפי הלוח, בשם.
   const brief = briefFor(g.progress)
   const who = creatureById(brief.creature)
+  // מפתחות: יצור נעול מוחלף, והבית אומר מה חסר ("צל מחכה ברחוב החשוך. צריך פנס")
+  const keyed = withKeys((brief.creatures || []).slice(0, nCreatures), g.progress, AVAILABLE)
   return (
     <>
       <p style={s.eyebrow}>WILDEN</p>
@@ -624,8 +630,9 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
       <div style={s.plan}>
         <span>🚶 {routeLen} ק״מ · ~{plannedMin(routeLen)} דק׳</span>
         <span>🪙 <b>{g.progress.coins || 0}</b></span>
-        <span>{`${(brief.creatures || []).map(id => creatureById(id)?.name).filter(Boolean).slice(0, nCreatures).join(' ו') || who?.name || 'יצורים'} בדרך`}</span>
+        <span>{`${keyed.creatures.map(id => creatureById(id)?.name).filter(Boolean).join(' ו') || who?.name || 'יצורים'} בדרך`}</span>
       </div>
+      {keyed.locked.map(id => <p key={id} style={s.locked}>🔒 {lockLine(id)}. בינתיים {creatureById(keyed.creatures[keyed.creatures.length - 1])?.name} במקומו.</p>)}
 
       {/* להורה: אורך המסלול. במקום לנחש — 1 עד 4 ק"מ, וממנו הזמן ומה בדרך. */}
       <div style={s.kmRow} aria-label="אורך המסלול">
@@ -1035,6 +1042,8 @@ const s = {
   buddyRow: { margin: '0 0 12px', padding: '10px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
   kmRow: { margin: '0 0 12px', padding: '10px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
   armed: { margin: '-6px 0 12px', fontSize: 14, color: '#F0C069', fontWeight: 700 },
+  locked: { margin: '-6px 0 12px', fontSize: 13.5, color: C.muted },
+  made: { margin: '6px 0 0', fontSize: 15, color: '#F0C069', fontWeight: 700 },
   kmTitle: { margin: '0 0 8px', fontSize: 12.5, fontWeight: 800, letterSpacing: '.08em', color: C.faint },
   kmPick: { display: 'flex', gap: 6 },
   kmChip: { flex: 1, padding: '8px 4px', borderRadius: 10, border: '1.5px solid', fontFamily: 'inherit', fontSize: 14, fontWeight: 800, cursor: 'pointer' },

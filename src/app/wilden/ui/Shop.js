@@ -48,22 +48,30 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onSkin = null, o
       <p style={T.groupTitle}>ציוד למרדף</p>
       <div style={T.gearGrid}>
         {GEAR.map(item => {
-          const owned = item.kind === 'gear' && ownsGear(progress, item.id)
+          const owned = item.kind !== 'item' && ownsGear(progress, item.id)
           const n = item.kind === 'item' ? itemCount(progress, item.id) : 0
           const can = canBuyGear(progress, item.id)
+          const canHoney = canBuyGear(progress, item.id, 'honey')
           return (
-            <button key={item.id} onClick={() => can && onGear?.(item.id)} disabled={!can && !owned}
-              aria-label={item.name}
-              style={{ ...T.gearCard, borderColor: owned ? '#8FB57C' : n > 0 ? '#F0C069' : '#2B382B', opacity: can || owned || n > 0 ? 1 : 0.55 }}>
+            <div key={item.id} style={{ ...T.gearCard, borderColor: owned ? '#8FB57C' : n > 0 ? '#F0C069' : '#2B382B', opacity: can || canHoney || owned || n > 0 ? 1 : 0.55 }}>
               <div style={T.gearIcon}><GearIcon id={item.id} size={64} />{n > 0 && <span style={T.gearCount}>×{n}</span>}</div>
               <div style={{ flex: 1, textAlign: 'start' }}>
-                <p style={T.gearName}>{item.name} {item.kind === 'item' && <span style={T.once}>חד־פעמי</span>}</p>
+                <p style={T.gearName}>{item.name} {item.kind === 'item' ? <span style={T.once}>חד־פעמי</span> : <span style={{ ...T.once, color: '#8FB57C', borderColor: 'rgba(143,181,124,.5)' }}>🔑 מפתח</span>}</p>
                 <p style={T.gearDesc}>{item.desc}</p>
-                <p style={{ ...T.gearPrice, color: owned ? '#8FB57C' : can ? '#E5A342' : '#767F71' }}>
-                  {owned ? '✓ יש לכם, לתמיד' : item.kind === 'item' && n >= MAX_ITEMS ? `יש ${n} — המקסימום` : `🪙 ${item.price}${n > 0 ? ' · עוד אחד' : ''}`}
-                </p>
+                {owned ? <p style={{ ...T.gearPrice, color: '#8FB57C' }}>✓ יש לכם, לתמיד</p>
+                  : item.kind === 'item' && n >= MAX_ITEMS ? <p style={{ ...T.gearPrice, color: '#767F71' }}>יש {n} — המקסימום</p>
+                  : (
+                    <div style={T.payRow}>
+                      <button onClick={() => can && onGear?.(item.id, 'coins')} disabled={!can} aria-label={item.name}
+                        style={{ ...T.payBtn, borderColor: can ? '#E5A342' : '#2B382B', color: can ? '#E5A342' : '#767F71' }}>🪙 {item.price}</button>
+                      {item.honey && (
+                        <button onClick={() => canHoney && onGear?.(item.id, 'honey')} disabled={!canHoney} aria-label={`${item.name} בדבש`}
+                          style={{ ...T.payBtn, borderColor: canHoney ? '#F0C069' : '#2B382B', color: canHoney ? '#F0C069' : '#767F71' }}>🍯 {item.honey}</button>
+                      )}
+                    </div>
+                  )}
               </div>
-            </button>
+            </div>
           )
         })}
       </div>
@@ -207,4 +215,6 @@ const T = {
   once: { fontSize: 11, fontWeight: 800, color: '#F0C069', border: '1px solid rgba(240,192,105,.5)', borderRadius: 999, padding: '1px 7px', marginInlineStart: 6, verticalAlign: 'middle' },
   gearDesc: { margin: '3px 0 0', fontSize: 13.5, color: '#C3C8BA', lineHeight: 1.4 },
   gearPrice: { margin: '5px 0 0', fontSize: 14, fontWeight: 800 },
+  payRow: { display: 'flex', gap: 6, marginTop: 6 },
+  payBtn: { padding: '5px 12px', borderRadius: 999, border: '1.5px solid', background: 'transparent', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 900, cursor: 'pointer' },
 }

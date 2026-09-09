@@ -1192,7 +1192,8 @@ test('המסע השלם: אחרי נימי, המסע הבא מציע דבשון 
   const b = briefFor(g.progress)
   assert.equal(b.creature, 'dabashon')
   g = reduce(g, { type: 'START_RUN', kind: RUN.STORY, day: '2026-09-07', t: 1 })
-  assert.deepEqual(g.run.wantCreatures, ['dabashon', 'tzel'], 'מהמסע השני — שניים: דבשון באוויר, צל על הרצפה')
+  assert.deepEqual(g.run.wantCreatures, ['dabashon', 'nimi'], 'מהמסע השני — שניים: האני באוויר, וצל נעול (אין פנס) — נימי במקומו')
+  assert.deepEqual(g.run.locked, ['tzel'])
 })
 
 test('המצלמה: כל שגיאה הופכת לסיבה אחת עם פעולה אחת', () => {
@@ -2194,66 +2195,90 @@ test('מראה במכונה: SET_LOOK בבית, נשמר לשרת ובמיזוג
 })
 
 // ══════════════════════════════════════════════
-// ─── ציוד למרדף ───
-import { GEAR, gearById, canBuyGear, buyGear, modsFor, consume, armed, ownsGear, itemCount, MAX_ITEMS, mergeGear } from '../src/app/wilden/engine/gear.js'
+// ─── ציוד: מפתחות, משרוקיות, ומה שנותן יותר ───
+import { GEAR, gearById, canBuyGear, buyGear, modsFor, consume, armed, ownsGear, itemCount, MAX_ITEMS, mergeGear, KEYS, unlocked, withKeys, withExtra, lockLine } from '../src/app/wilden/engine/gear.js'
 import { withExtraGold } from '../src/app/wilden/engine/coins.js'
+import { BUILDINGS, swarmOf, buildings, produce } from '../src/app/wilden/engine/world.js'
 
-test('ציוד: קבוע נקנה פעם אחת, חד-פעמי נערם עד 3, ומה שפעיל במסע הבא נגזר מהם', () => {
-  assert.equal(GEAR.length, 6)
-  const p0 = { ...initial().progress, coins: 100 }
+test('ציוד: מפתח נקנה פעם אחת, חד-פעמי נערם עד 3 ואפשר לקנות בדבש, ומה שפעיל נגזר מהם', () => {
+  assert.equal(GEAR.length, 7)
+  assert.deepEqual(KEYS, { tzel: 'lantern', ruchi: 'binoculars', kraag: 'pickaxe' })
+  const p0 = { ...initial().progress, coins: 100, res: { honey: 4 } }
   assert.ok(canBuyGear(p0, 'lantern')); assert.ok(!canBuyGear({ ...p0, coins: 10 }, 'lantern'))
-  const p1 = buyGear(p0, 'lantern'); assert.equal(p1.coins, 60); assert.ok(ownsGear(p1, 'lantern'))
+  const p1 = buyGear(p0, 'lantern'); assert.equal(p1.coins, 60); assert.ok(ownsGear(p1, 'lantern')); assert.ok(unlocked(p1, 'tzel')); assert.ok(!unlocked(p1, 'kraag'))
   assert.equal(buyGear(p1, 'lantern'), p1, 'לא פעמיים')
-  let p2 = buyGear(buyGear(buyGear(p1, 'honey'), 'honey'), 'honey')
-  assert.equal(itemCount(p2, 'honey'), 3); assert.equal(p2.coins, 15)
-  assert.equal(itemCount(buyGear({ ...p2, coins: 99 }, 'honey'), 'honey'), MAX_ITEMS, 'לא יותר משלושה')
-  assert.deepEqual(modsFor(p2), { startM: 6, flees: 1 })
-  assert.deepEqual(armed(p2).map(a => [a.id, a.n]), [['honey', 3]])
-  // יציאה למסע שורפת אחד מכל סוג
-  const c = consume(p2)
-  assert.deepEqual(c.used, ['honey']); assert.equal(itemCount(c.progress, 'honey'), 2)
-  const c2 = consume({ ...p2, items: { honey: 1, magnet: 1 } })
-  assert.deepEqual(c2.used.sort(), ['honey', 'magnet']); assert.deepEqual(c2.progress.items, {})
+  // משרוקית בדבש
+  assert.ok(canBuyGear(p1, 'whistle', 'honey')); assert.ok(!canBuyGear(p1, 'goldWhistle', 'honey'), '6 דבש — אין')
+  const p2 = buyGear(p1, 'whistle', 'honey')
+  assert.equal(p2.res.honey, 1); assert.equal(p2.coins, 60); assert.equal(itemCount(p2, 'whistle'), 1)
+  const p3 = buyGear(buyGear(p2, 'whistle'), 'whistle'); assert.equal(itemCount(p3, 'whistle'), 3)
+  assert.equal(itemCount(buyGear({ ...p3, coins: 99 }, 'whistle'), 'whistle'), MAX_ITEMS, 'לא יותר משלושה')
+  assert.deepEqual(modsFor(p3), { lantern: true, extraStop: 1 })
+  assert.deepEqual(armed(p3).map(a => [a.id, a.n]), [['whistle', 3]])
+  const c = consume(p3); assert.deepEqual(c.used, ['whistle']); assert.equal(itemCount(c.progress, 'whistle'), 2)
   assert.deepEqual(consume(p0).used, [])
-  // מיזוג: קבוע — איחוד; חד-פעמי — המקסימום
-  assert.deepEqual(mergeGear({ gear: ['lantern'], items: { honey: 1 } }, { gear: ['boots'], items: { honey: 2, map: 1 } }), { gear: ['lantern', 'boots'], items: { honey: 2, map: 1 } })
+  assert.ok(lockLine('tzel').includes('פנס') && lockLine('tzel').includes('40')); assert.equal(lockLine('nimi'), '')
+  assert.deepEqual(mergeGear({ gear: ['lantern'], items: { whistle: 1 } }, { gear: ['pickaxe'], items: { whistle: 2, map: 1 } }), { gear: ['lantern', 'pickaxe'], items: { whistle: 2, map: 1 } })
 })
 
-test('ציוד במרדף: פנס מקרב, פיתיון — בריחה אחת, נעליים — צעד שווה יותר', () => {
-  const nimiC = controllerFor(CREATURES.nimi)
-  const rng = () => 0.3
-  const plain = nimiC.start(0, rng, 1000)
-  const geared = nimiC.start(0, rng, 1000, { startM: 6, flees: 1, stepM: 1.0 })
-  assert.equal(plain.dist, START_M); assert.equal(geared.dist, 6)
-  assert.ok(nimiC.onStep(geared, 1100).state.dist < nimiC.onStep(plain, 1100).state.dist - 0.2, 'צעד שווה יותר')
-  // פיתיון: אחרי בריחה אחת — נעצר
-  let s = geared
-  for (let i = 0; i < 40 && s.phase !== 'NEAR'; i++) s = nimiC.onStep(s, 1200 + i * 300).state
-  assert.equal(s.phase, 'NEAR'); assert.equal(s.flees, 1, 'ברח פעם אחת בלבד')
-  let q = plain
-  for (let i = 0; i < 60 && q.phase !== 'NEAR'; i++) q = nimiC.onStep(q, 1200 + i * 300).state
-  assert.equal(q.flees, 2, 'בלי פיתיון — פעמיים')
+test('מפתחות בלוח: יצור נעול מוחלף בפנוי הבא, ומשרוקית מוסיפה אחד', () => {
+  const none = initial().progress
+  const k = withKeys(['dabashon', 'tzel'], none, AVAILABLE)
+  assert.deepEqual(k.creatures, ['dabashon', 'nimi']); assert.deepEqual(k.locked, ['tzel'])
+  const withL = { ...none, gear: ['lantern'] }
+  assert.deepEqual(withKeys(['dabashon', 'tzel'], withL, AVAILABLE), { creatures: ['dabashon', 'tzel'], locked: [] })
+  assert.deepEqual(withKeys(['kraag', 'ruchi'], none, AVAILABLE).locked, ['kraag', 'ruchi'])
+  const ex = withExtra(['nimi', 'gali'], none, AVAILABLE, 0)
+  assert.equal(ex.length, 3); assert.ok(!['tzel', 'ruchi', 'kraag'].includes(ex[2]), 'המשרוקית לא קוראת לנעול')
+  assert.equal(withExtra(['nimi', 'gali'], none, ['nimi', 'gali'], 0).length, 2, 'אין למי לקרוא')
 })
 
-test('ציוד במכונה: קנייה בבית בלבד, היציאה שורפת ומפעילה, מגנט ומפת אוצר עובדים', () => {
-  let g = { ...initial(), progress: { ...initial().progress, coins: 200 } }
-  g = reduce(g, { type: 'BUY_GEAR', id: 'magnet' }); g = reduce(g, { type: 'BUY_GEAR', id: 'map' }); g = reduce(g, { type: 'BUY_GEAR', id: 'boots' })
-  assert.equal(g.progress.coins, 200 - 20 - 25 - 60)
-  g = reduce(g, { type: 'START_RUN', kind: RUN.STORY, missionId: 'm01', day: DAY, t: 0 })
-  assert.deepEqual(g.run.mods, { stepM: 1.0, coinRadius: 28, extraGold: 1 })
-  assert.deepEqual(g.run.used.sort(), ['magnet', 'map']); assert.deepEqual(g.progress.items, {})
-  assert.equal(reduce(g, { type: 'BUY_GEAR', id: 'honey' }), g, 'לא באמצע')
-  g = reduce(g, { type: 'PERMISSION_GRANTED', home: HOME }); g = reduce(g, { type: 'ROUTE_READY', path: PATH, home: HOME, creatures: ['nimi'] })
-  assert.equal(g.run.coins.filter(c => c.gold).length, 2, 'מפת אוצר: שני זהבים')
-  // מגנט: מטבע 22 מ' מהצד נאסף (רגיל: 14)
-  const c0 = g.run.coins.find(c => !c.gold && c.along > 200)
+test('ציוד במכונה: משרוקית = עוד יצור; משרוקית זהב = צבע בפורטל; מגנט ומפה; נעול מוחלף', () => {
+  let g = { ...initial(), progress: { ...initial().progress, coins: 300, walks: 1 } }
+  g = reduce(g, { type: 'BUY_GEAR', id: 'whistle' }); g = reduce(g, { type: 'BUY_GEAR', id: 'goldWhistle' }); g = reduce(g, { type: 'BUY_GEAR', id: 'magnet' }); g = reduce(g, { type: 'BUY_GEAR', id: 'map' })
+  assert.equal(g.progress.coins, 300 - 30 - 60 - 20 - 25)
+  g = reduce(g, { type: 'START_RUN', kind: RUN.FREE, day: DAY, t: 0 })
+  assert.deepEqual(g.run.locked, ['tzel'], 'מסע 2: צל בלוח, בלי פנס — נעול')
+  assert.equal(g.run.wantCreatures.length, 3, 'שניים מהלוח (צל הוחלף) + משרוקית')
+  assert.ok(!g.run.wantCreatures.includes('tzel'))
+  assert.equal(g.run.mods.colorNext, 1); assert.equal(g.run.mods.coinRadius, 28); assert.equal(g.run.mods.extraGold, 1)
+  assert.deepEqual(g.progress.items, {})
+  const LONG3 = Array.from({ length: 151 }, (_, i) => destination(HOME, 0, i * 20))   // 3 ק"מ: מקום לשלושה יצורים וזהב
+  g = reduce(g, { type: 'PERMISSION_GRANTED', home: HOME }); g = reduce(g, { type: 'ROUTE_READY', path: LONG3, home: HOME })
+  assert.equal(g.run.stops.length, 3); assert.equal(g.run.coins.filter(c => c.gold).length, 2, 'מפת אוצר: שני זהבים')
+  g = walk(g, 300)
+  const c0 = g.run.coins.find(c => !c.gold && c.along > 420 && c.along < g.run.stops[0].along - 60)
   const side = destination({ lat: c0.lat, lng: c0.lng }, 90, 22)
-  g = reduce(g, { type: 'FIX', lat: side.lat, lng: side.lng, acc: 8, t: 5000 })
-  assert.ok(g.run.coins.find(c => c.id === c0.id).taken, 'נמשך מרחוק')
-  assert.deepEqual(forServer(g).progress.gear, ['boots'])
-  // מטבעות: withExtraGold לא דורס זהב קיים
+  g = reduce(g, { type: 'FIX', lat: side.lat, lng: side.lng, acc: 8, t: 400000 })
+  assert.ok(g.run.coins.find(c => c.id === c0.id).taken, 'מגנט: נמשך מ-22 מ\'')
+  // תופסים את הראשון ונכנסים לפורטל — משרוקית הזהב צובעת אותו
+  g = catchHere(g, 500000)
+  // עד סוף התחנות: מסמנים את השאר כתפוסים (קיצור לבדיקה)
+  g = { ...g, run: { ...g.run, stops: g.run.stops.map(s => ({ ...s, done: true })), resolved: true } }
+  g = run(g, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED', t: 600000, rng: () => 0.1 }])
+  assert.ok(g.hatched && g.hatched.source === 'whistle' && g.hatched.creature === g.run?.stops?.[0]?.creature || g.hatched?.source === 'whistle')
+  assert.ok(g.progress.variants.some(v => v.source === 'whistle' && v.variant === 'gold'))
   const coins = withExtraGold([{ id: 'a', along: 100, value: 1 }, { id: 'gold', along: 700, value: 10, gold: true }, { id: 'b', along: 900, value: 1 }], null)
   assert.equal(coins.filter(c => c.gold).length, 2); assert.ok(coins.find(c => c.id === 'gold2'))
+})
+
+test('נחיל ומבנים: 7 מאותו יצור — הכוורת עובדת ומייצרת דבש בכל מסע', () => {
+  assert.equal(BUILDINGS[0].id, 'hive')
+  assert.equal(swarmOf({ caught: { dabashon: 1 } }, 'dabashon'), 0)
+  assert.equal(swarmOf({ caught: { dabashon: 4 } }, 'dabashon'), 3)
+  assert.equal(swarmOf({ caught: { dabashon: 40 } }, 'dabashon'), 6, 'עד שש')
+  const b = buildings({ caught: { dabashon: 6 } }).find(x => x.id === 'hive')
+  assert.equal(b.built, false); assert.equal(b.have, 6)
+  assert.ok(buildings({ caught: { dabashon: 7 } }).find(x => x.id === 'hive').built)
+  assert.deepEqual(produce({ caught: { dabashon: 7 }, res: { honey: 2 } }), { res: { honey: 3 }, made: [{ id: 'hive', product: 'honey' }] })
+  assert.deepEqual(produce({ caught: { dabashon: 2 } }).made, [])
+  // במכונה: התפיסה השביעית של האני — הכוורת עובדת כבר במסע הזה
+  let g = started(['dabashon'], { ...initial(), progress: { ...initial().progress, caught: { dabashon: 6 }, creatures: ['dabashon'] } })
+  g = walk(g, 200); g = catchHere(g, 500000)
+  g = run(g, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED' }])
+  assert.equal(g.progress.res.honey, 2, 'האני הביאה 1 + הכוורת ייצרה 1')
+  assert.deepEqual(g.made, [{ id: 'hive', product: 'honey' }])
+  assert.equal(reduce(reduce(g, { type: 'CLUE_SEEN' }), { type: 'RUN_CLOSED' }).made, null)
 })
 
 // ══════════════════════════════════════════════

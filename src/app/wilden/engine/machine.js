@@ -9,17 +9,17 @@ import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL
 import { placeTarget, revalidate, PLACE_AFTER, freshEnd } from './placement.js'
 import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS, CATCH_BONUS } from './coins.js'
 import { mergeProgress } from './profile.js'
-import { EGG_PRICE, HATCH_M, canBuyEgg, hatch } from './egg.js'
+import { EGG_PRICE, HATCH_M, canBuyEgg, hatch, rollVariant } from './egg.js'
 import { buy as buyItem, equip as equipItem } from './shop.js'
 import { grantWeekly, walkSummary } from './weekly.js'
 import { evolvedBetween } from './stages.js'
 import { routeKm, poisFor, creatureCount, placePois, setRouteKm, POI } from './plan.js'
-import { modsFor, consume, buyGear } from './gear.js'
+import { modsFor, consume, buyGear, withKeys, withExtra } from './gear.js'
 import { buySkin, buyStone } from './skins.js'
-import { withExtraGold } from './coins.js'
+import { withExtraGold, AVAILABLE } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
-import { bringsFor, completeQuest } from './world.js'
+import { bringsFor, completeQuest, produce } from './world.js'
 import { newlyEarned } from './badges.js'
 
 // גובה קפיצה ממשך זמן באוויר: h = g·t²/8, בס"מ.
@@ -154,6 +154,11 @@ export function reduce(g, ev) {
       const mods = modsFor(g.progress)
       const paid = extra ? { ...g.progress, coins: wallet - WALK_PLAN.extraCost } : g.progress
       const { progress: afterGear, used } = consume(paid)
+      // מי בדרך: לפי הלוח; נעולים (בלי מפתח) מוחלפים; משרוקית מוסיפה אחד.
+      const avail = ev.available || AVAILABLE
+      const planned = creaturesForWalk(walks, extra, avail, creatureCount(pois))
+      const keyed = withKeys(planned, g.progress, avail)
+      const want = mods.extraStop ? withExtra(keyed.creatures, g.progress, avail, walks) : keyed.creatures
       return {
         ...g,
         state: S.PERMISSIONS,
@@ -165,8 +170,8 @@ export function reduce(g, ev) {
           day: ev.day,
           startedAt: ev.t,
           walkIndex: walks,
-          km, pois, mods, used,
-          wantCreatures: creaturesForWalk(walks, extra, ev.available, creatureCount(pois)),
+          km, pois, mods, used, locked: keyed.locked,
+          wantCreatures: want,
           home: null, path: null, pos: null, lastFix: null, walkRef: null, stillRef: null,
           acc: null, walked: 0, along: 0,
           streak: freshStreak(ev.t ?? null),      // רצף הליכה → דחף (ראה engine/streak.js)
@@ -390,14 +395,21 @@ export function reduce(g, ev) {
       // נשרפת, לא נמחקת. מי בוקע: מתוך מי שכבר נתפס (כולל היום).
       const progressWithToday = { ...g.progress, creatures }
       const warm = (r.walked || 0) >= HATCH_M
-      const hatched = g.progress.egg && warm ? hatch(progressWithToday, ev.rng) : null
-      const variants = hatched
-        ? [...(g.progress.variants || []), { ...hatched, at: ev.t ?? null }]
-        : g.progress.variants || []
+      const eggHatched = g.progress.egg && warm ? hatch(progressWithToday, ev.rng) : null
+      // משרוקית זהב: היצור הראשון שנתפס היום מגיע בצבע, בלי ביצה.
+      const whistled = r.mods?.colorNext && caughtIds[0]
+        ? { creature: caughtIds[0], variant: rollVariant(ev.rng || Math.random).id, source: 'whistle' } : null
+      const hatched = eggHatched || whistled
+      const variants = [...(g.progress.variants || []),
+        ...(eggHatched ? [{ ...eggHatched, at: ev.t ?? null }] : []),
+        ...(whistled ? [{ creature: whistled.creature, variant: whistled.variant, at: ev.t ?? null, source: 'whistle' }] : [])]
 
       // ── מונים להישגים ──
       const caught = { ...(g.progress.caught || {}) }
       for (const id of caughtIds) if (id) caught[id] = (caught[id] || 0) + 1
+      // מבנים שעובדים (7 מאותו יצור) מייצרים בכל מסע: הכוורת — דבש.
+      const made = produce({ caught }).made
+      for (const m of made) res[m.product] = (res[m.product] || 0) + 1
       const goldTaken = (r.coins || []).some(c => c.gold && c.taken) ? 1 : 0
       const runDone = r.coinRun?.done ? 1 : 0
       const walkDays = [...(g.progress.walkDays || [])]
@@ -445,6 +457,7 @@ export function reduce(g, ev) {
         weeklyGift: weekly.gift,
         // מי גדל במסע הזה (3 תפיסות = בוגר, 7 = אגדי) — למסך ההתפתחות.
         evolved: evolvedBetween(g.progress, progress),
+        made,       // מה המבנים ייצרו היום — למסך הסיום
         progress,
       }
     }
@@ -453,7 +466,7 @@ export function reduce(g, ev) {
       return { ...g, state: S.RUN_COMPLETE }
 
     case 'RUN_CLOSED':
-      return { ...g, state: S.BROKEN_WORLD, run: null, hatched: null, newBadges: null, weeklyGift: null, evolved: null }
+      return { ...g, state: S.BROKEN_WORLD, run: null, hatched: null, newBadges: null, weeklyGift: null, evolved: null, made: null }
 
     // ── החנות ──
     // במסך הבית בלבד. קנייה מורידה מטבעות; לבישה חופשית על מה שנקנה.
@@ -482,7 +495,7 @@ export function reduce(g, ev) {
     // ── ציוד ── כלים למרדף. בבית בלבד; מטבעות יורדים מיד.
     case 'BUY_GEAR': {
       if (g.state !== S.BROKEN_WORLD) return g
-      const progress = buyGear(g.progress, ev.id)
+      const progress = buyGear(g.progress, ev.id, ev.pay || 'coins')
       return progress === g.progress ? g : { ...g, progress }
     }
     // ── המראה ── צבע מהביצה עם דמות משלו, או הרגיל. בבית בלבד.
