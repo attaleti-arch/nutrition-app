@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { CREATURES, creatureById } from '../content/creatures'
 import { AVAILABLE } from '../engine/coins'
 import { RES_OF, RES_NAME, RES_ICON, creatureLine } from '../engine/world'
-import { variantById } from '../engine/egg'
+import { variantById, variantName } from '../engine/egg'
 import { useModelViewer } from '../hooks/useModelViewer'
 import { badgeList } from '../engine/badges'
 import { itemById } from '../engine/shop'
@@ -50,7 +50,7 @@ export function Book({ progress, onClose, onLook = null }) {
               </div>
               <p style={B.name}>{known ? stagedName(c, sp.stage) : '???'}</p>
               <p style={B.sub}>{known ? `${female ? 'מביאה' : 'מביא'} ${RES_ICON[RES_OF[id]] || ''} ${RES_NAME[RES_OF[id]] || ''}` : c.arMode === 'sky' ? 'משהו באוויר' : 'משהו על הרצפה'}</p>
-              {known && <p style={B.meta}>{n === 1 ? 'נתפס פעם אחת' : `נתפס ${n} פעמים`}{vs.length ? ' · ' + vs.map(v => variantById(v.variant)?.name).join(', ') : ''}</p>}
+              {known && <p style={B.meta}>{n === 1 ? 'נתפס פעם אחת' : `נתפס ${n} פעמים`}{vs.length ? ' · ' + vs.map(v => variantName(v.variant, c)).join(', ') : ''}</p>}
               {/* "עוד 2 תפיסות ונימי גדל" — הסיבה לצאת שוב אליו */}
               {known && sp.next && (
                 <div style={B.growWrap}>
@@ -97,7 +97,7 @@ function CreaturePage({ id, progress, onClose, onLook }) {
             </div>}
       </div>
       <p style={B.pageHint}>{dressed ? `${c.name} עם ${Object.values(wear).map(w => itemById(w)?.name).filter(Boolean).join(' ו')}` : 'סובבו אותו עם האצבע'}</p>
-      <h3 style={B.pageName}>{stagedName(c, sp.stage)}{c.look ? ` ${variantById(c.look)?.name || ''}` : ''}</h3>
+      <h3 style={B.pageName}>{stagedName(c, sp.stage)}{c.look ? ` ${variantName(c.look, c)}` : ''}</h3>
       {/* שלושת השלבים: מה הושג, ומה הסף הבא */}
       <div style={B.stages} aria-label="שלבי התפתחות">
         {STAGES.map(st => (
@@ -109,7 +109,7 @@ function CreaturePage({ id, progress, onClose, onLook }) {
       {sp.next && <p style={B.pageGrow}>נתפס {sp.have} מ־{sp.need}. עוד {sp.left === 1 ? 'תפיסה אחת' : `${sp.left} תפיסות`}.</p>}
       {canLook && onLook && (
         <button onClick={() => onLook(id, c.look ? 'base' : null)} style={B.lookBtn}>
-          {c.look ? `מראה: ${variantById(c.look)?.name} · להחליף לרגיל` : `להחליף למראה מהביצה ✨ ${vs.map(v => variantById(v.variant)?.name).filter(Boolean).join(' / ')}`}
+          {c.look ? `מראה: ${variantName(c.look, c)} · להחליף לרגיל` : `להחליף למראה מהביצה ✨ ${vs.map(v => variantName(v.variant, c)).filter(Boolean).join(' / ')}`}
         </button>
       )}
       <p style={B.pageLine}>"{creatureLine(id, line)}"</p>
@@ -117,7 +117,7 @@ function CreaturePage({ id, progress, onClose, onLook }) {
         <span style={B.fact}>{RES_ICON[RES_OF[id]]} מביא {RES_NAME[RES_OF[id]]}</span>
         <span style={B.fact}>{c.arMode === 'sky' ? '🌤️ באוויר' : '🐾 על הרצפה'}</span>
         <span style={B.fact}>🎯 נתפס {n} {n === 1 ? 'פעם' : 'פעמים'}</span>
-        {vs.map((v, i) => <span key={i} style={{ ...B.fact, color: '#F0C069' }}>✨ {variantById(v.variant)?.name}</span>)}
+        {vs.map((v, i) => <span key={i} style={{ ...B.fact, color: '#F0C069' }}>✨ {variantName(v.variant, c)}</span>)}
       </div>
     </div>
   )

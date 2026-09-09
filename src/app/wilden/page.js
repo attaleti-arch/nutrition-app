@@ -34,7 +34,7 @@ import { usePulse } from './hooks/usePulse'
 import { badgeById } from './engine/badges'
 import { RES_NAME as RES_NAMES } from './engine/world'
 import { CaughtClip, usePreloadClip } from './ui/CaughtClip'
-import { EGG_PRICE, canBuyEgg, eggWarmth, warmthWord, variantById } from './engine/egg'
+import { EGG_PRICE, canBuyEgg, eggWarmth, warmthWord, variantName } from './engine/egg'
 import { haversine } from './engine/geo'
 import { sfxCoin, sfxTally, sfxCheer, resumeAudio } from './engine/audio'
 import 'leaflet/dist/leaflet.css'
@@ -918,7 +918,7 @@ function Stats({ g }) {
       {(g.progress.variants || []).length > 0 && (
         <div style={{ flexBasis: '100%', display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
           {g.progress.variants.map((v, i) => (
-            <span key={i} style={s.variantChip}>✨ {creatureById(v.creature)?.name} {variantById(v.variant)?.name}</span>
+            <span key={i} style={s.variantChip}>✨ {creatureById(v.creature)?.name} {variantName(v.variant, creatureById(v.creature))}</span>
           ))}
         </div>
       )}

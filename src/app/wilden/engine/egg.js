@@ -16,12 +16,14 @@ export const HATCH_M = 1500        // כמה הליכה מחממת ביצה. ~20
 // בשביל לזרוק. ליצור שיש לו קליפ לצבע (creature.variants[id]) הצבע הוא
 // דמות שלמה; לשאר — גוון על המודל, כמו קודם.
 export const VARIANTS = [
-  { id: 'gold', name: 'זהוב', p: 0.55, tint: [1.35, 1.12, 0.55], glow: [0.35, 0.22, 0.02] },
-  { id: 'night', name: 'לילה', p: 0.25, tint: [0.32, 0.34, 0.8], glow: [0.02, 0.03, 0.22] },
-  { id: 'glow', name: 'זוהר', p: 0.15, tint: [0.7, 1.2, 1.1], glow: [0.05, 0.3, 0.25] },
-  { id: 'ice', name: 'קרח', p: 0.05, tint: [0.8, 1.05, 1.3], glow: [0.15, 0.3, 0.4] },
+  { id: 'gold', name: 'זהוב', nameF: 'זהובה', p: 0.55, tint: [1.35, 1.12, 0.55], glow: [0.35, 0.22, 0.02] },
+  { id: 'night', name: 'לילה', nameF: 'לילה', p: 0.25, tint: [0.32, 0.34, 0.8], glow: [0.02, 0.03, 0.22] },
+  { id: 'glow', name: 'זוהר', nameF: 'זוהרת', p: 0.15, tint: [0.7, 1.2, 1.1], glow: [0.05, 0.3, 0.25] },
+  { id: 'ice', name: 'קרח', nameF: 'קרח', p: 0.05, tint: [0.8, 1.05, 1.3], glow: [0.15, 0.3, 0.4] },
 ]
 export const variantById = id => VARIANTS.find(v => v.id === id) || null
+// "גלי זהובה", לא "גלי זהוב": השם לפי המין של היצור.
+export const variantName = (id, creature) => { const v = variantById(id); return v ? (creature?.gender === 'f' ? v.nameF : v.name) : '' }
 
 // ── הצבע על הדמות החיה ──
 // "הצבעים בדמו מושלמים." ליצור בלי קליפ לצבע: גוון על הקליפ הרגיל

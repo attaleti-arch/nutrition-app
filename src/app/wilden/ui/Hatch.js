@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useModelViewer } from '../hooks/useModelViewer'
 import { creatureById } from '../content/creatures'
-import { variantById, tintOf } from '../engine/egg'
+import { variantById, variantName, tintOf } from '../engine/egg'
 import { sfxCatch, sfxCheer, sfxCrack, sfxHatch, buzz } from '../engine/audio'
 import { Aura } from './Aura'
 
@@ -102,7 +102,8 @@ export function Hatch({ hatched, onClose }) {
   }, [ready, variant, art, phase])
 
   if (!creature || !variant) return null
-  const name = `${creature.name} ${variant.name}`
+  const name = `${creature.name} ${variantName(variant.id, creature)}`
+  const f = creature.gender === 'f'
   const rising = phase === 'creature'
   const k = cracks / CRACKS.length
   const eggLine = cracks === 0 ? 'הביצה נסדקת…' : cracks < 3 ? 'עוד סדק…' : cracks < 5 ? 'משהו זז בפנים!' : 'עכשיו!'
@@ -175,7 +176,7 @@ export function Hatch({ hatched, onClose }) {
       <div style={S.text}>
         <p style={S.eyebrow}>{rising ? 'הביצה בקעה!' : eggLine}</p>
         {rising && <p style={S.name}>{name}</p>}
-        {rising && <p style={S.sub}>{variant.id === 'ice' ? 'נדיר מאוד. כמעט אף אחד לא ראה כזה.' : variant.id === 'night' ? 'נדיר. הוא זוהר בחושך.' : variant.id === 'glow' ? 'הסימנים שלו דולקים.' : 'הוא נוצץ.'}</p>}
+        {rising && <p style={S.sub}>{variant.id === 'ice' ? 'נדיר מאוד. כמעט אף אחד לא ראה כזה.' : variant.id === 'night' ? (f ? 'נדיר. היא זוהרת בחושך.' : 'נדיר. הוא זוהר בחושך.') : variant.id === 'glow' ? (f ? 'הסימנים שלה דולקים.' : 'הסימנים שלו דולקים.') : (f ? 'היא נוצצת.' : 'הוא נוצץ.')}</p>}
         {rising && <button onClick={onClose} style={S.cta}>לעולם</button>}
       </div>
       <style>{CSS}</style>
