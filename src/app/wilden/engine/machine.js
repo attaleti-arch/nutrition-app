@@ -6,13 +6,14 @@
 
 import { haversine, bearing, advanceWalk, progressAlong } from './geo.js'
 import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL_RADIUS } from './beacon.js'
-import { placeTarget, placeStops, revalidate, PLACE_AFTER, freshEnd } from './placement.js'
-import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS, CATCH_BONUS, placeCoinRun } from './coins.js'
+import { placeTarget, revalidate, PLACE_AFTER, freshEnd } from './placement.js'
+import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS, CATCH_BONUS } from './coins.js'
 import { mergeProgress } from './profile.js'
 import { EGG_PRICE, HATCH_M, canBuyEgg, hatch } from './egg.js'
 import { buy as buyItem, equip as equipItem } from './shop.js'
 import { grantWeekly, walkSummary } from './weekly.js'
 import { evolvedBetween } from './stages.js'
+import { routeKm, poisFor, creatureCount, placePois, setRouteKm, POI } from './plan.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest } from './world.js'
@@ -71,6 +72,8 @@ export function initial() {
       owned: [], wear: {},
       // ── בן לוויה ── מי יוצא איתך, וכמה מטרים הלכתם יחד (ראה engine/buddy.js)
       buddy: null, bond: {},
+      routeKm: null,      // אורך המסלול שההורה בחר (ק"מ); null — הלוח
+
       // ── הבונוס השבועי ── יום ראשון של השבוע שבו כבר ניתן (ראה engine/weekly.js)
       weeklyBonus: null,
       // ── להורה ── ההליכה האחרונה, ודקות בחוץ בסך הכול
@@ -138,6 +141,9 @@ export function reduce(g, ev) {
       const walks = g.progress.walks || 0
       const wallet = g.progress.coins || 0
       const extra = !!ev.extra && walks >= WALK_PLAN.extraFromWalk && wallet >= WALK_PLAN.extraCost
+      // תוכנית המסע: האורך שההורה בחר (או הלוח), ומה בדרך לפי האורך.
+      const km = routeKm(g.progress, walks)
+      const pois = poisFor(km, walks)
       return {
         ...g,
         state: S.PERMISSIONS,
@@ -149,7 +155,8 @@ export function reduce(g, ev) {
           day: ev.day,
           startedAt: ev.t,
           walkIndex: walks,
-          wantCreatures: creaturesForWalk(walks, extra, ev.available),
+          km, pois,
+          wantCreatures: creaturesForWalk(walks, extra, ev.available, creatureCount(pois)),
           home: null, path: null, pos: null, lastFix: null, walkRef: null, stillRef: null,
           acc: null, walked: 0, along: 0,
           streak: freshStreak(ev.t ?? null),      // רצף הליכה → דחף (ראה engine/streak.js)
@@ -174,10 +181,17 @@ export function reduce(g, ev) {
     case 'ROUTE_READY': {
       // מי בדרך נקבע ב-START_RUN לפי הלוח: יצור אחד, או שניים אם שולם.
       const who = ev.creatures || g.run.wantCreatures || ['nimi']
-      const stops = placeStops(ev.path, who.length, { creatures: who })
-      const coins = placeCoins(ev.path, { stops })
-      // ריצת המטבעות: נקודה אחת בשליש הראשון, רחוק מהתחנות.
-      const coinRun = placeCoinRun(ev.path, { stops, freshEndM: freshEnd(ev.path) })
+      // נקודות העניין לפי התוכנית: מטבעות קודם, היצור אחרון, מפוזרות שווה.
+      // מסע ישן בלי תוכנית, יצור שלישי בתשלום, או בדיקה שמזינה יצורים ישירות —
+      // התחנות לפי היצורים; מטבעות רק כשיש יצור אחד (אחרת צפוף מדי).
+      const kinds = g.run.pois && creatureCount(g.run.pois) === who.length ? g.run.pois
+        : who.length === 1 ? [POI.RUN, POI.GOLD, POI.CREATURE]
+        : g.run.pois ? [...g.run.pois, ...Array(who.length - creatureCount(g.run.pois)).fill(POI.CREATURE)]
+        : who.map(() => POI.CREATURE)
+      const plan = placePois(ev.path, kinds, { creatures: who, freshEndM: freshEnd(ev.path) })
+      const stops = plan.stops
+      const coins = placeCoins(ev.path, { stops, goldAlong: plan.goldAlong })
+      const coinRun = plan.coinRun
       return {
         ...g,
         state: S.SEARCH,
@@ -438,6 +452,12 @@ export function reduce(g, ev) {
       // קנו בשביל מישהו? הוא לובש מיד.
       if (ev.who && ev.slot) progress = equipItem(progress, ev.who, ev.slot, ev.id)
       return { ...g, progress }
+    }
+    // ── אורך המסלול ── ההורה בוחר קילומטרים. בבית בלבד.
+    case 'SET_ROUTE_KM': {
+      if (g.state !== S.BROKEN_WORLD) return g
+      const progress = setRouteKm(g.progress, ev.km)
+      return progress === g.progress ? g : { ...g, progress }
     }
     // ── בן לוויה ── מי יוצא איתך. בבית בלבד; רק מי שנתפס.
     case 'SET_BUDDY': {

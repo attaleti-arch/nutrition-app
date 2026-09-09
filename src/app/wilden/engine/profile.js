@@ -91,6 +91,7 @@ export function mergeProgress(local, remote) {
     ...mergeWear(base, other),
     weeklyBonus: [base.weeklyBonus, other.weeklyBonus].filter(Boolean).sort().pop() || null,
     buddy: base.buddy || other.buddy || null,
+    routeKm: base.routeKm || other.routeKm || null,
     bond: mergeMax(base.bond, other.bond),
     minutesTotal: Math.max(base.minutesTotal || 0, other.minutesTotal || 0),
     lastWalk: base.lastWalk || other.lastWalk || null,

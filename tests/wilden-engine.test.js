@@ -2089,3 +2089,67 @@ test('בן לוויה במכונה: רק בבית, ההליכה נזקפת בפ�
   const m = mergeProgress2({ ...g.progress, walks: 5 }, { ...initial().progress, bond: { nimi: 9000, tzel: 500 }, buddy: 'tzel' })
   assert.equal(m.bond.nimi, 9000); assert.equal(m.bond.tzel, 500); assert.equal(m.buddy, 'nimi')
 })
+
+// ══════════════════════════════════════════════
+// ─── תוכנית המסע: ההורה בוחר ק"מ ───
+import { ROUTE_KM, routeKm, targetM, plannedMin, poisFor, creatureCount, placePois, setRouteKm, POI } from '../src/app/wilden/engine/plan.js'
+import { placeCoins as placeCoins2 } from '../src/app/wilden/engine/coins.js'
+
+test('תוכנית: בלי בחירה — הלוח; עם בחירה — הק"מ של ההורה, וממנו הזמן ומה בדרך', () => {
+  assert.deepEqual(ROUTE_KM, [1, 1.5, 2, 3, 4])
+  assert.equal(routeKm({}, 0), 2.2); assert.equal(routeKm({ walks: 3 }), 3.2); assert.equal(routeKm({ routeKm: 1.5 }, 3), 1.5)
+  assert.equal(targetM({ routeKm: 3 }), 3000)
+  const p = setRouteKm({}, 7); assert.equal(p.routeKm, undefined, 'רק מהרשימה')
+  assert.equal(setRouteKm({}, 3).routeKm, 3)
+  assert.equal(plannedMin(1), 18); assert.equal(plannedMin(3), 55)
+  assert.deepEqual(poisFor(1, 0), ['run', 'creature']); assert.deepEqual(poisFor(1.5, 1), ['gold', 'creature'], 'לסירוגין')
+  assert.deepEqual(poisFor(2, 0), ['run', 'gold', 'creature'])
+  assert.deepEqual(poisFor(3, 0), ['run', 'creature', 'gold', 'creature']); assert.equal(creatureCount(poisFor(4, 0)), 2)
+  assert.deepEqual(poisFor(2.2, 0), ['run', 'gold', 'creature'], 'הלוח הישן: מסע 1 — יצור אחד'); assert.equal(creatureCount(poisFor(3.2, 1)), 2)
+})
+
+test('תוכנית: הנקודות מפוזרות שווה, היצור אחרון, ובמסלול צפוף מוותרים על מטבעות', () => {
+  const total = 60 * 20
+  const a = placePois(PATH, ['run', 'gold', 'creature'], { creatures: ['nimi'] })
+  assert.equal(a.stops.length, 1); assert.equal(a.stops[0].creature, 'nimi')
+  assert.ok(a.coinRun.along < a.goldAlong && a.goldAlong < a.stops[0].along, 'מטבעות קודם, היצור אחרון')
+  assert.ok(a.stops[0].along / total >= 0.7, 'היצור לקראת הסוף: ' + (a.stops[0].along / total).toFixed(2))
+  assert.ok(a.coinRun.along >= 300, 'הריצה לא ליד הבית')
+  // ארבע נקודות — על מסלול של 2.4 ק"מ (על 1.2 ק"מ זה צפוף, ואז מוותרים על הזהב)
+  const LONG = Array.from({ length: 121 }, (_, i) => destination(HOME, 0, i * 20))
+  assert.equal(placePois(PATH, ['run', 'creature', 'gold', 'creature'], { creatures: ['nimi', 'gali'] }).goldAlong, null, 'צפוף — בלי זהב')
+  const b = placePois(LONG, ['run', 'creature', 'gold', 'creature'], { creatures: ['nimi', 'gali'] })
+  assert.deepEqual(b.stops.map(s => s.creature), ['nimi', 'gali'])
+  assert.ok(b.stops[0].along > b.coinRun.along && b.goldAlong > b.stops[0].along && b.stops[1].along > b.goldAlong)
+  assert.ok(b.stops[1].along - b.stops[0].along >= 300, 'רווח בין היצורים')
+  // מסלול קצר מאוד: נשאר רק יצור
+  const short = PATH.slice(0, 21)   // 400 מ'
+  const c = placePois(short, ['run', 'gold', 'creature'])
+  assert.equal(c.stops.length, 1); assert.equal(c.coinRun, null); assert.equal(c.goldAlong, null)
+  // הזהב במקום שהתוכנית קבעה; בלי זהב בתוכנית — בלי זהב
+  const coins = placeCoins2(PATH, { stops: a.stops, goldAlong: a.goldAlong })
+  const gold = coins.find(x => x.gold); assert.ok(gold && Math.abs(gold.along - a.goldAlong) <= 45, 'הזהב על המטבע הקרוב')
+  assert.ok(!placeCoins2(PATH, { stops: a.stops, goldAlong: null }).some(x => x.gold))
+})
+
+test('תוכנית במכונה: SET_ROUTE_KM בבית בלבד, והמסע נבנה לפי התוכנית', () => {
+  let g = reduce(initial(), { type: 'SET_ROUTE_KM', km: 1 })
+  assert.equal(g.progress.routeKm, 1)
+  assert.equal(reduce(g, { type: 'SET_ROUTE_KM', km: 9 }), g)
+  g = reduce(g, { type: 'START_RUN', kind: RUN.STORY, missionId: 'm01', day: DAY, t: 0 })
+  assert.equal(g.run.km, 1); assert.deepEqual(g.run.pois, ['run', 'creature']); assert.deepEqual(g.run.wantCreatures, ['nimi'])
+  assert.equal(reduce(g, { type: 'SET_ROUTE_KM', km: 3 }), g, 'לא באמצע')
+  g = reduce(g, { type: 'PERMISSION_GRANTED', home: HOME })
+  g = reduce(g, { type: 'ROUTE_READY', path: PATH, home: HOME })
+  assert.equal(g.run.stops.length, 1); assert.ok(g.run.coinRun); assert.ok(!g.run.coins.some(c => c.gold), '1 ק"מ: ריצה בלי זהב')
+  // 3 ק"מ, מהמסע השלישי: שני יצורים, ריצה וזהב
+  let h = { ...initial(), progress: { ...initial().progress, walks: 2, routeKm: 3 } }
+  h = reduce(h, { type: 'START_RUN', kind: RUN.FREE, day: DAY, t: 0 })
+  assert.equal(h.run.wantCreatures.length, 2)
+  const LONG = Array.from({ length: 151 }, (_, i) => destination(HOME, 0, i * 20))   // 3 ק"מ, כמו שהתוכנית ביקשה
+  h = reduce(h, { type: 'PERMISSION_GRANTED', home: HOME }); h = reduce(h, { type: 'ROUTE_READY', path: LONG, home: HOME })
+  assert.equal(h.run.stops.length, 2); assert.ok(h.run.coinRun); assert.ok(h.run.coins.some(c => c.gold))
+  assert.ok(h.run.coinRun.along < h.run.stops[0].along, 'הריצה לפני היצור הראשון')
+  assert.equal(forServer(h).progress.routeKm, 3)
+  assert.equal(mergeProgress2({ ...h.progress, walks: 5 }, { ...initial().progress, routeKm: 1 }).routeKm, 3, 'הבסיס קובע')
+})

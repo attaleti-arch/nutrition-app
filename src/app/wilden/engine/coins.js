@@ -16,7 +16,9 @@ export const COLLECT_RADIUS_M = 14      // GPS של טלפון: 5–10 מ' — �
 export const STOP_CLEAR_M = 30          // בלי מטבעות על התחנה עצמה
 export const GOLD_VALUE = 10
 
-export function placeCoins(path, { stops = [], every = COIN_EVERY_M, rng = Math.random } = {}) {
+// goldAlong: איפה הזהב לפי התוכנית (engine/plan.js). undefined — הגרלה כמו
+// פעם; null — בלי זהב במסע הזה.
+export function placeCoins(path, { stops = [], every = COIN_EVERY_M, rng = Math.random, goldAlong } = {}) {
   if (!path || path.length < 2) return []
   const total = pathLength(path)
   const coins = []
@@ -27,11 +29,16 @@ export function placeCoins(path, { stops = [], every = COIN_EVERY_M, rng = Math.
     if (stops.some(s => Math.abs(s.along - at) < STOP_CLEAR_M)) continue
     coins.push({ id: 'c' + i++, lat: p.point.lat, lng: p.point.lng, along: at, value: 1, taken: false })
   }
-  // מטבע זהב: איפשהו בין 40% ל-75% מהדרך, לא על מטבע רגיל
-  if (coins.length > 6) {
-    const k = Math.floor(coins.length * (0.4 + rng() * 0.35))
-    coins[k] = { ...coins[k], id: 'gold', value: GOLD_VALUE, gold: true }
+  if (goldAlong === null) return coins
+  let k = -1
+  if (goldAlong != null && coins.length) {
+    // הזהב במקום שהתוכנית קבעה: המטבע הקרוב ביותר לשם
+    k = coins.reduce((best, c, j) => (Math.abs(c.along - goldAlong) < Math.abs(coins[best].along - goldAlong) ? j : best), 0)
+  } else if (coins.length > 6) {
+    // מטבע זהב: איפשהו בין 40% ל-75% מהדרך, לא על מטבע רגיל
+    k = Math.floor(coins.length * (0.4 + rng() * 0.35))
   }
+  if (k >= 0) coins[k] = { ...coins[k], id: 'gold', value: GOLD_VALUE, gold: true }
   return coins
 }
 
@@ -144,11 +151,15 @@ export const AVAILABLE = ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'tzel', '
 // השני — שניים בדרך תמיד: הראשון לפי הסבב, השני מהצד השני של הרשימה
 // (כך שכמעט תמיד אחד על הרצפה ואחד באוויר). המטבעות פותחים שלישי.
 export const BASE_FROM_WALK = 1
-export function creaturesForWalk(walks, extra, available = AVAILABLE) {
+// count: כמה יצורים לפי תוכנית המסע (engine/plan.js); בלי — לפי הלוח.
+export function creaturesForWalk(walks, extra, available = AVAILABLE, count = null) {
   const n = available.length
   const first = available[walks % n]
-  if (walks < BASE_FROM_WALK || n < 2) return [first]
+  const want = count ?? (walks < BASE_FROM_WALK ? 1 : 2)
+  if (n < 2 || walks < BASE_FROM_WALK) return [first]
   const second = available[(walks + Math.floor(n / 2)) % n]
+  // מסלול קצר (יצור אחד בתוכנית): מי ששילם על נוסף מקבל שני
+  if (want < 2) return extra ? [first, second] : [first]
   const out = [first, second]
   if (extra) {
     const third = available.find((c, i) => i === (walks + Math.floor(n / 4)) % n && !out.includes(c)) || available.find(c => !out.includes(c))

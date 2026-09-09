@@ -28,6 +28,7 @@ import { Book, Badges } from './ui/Book'
 import { Shop } from './ui/Shop'
 import { weeklyStatus, WEEKLY_COINS, km } from './engine/weekly'
 import { bondOf, buddyLine, BOND_M } from './engine/buddy'
+import { ROUTE_KM, routeKm, poisFor, creatureCount, plannedMsKm, plannedMin } from './engine/plan'
 import { boosting, streakFill, boostLeftMs, BOOST_REVEAL } from './engine/streak'
 import { usePulse } from './hooks/usePulse'
 import { badgeById } from './engine/badges'
@@ -131,7 +132,7 @@ export default function Wilden() {
     if (g.state !== S.ROUTE_BUILDING || !g.run?.home) return
     let dead = false
     // אורך הלולאה לפי הלוח: 30 דקות בפעם הראשונה, 45 אחר כך.
-    route.build(g.run.home, loopTargetM(g.run.walkIndex || 0)).then(path => {
+    route.build(g.run.home, g.run.km ? Math.round(g.run.km * 1000) : loopTargetM(g.run.walkIndex || 0)).then(path => {
       if (dead) return
       if (path) dispatch({ type: 'ROUTE_READY', path, home: g.run.home, t: Date.now() })
       else dispatch({ type: 'ROUTE_FAILED' })
@@ -278,7 +279,8 @@ export default function Wilden() {
           <BrokenWorld g={g} today={today} onStart={startRun} onEgg={() => { sfxAppear(); dispatch({ type: 'BUY_EGG', t: Date.now() }) }} onQuest={id => dispatch({ type: 'COMPLETE_QUEST', id })}
             onBuy={(id, who, slot) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_ITEM', id, who, slot }) }}
             onEquip={(who, slot, id) => { sfxAppear(); dispatch({ type: 'EQUIP', who, slot, id }) }}
-            onBuddy={id => { sfxAppear(); dispatch({ type: 'SET_BUDDY', id }) }} P={P} />
+            onBuddy={id => { sfxAppear(); dispatch({ type: 'SET_BUDDY', id }) }}
+            onKm={km => dispatch({ type: 'SET_ROUTE_KM', km })} P={P} />
         )}
 
         {g.state === S.PERMISSIONS && (
@@ -527,10 +529,23 @@ function atHome(run) {
 }
 
 // ── עולם הבית ההרוס ──
-function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onBuddy, P }) {
+// מה בדרך, במילים של ילד
+function poisText(pois) {
+  const n = pois.filter(k => k === 'creature').length
+  const parts = [n === 1 ? 'יצור אחד' : `${n} יצורים`]
+  if (pois.includes('run')) parts.push('ריצת מטבעות')
+  if (pois.includes('gold')) parts.push('קפיצה לזהב')
+  return parts.join(' · ')
+}
+
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onBuddy, onKm, P }) {
   const [panel, setPanel] = useState(null)   // book | badges | shop
   const week = weeklyStatus(g.progress, today)
   const buddy = creatureById(g.progress.buddy)
+  // routeLen ולא km: km הוא פורמט המרחק (engine/weekly) שמשמש כאן למטה.
+  const routeLen = routeKm(g.progress, g.progress.walks || 0)
+  const pois = poisFor(routeLen, g.progress.walks || 0)
+  const nCreatures = creatureCount(pois)
   const storyOpen = canStartStory(g.progress, today)
   const first = g.progress.missionsCompleted === 0
   const walks = g.progress.walks || 0
@@ -597,9 +612,22 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onBudd
       {/* הלוח של הבן שלה: מסע 1 — 30 דקות ונימי. אחר כך 45 דקות ושניים
           בדרך. מהשלישי — מטבעות פותחים יצור שלישי. */}
       <div style={s.plan}>
-        <span>🚶 {walks === 0 ? '30 דק׳' : '45 דק׳'}</span>
+        <span>🚶 {routeLen} ק״מ · ~{plannedMin(routeLen)} דק׳</span>
         <span>🪙 <b>{g.progress.coins || 0}</b></span>
-        <span>{walks === 0 ? 'יצור אחד בדרך' : `${(brief.creatures || []).map(id => creatureById(id)?.name).filter(Boolean).join(' ו') || who?.name || 'יצורים'} בדרך`}</span>
+        <span>{`${(brief.creatures || []).map(id => creatureById(id)?.name).filter(Boolean).slice(0, nCreatures).join(' ו') || who?.name || 'יצורים'} בדרך`}</span>
+      </div>
+
+      {/* להורה: אורך המסלול. במקום לנחש — 1 עד 4 ק"מ, וממנו הזמן ומה בדרך. */}
+      <div style={s.kmRow} aria-label="אורך המסלול">
+        <p style={s.kmTitle}>להורה · אורך המסלול</p>
+        <div style={s.kmPick}>
+          {ROUTE_KM.map(k => (
+            <button key={k} onClick={() => onKm(k)} style={{ ...s.kmChip, borderColor: g.progress.routeKm === k ? C.amber : C.line, background: g.progress.routeKm === k ? 'rgba(229,163,66,.18)' : C.card, color: g.progress.routeKm === k ? C.amber : C.ink }}>
+              {k} ק״מ
+            </button>
+          ))}
+        </div>
+        <p style={s.kmHint}>{poisText(pois)}{g.progress.routeKm ? '' : ' · לא נבחר: לפי הלוח'}</p>
       </div>
 
       {storyOpen ? (
@@ -672,7 +700,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
   // ── טיימר לאחור ──
   const [now, setNow] = useState(Date.now())
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id) }, [])
-  const left = timeLeftMs(r.walkStartedAt, plannedMs(r.walkIndex || 0), now)
+  const left = timeLeftMs(r.walkStartedAt, r.km ? plannedMsKm(r.km) : plannedMs(r.walkIndex || 0), now)
   // ── מילות עידוד ──
   // כל 10 מטבעות, וחצי הדרך. מופיע לכמה שניות מעל המפה ונעלם.
   const [toast, setToast] = useState(null)
@@ -993,6 +1021,11 @@ const s = {
     boxShadow: '0 4px 14px rgba(240,192,105,.35)', animation: 'wildenCoinPop .5s ease-out' },
   weekly: { display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: C.muted, margin: '0 0 14px', padding: '8px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
   buddyRow: { margin: '0 0 12px', padding: '10px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
+  kmRow: { margin: '0 0 12px', padding: '10px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
+  kmTitle: { margin: '0 0 8px', fontSize: 12.5, fontWeight: 800, letterSpacing: '.08em', color: C.faint },
+  kmPick: { display: 'flex', gap: 6 },
+  kmChip: { flex: 1, padding: '8px 4px', borderRadius: 10, border: '1.5px solid', fontFamily: 'inherit', fontSize: 14, fontWeight: 800, cursor: 'pointer' },
+  kmHint: { margin: '8px 0 0', fontSize: 13, color: C.muted },
   buddyTitle: { margin: '0 0 8px', fontSize: 14.5, color: C.muted },
   buddyPick: { display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 },
   buddyChip: { flex: 'none', width: 48, height: 48, borderRadius: 12, border: '2px solid', display: 'grid', placeItems: 'center', padding: 3, cursor: 'pointer' },
