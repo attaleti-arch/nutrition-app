@@ -130,6 +130,10 @@ export const CREATURES = {
   },
   lumi: {
     id: 'lumi', name: 'לומי',
+    stages: {
+      2: { live: '/creatures/lumi/s2/live.webp', clip: '/creatures/lumi/s2/caught.mp4',
+        anchors: { head: { x: 65, y: 27, h: 7 }, face: { x: 66, y: 33, h: 4 } } },
+    },
     // שועל-אור עם זנב נוצות. המודל שלה מ-Meshy (18.4MB → 2.2MB). על הרצפה,
     // עקבות כמו נימי.
     model: '/creatures/lumi/lumi.glb',
@@ -149,6 +153,10 @@ export const CREATURES = {
   },
   gali: {
     id: 'gali', name: 'גלי', gender: 'f',
+    stages: {
+      2: { live: '/creatures/gali/s2/live.webp', clip: '/creatures/gali/s2/caught.mp4',
+        anchors: { head: { x: 51, y: 22, h: 8 }, face: { x: 51, y: 29, h: 5 } } },
+    },
     // יצור מים, כולו גל. המודל שלה מ-Meshy (16.9MB → 1.6MB). על הרצפה,
     // עקבות רטובות.
     model: '/creatures/gali/gali.glb',
