@@ -1987,12 +1987,12 @@ test('שלבים: 3 תפיסות = בוגר, 7 = אגדי; נגזר מהמונה
 })
 
 test('שלבים: יצור בשלב — אותה דמות גדולה יותר עם הילה, או הדמות של השלב אם יש', () => {
-  // צל: עוד אין לו דמות לשלב — אותה דמות, גדולה, עם הילה
-  assert.ok(!CREATURES.tzel.stages, 'הבדיקה מניחה שלצל עוד אין שלבים')
-  const g1 = staged(CREATURES.tzel, 1), g2 = staged(CREATURES.tzel, 2), g3 = staged(CREATURES.tzel, 3)
+  // קראג: עוד אין לו דמות לשלב — אותה דמות, גדולה, עם הילה
+  assert.ok(!CREATURES.kraag.stages, 'הבדיקה מניחה שלקראג עוד אין שלבים')
+  const g1 = staged(CREATURES.kraag, 1), g2 = staged(CREATURES.kraag, 2), g3 = staged(CREATURES.kraag, 3)
   assert.equal(g1.aura, false); assert.equal(g2.aura, true); assert.equal(g3.stage, 3)
-  assert.equal(g2.live, CREATURES.tzel.live, 'בלי חומר לשלב — הדמות הבסיסית')
-  assert.ok(Math.abs(g2.heightM / CREATURES.tzel.heightM - stageScale(2)) < 1e-9)
+  assert.equal(g2.live, CREATURES.kraag.live, 'בלי חומר לשלב — הדמות הבסיסית')
+  assert.ok(Math.abs(g2.heightM / CREATURES.kraag.heightM - stageScale(2)) < 1e-9)
   assert.ok(sizeOf2(g3) > sizeOf2(g2) && sizeOf2(g2) > sizeOf2(g1), 'גדל על הבמה')
   assert.ok(sizeOf2(staged(CREATURES.bolder, 3)) <= 2.4, 'בולדר האגדי עדיין נכנס למסך')
   // נימי: יש דמות לשלב 2 (הקליפ שלה) — מתחלפת, בלי הילה, ובלי המודל של הגור

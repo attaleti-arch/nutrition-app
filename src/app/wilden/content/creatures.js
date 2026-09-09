@@ -179,6 +179,12 @@ export const CREATURES = {
   },
   tzel: {
     id: 'tzel', name: 'צל',
+    // שלב 2: שועל שחור על רקע כמעט שחור — נחתך לפי גוון (הרקע ירקרק, הוא
+    // אפור-סגול) ובהירות, לא לפי צבע. לפעם הבאה: רקע בהיר יותר לצל.
+    stages: {
+      2: { live: '/creatures/tzel/s2/live.webp', clip: '/creatures/tzel/s2/caught.mp4',
+        anchors: { head: { x: 62, y: 29, h: 8 }, face: { x: 63, y: 37, h: 4 } } },
+    },
     // שועל צללים סגול, הזנב זוהר. המודל שלה מ-Meshy (16.3MB → 1.8MB). על
     // הרצפה, עקבות. הצל שלו הוא מה שהוא משאיר.
     model: '/creatures/tzel/tzel.glb',
