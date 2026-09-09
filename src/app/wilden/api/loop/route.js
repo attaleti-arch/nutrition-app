@@ -12,7 +12,12 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 20
 
-const URL_ORS = 'https://api.openrouteservice.org/v2/directions/foot-walking/geojson'
+// הכתובת החדשה קודם: "We are deprecating the URL api.openrouteservice.org in
+// favour of api.heigit.org" (מהלוח שלה). הישנה נשארת גיבוי עד שתיכבה.
+const URLS = [
+  'https://api.heigit.org/ors/v2/directions/foot-walking/geojson',
+  'https://api.openrouteservice.org/v2/directions/foot-walking/geojson',
+]
 const TIMEOUT_MS = 15000
 const cache = new Map()
 const EDGE = 'public, max-age=3600, s-maxage=604800, stale-while-revalidate=2592000'
@@ -35,30 +40,38 @@ export async function GET(req) {
   const hit = cache.get(k)
   if (hit) return Response.json(hit, { headers: { 'x-cache': 'hit', 'cache-control': EDGE } })
 
-  const ctl = new AbortController()
-  const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS)
+  const body = JSON.stringify(orsBody({ lat, lng }, m, seed))
   const t0 = Date.now()
-  try {
-    const res = await fetch(URL_ORS, {
-      method: 'POST', signal: ctl.signal,
-      headers: { 'content-type': 'application/json', accept: 'application/geo+json, application/json', authorization: key },
-      body: JSON.stringify(orsBody({ lat, lng }, m, seed)),
-    })
-    if (!res.ok) {
-      const text = await res.text().catch(() => '')
-      console.error(`loop fail http=${res.status} ms=${Date.now() - t0} ${text.slice(0, 200)}`)
-      return Response.json({ error: 'ors ' + res.status }, { status: 502, headers: { 'cache-control': 'no-store' } })
+  let last = 'network'
+  for (const url of URLS) {
+    const ctl = new AbortController()
+    const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS)
+    try {
+      const res = await fetch(url, {
+        method: 'POST', signal: ctl.signal,
+        headers: { 'content-type': 'application/json', accept: 'application/geo+json, application/json', authorization: key },
+        body,
+      })
+      if (!res.ok) {
+        const text = await res.text().catch(() => '')
+        console.error(`loop fail url=${new URL(url).host} http=${res.status} ms=${Date.now() - t0} ${text.slice(0, 200)}`)
+        last = 'ors ' + res.status
+        // 401/403 = המפתח, לא הכתובת. אין טעם לנסות כתובת אחרת.
+        if (res.status === 401 || res.status === 403) break
+        continue
+      }
+      const parsed = parseOrs(await res.json())
+      if (!parsed.ok) { last = parsed.reason; continue }
+      const out = { path: parsed.path, meters: parsed.meters, source: 'ors' }
+      cache.set(k, out)
+      console.log(`loop ok url=${new URL(url).host} ms=${Date.now() - t0} m=${parsed.meters} n=${parsed.path.length}`)
+      return Response.json(out, { headers: { 'x-cache': 'miss', 'cache-control': EDGE } })
+    } catch (e) {
+      last = e?.name === 'AbortError' ? 'timeout' : 'network'
+      console.error(`loop fail url=${new URL(url).host} ${last} ms=${Date.now() - t0}`)
+    } finally {
+      clearTimeout(timer)
     }
-    const parsed = parseOrs(await res.json())
-    if (!parsed.ok) return Response.json({ error: parsed.reason }, { status: 502, headers: { 'cache-control': 'no-store' } })
-    const body = { path: parsed.path, meters: parsed.meters, source: 'ors' }
-    cache.set(k, body)
-    console.log(`loop ok ms=${Date.now() - t0} m=${parsed.meters} n=${parsed.path.length}`)
-    return Response.json(body, { headers: { 'x-cache': 'miss', 'cache-control': EDGE } })
-  } catch (e) {
-    console.error(`loop fail ${e?.name || 'error'} ms=${Date.now() - t0}`)
-    return Response.json({ error: e?.name === 'AbortError' ? 'timeout' : 'network' }, { status: 502, headers: { 'cache-control': 'no-store' } })
-  } finally {
-    clearTimeout(timer)
   }
+  return Response.json({ error: last }, { status: 502, headers: { 'cache-control': 'no-store' } })
 }
