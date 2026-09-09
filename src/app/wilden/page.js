@@ -17,7 +17,7 @@ import { useRoute } from './hooks/useRoute'
 import { MiniMap } from './ui/MiniMap'
 import { turnsFor, nextCue, cueText, floorCue, cueGlyph, timeLeftMs, fmtClock } from './engine/turns'
 import { pathLength } from './engine/geo'
-import { loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, coinRunNearby, plannedMs, AVAILABLE } from './engine/coins'
+import { heatDistance, loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, coinRunNearby, plannedMs, AVAILABLE } from './engine/coins'
 import { cheer, milestone } from './content/cheers'
 import { GoldStage } from './ar/GoldStage'
 import { CoinRun } from './ar/CoinRun'
@@ -754,7 +754,8 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
   // ── חם־קר ──
   // הסימן על המפה נחשף רק כשמתחממים (מתחת ל-320 מ'). עד אז: מסלול, רחובות,
   // ומד חום שמתחזק. סיכה מהרגע הראשון הורגת את המתח.
-  const heat = r.target && !r.resolved ? heatOf(distToTarget) : null
+  const heatDist = heatDistance(distToTarget, toTarget)
+  const heat = r.target && !r.resolved ? heatOf(heatDist) : null
   // דחף: ארבע דקות בלי לעצור. מטבעות כפולים, והיצור מתגלה מרחוק יותר.
   const boost = boosting(r.streak, now)
   const fill = boost ? 1 : streakFill(r.streak, now)
@@ -775,7 +776,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [buddyKey])
   // רעידה בדופק כשמתקרבים לתחנה (מ-100 מ'): לאט, ואז מהר. כמו גלאי מתכות.
-  usePulse(!homeward && heat && distToTarget != null && distToTarget < 100 ? distToTarget : null,
+  usePulse(!homeward && heat && heatDist != null && heatDist < 100 ? heatDist : null,
     { base: 300, perM: 18, near: 350, far: 2000 })
 
   return (

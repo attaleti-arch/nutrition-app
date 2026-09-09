@@ -120,6 +120,14 @@ export const HEAT = [
   { max: 1000, key: 'COOL', word: 'קריר', t: 0.28 },
   { max: Infinity, key: 'COLD', word: 'קר', t: 0.12 },
 ]
+// המרחק שהחום מודד: לאורך המסלול, לא בקו אווירי. בלולאה של 1.6 ק"מ התחנה
+// יכולה להיות 120 מ' מהבית בקו ישר וקילומטר בהליכה — והמד הראה "חם מאוד"
+// ברגע היציאה. "תחילת המסע חייב להתחיל בקר." לוקחים את הגדול מבין השניים.
+export function heatDistance(straightM, alongM) {
+  if (straightM == null) return alongM == null ? null : alongM
+  if (alongM == null || alongM <= 0) return straightM
+  return Math.max(straightM, alongM)
+}
 export function heatOf(distM) {
   if (distM == null) return { key: 'NONE', word: '', t: 0 }
   return HEAT.find(h => distM <= h.max)

@@ -2319,3 +2319,16 @@ test('סקינים במכונה: בבית בלבד; אבן שמגדילה פות
   assert.equal(reduce(walking, { type: 'BUY_SKIN', creature: 'nimi', skin: 'lava' }), walking)
   assert.deepEqual(forServer(g).progress.skins, { nimi: ['forest'] }); assert.equal(forServer(g).progress.stones.nimi, 1)
 })
+
+test('חם-קר: מודד לאורך המסלול, לא בקו אווירי — היציאה מהבית תמיד קרה', async () => {
+  const { heatDistance, heatOf } = await import('../src/app/wilden/engine/coins.js')
+  // הבית 120 מ' מהתחנה בקו ישר, אבל 1100 מ' בהליכה לאורך הלולאה
+  assert.equal(heatDistance(120, 1100), 1100)
+  assert.equal(heatOf(heatDistance(120, 1100)).key, 'COLD')
+  // ליד התחנה שניהם קטנים — חם
+  assert.equal(heatOf(heatDistance(40, 50)).key, 'BURNING')
+  // אחרי שעברו את התחנה (along שלילי) — קו אווירי בלבד
+  assert.equal(heatDistance(300, -50), 300)
+  assert.equal(heatDistance(null, 500), 500)
+  assert.equal(heatDistance(null, null), null)
+})
