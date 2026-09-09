@@ -14,10 +14,16 @@ export const maxDuration = 20
 
 // הכתובת החדשה קודם: "We are deprecating the URL api.openrouteservice.org in
 // favour of api.heigit.org" (מהלוח שלה). הישנה נשארת גיבוי עד שתיכבה.
+// המפתחות החדשים של HeiGIT (JWT, "ey...") נדחים בכתובת הישנה ("Access to this
+// API has been disallowed"), והנתיב החדש לא מתועד בבירור — אז כמה מועמדים,
+// והראשון שעונה נשמר לשאר הבקשות של המופע.
 const URLS = [
+  'https://api.heigit.org/v2/directions/foot-walking/geojson',
   'https://api.heigit.org/ors/v2/directions/foot-walking/geojson',
+  'https://api.heigit.org/openrouteservice/v2/directions/foot-walking/geojson',
   'https://api.openrouteservice.org/v2/directions/foot-walking/geojson',
 ]
+let known = null
 const TIMEOUT_MS = 15000
 const cache = new Map()
 const EDGE = 'public, max-age=3600, s-maxage=604800, stale-while-revalidate=2592000'
@@ -44,7 +50,7 @@ export async function GET(req) {
   const body = JSON.stringify(orsBody({ lat, lng }, m, seed))
   const t0 = Date.now()
   let last = 'network'
-  for (const url of URLS) {
+  for (const url of (known ? [known, ...URLS.filter(u => u !== known)] : URLS)) {
     const ctl = new AbortController()
     const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS)
     try {
@@ -57,12 +63,11 @@ export async function GET(req) {
         const text = await res.text().catch(() => '')
         console.error(`loop fail url=${new URL(url).host} http=${res.status} ms=${Date.now() - t0} ${text.slice(0, 200)}`)
         last = 'ors ' + res.status
-        // 401/403 = המפתח, לא הכתובת. אין טעם לנסות כתובת אחרת.
-        if (res.status === 401 || res.status === 403) break
         continue
       }
       const parsed = parseOrs(await res.json())
       if (!parsed.ok) { last = parsed.reason; continue }
+      known = url
       const out = { path: parsed.path, meters: parsed.meters, source: 'ors' }
       cache.set(k, out)
       console.log(`loop ok url=${new URL(url).host} ms=${Date.now() - t0} m=${parsed.meters} n=${parsed.path.length}`)
