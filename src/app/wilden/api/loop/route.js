@@ -54,24 +54,33 @@ export async function GET(req) {
   const body = JSON.stringify(orsBody({ lat, lng }, m, seed))
   const t0 = Date.now()
   let last = 'network'
-  for (const url of (known ? [known, ...URLS.filter(u => u !== known)] : URLS)) {
+  // שלוש צורות לשלוח את המפתח: כותרת רגילה, Bearer, ופרמטר api_key. הישנה
+  // מקבלת את הראשונה; לא ברור מה החדשה מצפה, אז מנסים עד שאחת עונה.
+  const AUTHS = [
+    u => [u, { authorization: key }],
+    u => [u, { authorization: 'Bearer ' + key }],
+    u => [u + (u.includes('?') ? '&' : '?') + 'api_key=' + encodeURIComponent(key), {}],
+  ]
+  const tries = []
+  for (const url of (known ? [known, ...URLS.filter(u => u !== known)] : URLS)) for (const a of AUTHS) tries.push(a(url))
+  for (const [url, auth] of tries) {
     const ctl = new AbortController()
     const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS)
     try {
       const res = await fetch(url, {
         method: 'POST', signal: ctl.signal,
-        headers: { 'content-type': 'application/json', accept: 'application/geo+json, application/json', authorization: key },
+        headers: { 'content-type': 'application/json', accept: 'application/geo+json, application/json', ...auth },
         body,
       })
       if (!res.ok) {
         const text = await res.text().catch(() => '')
-        console.error(`loop fail url=${new URL(url).host} http=${res.status} ms=${Date.now() - t0} ${text.slice(0, 200)}`)
+        console.error(`loop fail url=${new URL(url).host}${auth.authorization ? (auth.authorization.startsWith('Bearer') ? ' bearer' : ' header') : ' param'} http=${res.status} ms=${Date.now() - t0} ${text.slice(0, 200)}`)
         last = 'ors ' + res.status
         continue
       }
       const parsed = parseOrs(await res.json())
       if (!parsed.ok) { last = parsed.reason; continue }
-      known = url
+      known = url.split('?')[0]
       const out = { path: parsed.path, meters: parsed.meters, source: 'ors' }
       cache.set(k, out)
       console.log(`loop ok url=${new URL(url).host} ms=${Date.now() - t0} m=${parsed.meters} n=${parsed.path.length}`)
