@@ -155,6 +155,23 @@ export function sfxTally(i, n) {
 }
 
 // ── כל הכבוד ──
+// ── הביצה ──
+// סדק: נקישה יבשה, חזקה יותר בכל פעם (k 0..1). בקיעה: שאיבה של אוויר,
+// עלייה, ואז נצנוץ — האור שממנו היצור עולה.
+export function sfxCrack(k = 0.5) {
+  if (muted) return
+  noise({ dur: 0.07 + 0.06 * k, freq: 1400 + 1200 * k, q: 1.6, vol: 0.12 + 0.22 * k })
+  tone({ freq: 220 + 80 * k, glideTo: 90, dur: 0.09, type: 'triangle', vol: 0.14 + 0.1 * k })
+  if (k > 0.6) noise({ dur: 0.25, freq: 300, q: 0.7, vol: 0.12, delay: 0.03 })   // הביצה מתנדנדת על האבן
+}
+export function sfxHatch() {
+  if (muted) return
+  noise({ dur: 0.55, freq: 2600, q: 0.5, vol: 0.16 })                             // ווש
+  tone({ freq: 240, glideTo: 1320, dur: 0.55, type: 'sine', vol: 0.22 })          // עלייה
+  ;[1568, 2093, 2637, 3136].forEach((f, i) => tone({ freq: f, dur: 0.5, type: 'sine', vol: 0.07, delay: 0.35 + i * 0.09 }))
+  tone({ freq: 1046, dur: 0.9, type: 'triangle', vol: 0.12, delay: 0.7 })         // פעמון
+}
+
 export function sfxCheer() {
   const notes = [783.99, 987.77, 1174.66]
   notes.forEach((f, i) => tone({ freq: f, dur: 0.22, type: 'triangle', vol: 0.14, delay: i * 0.08 }))
