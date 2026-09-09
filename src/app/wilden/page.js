@@ -278,13 +278,15 @@ export default function Wilden() {
         {g.state === S.BROKEN_WORLD && !P.loaded && (
           <p style={{ color: C.muted, textAlign: 'center' }}>רגע…</p>
         )}
-        {g.state === S.BROKEN_WORLD && P.needsGate && !P.switching && intro && (
+        {/* הפתיחה: לכל מי שפותח את המשחק בפעם הראשונה על הטלפון הזה — גם מי
+            שכבר יש לו שם. פעם אחת, ואפשר לראות שוב מהשורה של השחקן. */}
+        {g.state === S.BROKEN_WORLD && P.loaded && !P.switching && intro && (
           <Intro onDone={() => setIntro(false)} />
         )}
         {g.state === S.BROKEN_WORLD && P.needsGate && (P.switching || intro === false) && (
           <ProfileGate P={P} switching={P.switching} />
         )}
-        {g.state === S.BROKEN_WORLD && P.loaded && !P.needsGate && (
+        {g.state === S.BROKEN_WORLD && P.loaded && !P.needsGate && intro !== true && (
           <BrokenWorld g={g} today={today} onStart={startRun} onEgg={() => { sfxAppear(); dispatch({ type: 'BUY_EGG', t: Date.now() }) }} onQuest={id => dispatch({ type: 'COMPLETE_QUEST', id })}
             onBuy={(id, who, slot) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_ITEM', id, who, slot }) }}
             onEquip={(who, slot, id) => { sfxAppear(); dispatch({ type: 'EQUIP', who, slot, id }) }}
@@ -293,7 +295,7 @@ export default function Wilden() {
             onLook={(id, look) => { sfxAppear(); dispatch({ type: 'SET_LOOK', id, look }) }}
             onGear={(id, pay) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_GEAR', id, pay }) }}
             onSkin={(creature, skin) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_SKIN', creature, skin }) }}
-            onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }} P={P} />
+            onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }} P={P} onIntro={() => setIntro(true)} />
         )}
 
         {g.state === S.PERMISSIONS && (
@@ -554,7 +556,7 @@ function poisText(pois) {
   return parts.join(' · ')
 }
 
-function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onKm, onLook, P }) {
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onKm, onLook, P, onIntro }) {
   const [panel, setPanel] = useState(null)   // book | badges | shop
   const week = weeklyStatus(g.progress, today)
   const buddy = creatureById(g.progress.buddy)
@@ -574,7 +576,7 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
   return (
     <>
       <p style={s.eyebrow}>WILDEN</p>
-      {P && <ProfileBar P={P} />}
+      {P && <ProfileBar P={P} onIntro={onIntro} />}
       <h1 style={s.h1}>{first ? 'העולם שלך נשבר.' : 'העולם שלך חוזר לאט.'}</h1>
       <p style={s.lede}>
         {first

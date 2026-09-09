@@ -58,7 +58,7 @@ function errText(e) {
 }
 
 // ── שורת השחקן במסך הבית ──
-export function ProfileBar({ P }) {
+export function ProfileBar({ P, onIntro }) {
   const p = P.profile
   if (!p) return null
   const st = !P.server ? 'שמור בטלפון בלבד' : P.sync.ok ? 'שמור בענן' : P.sync.reason === 'never' ? 'עוד לא נשמר בענן' : 'לא הצלחנו לשמור בענן'
@@ -69,6 +69,7 @@ export function ProfileBar({ P }) {
       <span>קוד <b style={s.codeChip}>{p.code}</b></span>
       <span style={{ color: col }}>{st}</span>
       <button onClick={P.switchPlayer} style={s.link}>להחליף שחקן</button>
+      {onIntro && <button onClick={onIntro} style={s.link}>הפתיחה</button>}
     </div>
   )
 }
