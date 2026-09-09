@@ -149,7 +149,7 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
           שלה כשתגיע (img); עד אז — ציור. */}
       {buildings(progress).filter(b => b.built).map(b => (
         <div key={b.id} style={{ ...W.building, left: `${b.spot.x}%`, top: `${b.spot.y}%`, width: `${b.spot.w}%` }} aria-label={b.name}>
-          {b.img ? <img src={b.img} alt="" style={{ width: '100%', display: 'block' }} draggable={false} /> : <BuildingGlow id={b.id} />}
+          {b.img ? <img src={b.live || b.img} alt="" style={{ width: '100%', display: 'block' }} draggable={false} /> : <BuildingGlow id={b.id} />}
           <span style={W.buildingTag}>{RES_ICON[b.product]} +1 בכל מסע</span>
         </div>
       ))}

@@ -124,9 +124,9 @@ export function creatureLine(id, seed = 0) {
 // "7 דבורים = הכוורת עובדת." תפיסות חוזרות בונות נחיל, והנחיל בונה מבנה
 // שמייצר משאב בכל מסע. הכוורת ראשונה; השאר כשהתמונות שלה יגיעו (img).
 export const BUILDINGS = [
-  { id: 'hive', name: 'כוורת', creature: 'dabashon', need: 7, product: 'honey', spot: { x: 15, y: 60, w: 24 }, img: '/world/buildings/hive.webp',
+  { id: 'hive', name: 'כוורת', creature: 'dabashon', need: 7, product: 'honey', spot: { x: 15, y: 60, w: 24 }, img: '/world/buildings/hive.webp', live: '/world/buildings/hive-live.webp',
     line: 'שבע דבורים — והכוורת עובדת. דבש בכל מסע.' },
-  { id: 'pond', name: 'שלולית', creature: 'gali', need: 7, product: 'water', spot: { x: 62, y: 89, w: 26 }, img: '/world/buildings/pond.webp',
+  { id: 'pond', name: 'שלולית', creature: 'gali', need: 7, product: 'water', spot: { x: 62, y: 89, w: 26 }, img: '/world/buildings/pond.webp', live: '/world/buildings/pond-live.webp',
     line: 'שבע גלי — והשלולית מלאה. מים בכל מסע.' },
   { id: 'quarry', name: 'ערמת אבנים', creature: 'bolder', need: 7, product: 'stone', spot: { x: 88, y: 72, w: 30 }, img: '/world/buildings/quarry.webp',
     line: 'שבעה בולדר — וערמת האבנים גדלה. אבן בכל מסע.' },
