@@ -112,6 +112,10 @@ export const CREATURES = {
   },
   ruchi: {
     id: 'ruchi', name: 'רוחי',
+    stages: {
+      2: { live: '/creatures/ruchi/s2/live.webp', clip: '/creatures/ruchi/s2/caught.mp4',
+        anchors: { head: { x: 56, y: 29, h: 6 }, face: { x: 56, y: 35, h: 3 } } },
+    },
     // ציפור רוח, כחול-זהב. המודל שלה מ-Meshy (19.5MB → 1.9MB, 60K משולשים,
     // 1K WebP). באוויר, גבוה יותר מדבשון.
     model: '/creatures/ruchi/ruchi.glb',
