@@ -17,9 +17,9 @@ export const maxDuration = 20
 // המפתחות החדשים של HeiGIT (JWT, "ey...") נדחים בכתובת הישנה ("Access to this
 // API has been disallowed"), והנתיב החדש לא מתועד בבירור — אז כמה מועמדים,
 // והראשון שעונה נשמר לשאר הבקשות של המופע.
+// נבדק מול השרת: /openrouteservice/v2/... הוא הנתיב בכתובת החדשה (שאר
+// הנתיבים מחזירים 404 של nginx).
 const URLS = [
-  'https://api.heigit.org/v2/directions/foot-walking/geojson',
-  'https://api.heigit.org/ors/v2/directions/foot-walking/geojson',
   'https://api.heigit.org/openrouteservice/v2/directions/foot-walking/geojson',
   'https://api.openrouteservice.org/v2/directions/foot-walking/geojson',
 ]
@@ -34,6 +34,10 @@ export async function GET(req) {
   if (!key) return Response.json({ error: 'no key' }, { status: 404, headers: { 'cache-control': 'no-store' } })
 
   const u = new URL(req.url)
+  // אבחון בלי לחשוף את המפתח: אורך, ואם הודבק הטקסט המוסתר ("ey***…") במקום המפתח.
+  if (u.searchParams.get('diag') === '1') {
+    return Response.json({ keyLen: key.length, masked: key.includes('*'), startsWith: key.slice(0, 2), endsWith: key.slice(-1) }, { headers: { 'cache-control': 'no-store' } })
+  }
   const lat = Number(u.searchParams.get('lat'))
   const lng = Number(u.searchParams.get('lng'))
   const m = Number(u.searchParams.get('m') || 2200)
