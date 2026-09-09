@@ -33,16 +33,11 @@ const GUARDIAN = { x: 52, y: 41, h: 24 }
 const SWARM_OFFS = [[-9, -3, 0.45], [9, -2, 0.45], [-14, 4, 0.4], [14, 5, 0.4], [-5, 7, 0.5], [6, 8, 0.5]]
 const SWARM_BUDGET = 12
 
-// כוורת מצוירת, עד שהתמונה שלה תגיע
-function HiveSvg() {
-  return (
-    <svg viewBox="0 0 100 110" style={{ display: 'block', width: '100%', filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5))' }} aria-hidden="true">
-      <path d="M50 4 Q10 6 12 28 Q6 34 12 46 Q6 54 12 66 Q6 74 14 84 Q20 100 50 104 Q80 100 86 84 Q94 74 88 66 Q94 54 88 46 Q94 34 88 28 Q90 6 50 4 Z" fill="#E9B44C" />
-      <path d="M12 28 H88 M12 46 H88 M12 66 H88 M14 84 H86" stroke="#B8842A" strokeWidth="4" />
-      <ellipse cx="50" cy="76" rx="9" ry="8" fill="#3A2A1A" />
-      <path d="M40 60 L50 52 L60 60 L56 68 L44 68 Z" fill="#F7D27A" opacity=".7" />
-    </svg>
-  )
+// עד שתמונת המבנה תגיע: רק הילה חמה במקום שלו (הנחיל מסביב עושה את העבודה)
+const GLOW = { hive: 'rgba(240,192,105,.55)', pond: 'rgba(120,200,240,.5)', quarry: 'rgba(200,170,140,.5)', nest: 'rgba(180,230,255,.5)' }
+function BuildingGlow({ id }) {
+  const c = GLOW[id] || GLOW.hive
+  return <div aria-hidden="true" style={{ width: '100%', aspectRatio: '1', borderRadius: '50%', background: `radial-gradient(circle, ${c} 0%, transparent 65%)` }} />
 }
 
 export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
@@ -154,7 +149,7 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
           שלה כשתגיע (img); עד אז — ציור. */}
       {buildings(progress).filter(b => b.built).map(b => (
         <div key={b.id} style={{ ...W.building, left: `${b.spot.x}%`, top: `${b.spot.y}%`, width: `${b.spot.w}%` }} aria-label={b.name}>
-          {b.img ? <img src={b.img} alt="" style={{ width: '100%', display: 'block' }} draggable={false} /> : b.id === 'hive' ? <HiveSvg /> : null}
+          {b.img ? <img src={b.img} alt="" style={{ width: '100%', display: 'block' }} draggable={false} /> : <BuildingGlow id={b.id} />}
           <span style={W.buildingTag}>{RES_ICON[b.product]} +1 בכל מסע</span>
         </div>
       ))}
