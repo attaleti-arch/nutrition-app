@@ -126,7 +126,7 @@ export function creatureLine(id, seed = 0) {
 export const BUILDINGS = [
   { id: 'hive', name: 'כוורת', creature: 'dabashon', need: 7, product: 'honey', spot: { x: 15, y: 60, w: 24 }, img: '/world/buildings/hive.webp',
     line: 'שבע דבורים — והכוורת עובדת. דבש בכל מסע.' },
-  { id: 'pond', name: 'שלולית', creature: 'gali', need: 7, product: 'water', spot: { x: 56, y: 60, w: 18 }, img: null,
+  { id: 'pond', name: 'שלולית', creature: 'gali', need: 7, product: 'water', spot: { x: 76, y: 85, w: 30 }, img: '/world/buildings/pond.webp',
     line: 'שבע גלי — והשלולית מלאה. מים בכל מסע.' },
   { id: 'quarry', name: 'ערמת אבנים', creature: 'bolder', need: 7, product: 'stone', spot: { x: 82, y: 64, w: 16 }, img: null,
     line: 'שבעה בולדר — וערמת האבנים גדלה. אבן בכל מסע.' },

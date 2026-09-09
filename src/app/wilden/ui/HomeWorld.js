@@ -19,7 +19,7 @@ import { stageOf, stagedFor } from '../engine/stages'
 // איפה כל יצור עומד בעולם (אחוזים מהתפאורה), ובאיזה גודל (גובה ב-%).
 const SPOTS = {
   nimi: { x: 36, y: 63, h: 15, flip: true },
-  gali: { x: 56, y: 56, h: 12 },
+  gali: { x: 76, y: 74, h: 12 },
   lumi: { x: 24, y: 74, h: 18, flip: true },
   bolder: { x: 80, y: 60, h: 22 },
   kraag: { x: 66, y: 71, h: 17, flip: true },
