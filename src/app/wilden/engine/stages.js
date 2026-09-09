@@ -68,7 +68,9 @@ export function staged(creature, stage = 1) {
   const art = creature.stages?.[n] || null
   return {
     ...creature,
-    ...(art || {}),
+    // יש דמות לשלב: הקליפ שלה. מודל תלת-ממד וגזירות של שלב 1 לא "מבינים"
+    // — אחרת הבמה מציגה את הגור בתלת-ממד ליד הבוגר בקליפ.
+    ...(art ? { model: null, ios: null, sprites: null, anchors: null, ...art } : {}),
     stage: n,
     aura: !art,
     heightM: (creature.heightM || 0.5) * stageScale(n),

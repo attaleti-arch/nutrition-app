@@ -43,7 +43,7 @@ export function Book({ progress, onClose }) {
                   ? <div style={{ position: 'relative', height: 100 + (sp.stage - 1) * 8, width: 'fit-content' }}>
                       {c.aura && <Aura stage={sp.stage} />}
                       <img src={c.live || c.sprites?.hero} alt="" style={{ ...B.img, position: 'relative', zIndex: 1, maxHeight: '100%' }} draggable={false} />
-                      <Wear id={id} wear={progress?.wear?.[id]} />
+                      <Wear id={id} wear={progress?.wear?.[id]} anchors={c.anchors} />
                     </div>
                   : <span style={B.unknown}>?</span>}
                 {known && <StageTag stage={sp.stage} style={{ position: 'absolute', top: 6, insetInlineStart: 6 }} />}
@@ -91,7 +91,7 @@ function CreaturePage({ id, progress, onClose }) {
           : <div style={{ position: 'relative', height: `${68 + (sp.stage - 1) * 12}%`, width: 'fit-content' }}>
               {c.aura && <Aura stage={sp.stage} size="118%" />}
               <img src={c.live || c.sprites?.hero} alt="" style={{ position: 'relative', zIndex: 1, height: '100%', width: 'auto', display: 'block' }} draggable={false} />
-              <Wear id={id} wear={wear} />
+              <Wear id={id} wear={wear} anchors={c.anchors} />
             </div>}
       </div>
       <p style={B.pageHint}>{dressed ? `${c.name} עם ${Object.values(wear).map(w => itemById(w)?.name).filter(Boolean).join(' ו')}` : 'סובבו אותו עם האצבע'}</p>

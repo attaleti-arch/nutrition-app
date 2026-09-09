@@ -62,7 +62,7 @@ export function Shop({ progress, onBuy, onEquip, onClose }) {
             <div style={{ position: 'relative', height: 176, width: 'fit-content' }}>
               {c.aura && <Aura stage={c.stage} />}
               <img src={c.live || c.sprites?.hero} alt="" style={{ position: 'relative', zIndex: 1, height: 176, width: 'auto', display: 'block' }} draggable={false} />
-              <Wear id={who} wear={wear} />
+              <Wear id={who} wear={wear} anchors={c.anchors} />
             </div>
           )}
       </div>

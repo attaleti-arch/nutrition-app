@@ -91,8 +91,9 @@ const SIDE = {
 // ── על יצור ──
 // wear: { head, face } — מונח בתוך תיבה שגודלה = תיבת התמונה (position:
 // relative על העוטף). flip — כשהתמונה הפוכה, גם הפריט.
-export function Wear({ id, wear, flip = false }) {
-  const a = ANCHORS[id]
+// anchors — עוגנים של הדמות בשלב הזה (creature.stages[n].anchors); בלי — של שלב 1.
+export function Wear({ id, wear, flip = false, anchors = null }) {
+  const a = anchors || ANCHORS[id]
   if (!a || !wear) return null
   return (
     <>

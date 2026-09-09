@@ -1987,16 +1987,18 @@ test('שלבים: 3 תפיסות = בוגר, 7 = אגדי; נגזר מהמונה
 })
 
 test('שלבים: יצור בשלב — אותה דמות גדולה יותר עם הילה, או הדמות של השלב אם יש', () => {
-  const n1 = staged(CREATURES.nimi, 1), n2 = staged(CREATURES.nimi, 2), n3 = staged(CREATURES.nimi, 3)
-  assert.equal(n1.aura, false); assert.equal(n2.aura, true); assert.equal(n3.stage, 3)
-  assert.equal(n2.live, CREATURES.nimi.live, 'בלי חומר לשלב — הדמות הבסיסית')
-  assert.ok(Math.abs(n2.heightM / CREATURES.nimi.heightM - stageScale(2)) < 1e-9)
-  assert.ok(sizeOf2(n3) > sizeOf2(n2) && sizeOf2(n2) > sizeOf2(n1), 'גדל על הבמה')
+  // גלי: עוד אין לה דמות לשלב — אותה דמות, גדולה, עם הילה
+  const g1 = staged(CREATURES.gali, 1), g2 = staged(CREATURES.gali, 2), g3 = staged(CREATURES.gali, 3)
+  assert.equal(g1.aura, false); assert.equal(g2.aura, true); assert.equal(g3.stage, 3)
+  assert.equal(g2.live, CREATURES.gali.live, 'בלי חומר לשלב — הדמות הבסיסית')
+  assert.ok(Math.abs(g2.heightM / CREATURES.gali.heightM - stageScale(2)) < 1e-9)
+  assert.ok(sizeOf2(g3) > sizeOf2(g2) && sizeOf2(g2) > sizeOf2(g1), 'גדל על הבמה')
   assert.ok(sizeOf2(staged(CREATURES.bolder, 3)) <= 2.4, 'בולדר האגדי עדיין נכנס למסך')
-  // עם חומר לשלב: הדמות מתחלפת, בלי הילה
-  const fake = { ...CREATURES.nimi, stages: { 2: { live: '/x/live2.webp', clip: '/x/c2.mp4' } } }
-  const f2 = staged(fake, 2)
-  assert.equal(f2.live, '/x/live2.webp'); assert.equal(f2.clip, '/x/c2.mp4'); assert.equal(f2.model, CREATURES.nimi.model, 'מה שאין — מהבסיס'); assert.equal(f2.aura, false)
+  // נימי: יש דמות לשלב 2 (הקליפ שלה) — מתחלפת, בלי הילה, ובלי המודל של הגור
+  const n2 = staged(CREATURES.nimi, 2)
+  assert.equal(n2.live, '/creatures/nimi/s2/live.webp'); assert.equal(n2.clip, '/creatures/nimi/s2/caught.mp4')
+  assert.equal(n2.aura, false); assert.equal(n2.model, null, 'המודל של הגור לא מוצג ליד הבוגר'); assert.ok(n2.anchors?.head)
+  assert.equal(staged(CREATURES.nimi, 3).aura, true, 'שלב 3 עדיין בלי דמות — הילה')
   assert.equal(staged(null, 2), null)
 })
 

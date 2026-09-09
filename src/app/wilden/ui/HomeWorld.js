@@ -109,7 +109,7 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
             <div style={{ ...W.figure, width: 'fit-content', position: 'relative', transform: sp.flip ? 'scaleX(-1)' : 'none' }}>
               {c.aura && <Aura stage={stage} />}
               <img src={c.live} alt="" draggable={false} style={{ ...W.figure, position: 'relative', zIndex: 1 }} />
-              <Wear id={id} wear={progress?.wear?.[id]} />
+              <Wear id={id} wear={progress?.wear?.[id]} anchors={c.anchors} />
             </div>
             {!sp.air && <span style={W.groundShadow} />}
             {bubble?.id === id && <span style={W.bubble}>{bubble.text}</span>}

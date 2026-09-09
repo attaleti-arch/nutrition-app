@@ -48,6 +48,12 @@ export const CREATURES = {
     clip: '/creatures/nimi/caught.mp4',
     live: '/creatures/nimi/live.webp',
     sprites: { hero: '/creatures/nimi/hero.png', peek: '/creatures/nimi/peek.png' },
+    // ── שלבים ── הדמות של כל שלב (ראה engine/stages.js). anchors: איפה
+    // הכובע יושב על הדמות הזאת. אין שלב 3 עדיין — הילה וגודל עד שיגיע.
+    stages: {
+      2: { live: '/creatures/nimi/s2/live.webp', clip: '/creatures/nimi/s2/caught.mp4',
+        anchors: { head: { x: 62, y: 17, h: 9 }, face: { x: 63, y: 24, h: 6 } } },
+    },
     heightM: 0.45,
     arMode: AR_MODE.GROUND,
     controller: 'tracks-true-or-false',
@@ -66,6 +72,10 @@ export const CREATURES = {
     clip: '/creatures/dabashon/caught.mp4',
     live: '/creatures/dabashon/live.webp',
     sprites: null,                        // אין עדיין גזירה דו-ממדית
+    stages: {
+      2: { live: '/creatures/dabashon/s2/live.webp', clip: '/creatures/dabashon/s2/caught.mp4',
+        anchors: { head: { x: 54, y: 24, h: 7 }, face: { x: 55, y: 30, h: 5 } } },
+    },
     heightM: 0.40,
     arMode: AR_MODE.SKY,
     controller: 'buzz',
@@ -88,6 +98,10 @@ export const CREATURES = {
     // רגע הבריחה שלו במרדף — מוצג פעם אחת במקום שבו עמד, ואז הוא מאחוריכם.
     burst: '/creatures/bolder/burst.webp',
     sprites: null,
+    stages: {
+      2: { live: '/creatures/bolder/s2/live.webp', clip: '/creatures/bolder/s2/caught.mp4',
+        anchors: { head: { x: 57, y: 24, h: 7 }, face: { x: 58, y: 30, h: 5 } } },
+    },
     heightM: 0.80,
     arMode: AR_MODE.GROUND,
     controller: 'stomp',                  // לא בורח: רוקע, נעלם באבק, ומאחוריכם

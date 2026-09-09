@@ -36,7 +36,7 @@ export function Evolve({ evolved, wearAll = {}, onClose }) {
         <div style={{ position: 'relative', height: '100%', width: 'fit-content' }}>
           <Aura stage={cur.stage} size="120%" />
           <img src={cur.live || cur.sprites?.hero} alt="" draggable={false} style={{ position: 'relative', zIndex: 1, height: '100%', width: 'auto', display: 'block' }} />
-          <Wear id={base.id} wear={wearAll?.[base.id]} />
+          <Wear id={base.id} wear={wearAll?.[base.id]} anchors={cur.anchors} />
         </div>
       </div>
       <div style={E.text}>
