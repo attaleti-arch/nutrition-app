@@ -223,6 +223,10 @@ export const CREATURES = {
   },
   noga: {
     id: 'noga', name: 'נוגה', gender: 'f',
+    stages: {
+      2: { live: '/creatures/noga/s2/live.webp', clip: '/creatures/noga/s2/caught.mp4',
+        anchors: { head: { x: 61, y: 31, h: 9 }, face: { x: 62, y: 38, h: 5 } } },
+    },
     // "כל הילדים אמרו לי ש-8 יצורים זה לא מספיק." התשיעית: איילת אור —
     // קרניים של עלים זוהרים, זנב של עלי כותרת. המודל שלה מ-Meshy
     // (19.1MB → 2.5MB, 60K משולשים, WebP 1K). הקליפ שלה מ-Runway: עומדת,
