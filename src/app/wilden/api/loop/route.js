@@ -23,7 +23,8 @@ const cache = new Map()
 const EDGE = 'public, max-age=3600, s-maxage=604800, stale-while-revalidate=2592000'
 
 export async function GET(req) {
-  const key = process.env.ORS_API_KEY
+  // מפתח שהודבק עם רווח או שורה חדשה בסוף מפיל את fetch מיד ("invalid header value").
+  const key = (process.env.ORS_API_KEY || '').replace(/^Bearer\s+/i, '').replace(/[^\x21-\x7e]/g, '')
   if (!key) return Response.json({ error: 'no key' }, { status: 404, headers: { 'cache-control': 'no-store' } })
 
   const u = new URL(req.url)
@@ -68,7 +69,7 @@ export async function GET(req) {
       return Response.json(out, { headers: { 'x-cache': 'miss', 'cache-control': EDGE } })
     } catch (e) {
       last = e?.name === 'AbortError' ? 'timeout' : 'network'
-      console.error(`loop fail url=${new URL(url).host} ${last} ms=${Date.now() - t0}`)
+      console.error(`loop fail url=${new URL(url).host} ${last} ms=${Date.now() - t0} ${String(e?.cause?.message || e?.message || '').slice(0, 160)}`)
     } finally {
       clearTimeout(timer)
     }
