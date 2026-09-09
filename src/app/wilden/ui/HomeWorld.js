@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { usePinch } from './usePinch'
 import { creatureById } from '../content/creatures'
 import { activeQuest, questProgress, canComplete, worldState, creatureLine, RES_NAME, RES_ICON, swarmOf, buildings } from '../engine/world'
 import { sfxAppear, sfxCheer, sfxFinish, buzz } from '../engine/audio'
@@ -25,7 +26,7 @@ const SPOTS = {
   kraag: { x: 66, y: 71, h: 17, flip: true },
   tzel: { x: 88, y: 77, h: 15 },
   dabashon: { x: 20, y: 30, h: 11, air: true },
-  ruchi: { x: 72, y: 24, h: 12, air: true, flip: true },
+  ruchi: { x: 90, y: 22, h: 12, air: true, flip: true },
   noga: { x: 40, y: 87, h: 19 },
 }
 const GUARDIAN = { x: 52, y: 41, h: 24 }
@@ -74,9 +75,13 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
     }, 900)
   }
 
+  // לטייל בעולם: צביטה מקרבת, גרירה מזיזה, לחיצה כפולה מחזירה.
+  const pinch = usePinch()
+
   return (
-    <div style={W.wrap}>
+    <div ref={pinch.ref} style={{ ...W.wrap, ...pinch.wrapStyle }} {...pinch.handlers}>
       <style>{CSS}</style>
+      <div style={{ ...W.scene, ...pinch.sceneStyle }}>
       {/* התפאורה: סרטון בלופ. ילד לא מחכה לסרטון — התמונה קודם, הסרטון מעליה כשמוכן. */}
       <img src="/world/broken.jpg" alt="" style={W.bg} draggable={false} />
       {!healed && <video src="/world/broken.mp4" autoPlay muted loop playsInline style={W.bg} />}
@@ -158,6 +163,8 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
         <span style={{ ...W.bubble, position: 'absolute', bottom: 'auto', left: `${GUARDIAN.x}%`, top: `${GUARDIAN.y - GUARDIAN.h - 12}%`, display: 'block' }}>{bubble.text}</span>
       )}
 
+      </div>
+
       {/* הבקשה של השומר */}
       {quest && guardOpen && (
         <div style={W.questCard} onClick={e => e.stopPropagation()}>
@@ -196,6 +203,7 @@ const CSS = `
 
 const W = {
   wrap: { position: 'relative', width: '100%', aspectRatio: '3 / 4', borderRadius: 18, overflow: 'hidden', background: '#1b1a22', border: '1px solid #2B382B', userSelect: 'none' },
+  scene: { position: 'absolute', inset: 0, willChange: 'transform' },
   bg: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' },
   dusk: { position: 'absolute', inset: 0, background: 'linear-gradient(rgba(15,21,15,0) 70%, rgba(15,21,15,.55))', pointerEvents: 'none' },
   spot: { position: 'absolute', transform: 'translate(-50%,-100%)', background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', WebkitTapHighlightColor: 'transparent', display: 'block' },

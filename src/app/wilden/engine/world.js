@@ -128,9 +128,9 @@ export const BUILDINGS = [
     line: 'שבע דבורים — והכוורת עובדת. דבש בכל מסע.' },
   { id: 'pond', name: 'שלולית', creature: 'gali', need: 7, product: 'water', spot: { x: 62, y: 89, w: 26 }, img: '/world/buildings/pond.webp', live: '/world/buildings/pond-live.webp',
     line: 'שבע גלי — והשלולית מלאה. מים בכל מסע.' },
-  { id: 'quarry', name: 'ערמת אבנים', creature: 'bolder', need: 7, product: 'stone', spot: { x: 88, y: 72, w: 30 }, img: '/world/buildings/quarry.webp',
+  { id: 'quarry', name: 'ערמת אבנים', creature: 'bolder', need: 7, product: 'stone', spot: { x: 88, y: 72, w: 30 }, img: '/world/buildings/quarry.webp', live: '/world/buildings/quarry-live.webp',
     line: 'שבעה בולדר — וערמת האבנים גדלה. אבן בכל מסע.' },
-  { id: 'nest', name: 'קן', creature: 'ruchi', need: 7, product: 'wind', spot: { x: 76, y: 42, w: 15 }, img: '/world/buildings/nest.webp',
+  { id: 'nest', name: 'קן', creature: 'ruchi', need: 7, product: 'wind', spot: { x: 89, y: 35, w: 15 }, img: '/world/buildings/nest.webp', live: '/world/buildings/nest-live.webp',
     line: 'שבעה רוחי — והקן שלם. רוח בכל מסע.' },
 ]
 export const SWARM_MAX = 6      // כמה קטנים מסביב לגדול, לכל היותר
