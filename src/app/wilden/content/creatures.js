@@ -204,6 +204,10 @@ export const CREATURES = {
   },
   kraag: {
     id: 'kraag', name: 'קראג',
+    stages: {
+      2: { live: '/creatures/kraag/s2/live.webp', clip: '/creatures/kraag/s2/caught.mp4',
+        anchors: { head: { x: 64, y: 26, h: 6 }, face: { x: 65, y: 32, h: 3 } } },
+    },
     // המודל שלה מ-Meshy (19.6MB → 1.8MB). בקאנון המקורי קראג הוא "חורבה
     // חיה" שמתעוררת רק במסע 10 בגובה 2.2 מ'. היא שלחה את המודל שלו עכשיו,
     // עם תוכנית של שישה יצורים — אז הוא נכנס לסבב כיצור קטן, על הרצפה,
