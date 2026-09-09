@@ -18,7 +18,7 @@ import { stageOf, stagedFor } from '../engine/stages'
 // הכול על מלבן 3:4 של הרקע, במיקומים באחוזים, כדי שיישב על כל טלפון.
 
 // איפה כל יצור עומד בעולם (אחוזים מהתפאורה), ובאיזה גודל (גובה ב-%).
-const SPOTS = {
+export const SPOTS = {
   nimi: { x: 36, y: 63, h: 15, flip: true },
   gali: { x: 62, y: 79, h: 12 },
   lumi: { x: 24, y: 74, h: 18, flip: true },

@@ -8,6 +8,7 @@ import { creatureById } from './content/creatures'
 import { briefFor, homeFor, todaysCreature } from './content/briefs'
 import { useProfile } from './hooks/useProfile'
 import { ProfileGate, ProfileBar } from './ui/ProfileGate'
+import { Intro, introSeen as introAlreadySeen } from './ui/Intro'
 import { Beacon, BeaconLine, BEACON_CSS } from './ui/Beacon'
 import { Stage } from './ar/Stage'
 import { useGeo } from './hooks/useGeo'
@@ -75,6 +76,9 @@ export default function Wilden() {
   // שם וקוד בטלפון, העולם גם בשרת. בלי זה כל דפדפן היה עולם חדש —
   // walks חוזר לאפס והמשחק שולח שוב ושוב לתפוס את נימי.
   const P = useProfile({ g, dispatch, booted })
+  // סרטון הפתיחה: פעם אחת על הטלפון, לפני השם. null = עוד לא בדקנו.
+  const [intro, setIntro] = useState(null)
+  useEffect(() => { setIntro(!introAlreadySeen()) }, [])
 
   // ── חלון הצצה למצב, מאחורי ?debug=1 ──
   // גם לבדיקות אוטומטיות וגם לרגע שבו הורה בפיילוט אומר "זה תקוע" ואני
@@ -274,7 +278,10 @@ export default function Wilden() {
         {g.state === S.BROKEN_WORLD && !P.loaded && (
           <p style={{ color: C.muted, textAlign: 'center' }}>רגע…</p>
         )}
-        {g.state === S.BROKEN_WORLD && P.needsGate && (
+        {g.state === S.BROKEN_WORLD && P.needsGate && !P.switching && intro && (
+          <Intro onDone={() => setIntro(false)} />
+        )}
+        {g.state === S.BROKEN_WORLD && P.needsGate && (P.switching || intro === false) && (
           <ProfileGate P={P} switching={P.switching} />
         )}
         {g.state === S.BROKEN_WORLD && P.loaded && !P.needsGate && (
