@@ -21,6 +21,8 @@ import { cheer, milestone } from './content/cheers'
 import { GoldStage } from './ar/GoldStage'
 import { CoinRun } from './ar/CoinRun'
 import { Hatch } from './ui/Hatch'
+import { Evolve } from './ui/Evolve'
+import { staged, stageOf } from './engine/stages'
 import { HomeWorld } from './ui/HomeWorld'
 import { Book, Badges } from './ui/Book'
 import { Shop } from './ui/Shop'
@@ -149,6 +151,9 @@ export default function Wilden() {
   // וחוזרים — לא נטפל בילד.
   const [goldOpen, setGoldOpen] = useState(false)
   const [hatchSeen, setHatchSeen] = useState(false)
+  const [evolveSeen, setEvolveSeen] = useState(false)
+  // הביצה וההתפתחות — פעם אחת לכל מסע; מתאפסים כשמסע חדש מתחיל.
+  useEffect(() => { if (g.state === S.BROKEN_WORLD) { setEvolveSeen(false) } }, [g.state])
   // ── הקליפ אחרי התפיסה ── פעם אחת לכל תפיסה; נטען מראש בזמן המפגש.
   const [clipSeen, setClipSeen] = useState(false)
   useEffect(() => { if (g.state !== S.CAUGHT) setClipSeen(false) }, [g.state])
@@ -202,11 +207,14 @@ export default function Wilden() {
   if (!booted) return <Shell><p style={{ color: C.muted, textAlign: 'center' }}>רגע…</p></Shell>
 
   // היצור של התחנה הנוכחית. (מסע ישן בלי תחנות — היצור של המסע.)
-  const creature = creatureById(g.run?.target?.creature || g.run?.creature) || todaysCreature(g.progress)
+  // בשלב שלו (3 תפיסות = בוגר, 7 = אגדי): הדמות, הקליפ והגודל של השלב.
+  const creatureBase = creatureById(g.run?.target?.creature || g.run?.creature) || todaysCreature(g.progress)
+  const creature = staged(creatureBase, stageOf(g.progress, creatureBase?.id))
   // מי נתפס הרגע: התחנה שסומנה done אחרונה.
-  const justCaught = g.state === S.CAUGHT
-    ? creatureById(g.run.stops?.[Math.max(0, g.run.stop - (g.run.resolved ? 0 : 1))]?.creature || g.run.creature) || creature
+  const justCaughtBase = g.state === S.CAUGHT
+    ? creatureById(g.run.stops?.[Math.max(0, g.run.stop - (g.run.resolved ? 0 : 1))]?.creature || g.run.creature) || creatureBase
     : null
+  const justCaught = justCaughtBase ? staged(justCaughtBase, stageOf(g.progress, justCaughtBase.id)) : null
 
   return (
     <div dir="rtl" style={{ minHeight: '100dvh', background: C.bg, color: C.ink,
@@ -230,6 +238,10 @@ export default function Wilden() {
       {/* הביצה בקעה: מסך אחד מעל הכול, לפני הבית */}
       {g.hatched && (g.state === S.CLUE || g.state === S.RUN_COMPLETE) && !hatchSeen && (
         <Hatch hatched={g.hatched} onClose={() => setHatchSeen(true)} />
+      )}
+      {/* מי גדל במסע הזה — אחרי הביצה, לפני מסך הסיום */}
+      {g.evolved?.length > 0 && (g.state === S.CLUE || g.state === S.RUN_COMPLETE) && (!g.hatched || hatchSeen) && !evolveSeen && (
+        <Evolve evolved={g.evolved} wearAll={g.progress.wear} onClose={() => setEvolveSeen(true)} />
       )}
 
       {/* הקליפ של היצור, אחרי "תפסתם אותו!" ולפני ספירת המטבעות */}

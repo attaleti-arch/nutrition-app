@@ -4,6 +4,8 @@ import { creatureById } from '../content/creatures'
 import { activeQuest, questProgress, canComplete, worldState, creatureLine, RES_NAME, RES_ICON } from '../engine/world'
 import { sfxAppear, sfxCheer, sfxFinish, buzz } from '../engine/audio'
 import { Wear } from './Wear'
+import { Aura } from './Aura'
+import { stageOf, staged } from '../engine/stages'
 
 // ─── עולם הבית ───
 // "לא מבינה מה ילד רואה במעמד הבית." עכשיו: הרקע שלה (החורבה בשקיעה,
@@ -94,14 +96,19 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
 
       {/* היצורים שחיים כאן */}
       {have.map(id => {
-        const c = creatureById(id); const sp = SPOTS[id]
+        const sp = SPOTS[id]
+        // בשלב שלו: בוגר גדול ב-15%, אגדי ב-30% (לא הגודל המלא של הבמה — הבית צפוף).
+        const stage = stageOf(progress, id)
+        const c = staged(creatureById(id), stage)
         if (!c || !sp || !c.live) return null
+        const h = sp.h * (1 + (stage - 1) * 0.15)
         return (
           <button key={id} onClick={() => { say(id, creatureLine(id, seed + walks)); onCreatureTap?.(id); try { sfxAppear() } catch (e) { /* */ } }}
             aria-label={c.name}
-            style={{ ...W.spot, left: `${sp.x}%`, top: `${sp.y}%`, height: `${sp.h}%`, animation: sp.air ? 'wildenHover 3.2s ease-in-out infinite' : 'none' }}>
+            style={{ ...W.spot, left: `${sp.x}%`, top: `${sp.y}%`, height: `${h}%`, animation: sp.air ? 'wildenHover 3.2s ease-in-out infinite' : 'none' }}>
             <div style={{ ...W.figure, width: 'fit-content', position: 'relative', transform: sp.flip ? 'scaleX(-1)' : 'none' }}>
-              <img src={c.live} alt="" draggable={false} style={W.figure} />
+              {c.aura && <Aura stage={stage} />}
+              <img src={c.live} alt="" draggable={false} style={{ ...W.figure, position: 'relative', zIndex: 1 }} />
               <Wear id={id} wear={progress?.wear?.[id]} />
             </div>
             {!sp.air && <span style={W.groundShadow} />}

@@ -8,6 +8,8 @@ import { useModelViewer } from '../hooks/useModelViewer'
 import { badgeList } from '../engine/badges'
 import { itemById } from '../engine/shop'
 import { Wear } from './Wear'
+import { Aura, StageTag } from './Aura'
+import { STAGES, stageProgress, staged, stagedName } from '../engine/stages'
 
 // ─── ספר היצורים, והישגים ───
 // עמוד לכל יצור: מי הוא, מה הוא מביא, כמה פעמים נתפס, באילו צבעים. מי
@@ -28,23 +30,34 @@ export function Book({ progress, onClose }) {
       </div>
       <div style={B.grid}>
         {AVAILABLE.map(id => {
-          const c = CREATURES[id]
+          const sp = stageProgress(progress, id)
+          const c = staged(CREATURES[id], sp.stage)
           const known = have.includes(id)
           const n = caught[id] || 0
           const vs = variants.filter(v => v.creature === id)
+          const female = c.gender === 'f'
           return (
-            <button key={id} onClick={() => known && setOpen(id)} style={{ ...B.card, opacity: known ? 1 : 0.7, cursor: known ? 'pointer' : 'default' }} aria-label={known ? c.name : 'יצור לא ידוע'}>
+            <button key={id} onClick={() => known && setOpen(id)} style={{ ...B.card, opacity: known ? 1 : 0.7, cursor: known ? 'pointer' : 'default' }} aria-label={known ? stagedName(c, sp.stage) : 'יצור לא ידוע'}>
               <div style={B.pic}>
                 {known
-                  ? <div style={{ position: 'relative', height: 116, width: 'fit-content' }}>
-                      <img src={c.live || c.sprites?.hero} alt="" style={B.img} draggable={false} />
+                  ? <div style={{ position: 'relative', height: 100 + (sp.stage - 1) * 8, width: 'fit-content' }}>
+                      {c.aura && <Aura stage={sp.stage} />}
+                      <img src={c.live || c.sprites?.hero} alt="" style={{ ...B.img, position: 'relative', zIndex: 1, maxHeight: '100%' }} draggable={false} />
                       <Wear id={id} wear={progress?.wear?.[id]} />
                     </div>
                   : <span style={B.unknown}>?</span>}
+                {known && <StageTag stage={sp.stage} style={{ position: 'absolute', top: 6, insetInlineStart: 6 }} />}
               </div>
-              <p style={B.name}>{known ? c.name : '???'}</p>
-              <p style={B.sub}>{known ? `מביא ${RES_ICON[RES_OF[id]] || ''} ${RES_NAME[RES_OF[id]] || ''}` : c.arMode === 'sky' ? 'משהו באוויר' : 'משהו על הרצפה'}</p>
-              {known && <p style={B.meta}>נתפס {n === 1 ? 'פעם אחת' : `${n} פעמים`}{vs.length ? ' · ' + vs.map(v => variantById(v.variant)?.name).join(', ') : ''}</p>}
+              <p style={B.name}>{known ? stagedName(c, sp.stage) : '???'}</p>
+              <p style={B.sub}>{known ? `${female ? 'מביאה' : 'מביא'} ${RES_ICON[RES_OF[id]] || ''} ${RES_NAME[RES_OF[id]] || ''}` : c.arMode === 'sky' ? 'משהו באוויר' : 'משהו על הרצפה'}</p>
+              {known && <p style={B.meta}>{n === 1 ? 'נתפס פעם אחת' : `נתפס ${n} פעמים`}{vs.length ? ' · ' + vs.map(v => variantById(v.variant)?.name).join(', ') : ''}</p>}
+              {/* "עוד 2 תפיסות ונימי גדל" — הסיבה לצאת שוב אליו */}
+              {known && sp.next && (
+                <div style={B.growWrap}>
+                  <div style={B.growBar}><div style={{ ...B.growFill, width: `${Math.round((sp.have / sp.need) * 100)}%` }} /></div>
+                  <span style={B.growText}>עוד {sp.left === 1 ? 'תפיסה אחת' : `${sp.left} תפיסות`} {sp.next === 3 ? (female ? 'והיא אגדית' : 'והוא אגדי') : (female ? 'והיא גדלה' : 'והוא גדל')}</span>
+                </div>
+              )}
             </button>
           )
         })}
@@ -55,7 +68,8 @@ export function Book({ progress, onClose }) {
 }
 
 function CreaturePage({ id, progress, onClose }) {
-  const c = creatureById(id)
+  const sp = stageProgress(progress, id)
+  const c = staged(creatureById(id), sp.stage)
   const ready = useModelViewer(!!c?.model)
   const ref = useRef(null)
   const [line, setLine] = useState(0)
@@ -74,13 +88,23 @@ function CreaturePage({ id, progress, onClose }) {
           ? <model-viewer ref={ref} src={c.model} camera-controls auto-rotate auto-rotate-delay="800" rotation-per-second="20deg"
               interaction-prompt="none" environment-image="neutral" shadow-intensity="0.7" exposure="1.05"
               style={{ width: '100%', height: '100%', background: 'transparent' }} />
-          : <div style={{ position: 'relative', height: '80%', width: 'fit-content' }}>
-              <img src={c.live || c.sprites?.hero} alt="" style={{ height: '100%', width: 'auto', display: 'block' }} draggable={false} />
+          : <div style={{ position: 'relative', height: `${68 + (sp.stage - 1) * 12}%`, width: 'fit-content' }}>
+              {c.aura && <Aura stage={sp.stage} size="118%" />}
+              <img src={c.live || c.sprites?.hero} alt="" style={{ position: 'relative', zIndex: 1, height: '100%', width: 'auto', display: 'block' }} draggable={false} />
               <Wear id={id} wear={wear} />
             </div>}
       </div>
       <p style={B.pageHint}>{dressed ? `${c.name} עם ${Object.values(wear).map(w => itemById(w)?.name).filter(Boolean).join(' ו')}` : 'סובבו אותו עם האצבע'}</p>
-      <h3 style={B.pageName}>{c.name}</h3>
+      <h3 style={B.pageName}>{stagedName(c, sp.stage)}</h3>
+      {/* שלושת השלבים: מה הושג, ומה הסף הבא */}
+      <div style={B.stages} aria-label="שלבי התפתחות">
+        {STAGES.map(st => (
+          <span key={st.n} style={{ ...B.stageDot, background: sp.stage >= st.n ? (st.n === 3 ? '#F0C069' : '#6EE6C8') : 'transparent', color: sp.stage >= st.n ? '#14200F' : '#767F71' }}>
+            {st.name}{st.n > 1 && sp.stage < st.n ? ` · ${st.need}` : ''}
+          </span>
+        ))}
+      </div>
+      {sp.next && <p style={B.pageGrow}>נתפס {sp.have} מ־{sp.need}. עוד {sp.left === 1 ? 'תפיסה אחת' : `${sp.left} תפיסות`}.</p>}
       <p style={B.pageLine}>"{creatureLine(id, line)}"</p>
       <div style={B.facts}>
         <span style={B.fact}>{RES_ICON[RES_OF[id]]} מביא {RES_NAME[RES_OF[id]]}</span>
@@ -128,7 +152,14 @@ const B = {
   grid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 },
   card: { background: '#161E17', border: '1px solid #2B382B', borderRadius: 14, padding: 10, textAlign: 'center', color: '#E9E5D8', fontFamily: 'inherit' },
   // רקע בהיר מעט מאחורי הדמות — צל, השחור, נעלם אחרת על כרטיס כהה.
-  pic: { height: 120, display: 'grid', placeItems: 'center', background: 'radial-gradient(ellipse at 50% 60%, #33423A, rgba(51,66,58,0) 72%)', borderRadius: 12 },
+  pic: { position: 'relative', height: 120, display: 'grid', placeItems: 'center', background: 'radial-gradient(ellipse at 50% 60%, #33423A, rgba(51,66,58,0) 72%)', borderRadius: 12 },
+  growWrap: { marginTop: 6 },
+  growBar: { height: 5, borderRadius: 999, background: 'rgba(233,229,216,.12)', overflow: 'hidden' },
+  growFill: { height: '100%', background: '#6EE6C8', borderRadius: 999 },
+  growText: { display: 'block', marginTop: 3, fontSize: 11.5, color: '#9BA495' },
+  stages: { display: 'flex', gap: 6, marginTop: 6 },
+  stageDot: { padding: '4px 10px', borderRadius: 999, border: '1px solid #2B382B', fontSize: 12.5, fontWeight: 800 },
+  pageGrow: { margin: '6px 0 0', fontSize: 13.5, color: '#9BA495' },
   img: { maxHeight: 116, maxWidth: '100%', objectFit: 'contain' },
   unknown: { fontSize: 54, fontWeight: 900, color: '#3A473A' },
   name: { margin: '6px 0 0', fontSize: 17, fontWeight: 900 },

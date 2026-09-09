@@ -5,6 +5,7 @@
 // newlyEarned(before, after) — מה נפתח במסע הזה, למסך הסיום.
 
 import { AVAILABLE } from './coins.js'
+import { countAtStage } from './stages.js'
 
 export const BADGES = [
   { id: 'first-walk', icon: '🚶', name: 'המסע הראשון', desc: 'יצאתם וחזרתם.', of: p => p.walks || 0, need: 1 },
@@ -27,6 +28,9 @@ export const BADGES = [
   { id: 'coins-500', icon: '🏦', name: '500 מטבעות', desc: 'חמש מאות.', of: p => p.coinsEarned || 0, need: 500 },
   { id: 'hatch-first', icon: '🥚', name: 'הביצה בקעה', desc: 'יצור בצבע נדיר.', of: p => (p.variants || []).length, need: 1 },
   { id: 'hatch-3', icon: '🌈', name: 'שלושה צבעים', desc: 'שלושה יצורים בצבעים נדירים.', of: p => (p.variants || []).length, need: 3 },
+  { id: 'grown-first', icon: '🌱', name: 'הוא גדל', desc: 'יצור אחד הגיע לשלב הבוגר — שלוש תפיסות.', of: p => countAtStage(p, 2), need: 1 },
+  { id: 'grown-3', icon: '🌳', name: 'שלושה בוגרים', desc: 'שלושה יצורים בשלב הבוגר.', of: p => countAtStage(p, 2), need: 3 },
+  { id: 'legend-first', icon: '✦', name: 'אגדי', desc: 'יצור אחד הגיע לשלב האגדי — שבע תפיסות.', of: p => countAtStage(p, 3), need: 1 },
   { id: 'guardian', icon: '🗿', name: 'השומר התעורר', desc: 'הבקשה הראשונה של השומר.', of: p => (p.quests || []).length, need: 1 },
   { id: 'world', icon: '🏰', name: 'העולם נבנה', desc: 'כל הבקשות של השומר.', of: p => (p.quests || []).length, need: 5 },
 ]

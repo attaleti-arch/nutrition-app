@@ -1272,7 +1272,7 @@ test('גודל על המסך: בולדר גדול מנימי, לפי heightM', (
   assert.ok(sizeOf(CREATURES.nimi) < 1 && sizeOf(CREATURES.nimi) >= 0.85, 'נימי קטן מהייחוס')
   assert.ok(sizeOf(CREATURES.dabashon) < sizeOf(CREATURES.nimi), 'דבשון הכי קטנה')
   assert.equal(sizeOf(null), 1, 'בלי יצור — 1')
-  assert.equal(sizeOf({ heightM: 5 }), 1.7, 'תקרה, שלא יחתוך את המסך')
+  assert.equal(sizeOf({ heightM: 5 }), 2.4, 'תקרה (בולדר האגדי), שלא יחתוך את המסך')
 })
 
 test('תשעה יצורים: לכולם מודל אמיתי, controller רשום, ומצב AR שהבמה מכירה', () => {
@@ -1960,4 +1960,55 @@ test('דופק: רחוק — לאט, קרוב — מהר, בלי מרחק — ש
   assert.equal(pulsePeriod(0.2), 250)
   assert.equal(pulsePeriod(95, { base: 300, perM: 18, near: 350, far: 2000 }), 2000)
   assert.equal(pulsePeriod(5, { base: 300, perM: 18, near: 350, far: 2000 }), 390)
+})
+
+// ══════════════════════════════════════════════
+// ─── שלבי התפתחות ───
+import { STAGES, stageFor, stageOf, stageProgress, evolvedBetween, staged, stagedName, grewVerb, stageScale, countAtStage } from '../src/app/wilden/engine/stages.js'
+import { sizeOf as sizeOf2 } from '../src/app/wilden/content/creatures.js'
+
+test('שלבים: 3 תפיסות = בוגר, 7 = אגדי; נגזר מהמונה, לא מצב נפרד', () => {
+  assert.equal(STAGES.length, 3)
+  assert.deepEqual([0, 1, 2, 3, 6, 7, 20].map(stageFor), [1, 1, 1, 2, 2, 3, 3])
+  const p = { caught: { nimi: 4, gali: 7 } }
+  assert.equal(stageOf(p, 'nimi'), 2); assert.equal(stageOf(p, 'gali'), 3); assert.equal(stageOf(p, 'tzel'), 1)
+  assert.deepEqual(stageProgress(p, 'nimi'), { stage: 2, have: 4, need: 7, next: 3, left: 3 })
+  assert.deepEqual(stageProgress(p, 'gali'), { stage: 3, have: 7, need: null, next: null, left: 0 })
+  assert.deepEqual(stageProgress({}, 'nimi'), { stage: 1, have: 0, need: 3, next: 2, left: 3 })
+  assert.equal(countAtStage(p, 2), 2); assert.equal(countAtStage(p, 3), 1)
+  // מה גדל בין שני מצבים
+  assert.deepEqual(evolvedBetween({ caught: { nimi: 2 } }, { caught: { nimi: 3, tzel: 1 } }), [{ id: 'nimi', from: 1, to: 2 }])
+  assert.deepEqual(evolvedBetween({ caught: { nimi: 3 } }, { caught: { nimi: 4 } }), [])
+  // שם ופועל לפי מין
+  assert.equal(stagedName(CREATURES.nimi, 1), 'נימי'); assert.equal(stagedName(CREATURES.nimi, 2), 'נימי הבוגר'); assert.equal(stagedName(CREATURES.nimi, 3), 'נימי האגדי')
+  assert.equal(stagedName(CREATURES.gali, 2), 'גלי הבוגרת'); assert.equal(stagedName(CREATURES.noga, 3), 'נוגה האגדית')
+  assert.equal(grewVerb(CREATURES.dabashon), 'גדלה'); assert.equal(grewVerb(CREATURES.bolder), 'גדל')
+})
+
+test('שלבים: יצור בשלב — אותה דמות גדולה יותר עם הילה, או הדמות של השלב אם יש', () => {
+  const n1 = staged(CREATURES.nimi, 1), n2 = staged(CREATURES.nimi, 2), n3 = staged(CREATURES.nimi, 3)
+  assert.equal(n1.aura, false); assert.equal(n2.aura, true); assert.equal(n3.stage, 3)
+  assert.equal(n2.live, CREATURES.nimi.live, 'בלי חומר לשלב — הדמות הבסיסית')
+  assert.ok(Math.abs(n2.heightM / CREATURES.nimi.heightM - stageScale(2)) < 1e-9)
+  assert.ok(sizeOf2(n3) > sizeOf2(n2) && sizeOf2(n2) > sizeOf2(n1), 'גדל על הבמה')
+  assert.ok(sizeOf2(staged(CREATURES.bolder, 3)) <= 2.4, 'בולדר האגדי עדיין נכנס למסך')
+  // עם חומר לשלב: הדמות מתחלפת, בלי הילה
+  const fake = { ...CREATURES.nimi, stages: { 2: { live: '/x/live2.webp', clip: '/x/c2.mp4' } } }
+  const f2 = staged(fake, 2)
+  assert.equal(f2.live, '/x/live2.webp'); assert.equal(f2.clip, '/x/c2.mp4'); assert.equal(f2.model, CREATURES.nimi.model, 'מה שאין — מהבסיס'); assert.equal(f2.aura, false)
+  assert.equal(staged(null, 2), null)
+})
+
+test('שלבים במכונה: התפיסה השלישית מגדילה בפורטל, מסך הסיום יודע, ותג נפתח', () => {
+  let g = started(['nimi'], { ...initial(), progress: { ...initial().progress, caught: { nimi: 2 }, creatures: ['nimi'] } })
+  g = walk(g, 200); g = catchHere(g, 500000)
+  g = run(g, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED' }])
+  assert.deepEqual(g.evolved, [{ id: 'nimi', from: 1, to: 2 }])
+  assert.ok(g.newBadges.includes('grown-first'), g.newBadges.join(','))
+  const closed = reduce(reduce(g, { type: 'CLUE_SEEN' }), { type: 'RUN_CLOSED' })
+  assert.equal(closed.evolved, null)
+  // תפיסה רביעית — כלום
+  let g4 = started(['nimi'], closed); g4 = walk(g4, 200); g4 = catchHere(g4, 500000)
+  g4 = run(g4, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED' }])
+  assert.deepEqual(g4.evolved, [])
 })

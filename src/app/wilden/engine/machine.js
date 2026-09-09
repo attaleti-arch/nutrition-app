@@ -12,6 +12,7 @@ import { mergeProgress } from './profile.js'
 import { EGG_PRICE, HATCH_M, canBuyEgg, hatch } from './egg.js'
 import { buy as buyItem, equip as equipItem } from './shop.js'
 import { grantWeekly, walkSummary } from './weekly.js'
+import { evolvedBetween } from './stages.js'
 import { bringsFor, completeQuest } from './world.js'
 import { newlyEarned } from './badges.js'
 
@@ -404,6 +405,8 @@ export function reduce(g, ev) {
         // מה נפתח במסע הזה — למסך הסיום. נמחק ב-RUN_CLOSED, כמו hatched.
         newBadges: newlyEarned(g.progress, progress),
         weeklyGift: weekly.gift,
+        // מי גדל במסע הזה (3 תפיסות = בוגר, 7 = אגדי) — למסך ההתפתחות.
+        evolved: evolvedBetween(g.progress, progress),
         progress,
       }
     }
@@ -412,7 +415,7 @@ export function reduce(g, ev) {
       return { ...g, state: S.RUN_COMPLETE }
 
     case 'RUN_CLOSED':
-      return { ...g, state: S.BROKEN_WORLD, run: null, hatched: null, newBadges: null, weeklyGift: null }
+      return { ...g, state: S.BROKEN_WORLD, run: null, hatched: null, newBadges: null, weeklyGift: null, evolved: null }
 
     // ── החנות ──
     // במסך הבית בלבד. קנייה מורידה מטבעות; לבישה חופשית על מה שנקנה.
