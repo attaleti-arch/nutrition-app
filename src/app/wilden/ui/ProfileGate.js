@@ -58,7 +58,7 @@ function errText(e) {
 }
 
 // ── שורת השחקן במסך הבית ──
-export function ProfileBar({ P, onIntro }) {
+export function ProfileBar({ P, onIntro, music }) {
   const p = P.profile
   if (!p) return null
   const st = !P.server ? 'שמור בטלפון בלבד' : P.sync.ok ? 'שמור בענן' : P.sync.reason === 'never' ? 'עוד לא נשמר בענן' : 'לא הצלחנו לשמור בענן'
@@ -70,6 +70,7 @@ export function ProfileBar({ P, onIntro }) {
       <span style={{ color: col }}>{st}</span>
       <button onClick={P.switchPlayer} style={s.link}>להחליף שחקן</button>
       {onIntro && <button onClick={onIntro} style={s.link}>הפתיחה</button>}
+      {music && <button onClick={music.toggle} style={s.link} aria-label={music.off ? 'להפעיל מוזיקה' : 'להשתיק מוזיקה'}>{music.off ? '🔇' : '🎵'}</button>}
     </div>
   )
 }

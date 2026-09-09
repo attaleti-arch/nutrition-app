@@ -1,8 +1,9 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { SPOTS } from './HomeWorld'
+import { SPOTS, GUARDIAN } from './HomeWorld'
 import { BUILDINGS } from '../engine/world'
-import { sfxCrack, sfxAppear, buzz } from '../engine/audio'
+import { sfxCrack, sfxAppear, sfxThud, sfxSleep, buzz } from '../engine/audio'
+import { startMusic } from '../engine/music'
 
 // ─── סרטון הפתיחה ───
 // "סרטון פתיחה שמראה את כל פוטנציאל העולם המתוקן, ואז פלאש לעולם ההרוס
@@ -13,6 +14,11 @@ import { sfxCrack, sfxAppear, buzz } from '../engine/audio'
 // סדק, רעידה — והחורבה. הטקסט קצר: ילד בן שבע לא קורא פסקאות.
 //
 // לחיצה ראשונה ("להתחיל") כי בלי מגע אייפון לא משמיע כלום.
+//
+// ואז השומר: "אולי אחרי 'השומר כבר מחכה' פלאש, רקע שחור, ואנימציית שומר
+// רוקעת ומתכווצת למקומו ונרדם." — פלאש שני, חושך, השומר ענק רוקע שלוש
+// פעמים (רעידה + בום), מתכווץ אל המקום שלו בשער בזמן שהחורבה חוזרת,
+// ונרדם: אבן אפורה, 💤. אז מבקשים עזרה.
 
 const INTRO_KEY = 'wilden_intro_v1'
 export const introSeen = () => { try { return localStorage.getItem(INTRO_KEY) === '1' } catch (e) { return true } }
@@ -30,20 +36,30 @@ export function Intro({ onDone }) {
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
   const begin = () => {
-    try { sfxAppear() } catch (e) { /* */ }
+    try { sfxAppear(); startMusic('magic') } catch (e) { /* */ }
     setPhase('healed'); setLine(0)
     later(3200, () => setLine(1))
     later(7000, () => {
       setPhase('flash')
-      try { sfxCrack(0.9); buzz([80, 40, 120, 40, 200]) } catch (e) { /* */ }
+      try { sfxCrack(0.9); buzz([80, 40, 120, 40, 200]); startMusic('broken') } catch (e) { /* */ }
     })
     later(7900, () => { setPhase('broken'); setLine(0) })
     later(10600, () => setLine(1))
-    later(13600, () => setPhase('ask'))
+    later(13600, () => setPhase('wait'))
+    later(16200, () => { setPhase('flash2'); try { sfxCrack(0.6) } catch (e) { /* */ } })
+    later(17000, () => setPhase('guardian'))
+    for (const [i, t] of [17400, 18300, 19200].entries()) later(t, () => { setStomp(i + 1); try { sfxThud(1 - i * 0.15); buzz([90]) } catch (e) { /* */ } })
+    later(20200, () => setPhase('settle'))
+    later(21800, () => { setPhase('sleep'); try { sfxSleep() } catch (e) { /* */ } })
+    later(23400, () => setPhase('ask'))
   }
+  const [stomp, setStomp] = useState(0)
   const finish = () => { markIntroSeen(); onDone?.() }
 
-  const broken = phase === 'broken' || phase === 'ask' || phase === 'flash'
+  const broken = !['start', 'healed'].includes(phase)
+  const guardianPhase = ['guardian', 'settle', 'sleep', 'ask'].includes(phase)
+  const big = phase === 'guardian'          // ענק, על שחור, רוקע
+  const asleep = phase === 'sleep' || phase === 'ask'
   return (
     <div style={I.wrap} className="wildenIntro">
       <style>{CSS}</style>
@@ -61,6 +77,18 @@ export function Intro({ onDone }) {
           <img key={b.id} src={b.img} alt="" draggable={false}
             style={{ ...I.item, left: `${b.spot.x}%`, top: `${b.spot.y}%`, width: `${b.spot.w}%`, animation: 'wildenPop .6s ease-out both', animationDelay: `${0.4 + (b.id.length % 4) * 0.2}s` }} />
         ))}
+        {/* חושך לשומר: עולה בפלאש השני, יורד כשהוא מתיישב במקומו */}
+        <div style={{ ...I.bg, background: '#000', opacity: big || phase === 'flash2' ? 1 : 0, transition: 'opacity 1.2s ease', pointerEvents: 'none', zIndex: 1 }} />
+        {guardianPhase && (
+          <div style={{ ...I.guardian,
+            left: big ? '50%' : `${GUARDIAN.x}%`, top: big ? '96%' : `${GUARDIAN.y}%`, height: big ? '82%' : `${GUARDIAN.h}%`,
+            transition: big ? 'none' : 'left 1.4s ease-in-out, top 1.4s ease-in-out, height 1.4s ease-in-out',
+            animation: big && stomp ? `wildenStomp .5s ease-out ${stomp}` : 'none' }}>
+            <img src="/world/guardian.webp" alt="" draggable={false} style={{ ...I.gimg, opacity: asleep ? 0 : 1 }} />
+            <img src="/world/guardian-still.png" alt="" draggable={false} style={{ ...I.gimg, position: 'absolute', inset: 0, opacity: asleep ? 1 : 0, filter: 'grayscale(1) brightness(.62) contrast(.95)' }} />
+            {asleep && <span style={I.zz}>💤</span>}
+          </div>
+        )}
         {phase === 'healed' && CAST.map((id, i) => {
           const sp = SPOTS[id]; if (!sp) return null
           return (
@@ -73,7 +101,7 @@ export function Intro({ onDone }) {
       </div>
 
       {broken && <div style={I.grey} />}
-      {phase === 'flash' && <div style={I.flash} />}
+      {(phase === 'flash' || phase === 'flash2') && <div style={I.flash} />}
       {phase === 'flash' && <div style={I.cracks} />}
 
       <div style={{ ...I.text, animation: phase === 'flash' ? 'wildenShake .5s ease-out' : 'none' }}>
@@ -85,10 +113,13 @@ export function Intro({ onDone }) {
         )}
         {phase === 'healed' && <p key={'h' + line} style={I.line}>{LINES_HEALED[line]}</p>}
         {phase === 'broken' && <p key={'b' + line} style={I.line}>{LINES_BROKEN[line]}</p>}
+        {phase === 'wait' && <p style={I.line}>השומר מחכה בשער.</p>}
+        {phase === 'guardian' && <p style={I.line}>הוא כבד. הוא עייף.</p>}
+        {(phase === 'settle' || phase === 'sleep') && <p style={I.line}>{phase === 'sleep' ? 'ונרדם.' : 'הוא חוזר למקומו…'}</p>}
         {phase === 'ask' && (
           <>
-            <p style={I.line}>השומר מחכה בשער.</p>
-            <p style={I.sub}>תעזרו לבנות את העולם מחדש?</p>
+            <p style={I.line}>השומר ישן בשער.</p>
+            <p style={I.sub}>תעזרו להעיר אותו ולבנות את העולם מחדש?</p>
             <button onClick={finish} style={I.cta}>אני בפנים!</button>
           </>
         )}
@@ -107,6 +138,7 @@ const CSS = `
 @keyframes wildenFloat { 0%,100% { margin-top: 0 } 50% { margin-top: -10px } }
 @keyframes wildenFlash { 0% { opacity: 1 } 100% { opacity: 0 } }
 @keyframes wildenLine { 0% { opacity: 0; transform: translateY(8px) } 100% { opacity: 1; transform: translateY(0) } }
+@keyframes wildenStomp { 0% { transform: translate(-50%,-100%) scaleY(1.06) scaleX(.96) } 30% { transform: translate(-50%,-100%) scaleY(.94) scaleX(1.06) } 55% { transform: translate(-51%,-100%) } 75% { transform: translate(-49%,-100%) } 100% { transform: translate(-50%,-100%) } }
 @keyframes wildenShake { 0%,100% { transform: translate(0,0) } 15% { transform: translate(-7px,4px) } 30% { transform: translate(6px,-5px) } 45% { transform: translate(-5px,-3px) } 60% { transform: translate(4px,4px) } 80% { transform: translate(-2px,1px) } }
 @media (prefers-reduced-motion: reduce) { .wildenIntro * { animation-duration: .01s !important } }
 `
@@ -121,6 +153,9 @@ const I = {
   flash: { position: 'absolute', inset: 0, background: '#fff', animation: 'wildenFlash .9s ease-out forwards', pointerEvents: 'none', zIndex: 2 },
   cracks: { position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none', mixBlendMode: 'multiply',
     background: 'linear-gradient(115deg, transparent 49.6%, #000 49.9%, #000 50.1%, transparent 50.4%), linear-gradient(35deg, transparent 39.7%, #000 39.9%, #000 40.1%, transparent 40.3%), linear-gradient(160deg, transparent 62.7%, #000 62.9%, #000 63.1%, transparent 63.3%)' },
+  guardian: { position: 'absolute', transform: 'translate(-50%,-100%)', zIndex: 2, pointerEvents: 'none', filter: 'drop-shadow(0 8px 14px rgba(0,0,0,.6))' },
+  gimg: { height: '100%', width: 'auto', display: 'block', transition: 'opacity 1.2s ease' },
+  zz: { position: 'absolute', top: -6, insetInlineEnd: -10, fontSize: 22, animation: 'wildenFloat 2.4s ease-in-out infinite' },
   text: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '16px 24px max(24px, env(safe-area-inset-bottom))', textAlign: 'center', zIndex: 4 },
   eyebrow: { margin: 0, letterSpacing: 6, fontWeight: 900, color: '#E5A342', fontSize: 22 },
   line: { margin: 0, fontSize: 30, fontWeight: 900, lineHeight: 1.25, textShadow: '0 2px 12px rgba(0,0,0,.8)', animation: 'wildenLine .7s ease-out both' },

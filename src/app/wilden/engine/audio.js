@@ -50,6 +50,12 @@ export function unlockAudio() {
   return true
 }
 
+// הגרף עצמו, למוזיקת הרקע (engine/music.js) — אותו הקשר, אותו master.
+export function audioGraph() {
+  const c = ac()
+  return c ? { ctx: c, master, muted } : null
+}
+
 export function setMuted(v) {
   muted = !!v
   if (master) master.gain.value = muted ? 0 : 0.9
@@ -164,6 +170,17 @@ export function sfxCrack(k = 0.5) {
   tone({ freq: 220 + 80 * k, glideTo: 90, dur: 0.09, type: 'triangle', vol: 0.14 + 0.1 * k })
   if (k > 0.6) noise({ dur: 0.25, freq: 300, q: 0.7, vol: 0.12, delay: 0.03 })   // הביצה מתנדנדת על האבן
 }
+// רקיעה של השומר: בום נמוך + חבטה. ושינה: שלושה צלילים יורדים, רכים.
+export function sfxThud(k = 1) {
+  tone({ freq: 70, glideTo: 38, dur: 0.42, type: 'sine', vol: 0.5 * k })
+  noise({ dur: 0.16, freq: 220, q: 0.7, vol: 0.22 * k })
+}
+export function sfxSleep() {
+  tone({ freq: 523, dur: 0.5, type: 'triangle', vol: 0.12 })
+  tone({ freq: 392, dur: 0.6, type: 'triangle', vol: 0.11, delay: 0.45 })
+  tone({ freq: 262, dur: 1.1, type: 'triangle', vol: 0.1, delay: 0.95 })
+}
+
 export function sfxHatch() {
   if (muted) return
   noise({ dur: 0.55, freq: 2600, q: 0.5, vol: 0.16 })                             // ווש

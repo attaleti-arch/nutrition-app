@@ -9,6 +9,8 @@ import { briefFor, homeFor, todaysCreature } from './content/briefs'
 import { useProfile } from './hooks/useProfile'
 import { ProfileGate, ProfileBar } from './ui/ProfileGate'
 import { Intro, introSeen as introAlreadySeen } from './ui/Intro'
+import { worldState } from './engine/world'
+import { startMusic, stopMusic, musicMuted, setMusicMuted } from './engine/music'
 import { Beacon, BeaconLine, BEACON_CSS } from './ui/Beacon'
 import { Stage } from './ar/Stage'
 import { useGeo } from './hooks/useGeo'
@@ -79,6 +81,18 @@ export default function Wilden() {
   // סרטון הפתיחה: פעם אחת על הטלפון, לפני השם. null = עוד לא בדקנו.
   const [intro, setIntro] = useState(null)
   useEffect(() => { setIntro(!introAlreadySeen()) }, [])
+  // מוזיקת רקע בבית: חורבה עד שהכול נבנה, קסם אחרי. בטיול — שקט (הרחוב מספיק).
+  const atHome = g.state === S.BROKEN_WORLD && intro !== true
+  const built = (g.progress.quests || []).length
+  const [musicOff, setMusicOff] = useState(false)
+  useEffect(() => { setMusicOff(musicMuted()) }, [])
+  useEffect(() => {
+    if (!atHome || musicOff) { stopMusic(); return }
+    const ws = worldState(g.progress)
+    startMusic(ws.built >= ws.total ? 'magic' : 'broken')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [atHome, built, musicOff])
+  const toggleMusic = () => { const v = !musicOff; setMusicMuted(v); setMusicOff(v) }
 
   // ── חלון הצצה למצב, מאחורי ?debug=1 ──
   // גם לבדיקות אוטומטיות וגם לרגע שבו הורה בפיילוט אומר "זה תקוע" ואני
@@ -295,7 +309,7 @@ export default function Wilden() {
             onLook={(id, look) => { sfxAppear(); dispatch({ type: 'SET_LOOK', id, look }) }}
             onGear={(id, pay) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_GEAR', id, pay }) }}
             onSkin={(creature, skin) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_SKIN', creature, skin }) }}
-            onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }} P={P} onIntro={() => setIntro(true)} />
+            onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }} P={P} onIntro={() => setIntro(true)} music={{ off: musicOff, toggle: toggleMusic }} />
         )}
 
         {g.state === S.PERMISSIONS && (
@@ -556,7 +570,7 @@ function poisText(pois) {
   return parts.join(' · ')
 }
 
-function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onKm, onLook, P, onIntro }) {
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onKm, onLook, P, onIntro, music }) {
   const [panel, setPanel] = useState(null)   // book | badges | shop
   const week = weeklyStatus(g.progress, today)
   const buddy = creatureById(g.progress.buddy)
@@ -576,7 +590,7 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
   return (
     <>
       <p style={s.eyebrow}>WILDEN</p>
-      {P && <ProfileBar P={P} onIntro={onIntro} />}
+      {P && <ProfileBar P={P} onIntro={onIntro} music={music} />}
       <h1 style={s.h1}>{first ? 'העולם שלך נשבר.' : 'העולם שלך חוזר לאט.'}</h1>
       <p style={s.lede}>
         {first
