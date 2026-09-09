@@ -5,6 +5,7 @@ import { fetchStreets } from '../engine/osm'
 // מבחינת Next, והוא נבנה כנתיב /wilden/engine בלי שאף אחד התכוון.
 import { buildLoop, fallbackLoop, routeNote, TARGET_M } from '../engine/loop'
 import { getCached, putCached } from '../engine/routeCache'
+import { daySeed } from '../engine/ors'
 
 // ─── בניית הלולאה ───
 // ה-hook עושה שני דברים בלבד: מביא מ-Overpass, ומנהל מצב מסך. כל החישוב
@@ -22,6 +23,29 @@ import { getCached, putCached } from '../engine/routeCache'
 const FETCH_TIMEOUT = 26000
 const SOFT_TIMEOUT = 7000    // מתי אומרים "לוקח יותר מהרגיל"
 const WIDE_RADIUS = 1500     // ניסיון שני, רק כשהראשון לא מצא לולאה
+
+const ENGINE_TIMEOUT = 12000
+
+async function fetchEngineLoop(home, targetM, signal) {
+  const ctl = new AbortController()
+  const onAbort = () => ctl.abort()
+  signal?.addEventListener('abort', onAbort)
+  const timer = setTimeout(() => ctl.abort(), ENGINE_TIMEOUT)
+  try {
+    const q = new URLSearchParams({ lat: home.lat.toFixed(6), lng: home.lng.toFixed(6), m: String(Math.round(targetM)), seed: String(daySeed()) })
+    const res = await fetch(`/wilden/api/loop?${q}`, { signal: ctl.signal })
+    if (!res.ok) return null
+    const json = await res.json()
+    const path = json?.path
+    if (!Array.isArray(path) || path.length < 4) return null
+    // המסלול מתחיל ונגמר בדלת, כמו אצל המתכנן שלנו.
+    return [home, ...path, home]
+  } catch (e) {
+    return null
+  } finally {
+    clearTimeout(timer); signal?.removeEventListener('abort', onAbort)
+  }
+}
 
 export function useRoute() {
   const [status, setStatus] = useState('idle')   // idle | working | slow | ok
@@ -53,6 +77,22 @@ export function useRoute() {
     abort.current = ctl
     clearTimeout(softTimer.current)
     softTimer.current = setTimeout(() => setStatus(s => (s === 'working' ? 'slow' : s)), SOFT_TIMEOUT)
+
+    // ── קודם מנוע ניווט אמיתי ──
+    // "החוליה החלשה שלנו היא המסלול." לולאת הליכה ממנוע שמכיר מדרכות
+    // ומעברי חצייה, עם זרע יומי — כל יום לולאה אחרת מאותה דלת. בלי
+    // מפתח בשרת (404) או בלי תשובה — ממשיכים למתכנן שלנו, כמו תמיד.
+    const engine = await fetchEngineLoop(home, targetM, ctl.signal)
+    if (engine) {
+      clearTimeout(softTimer.current); abort.current = null
+      setSource('ors'); setNote(null); setPath(engine); setStatus('ok')
+      return engine
+    }
+    if (ctl.signal.aborted) {
+      clearTimeout(softTimer.current); abort.current = null
+      setReason('aborted'); setPath(null); setStatus('failed')
+      return null
+    }
 
     let out = null
     try {

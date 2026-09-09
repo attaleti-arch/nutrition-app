@@ -2332,3 +2332,25 @@ test('חם-קר: מודד לאורך המסלול, לא בקו אווירי — 
   assert.equal(heatDistance(null, 500), 500)
   assert.equal(heatDistance(null, null), null)
 })
+
+test('מנוע ניווט: בונים בקשת לולאה ומפענחים תשובת GeoJSON לשמות רחובות על הנקודות', async () => {
+  const { orsBody, parseOrs, daySeed } = await import('../src/app/wilden/engine/ors.js')
+  const body = orsBody({ lat: 32.0853, lng: 34.7818 }, 2200, 12)
+  assert.deepEqual(body.coordinates, [[34.7818, 32.0853]])
+  assert.equal(body.options.round_trip.length, 2200)
+  assert.equal(body.options.round_trip.seed, 12)
+  const json = { features: [{ geometry: { coordinates: [[34.78, 32.08], [34.781, 32.081], [34.782, 32.081], [34.782, 32.08], [34.78, 32.08]] },
+    properties: { summary: { distance: 1234.6 }, segments: [{ steps: [
+      { name: 'הרצל', way_points: [0, 1] }, { name: '-', way_points: [1, 3] }, { name: 'ביאליק', way_points: [3, 4] } ] }] } }] }
+  const r = parseOrs(json)
+  assert.equal(r.ok, true)
+  assert.equal(r.meters, 1235)
+  assert.equal(r.path.length, 5)
+  assert.deepEqual(r.path[0], { lat: 32.08, lng: 34.78, street: 'הרצל' })
+  assert.equal(r.path[2].street, '')          // "-" = בלי שם
+  assert.equal(r.path[4].street, 'ביאליק')
+  assert.equal(parseOrs({ features: [] }).ok, false)
+  assert.equal(parseOrs(null).ok, false)
+  assert.equal(daySeed(new Date(2026, 0, 1)), 0)
+  assert.equal(daySeed(new Date(2026, 0, 2)), 1)
+})
