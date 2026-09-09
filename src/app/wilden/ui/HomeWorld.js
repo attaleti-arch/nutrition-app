@@ -91,6 +91,10 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
         style={{ ...W.bg, opacity: heal, transition: 'opacity 2.4s ease-in-out' }} />
       {/* וכשהכול נבנה — הסרטון שלה של הבוקר, נושם: אור בשער, מים בכד, פריחה. */}
       {healed && <video src="/world/healed.mp4" poster="/world/healed.jpg" autoPlay muted loop playsInline style={W.bg} />}
+      {/* בזום: התמונה המקורית שלה (1024 רוחב) מעל הסרטון (720). הסרטון נוצר
+          ממנה, אז המעבר כמעט לא מורגש — רק שהעולם נהיה חד. */}
+      {healed && <img src="/world/healed-hd.jpg" alt="" draggable={false}
+        style={{ ...W.bg, opacity: pinch.zoomed ? 1 : 0, transition: 'opacity .35s ease' }} />}
       <div style={{ ...W.dusk, opacity: 1 - heal * 0.5 }} />
 
       {/* מה נבנה: שכבות על התפאורה — עד שהתמונה המתוקנת כבר מראה הכול בעצמה */}
