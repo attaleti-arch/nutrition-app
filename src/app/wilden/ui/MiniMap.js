@@ -86,6 +86,12 @@ function stopIcon(L, s, isNext, img, known) {
 function kidIcon(L, facing, kid) {
   return L.divIcon({ className: '', iconSize: [72, 72], iconAnchor: [36, 36], html: kidSvg(facing == null ? 0 : facing, kid) })
 }
+// בן הלוויה: הדמות החיה, קטנה, מימין לילד. העוגן מוזז כדי שתשב לצידו.
+function buddyIcon(L, src) {
+  return L.divIcon({ className: '', iconSize: [44, 44], iconAnchor: [-14, 30],
+    // height מפורש: ה-CSS של Leaflet דורס max-height על כל תמונה במפה (none !important).
+    html: upright(`<div style="width:44px;height:44px;display:grid;place-items:center;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))"><img src="${src}" alt="" style="height:44px;width:44px;object-fit:contain;display:block"></div>`) })
+}
 
 function arrowIcon(L, deg) {
   return L.divIcon({ className: '', iconSize: [16, 16], iconAnchor: [8, 8],
@@ -98,9 +104,10 @@ const fitPad = m => { const sz = m.getSize(); return [sz.x / 6 + 28, sz.y / 6 + 
 
 const coinKey = c => `${c.lat.toFixed(6)},${c.lng.toFixed(6)}`
 
-export function MiniMap({ home, path, pos, along = 0, heading = null, stops = [], nextStop = 0, reveal = true, known = [], creatureImg, coins = [], coinRun = null, height = '46vh', kid = null }) {
+export function MiniMap({ home, path, pos, along = 0, heading = null, stops = [], nextStop = 0, reveal = true, known = [], creatureImg, coins = [], coinRun = null, height = '46vh', kid = null, buddyImg = null }) {
   // מה הילד לובש (חנות) — נקרא כשמציירים את הדמות. לא משתנה באמצע הליכה.
   const kidRef = useRef(kid); kidRef.current = kid
+  const buddyRef = useRef(buddyImg); buddyRef.current = buddyImg
   const ready = useLeaflet()
   const el = useRef(null)
   const wrap = useRef(null)
@@ -261,8 +268,11 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
       lay.current.acc = L.circle(ll, { radius: pos.acc || 0, color: BLUE, weight: 1, opacity: 0.4, fillColor: BLUE, fillOpacity: 0.1, interactive: false }).addTo(m)
       lay.current.me = L.marker(ll, { interactive: false, zIndexOffset: 2000, icon: kidIcon(L, face, kidRef.current) }).addTo(m)
       lay.current.meFace = face
+      // בן הלוויה: הולך לידך, זקוף (לא מסתובב עם הדמות ולא עם המפה).
+      if (buddyRef.current) lay.current.buddy = L.marker(ll, { interactive: false, zIndexOffset: 1990, icon: buddyIcon(L, buddyRef.current) }).addTo(m)
     } else {
       lay.current.me.setLatLng(ll)
+      lay.current.buddy?.setLatLng(ll)
       lay.current.acc.setLatLng(ll).setRadius(pos.acc || 0)
       if (Math.abs(angleDelta(lay.current.meFace, face) || 0) >= 2) {
         const kid = lay.current.me.getElement()?.querySelector('.kid')

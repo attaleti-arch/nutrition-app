@@ -90,6 +90,8 @@ export function mergeProgress(local, remote) {
     // החנות: מה שנקנה נקנה; מי לובש מה — של הבסיס, והשאר מהצד השני.
     ...mergeWear(base, other),
     weeklyBonus: [base.weeklyBonus, other.weeklyBonus].filter(Boolean).sort().pop() || null,
+    buddy: base.buddy || other.buddy || null,
+    bond: mergeMax(base.bond, other.bond),
     minutesTotal: Math.max(base.minutesTotal || 0, other.minutesTotal || 0),
     lastWalk: base.lastWalk || other.lastWalk || null,
     story: { ...(other.story || {}), ...(base.story || {}) },

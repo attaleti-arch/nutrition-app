@@ -70,6 +70,8 @@ export function forServer(g) {
       owned: g.progress?.owned ?? [],
       wear: g.progress?.wear ?? {},
       weeklyBonus: g.progress?.weeklyBonus ?? null,
+      buddy: g.progress?.buddy ?? null,
+      bond: g.progress?.bond ?? {},
       minutesTotal: g.progress?.minutesTotal ?? 0,
       lastWalk: g.progress?.lastWalk ?? null,
     },

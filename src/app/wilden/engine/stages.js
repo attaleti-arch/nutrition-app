@@ -8,6 +8,8 @@
 // הדמות של כל שלב באה מהמרשם (creature.stages[n]); אם אין עדיין — אותה
 // דמות, גדולה יותר, עם הילה. המשחק עובד לפני שכל החומרים מוכנים.
 
+import { bondCredits } from './buddy.js'
+
 export const STAGES = [
   { n: 1, name: 'גור', need: 0, scale: 1 },
   { n: 2, name: 'בוגר', need: 3, scale: 1.3 },
@@ -18,26 +20,30 @@ export const MAX_STAGE = STAGES.length
 export const stageInfo = n => STAGES[Math.max(1, Math.min(MAX_STAGE, n || 1)) - 1]
 export const stageScale = n => stageInfo(n).scale
 
-// כמה פעמים נתפס → באיזה שלב.
-export function stageFor(caughtCount) {
+// כמה נקודות → באיזה שלב.
+export function stageFor(points) {
   let s = 1
-  for (const st of STAGES) if ((caughtCount || 0) >= st.need) s = st.n
+  for (const st of STAGES) if ((points || 0) >= st.need) s = st.n
   return s
 }
-export const stageOf = (progress, id) => stageFor(progress?.caught?.[id] || 0)
+// הנקודות של יצור: תפיסות, ועוד אחת על כל 2 ק"מ שהלכו איתו כבן לוויה.
+export const stagePoints = (progress, id) => (progress?.caught?.[id] || 0) + bondCredits(progress, id)
+export const stageOf = (progress, id) => stageFor(stagePoints(progress, id))
 
 // לספר: { stage, have, need, next } — need הוא הסף של השלב הבא, null באגדי.
 export function stageProgress(progress, id) {
-  const have = progress?.caught?.[id] || 0
+  const have = stagePoints(progress, id)
   const stage = stageFor(have)
   const next = STAGES.find(s => s.n === stage + 1) || null
   return { stage, have, need: next ? next.need : null, next: next ? next.n : null, left: next ? Math.max(0, next.need - have) : 0 }
 }
 
+const idsOf = p => new Set([...Object.keys(p?.caught || {}), ...Object.keys(p?.bond || {})])
+
 // מה גדל במסע הזה: [{ id, from, to }] — למסך ההתפתחות.
 export function evolvedBetween(before, after) {
   const out = []
-  for (const id of Object.keys(after?.caught || {})) {
+  for (const id of idsOf(after)) {
     const from = stageOf(before, id), to = stageOf(after, id)
     if (to > from) out.push({ id, from, to })
   }
@@ -70,4 +76,4 @@ export function staged(creature, stage = 1) {
 }
 
 // כמה יצורים הגיעו לשלב — להישגים.
-export const countAtStage = (progress, n) => Object.keys(progress?.caught || {}).filter(id => stageOf(progress, id) >= n).length
+export const countAtStage = (progress, n) => [...idsOf(progress)].filter(id => stageOf(progress, id) >= n).length

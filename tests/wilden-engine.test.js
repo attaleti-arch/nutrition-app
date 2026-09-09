@@ -844,7 +844,8 @@ test('הלוך ושוב מקצה לקצה: בדרך החוצה אין מפגש, 
   assert.ok(haversine(g.run.pos, g.run.target) > 100, 'בדרך החוצה היצור עוד רחוק')
   assert.ok(Math.abs(g.run.along - 700) < 30, `המונה לאורך: ${Math.round(g.run.along)}`)
   const coinsOut = g.run.coinsTaken
-  assert.ok(coinsOut >= 4 && coinsOut <= 9, `מטבעות בדרך החוצה בלבד: ${coinsOut}`)
+  // 700 מ' ב-10 שניות ל-15 מ' = כמעט 8 דקות רצוף: אחרי 4 דקות יש דחף שמכפיל
+  assert.ok(coinsOut >= 4 && coinsOut <= 14, `מטבעות בדרך החוצה בלבד (עם דחף): ${coinsOut}`)
   // עד הקצה, ותפיסה
   let t = 1000 + 47 * 10000
   for (let d = 715; d <= 1000; d += 15) { const p = destination(HOME, 0, d); g = reduce(g, { type: 'FIX', lat: p.lat, lng: p.lng, acc: 10, t }); t += 10000 }
@@ -2011,4 +2012,77 @@ test('שלבים במכונה: התפיסה השלישית מגדילה בפור
   let g4 = started(['nimi'], closed); g4 = walk(g4, 200); g4 = catchHere(g4, 500000)
   g4 = run(g4, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED' }])
   assert.deepEqual(g4.evolved, [])
+})
+
+// ══════════════════════════════════════════════
+// ─── רצף הליכה ודחף; בן לוויה ───
+import { STREAK_MS, BOOST_MS, STOP_MS, freshStreak, tickStreak, boosting, streakFill, boostLeftMs, BOOST_COINS } from '../src/app/wilden/engine/streak.js'
+import { BOND_M, setBuddy, addBond, bondOf, bondCredits, buddyLine, canBuddy } from '../src/app/wilden/engine/buddy.js'
+
+test('רצף: ארבע דקות בלי לעצור — דחף לדקתיים; עצירה מאפסת את הפס ולא את הדחף', () => {
+  let s = freshStreak(0)
+  for (let t = 5000; t < STREAK_MS - 1000; t += 5000) s = tickStreak(s, { moved: t % 15000 === 0, t })
+  assert.ok(!boosting(s, STREAK_MS - 1000)); assert.ok(streakFill(s, STREAK_MS - 1000) > 0.95)
+  s = tickStreak(s, { moved: true, t: STREAK_MS + 1000 })
+  assert.ok(boosting(s, STREAK_MS + 1000), 'דחף'); assert.equal(s.boosts, 1)
+  assert.ok(boostLeftMs(s, STREAK_MS + 1000) === BOOST_MS)
+  assert.ok(streakFill(s, STREAK_MS + 1000) < 0.05, 'הפס מתחיל מחדש')
+  // עוצרים באמצע הדחף: הפס מתאפס, הדחף נשאר עד סופו
+  const t2 = STREAK_MS + 1000 + STOP_MS + 5000
+  s = tickStreak(s, { moved: false, t: t2 })
+  assert.ok(boosting(s, t2)); assert.equal(s.since, t2)
+  assert.ok(!boosting(s, STREAK_MS + 1000 + BOOST_MS + 1))
+  // GPS שמוסיף מטרים בקפיצות: 20 שניות בלי מטר חדש עדיין "הולכים"
+  let w = freshStreak(0); w = tickStreak(w, { moved: true, t: 1000 }); w = tickStreak(w, { moved: false, t: 20000 })
+  assert.equal(w.since, 0)
+})
+
+test('דחף במכונה: מטבעות כפולים בזמן דחף', () => {
+  let g = started(['nimi'])
+  assert.ok(g.run.streak, 'יש רצף מהיציאה')
+  // הולכים 5 דקות ברצף (FIX כל 10 שניות, 15 מ')
+  g = walk(g, 450, { t0: 1000 })     // 30 דגימות × 10 שניות = 300 שניות
+  assert.ok(boosting(g.run.streak, g.run.lastT), 'אחרי 4 דקות — דחף')
+  const before = g.run.coinsTaken
+  // מטבע לפנינו: אוספים אותו בזמן הדחף
+  const next = g.run.coins.find(c => !c.taken && !c.gold && c.along > g.run.along)
+  g = reduce(g, { type: 'FIX', lat: next.lat, lng: next.lng, acc: 8, t: g.run.lastT + 10000 })
+  assert.equal(g.run.coinsTaken - before, (next.value || 1) * BOOST_COINS)
+  assert.equal(g.run.lastCoin.boost, true)
+})
+
+test('בן לוויה: בוחרים רק מי שנתפס; המטרים נזקפים לו; 2 ק"מ = נקודת התפתחות', () => {
+  const p0 = { ...initial().progress, creatures: ['nimi'], caught: { nimi: 2 } }
+  assert.ok(canBuddy(p0, 'nimi')); assert.ok(!canBuddy(p0, 'gali'))
+  assert.equal(setBuddy(p0, 'gali'), p0)
+  const p1 = setBuddy(p0, 'nimi'); assert.equal(p1.buddy, 'nimi')
+  assert.equal(setBuddy(p1, null).buddy, null)
+  const p2 = addBond(p1, 1500); assert.equal(bondOf(p2, 'nimi'), 1500); assert.equal(bondCredits(p2, 'nimi'), 0)
+  const p3 = addBond(p2, 600); assert.equal(bondCredits(p3, 'nimi'), 1)
+  assert.equal(addBond(p0, 900), p0, 'בלי בן לוויה — כלום')
+  assert.equal(stageOf(p3, 'nimi'), 2, '2 תפיסות + 2 ק"מ = בוגר')
+  assert.deepEqual(stageProgress(p3, 'nimi').have, 3)
+  assert.ok(buddyLine('nimi', 'half') && buddyLine('noga', 'start')); assert.equal(buddyLine('nimi', 'nope'), null)
+  assert.equal(BOND_M, 2000)
+})
+
+test('בן לוויה במכונה: רק בבית, ההליכה נזקפת בפורטל ובעצירה, וההתפתחות קופצת', () => {
+  let g = { ...initial(), progress: { ...initial().progress, creatures: ['nimi'], caught: { nimi: 2 }, bond: { nimi: 1900 } } }
+  g = reduce(g, { type: 'SET_BUDDY', id: 'nimi' })
+  assert.equal(g.progress.buddy, 'nimi')
+  g = started(['nimi'], g)
+  assert.equal(reduce(g, { type: 'SET_BUDDY', id: null }), g, 'לא באמצע הליכה')
+  g = walk(g, 200); g = catchHere(g, 500000)
+  g = run(g, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED' }])
+  assert.ok(g.progress.bond.nimi >= 2050, 'המטרים נוספו: ' + g.progress.bond.nimi)
+  assert.equal(stageOf(g.progress, 'nimi'), 2)
+  assert.ok(g.evolved.some(e => e.id === 'nimi' && e.to === 2), 'גדל מהקילומטרים ומהתפיסה יחד')
+  assert.equal(forServer(g).progress.buddy, 'nimi')
+  // עצירה באמצע — גם נזקף
+  let a = { ...initial(), progress: { ...initial().progress, creatures: ['gali'], buddy: 'gali' } }
+  a = started(['gali'], a); a = walk(a, 300); a = reduce(a, { type: 'ABORT', t: 5000 })
+  assert.ok(a.progress.bond.gali >= 250)
+  // מיזוג: המקסימום, ובן הלוויה של הבסיס
+  const m = mergeProgress2({ ...g.progress, walks: 5 }, { ...initial().progress, bond: { nimi: 9000, tzel: 500 }, buddy: 'tzel' })
+  assert.equal(m.bond.nimi, 9000); assert.equal(m.bond.tzel, 500); assert.equal(m.buddy, 'nimi')
 })

@@ -13,6 +13,8 @@ import { EGG_PRICE, HATCH_M, canBuyEgg, hatch } from './egg.js'
 import { buy as buyItem, equip as equipItem } from './shop.js'
 import { grantWeekly, walkSummary } from './weekly.js'
 import { evolvedBetween } from './stages.js'
+import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
+import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest } from './world.js'
 import { newlyEarned } from './badges.js'
 
@@ -67,6 +69,8 @@ export function initial() {
       metersTotal: 0, coinsEarned: 0, walkDays: [],
       // ── החנות ── מה נקנה, ומי לובש מה (ראה engine/shop.js)
       owned: [], wear: {},
+      // ── בן לוויה ── מי יוצא איתך, וכמה מטרים הלכתם יחד (ראה engine/buddy.js)
+      buddy: null, bond: {},
       // ── הבונוס השבועי ── יום ראשון של השבוע שבו כבר ניתן (ראה engine/weekly.js)
       weeklyBonus: null,
       // ── להורה ── ההליכה האחרונה, ודקות בחוץ בסך הכול
@@ -148,6 +152,7 @@ export function reduce(g, ev) {
           wantCreatures: creaturesForWalk(walks, extra, ev.available),
           home: null, path: null, pos: null, lastFix: null, walkRef: null, stillRef: null,
           acc: null, walked: 0, along: 0,
+          streak: freshStreak(ev.t ?? null),      // רצף הליכה → דחף (ראה engine/streak.js)
           target: null, resolved: false,
           encounterMode: null, stillMs: 0,
           loot: [], coins: [], coinsTaken: 0, lastCoin: null,
@@ -224,16 +229,21 @@ export function reduce(g, ev) {
         target = placeTarget(r.path, along)
       }
 
+      // ── רצף הליכה ── ארבע דקות בלי לעצור = דחף: מטבעות כפולים לדקתיים.
+      const streak = tickStreak(r.streak, { moved: w.add > 0, t: ev.t })
+      const boost = boosting(streak, ev.t)
+
       // ── מטבעות ──
       // עוברים דרך מטבע — הוא נאסף. הדף שומע את השינוי ב-coinsTaken ומצלצל.
       const cc = collectCoins(r.coins, pos, undefined, along)
-      const coinsTaken = (r.coinsTaken || 0) + coinsValue(cc.got, r.resolved ? HOME_BONUS : 1)
-      const lastCoin = cc.got.length ? { t: ev.t, gold: cc.got.some(c => c.gold), n: cc.got.length } : r.lastCoin
+      // כפול בדרך הביתה, כפול בדחף — לא פי ארבע. המקסימום מהשניים.
+      const coinsTaken = (r.coinsTaken || 0) + coinsValue(cc.got, Math.max(r.resolved ? HOME_BONUS : 1, boost ? BOOST_COINS : 1))
+      const lastCoin = cc.got.length ? { t: ev.t, gold: cc.got.some(c => c.gold), n: cc.got.length, boost } : r.lastCoin
 
       return {
         ...g,
         run: { ...r, pos, lastFix: pos, walkRef: w.ref, stillRef, lastT: ev.t, acc: ev.acc ?? null, walked, along, target, stillMs,
-          coins: cc.coins, coinsTaken, lastCoin },
+          coins: cc.coins, coinsTaken, lastCoin, streak },
       }
     }
 
@@ -368,8 +378,10 @@ export function reduce(g, ev) {
       if (r.day && !walkDays.includes(r.day)) walkDays.push(r.day)
       // ── להורה ── מרחק, דקות, צעדים משוערים של ההליכה הזאת
       const lastWalk = { ...walkSummary({ walked: r.walked, startedAt: r.walkStartedAt, t: ev.t }), day: r.day || null }
+      // בן הלוויה: המטרים של היום נזקפים לו (כל 2 ק"מ = תפיסה להתפתחות).
+      const withBond = addBond(g.progress, r.walked)
       const progress0 = {
-          ...g.progress,
+          ...withBond,
           creatures,
           res,
           egg: hatched ? null : g.progress.egg,
@@ -427,6 +439,12 @@ export function reduce(g, ev) {
       if (ev.who && ev.slot) progress = equipItem(progress, ev.who, ev.slot, ev.id)
       return { ...g, progress }
     }
+    // ── בן לוויה ── מי יוצא איתך. בבית בלבד; רק מי שנתפס.
+    case 'SET_BUDDY': {
+      if (g.state !== S.BROKEN_WORLD) return g
+      const progress = setBuddy(g.progress, ev.id ?? null)
+      return progress === g.progress ? g : { ...g, progress }
+    }
     case 'EQUIP': {
       if (g.state !== S.BROKEN_WORLD) return g
       const progress = equipItem(g.progress, ev.who, ev.slot, ev.id ?? null)
@@ -451,7 +469,7 @@ export function reduce(g, ev) {
         ...g,
         state: S.ABORTED,
         progress: {
-          ...g.progress,
+          ...addBond(g.progress, g.run?.walked),
           coins: (g.progress.coins || 0) + (g.run?.coinsTaken || 0),
           ...(aborted ? { lastWalk: aborted, minutesTotal: (g.progress.minutesTotal || 0) + aborted.minutes, metersTotal: (g.progress.metersTotal || 0) + aborted.meters } : {}),
         },

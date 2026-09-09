@@ -22,11 +22,13 @@ import { GoldStage } from './ar/GoldStage'
 import { CoinRun } from './ar/CoinRun'
 import { Hatch } from './ui/Hatch'
 import { Evolve } from './ui/Evolve'
-import { staged, stageOf } from './engine/stages'
+import { staged, stageOf, stagedName, stageProgress } from './engine/stages'
 import { HomeWorld } from './ui/HomeWorld'
 import { Book, Badges } from './ui/Book'
 import { Shop } from './ui/Shop'
 import { weeklyStatus, WEEKLY_COINS, km } from './engine/weekly'
+import { bondOf, buddyLine, BOND_M } from './engine/buddy'
+import { boosting, streakFill, boostLeftMs, BOOST_REVEAL } from './engine/streak'
 import { usePulse } from './hooks/usePulse'
 import { badgeById } from './engine/badges'
 import { RES_NAME as RES_NAMES } from './engine/world'
@@ -275,7 +277,8 @@ export default function Wilden() {
         {g.state === S.BROKEN_WORLD && P.loaded && !P.needsGate && (
           <BrokenWorld g={g} today={today} onStart={startRun} onEgg={() => { sfxAppear(); dispatch({ type: 'BUY_EGG', t: Date.now() }) }} onQuest={id => dispatch({ type: 'COMPLETE_QUEST', id })}
             onBuy={(id, who, slot) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_ITEM', id, who, slot }) }}
-            onEquip={(who, slot, id) => { sfxAppear(); dispatch({ type: 'EQUIP', who, slot, id }) }} P={P} />
+            onEquip={(who, slot, id) => { sfxAppear(); dispatch({ type: 'EQUIP', who, slot, id }) }}
+            onBuddy={id => { sfxAppear(); dispatch({ type: 'SET_BUDDY', id }) }} P={P} />
         )}
 
         {g.state === S.PERMISSIONS && (
@@ -388,7 +391,7 @@ export default function Wilden() {
           <Panel eyebrow="המסע נגמר">
             <h2 style={s.h2}>{g.progress.creatures.length ? 'הוא חי בעולם שלכם עכשיו.' : 'חזרתם.'}</h2>
             <NewBadges ids={g.newBadges} />
-            <ParentCard walk={g.progress.lastWalk} gift={g.weeklyGift} />
+            <ParentCard walk={g.progress.lastWalk && { ...g.progress.lastWalk, buddy: g.progress.buddy, stageProgress: g.progress.buddy ? stageProgress(g.progress, g.progress.buddy) : null }} gift={g.weeklyGift} />
             <Stats g={g} />
             <button onClick={() => dispatch({ type: 'RUN_CLOSED' })} style={s.cta}>לעולם</button>
           </Panel>
@@ -507,6 +510,9 @@ function ParentCard({ walk, gift = null }) {
         {walk.minutes > 0 && <> · <b>{walk.minutes} דקות</b> בחוץ</>}
         {walk.steps > 0 && <> · כ־<b>{walk.steps.toLocaleString('he-IL')}</b> צעדים</>}.
       </p>
+      {walk.buddy && (() => { const b = creatureById(walk.buddy); const sp = walk.stageProgress; return b ? (
+        <p style={s.parentBuddy}>🐾 {km(walk.meters)} עם {b.name}{sp?.next ? ` · עוד ${sp.left === 1 ? 'תפיסה אחת' : `${sp.left} תפיסות`} או ${km(sp.left * BOND_M)} יחד — ${b.gender === 'f' ? 'והיא גדלה' : 'והוא גדל'}` : ''}</p>
+      ) : null })()}
       {gift === 'egg' && <p style={s.parentGift}>🥚 שלושה מסעות השבוע — ביצה על הביקון, מתנה.</p>}
       {gift === 'coins' && <p style={s.parentGift}>🪙 שלושה מסעות השבוע — {WEEKLY_COINS} מטבעות בונוס.</p>}
     </div>
@@ -521,9 +527,10 @@ function atHome(run) {
 }
 
 // ── עולם הבית ההרוס ──
-function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, P }) {
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onBuddy, P }) {
   const [panel, setPanel] = useState(null)   // book | badges | shop
   const week = weeklyStatus(g.progress, today)
+  const buddy = creatureById(g.progress.buddy)
   const storyOpen = canStartStory(g.progress, today)
   const first = g.progress.missionsCompleted === 0
   const walks = g.progress.walks || 0
@@ -556,6 +563,26 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, P }) {
       {panel === 'book' && <Book progress={g.progress} onClose={() => setPanel(null)} />}
       {panel === 'badges' && <Badges progress={g.progress} onClose={() => setPanel(null)} />}
       {panel === 'shop' && <Shop progress={g.progress} onBuy={onBuy} onEquip={onEquip} onClose={() => setPanel(null)} />}
+
+      {/* בן לוויה: מי יוצא איתך היום. על המפה לידך, וכל 2 ק"מ יחד = תפיסה להתפתחות שלו. */}
+      {g.progress.creatures.length > 0 && (
+        <div style={s.buddyRow} aria-label="בן לוויה">
+          <p style={s.buddyTitle}>{buddy ? <>יוצא איתך: <b>{stagedName(buddy, stageOf(g.progress, buddy.id))}</b> · {km(bondOf(g.progress, buddy.id))} יחד</> : 'מי יוצא איתך היום?'}</p>
+          <div style={s.buddyPick}>
+            {g.progress.creatures.map(id => {
+              const c = creatureById(id); if (!c) return null
+              const on = g.progress.buddy === id
+              return (
+                <button key={id} onClick={() => onBuddy(on ? null : id)} aria-label={`בן לוויה: ${c.name}`}
+                  style={{ ...s.buddyChip, borderColor: on ? C.amber : C.line, background: on ? 'rgba(229,163,66,.18)' : C.card }}>
+                  <img src={c.live || c.sprites?.hero} alt="" style={s.buddyImg} draggable={false} />
+                </button>
+              )
+            })}
+          </div>
+          {!buddy && <p style={s.buddyHint}>הוא ילך לידך על המפה, וכל 2 ק״מ יחד נספרים לו כתפיסה.</p>}
+        </div>
+      )}
 
       {/* השבוע: שלושה מסעות בין ראשון לשבת — ביצה. לא רצף שנשבר: מונה שמתאפס ביום ראשון. */}
       <div style={s.weekly} aria-label="השבוע">
@@ -676,7 +703,24 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
   // הסימן על המפה נחשף רק כשמתחממים (מתחת ל-320 מ'). עד אז: מסלול, רחובות,
   // ומד חום שמתחזק. סיכה מהרגע הראשון הורגת את המתח.
   const heat = r.target && !r.resolved ? heatOf(distToTarget) : null
-  const reveal = (r.walked || 0) >= PLACE_AFTER && !!heat && heat.t >= 0.65
+  // דחף: ארבע דקות בלי לעצור. מטבעות כפולים, והיצור מתגלה מרחוק יותר.
+  const boost = boosting(r.streak, now)
+  const fill = boost ? 1 : streakFill(r.streak, now)
+  const reveal = (r.walked || 0) >= PLACE_AFTER && !!heat && heat.t >= (boost ? BOOST_REVEAL : 0.65)
+  // בן הלוויה: על המפה לידך, ומדבר באבני הדרך (יציאה, חצי, הביתה, תחנה).
+  const buddy = creatureById(g.progress.buddy)
+  const buddyKey = !buddy ? null : homeward ? 'home' : reveal ? 'stop' : total && along / total >= 0.5 ? 'half' : 'start'
+  const saidRef = useRef(null)
+  useEffect(() => {
+    if (!buddy || !buddyKey || saidRef.current === buddyKey) return
+    saidRef.current = buddyKey
+    const line = buddyLine(buddy.id, buddyKey)
+    if (!line) return
+    setToast(`${buddy.name}: ${line}`)
+    const id = setTimeout(() => setToast(null), 3600)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buddyKey])
   // רעידה בדופק כשמתקרבים לתחנה (מ-100 מ'): לאט, ואז מהר. כמו גלאי מתכות.
   usePulse(!homeward && heat && distToTarget != null && distToTarget < 100 ? distToTarget : null,
     { base: 300, perM: 18, near: 350, far: 2000 })
@@ -687,10 +731,18 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
         <MiniMap home={r.home} path={r.path} pos={geo.pos} along={r.along || 0} heading={orient.heading} coinRun={r.coinRun}
           stops={r.stops || (r.target ? [r.target] : [])} nextStop={r.stops ? r.stop : 0}
           reveal={reveal} known={g.progress.creatures} creatureImg={creature?.sprites?.hero}
-          coins={r.coins} height="100%" kid={g.progress.wear?.kid || null} />
+          coins={r.coins} height="100%" kid={g.progress.wear?.kid || null} buddyImg={buddy?.live || null} />
 
-        {/* מונה המטבעות: קופץ בכל גלינג. בדרך הביתה — כפול. */}
-        <div key={r.coinsTaken || 0} style={s.coinHud}>🪙 {r.coinsTaken || 0}{homeward && <span style={{ fontSize: 12 }}> ×2</span>}</div>
+        {/* מונה המטבעות: קופץ בכל גלינג. בדרך הביתה או בדחף — כפול. */}
+        <div key={r.coinsTaken || 0} style={{ ...s.coinHud, ...(boost ? s.coinHudBoost : {}) }}>🪙 {r.coinsTaken || 0}{(homeward || boost) && <span style={{ fontSize: 12 }}> ×2</span>}</div>
+
+        {/* רצף ההליכה: מתמלא כשהולכים בלי לעצור; מלא = דחף לדקתיים. */}
+        {!homeward && (
+          <div style={{ ...s.streak, ...(boost ? s.streakOn : {}) }} aria-label="רצף הליכה">
+            <div style={s.streakBar}><div style={{ ...s.streakFill, width: `${Math.round(fill * 100)}%`, background: boost ? '#FFD84A' : '#8FB57C' }} /></div>
+            <span style={s.streakWord}>{boost ? `⚡ דחף! ${Math.ceil(boostLeftMs(r.streak, now) / 1000)} שנ׳` : fill > 0.02 ? 'בלי לעצור…' : 'רצף'}</span>
+          </div>
+        )}
 
         {/* אפקט איסוף: מטבע עף מהמרכז אל המונה, עם +1 */}
         {burst && (
@@ -699,7 +751,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
             <span style={s.burstPlus}>+{burst.gold ? 10 : burst.n}{homeward ? '×2' : ''}</span>
           </div>
         )}
-        {toast && <div style={s.toast}>{toast}</div>}
+        {toast && <div style={s.toast}>{buddy && toast.startsWith(buddy.name + ':') && <img src={buddy.live} alt="" style={s.toastBuddy} />}{toast}</div>}
 
         {/* ההוראה, מעל המפה */}
         <div style={s.navOverlay}>
@@ -940,6 +992,21 @@ const s = {
   newBadge: { padding: '8px 12px', borderRadius: 999, background: '#F0C069', color: '#14200F', fontSize: 14, fontWeight: 900,
     boxShadow: '0 4px 14px rgba(240,192,105,.35)', animation: 'wildenCoinPop .5s ease-out' },
   weekly: { display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: C.muted, margin: '0 0 14px', padding: '8px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
+  buddyRow: { margin: '0 0 12px', padding: '10px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
+  buddyTitle: { margin: '0 0 8px', fontSize: 14.5, color: C.muted },
+  buddyPick: { display: 'flex', gap: 6, overflowX: 'auto', paddingBottom: 2 },
+  buddyChip: { flex: 'none', width: 48, height: 48, borderRadius: 12, border: '2px solid', display: 'grid', placeItems: 'center', padding: 3, cursor: 'pointer' },
+  buddyImg: { maxHeight: 40, maxWidth: 40, objectFit: 'contain' },
+  buddyHint: { margin: '8px 0 0', fontSize: 12.5, color: C.faint },
+  streak: { position: 'absolute', top: 136, insetInlineStart: 12, zIndex: 650, display: 'flex', alignItems: 'center', gap: 8,
+    background: 'rgba(15,21,15,.85)', border: `1px solid ${C.line}`, borderRadius: 999, padding: '5px 12px 5px 8px' },
+  streakOn: { border: '1px solid #FFD84A', boxShadow: '0 0 14px rgba(255,216,74,.5)', animation: 'wildenCoinPop .35s ease-out' },
+  streakBar: { width: 70, height: 8, borderRadius: 999, background: '#243024', overflow: 'hidden' },
+  streakFill: { height: '100%', borderRadius: 999, transition: 'width 1s linear' },
+  streakWord: { fontSize: 12.5, fontWeight: 800, color: C.ink },
+  coinHudBoost: { boxShadow: '0 0 16px rgba(255,216,74,.7)', background: '#FFD84A' },
+  toastBuddy: { height: 34, width: 'auto', verticalAlign: 'middle', marginInlineEnd: 8 },
+  parentBuddy: { margin: '6px 0 0', fontSize: 14.5, color: C.muted },
   weekDot: { width: 12, height: 12, borderRadius: '50%', border: `2px solid ${C.amber}`, display: 'block' },
   parent: { background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '12px 16px', margin: '4px 0 12px' },
   parentEyebrow: { margin: 0, fontSize: 12, fontWeight: 800, letterSpacing: '.1em', color: C.faint },
