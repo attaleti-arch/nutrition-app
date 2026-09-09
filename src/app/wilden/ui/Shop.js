@@ -5,13 +5,15 @@ import { ITEMS, SLOT, KID, owns, canBuy, wearOf } from '../engine/shop'
 import { ItemSvg, Wear, kidSvg } from './Wear'
 import { CreatureAura } from './Aura'
 import { stagedFor } from '../engine/stages'
+import { GEAR, ownsGear, itemCount, canBuyGear, MAX_ITEMS } from '../engine/gear'
+import { GearIcon } from './GearIcons'
 
 // ─── החנות ───
 // זרימה אחת: בוחרים מי (יצור שנתפס, או "אני" — הילד במפה), רואים אותו
 // למעלה עם מה שהוא לובש, ולוחצים על פריט. לא נקנה ויש מטבעות — קונים והוא
 // לובש מיד. נקנה — לובש. לובש כבר — מוריד. אין "סל", אין אישור.
 
-export function Shop({ progress, onBuy, onEquip, onClose }) {
+export function Shop({ progress, onBuy, onEquip, onGear = null, onClose }) {
   const have = progress?.creatures || []
   const [who, setWho] = useState(have[0] || KID)
   const coins = progress?.coins || 0
@@ -39,6 +41,31 @@ export function Shop({ progress, onBuy, onEquip, onClose }) {
         <button onClick={onClose} style={T.close}>סגור</button>
       </div>
 
+      {/* ── ציוד למרדף ── "משהו שמקל על המרדף." כלים עם השפעה אמיתית, קודם. */}
+      <p style={T.groupTitle}>ציוד למרדף</p>
+      <div style={T.gearGrid}>
+        {GEAR.map(item => {
+          const owned = item.kind === 'gear' && ownsGear(progress, item.id)
+          const n = item.kind === 'item' ? itemCount(progress, item.id) : 0
+          const can = canBuyGear(progress, item.id)
+          return (
+            <button key={item.id} onClick={() => can && onGear?.(item.id)} disabled={!can && !owned}
+              aria-label={item.name}
+              style={{ ...T.gearCard, borderColor: owned ? '#8FB57C' : n > 0 ? '#F0C069' : '#2B382B', opacity: can || owned || n > 0 ? 1 : 0.55 }}>
+              <div style={T.gearIcon}><GearIcon id={item.id} size={64} />{n > 0 && <span style={T.gearCount}>×{n}</span>}</div>
+              <div style={{ flex: 1, textAlign: 'start' }}>
+                <p style={T.gearName}>{item.name} {item.kind === 'item' && <span style={T.once}>חד־פעמי</span>}</p>
+                <p style={T.gearDesc}>{item.desc}</p>
+                <p style={{ ...T.gearPrice, color: owned ? '#8FB57C' : can ? '#E5A342' : '#767F71' }}>
+                  {owned ? '✓ יש לכם, לתמיד' : item.kind === 'item' && n >= MAX_ITEMS ? `יש ${n} — המקסימום` : `🪙 ${item.price}${n > 0 ? ' · עוד אחד' : ''}`}
+                </p>
+              </div>
+            </button>
+          )
+        })}
+      </div>
+
+      <p style={{ ...T.groupTitle, marginTop: 18 }}>להלביש</p>
       {/* מי לובש */}
       <div style={T.whoRow}>
         {have.map(id => {
@@ -123,4 +150,12 @@ const T = {
   name: { margin: '6px 0 0', fontSize: 13.5, fontWeight: 800, lineHeight: 1.25 },
   price: { margin: '3px 0 0', fontSize: 13, fontWeight: 800 },
   hint: { margin: '14px 0 0', fontSize: 13, color: '#767F71', textAlign: 'center' },
+  gearGrid: { display: 'grid', gap: 8 },
+  gearCard: { display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(135deg, #1C271E, #131A14)', border: '1.5px solid', borderRadius: 16, padding: '10px 12px', color: '#E9E5D8', fontFamily: 'inherit', cursor: 'pointer' },
+  gearIcon: { position: 'relative', flex: 'none', width: 72, height: 72, borderRadius: 14, background: 'radial-gradient(circle at 50% 40%, #33423A, #1C261D 75%)', display: 'grid', placeItems: 'center' },
+  gearCount: { position: 'absolute', top: -6, insetInlineStart: -6, padding: '2px 7px', borderRadius: 999, background: '#F0C069', color: '#14200F', fontSize: 12, fontWeight: 900 },
+  gearName: { margin: 0, fontSize: 16.5, fontWeight: 900 },
+  once: { fontSize: 11, fontWeight: 800, color: '#F0C069', border: '1px solid rgba(240,192,105,.5)', borderRadius: 999, padding: '1px 7px', marginInlineStart: 6, verticalAlign: 'middle' },
+  gearDesc: { margin: '3px 0 0', fontSize: 13.5, color: '#C3C8BA', lineHeight: 1.4 },
+  gearPrice: { margin: '5px 0 0', fontSize: 14, fontWeight: 800 },
 }

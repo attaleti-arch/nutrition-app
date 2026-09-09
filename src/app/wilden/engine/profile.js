@@ -7,6 +7,7 @@
 // לאפס, והמשחק שולח שוב ושוב לתפוס את נימי.
 
 import { mergeWear } from './shop.js'
+import { mergeGear } from './gear.js'
 
 // בלי 0/O/1/I/L — הורה מכתיב את הקוד בטלפון ואסור שיהיה ספק
 const ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
@@ -93,6 +94,7 @@ export function mergeProgress(local, remote) {
     buddy: base.buddy || other.buddy || null,
     routeKm: base.routeKm || other.routeKm || null,
     look: { ...(other.look || {}), ...(base.look || {}) },
+    ...mergeGear(base, other),
     bond: mergeMax(base.bond, other.bond),
     minutesTotal: Math.max(base.minutesTotal || 0, other.minutesTotal || 0),
     lastWalk: base.lastWalk || other.lastWalk || null,

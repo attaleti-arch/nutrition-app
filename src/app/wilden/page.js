@@ -29,6 +29,7 @@ import { Shop } from './ui/Shop'
 import { weeklyStatus, WEEKLY_COINS, km } from './engine/weekly'
 import { bondOf, buddyLine, BOND_M } from './engine/buddy'
 import { ROUTE_KM, routeKm, poisFor, creatureCount, plannedMsKm, plannedMin } from './engine/plan'
+import { armed, gearById } from './engine/gear'
 import { boosting, streakFill, boostLeftMs, BOOST_REVEAL } from './engine/streak'
 import { usePulse } from './hooks/usePulse'
 import { badgeById } from './engine/badges'
@@ -260,6 +261,7 @@ export default function Wilden() {
         <Stage
           creature={creature}
           wear={g.progress.wear?.[creature?.id] || null}
+          mods={g.run?.mods || null}
           pos={geo.pos}
           anchor={g.run?.target || null}
           onMode={m => dispatch({ type: m === 'CAMERA' ? 'CAMERA_READY' : 'CAMERA_DENIED' })}
@@ -281,7 +283,8 @@ export default function Wilden() {
             onEquip={(who, slot, id) => { sfxAppear(); dispatch({ type: 'EQUIP', who, slot, id }) }}
             onBuddy={id => { sfxAppear(); dispatch({ type: 'SET_BUDDY', id }) }}
             onKm={km => dispatch({ type: 'SET_ROUTE_KM', km })}
-            onLook={(id, look) => { sfxAppear(); dispatch({ type: 'SET_LOOK', id, look }) }} P={P} />
+            onLook={(id, look) => { sfxAppear(); dispatch({ type: 'SET_LOOK', id, look }) }}
+            onGear={id => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_GEAR', id }) }} P={P} />
         )}
 
         {g.state === S.PERMISSIONS && (
@@ -539,7 +542,7 @@ function poisText(pois) {
   return parts.join(' · ')
 }
 
-function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onBuddy, onKm, onLook, P }) {
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onBuddy, onKm, onLook, P }) {
   const [panel, setPanel] = useState(null)   // book | badges | shop
   const week = weeklyStatus(g.progress, today)
   const buddy = creatureById(g.progress.buddy)
@@ -578,7 +581,12 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onBudd
       </div>
       {panel === 'book' && <Book progress={g.progress} onClose={() => setPanel(null)} onLook={onLook} />}
       {panel === 'badges' && <Badges progress={g.progress} onClose={() => setPanel(null)} />}
-      {panel === 'shop' && <Shop progress={g.progress} onBuy={onBuy} onEquip={onEquip} onClose={() => setPanel(null)} />}
+      {panel === 'shop' && <Shop progress={g.progress} onBuy={onBuy} onEquip={onEquip} onGear={onGear} onClose={() => setPanel(null)} />}
+
+      {/* מה מחכה למסע הבא מהחנות */}
+      {armed(g.progress).length > 0 && (
+        <p style={s.armed}>🎒 למסע הבא: {armed(g.progress).map(it => `${it.name}${it.n > 1 ? ` ×${it.n}` : ''}`).join(' · ')}</p>
+      )}
 
       {/* בן לוויה: מי יוצא איתך היום. על המפה לידך, וכל 2 ק"מ יחד = תפיסה להתפתחות שלו. */}
       {g.progress.creatures.length > 0 && (
@@ -735,7 +743,8 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
   // דחף: ארבע דקות בלי לעצור. מטבעות כפולים, והיצור מתגלה מרחוק יותר.
   const boost = boosting(r.streak, now)
   const fill = boost ? 1 : streakFill(r.streak, now)
-  const reveal = (r.walked || 0) >= PLACE_AFTER && !!heat && heat.t >= (boost ? BOOST_REVEAL : 0.65)
+  // משקפת (חנות): הסימן נדלק מרחוק כפול. דחף — אותו דבר לדקתיים.
+  const reveal = (r.walked || 0) >= PLACE_AFTER && !!heat && heat.t >= (boost ? BOOST_REVEAL : (r.mods?.reveal ?? 0.65))
   // בן הלוויה: על המפה לידך, ומדבר באבני הדרך (יציאה, חצי, הביתה, תחנה).
   const buddy = creatureById(g.progress.buddy)
   const buddyKey = !buddy ? null : homeward ? 'home' : reveal ? 'stop' : total && along / total >= 0.5 ? 'half' : 'start'
@@ -798,6 +807,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
             הביתה: <b>{fmtM(Math.max(0, total - along))}</b>
             {r.stops && !homeward && <> · יצורים בדרך: <b>{stopsLeft}</b></>}
             {homeward && <> · מטבעות כפול</>}
+            {r.used?.length > 0 && <> · 🎒 {r.used.map(id => gearById(id)?.name).filter(Boolean).join(', ')}</>}
             {g.progress.egg && <> · 🥚 <b>{warmthWord(eggWarmth(r.walked))}</b></>}
           </p>
         </div>
@@ -1023,6 +1033,7 @@ const s = {
   weekly: { display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: C.muted, margin: '0 0 14px', padding: '8px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
   buddyRow: { margin: '0 0 12px', padding: '10px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
   kmRow: { margin: '0 0 12px', padding: '10px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
+  armed: { margin: '-6px 0 12px', fontSize: 14, color: '#F0C069', fontWeight: 700 },
   kmTitle: { margin: '0 0 8px', fontSize: 12.5, fontWeight: 800, letterSpacing: '.08em', color: C.faint },
   kmPick: { display: 'flex', gap: 6 },
   kmChip: { flex: 1, padding: '8px 4px', borderRadius: 10, border: '1.5px solid', fontFamily: 'inherit', fontSize: 14, fontWeight: 800, cursor: 'pointer' },

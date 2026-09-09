@@ -42,6 +42,17 @@ export function placeCoins(path, { stops = [], every = COIN_EVERY_M, rng = Math.
   return coins
 }
 
+// מפת אוצר (חנות): עוד מטבע זהב, בחלק השני של הדרך, לא על זהב קיים.
+export function withExtraGold(coins, path) {
+  if (!coins?.length) return coins
+  const total = path ? pathLength(path) : Math.max(...coins.map(c => c.along))
+  const want = total * 0.72
+  let k = -1
+  coins.forEach((c, j) => { if (!c.gold && (k < 0 || Math.abs(c.along - want) < Math.abs(coins[k].along - want))) k = j })
+  if (k < 0) return coins
+  return coins.map((c, j) => (j === k ? { ...c, id: 'gold2', value: GOLD_VALUE, gold: true } : c))
+}
+
 // מחזירה את המטבעות המעודכנים ואת מה שנאסף עכשיו. לא משנה את הקלט.
 // הזהב לא נאסף בהליכה: הוא רגע של קפיצה (GOLD_TAKEN), לא של מעבר.
 // along: איפה הילד על המסלול. מטבע של הדרך חזרה יושב, בהלוך ושוב, על

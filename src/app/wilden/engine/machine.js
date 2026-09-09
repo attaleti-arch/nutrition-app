@@ -14,6 +14,8 @@ import { buy as buyItem, equip as equipItem } from './shop.js'
 import { grantWeekly, walkSummary } from './weekly.js'
 import { evolvedBetween } from './stages.js'
 import { routeKm, poisFor, creatureCount, placePois, setRouteKm, POI } from './plan.js'
+import { modsFor, consume, buyGear } from './gear.js'
+import { withExtraGold } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest } from './world.js'
@@ -74,6 +76,7 @@ export function initial() {
       buddy: null, bond: {},
       routeKm: null,      // אורך המסלול שההורה בחר (ק"מ); null — הלוח
       look: {},           // { [creatureId]: 'base' | מזהה צבע } — המראה שנבחר בספר
+      gear: [], items: {}, // ציוד למרדף: קבוע, וחד-פעמי עם כמות (ראה engine/gear.js)
 
       // ── הבונוס השבועי ── יום ראשון של השבוע שבו כבר ניתן (ראה engine/weekly.js)
       weeklyBonus: null,
@@ -145,18 +148,22 @@ export function reduce(g, ev) {
       // תוכנית המסע: האורך שההורה בחר (או הלוח), ומה בדרך לפי האורך.
       const km = routeKm(g.progress, walks)
       const pois = poisFor(km, walks)
+      // ציוד: הקבועים פעילים תמיד; החד-פעמיים נשרפים עכשיו ופעילים במסע הזה.
+      const mods = modsFor(g.progress)
+      const paid = extra ? { ...g.progress, coins: wallet - WALK_PLAN.extraCost } : g.progress
+      const { progress: afterGear, used } = consume(paid)
       return {
         ...g,
         state: S.PERMISSIONS,
         notice: null,
-        progress: extra ? { ...g.progress, coins: wallet - WALK_PLAN.extraCost } : g.progress,
+        progress: afterGear,
         run: {
           kind,
           missionId: ev.missionId || null,
           day: ev.day,
           startedAt: ev.t,
           walkIndex: walks,
-          km, pois,
+          km, pois, mods, used,
           wantCreatures: creaturesForWalk(walks, extra, ev.available, creatureCount(pois)),
           home: null, path: null, pos: null, lastFix: null, walkRef: null, stillRef: null,
           acc: null, walked: 0, along: 0,
@@ -191,7 +198,9 @@ export function reduce(g, ev) {
         : who.map(() => POI.CREATURE)
       const plan = placePois(ev.path, kinds, { creatures: who, freshEndM: freshEnd(ev.path) })
       const stops = plan.stops
-      const coins = placeCoins(ev.path, { stops, goldAlong: plan.goldAlong })
+      let coins = placeCoins(ev.path, { stops, goldAlong: plan.goldAlong })
+      // מפת אוצר: עוד זהב, בחלק השני של הדרך
+      if (g.run.mods?.extraGold) coins = withExtraGold(coins, ev.path)
       const coinRun = plan.coinRun
       return {
         ...g,
@@ -250,7 +259,7 @@ export function reduce(g, ev) {
 
       // ── מטבעות ──
       // עוברים דרך מטבע — הוא נאסף. הדף שומע את השינוי ב-coinsTaken ומצלצל.
-      const cc = collectCoins(r.coins, pos, undefined, along)
+      const cc = collectCoins(r.coins, pos, r.mods?.coinRadius ?? undefined, along)   // מגנט: רדיוס כפול
       // כפול בדרך הביתה, כפול בדחף — לא פי ארבע. המקסימום מהשניים.
       const coinsTaken = (r.coinsTaken || 0) + coinsValue(cc.got, Math.max(r.resolved ? HOME_BONUS : 1, boost ? BOOST_COINS : 1))
       const lastCoin = cc.got.length ? { t: ev.t, gold: cc.got.some(c => c.gold), n: cc.got.length, boost } : r.lastCoin
@@ -453,6 +462,12 @@ export function reduce(g, ev) {
       // קנו בשביל מישהו? הוא לובש מיד.
       if (ev.who && ev.slot) progress = equipItem(progress, ev.who, ev.slot, ev.id)
       return { ...g, progress }
+    }
+    // ── ציוד ── כלים למרדף. בבית בלבד; מטבעות יורדים מיד.
+    case 'BUY_GEAR': {
+      if (g.state !== S.BROKEN_WORLD) return g
+      const progress = buyGear(g.progress, ev.id)
+      return progress === g.progress ? g : { ...g, progress }
     }
     // ── המראה ── צבע מהביצה עם דמות משלו, או הרגיל. בבית בלבד.
     case 'SET_LOOK': {

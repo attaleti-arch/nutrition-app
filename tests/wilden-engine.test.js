@@ -2192,3 +2192,66 @@ test('מראה במכונה: SET_LOOK בבית, נשמר לשרת ובמיזוג
   const m = mergeProgress2({ ...g.progress, walks: 3, look: { nimi: 'base' } }, { ...initial().progress, look: { nimi: 'glow', gali: 'base' } })
   assert.deepEqual(m.look, { nimi: 'base', gali: 'base' })
 })
+
+// ══════════════════════════════════════════════
+// ─── ציוד למרדף ───
+import { GEAR, gearById, canBuyGear, buyGear, modsFor, consume, armed, ownsGear, itemCount, MAX_ITEMS, mergeGear } from '../src/app/wilden/engine/gear.js'
+import { withExtraGold } from '../src/app/wilden/engine/coins.js'
+
+test('ציוד: קבוע נקנה פעם אחת, חד-פעמי נערם עד 3, ומה שפעיל במסע הבא נגזר מהם', () => {
+  assert.equal(GEAR.length, 6)
+  const p0 = { ...initial().progress, coins: 100 }
+  assert.ok(canBuyGear(p0, 'lantern')); assert.ok(!canBuyGear({ ...p0, coins: 10 }, 'lantern'))
+  const p1 = buyGear(p0, 'lantern'); assert.equal(p1.coins, 60); assert.ok(ownsGear(p1, 'lantern'))
+  assert.equal(buyGear(p1, 'lantern'), p1, 'לא פעמיים')
+  let p2 = buyGear(buyGear(buyGear(p1, 'honey'), 'honey'), 'honey')
+  assert.equal(itemCount(p2, 'honey'), 3); assert.equal(p2.coins, 15)
+  assert.equal(itemCount(buyGear({ ...p2, coins: 99 }, 'honey'), 'honey'), MAX_ITEMS, 'לא יותר משלושה')
+  assert.deepEqual(modsFor(p2), { startM: 6, flees: 1 })
+  assert.deepEqual(armed(p2).map(a => [a.id, a.n]), [['honey', 3]])
+  // יציאה למסע שורפת אחד מכל סוג
+  const c = consume(p2)
+  assert.deepEqual(c.used, ['honey']); assert.equal(itemCount(c.progress, 'honey'), 2)
+  const c2 = consume({ ...p2, items: { honey: 1, magnet: 1 } })
+  assert.deepEqual(c2.used.sort(), ['honey', 'magnet']); assert.deepEqual(c2.progress.items, {})
+  assert.deepEqual(consume(p0).used, [])
+  // מיזוג: קבוע — איחוד; חד-פעמי — המקסימום
+  assert.deepEqual(mergeGear({ gear: ['lantern'], items: { honey: 1 } }, { gear: ['boots'], items: { honey: 2, map: 1 } }), { gear: ['lantern', 'boots'], items: { honey: 2, map: 1 } })
+})
+
+test('ציוד במרדף: פנס מקרב, פיתיון — בריחה אחת, נעליים — צעד שווה יותר', () => {
+  const nimiC = controllerFor(CREATURES.nimi)
+  const rng = () => 0.3
+  const plain = nimiC.start(0, rng, 1000)
+  const geared = nimiC.start(0, rng, 1000, { startM: 6, flees: 1, stepM: 1.0 })
+  assert.equal(plain.dist, START_M); assert.equal(geared.dist, 6)
+  assert.ok(nimiC.onStep(geared, 1100).state.dist < nimiC.onStep(plain, 1100).state.dist - 0.2, 'צעד שווה יותר')
+  // פיתיון: אחרי בריחה אחת — נעצר
+  let s = geared
+  for (let i = 0; i < 40 && s.phase !== 'NEAR'; i++) s = nimiC.onStep(s, 1200 + i * 300).state
+  assert.equal(s.phase, 'NEAR'); assert.equal(s.flees, 1, 'ברח פעם אחת בלבד')
+  let q = plain
+  for (let i = 0; i < 60 && q.phase !== 'NEAR'; i++) q = nimiC.onStep(q, 1200 + i * 300).state
+  assert.equal(q.flees, 2, 'בלי פיתיון — פעמיים')
+})
+
+test('ציוד במכונה: קנייה בבית בלבד, היציאה שורפת ומפעילה, מגנט ומפת אוצר עובדים', () => {
+  let g = { ...initial(), progress: { ...initial().progress, coins: 200 } }
+  g = reduce(g, { type: 'BUY_GEAR', id: 'magnet' }); g = reduce(g, { type: 'BUY_GEAR', id: 'map' }); g = reduce(g, { type: 'BUY_GEAR', id: 'boots' })
+  assert.equal(g.progress.coins, 200 - 20 - 25 - 60)
+  g = reduce(g, { type: 'START_RUN', kind: RUN.STORY, missionId: 'm01', day: DAY, t: 0 })
+  assert.deepEqual(g.run.mods, { stepM: 1.0, coinRadius: 28, extraGold: 1 })
+  assert.deepEqual(g.run.used.sort(), ['magnet', 'map']); assert.deepEqual(g.progress.items, {})
+  assert.equal(reduce(g, { type: 'BUY_GEAR', id: 'honey' }), g, 'לא באמצע')
+  g = reduce(g, { type: 'PERMISSION_GRANTED', home: HOME }); g = reduce(g, { type: 'ROUTE_READY', path: PATH, home: HOME, creatures: ['nimi'] })
+  assert.equal(g.run.coins.filter(c => c.gold).length, 2, 'מפת אוצר: שני זהבים')
+  // מגנט: מטבע 22 מ' מהצד נאסף (רגיל: 14)
+  const c0 = g.run.coins.find(c => !c.gold && c.along > 200)
+  const side = destination({ lat: c0.lat, lng: c0.lng }, 90, 22)
+  g = reduce(g, { type: 'FIX', lat: side.lat, lng: side.lng, acc: 8, t: 5000 })
+  assert.ok(g.run.coins.find(c => c.id === c0.id).taken, 'נמשך מרחוק')
+  assert.deepEqual(forServer(g).progress.gear, ['boots'])
+  // מטבעות: withExtraGold לא דורס זהב קיים
+  const coins = withExtraGold([{ id: 'a', along: 100, value: 1 }, { id: 'gold', along: 700, value: 10, gold: true }, { id: 'b', along: 900, value: 1 }], null)
+  assert.equal(coins.filter(c => c.gold).length, 2); assert.ok(coins.find(c => c.id === 'gold2'))
+})

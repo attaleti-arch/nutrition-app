@@ -73,6 +73,8 @@ export function makeChase({ id, target, style = 'run', copy = null }) {
   const flying = style === 'fly'
 
   // בריחה: לאן, וכמה רחוק. כל בריחה קצת פחות רחוקה — הוא מתעייף.
+  // ציוד מהחנות: פנס (startM), נעלי ריצה (stepM), פיתיון (flees). בלי — ברירות המחדל.
+  const M = s => s.mods || {}
   function flee(s, rng, t) {
     const from = s.hidden
     const n = s.flees + 1
@@ -83,7 +85,7 @@ export function makeChase({ id, target, style = 'run', copy = null }) {
     return {
       state: {
         ...s, phase: PHASE.FLEE, hidden: to, streakFrom: from, flees: n,
-        dist: START_M - 2 * n, lastMoveT: t, fleeT: t,
+        dist: (M(s).startM ?? START_M) - 2 * n, lastMoveT: t, fleeT: t,
         hiddenUntil: style === 'stomp' ? t + STOMP_HIDE_MS : 0,
         dustAt: style === 'stomp' ? from : null,
       },
@@ -97,7 +99,7 @@ export function makeChase({ id, target, style = 'run', copy = null }) {
 
   // הגיע קרוב: בורח, או נעצר אם כבר ברח מספיק.
   function arrived(s, rng, t) {
-    if (s.flees >= FLEES) return settle(s, t)
+    if (s.flees >= (M(s).flees ?? FLEES)) return settle(s, t)
     return flee(s, rng, t)
   }
 
@@ -113,13 +115,14 @@ export function makeChase({ id, target, style = 'run', copy = null }) {
     id,
     style,
 
-    start(ref, rng = Math.random, t = 0) {
+    start(ref, rng = Math.random, t = 0, mods = null) {
       // בצד, לא מאחור ולא מול: צריך להסתובב קצת כדי למצוא אותו.
       const side = rng() < 0.5 ? -1 : 1
       return {
         phase: PHASE.FAR, style, hidden: norm(ref + side * rnd(rng, 25, 55)),
-        dist: START_M, flees: 0, lastMoveT: t, tickT: t, fleeT: 0,
+        dist: mods?.startM ?? START_M, flees: 0, lastMoveT: t, tickT: t, fleeT: 0,
         streakFrom: null, ready: false, hiddenUntil: 0, dustAt: null,
+        mods: mods || null,
       }
     },
 
@@ -154,7 +157,7 @@ export function makeChase({ id, target, style = 'run', copy = null }) {
 
     // צעד אמיתי (מד התאוצה). זה הדלק של המרדף.
     onStep(s, t = 0, rng = Math.random) {
-      return closer(s, STEP_M, rng, t)
+      return closer(s, M(s).stepM ?? STEP_M, rng, t)
     },
 
     // הזמן עובר: עומדים — הוא מתרחק. "הוא ברח!" חוזר ל"רוצו" אחרי רגע.

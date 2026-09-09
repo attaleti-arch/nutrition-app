@@ -37,7 +37,7 @@ const DECAY = 0.6
 const TICK = 80
 const TICK_CHASE = 250     // הדופק של המרדף: צעדים וזמן
 
-export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor = null, wear = null }) {
+export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor = null, wear = null, mods = null }) {
   // ── המצלמה ──
   // התוצאה מדווחת החוצה למכונה. בלי זה "מצלמה נדחתה ← Story Mode" נשאר
   // כלל שנבדק במנוע ולא מתקיים במציאות. הפתיחה עצמה, הזמן הקצוב והניסיון
@@ -90,7 +90,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
     const ref = heading != null ? heading : (needsAsk && perm === 'unknown' ? null : 0)
     if (ref == null) return
     anchored.current = true
-    setCs(ctrl.start(ref, Math.random, Date.now()))
+    setCs(ctrl.start(ref, Math.random, Date.now(), mods))
   }, [heading, needsAsk, perm, ctrl])
 
   const live = hasSensors ? heading : swipe
