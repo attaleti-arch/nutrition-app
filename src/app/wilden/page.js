@@ -155,9 +155,7 @@ export default function Wilden() {
   // וחוזרים — לא נטפל בילד.
   const [goldOpen, setGoldOpen] = useState(false)
   const [hatchSeen, setHatchSeen] = useState(false)
-  const [evolveSeen, setEvolveSeen] = useState(false)
-  // הביצה וההתפתחות — פעם אחת לכל מסע; מתאפסים כשמסע חדש מתחיל.
-  useEffect(() => { if (g.state === S.BROKEN_WORLD) { setEvolveSeen(false) } }, [g.state])
+  const [seenEvolved, setSeenEvolved] = useState(null)   // הרשימה שכבר הוצגה (לפי זהות)
   // ── הקליפ אחרי התפיסה ── פעם אחת לכל תפיסה; נטען מראש בזמן המפגש.
   const [clipSeen, setClipSeen] = useState(false)
   useEffect(() => { if (g.state !== S.CAUGHT) setClipSeen(false) }, [g.state])
@@ -244,8 +242,9 @@ export default function Wilden() {
         <Hatch hatched={g.hatched} onClose={() => setHatchSeen(true)} />
       )}
       {/* מי גדל במסע הזה — אחרי הביצה, לפני מסך הסיום */}
-      {g.evolved?.length > 0 && (g.state === S.CLUE || g.state === S.RUN_COMPLETE) && (!g.hatched || hatchSeen) && !evolveSeen && (
-        <Evolve evolved={g.evolved} wearAll={g.progress.wear} progress={g.progress} onClose={() => setEvolveSeen(true)} />
+      {/* גם בבית: אבן צמיחה מהחנות מגדילה מיד. כל רשימה חדשה של "מי גדל" מוצגת פעם אחת. */}
+      {g.evolved?.length > 0 && (g.state === S.CLUE || g.state === S.RUN_COMPLETE || g.state === S.BROKEN_WORLD) && (!g.hatched || hatchSeen) && seenEvolved !== g.evolved && (
+        <Evolve evolved={g.evolved} wearAll={g.progress.wear} progress={g.progress} onClose={() => setSeenEvolved(g.evolved)} />
       )}
 
       {/* הקליפ של היצור, אחרי "תפסתם אותו!" ולפני ספירת המטבעות */}
@@ -284,7 +283,9 @@ export default function Wilden() {
             onBuddy={id => { sfxAppear(); dispatch({ type: 'SET_BUDDY', id }) }}
             onKm={km => dispatch({ type: 'SET_ROUTE_KM', km })}
             onLook={(id, look) => { sfxAppear(); dispatch({ type: 'SET_LOOK', id, look }) }}
-            onGear={id => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_GEAR', id }) }} P={P} />
+            onGear={id => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_GEAR', id }) }}
+            onSkin={(creature, skin) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_SKIN', creature, skin }) }}
+            onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }} P={P} />
         )}
 
         {g.state === S.PERMISSIONS && (
@@ -542,7 +543,7 @@ function poisText(pois) {
   return parts.join(' · ')
 }
 
-function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onBuddy, onKm, onLook, P }) {
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onKm, onLook, P }) {
   const [panel, setPanel] = useState(null)   // book | badges | shop
   const week = weeklyStatus(g.progress, today)
   const buddy = creatureById(g.progress.buddy)
@@ -581,7 +582,7 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
       </div>
       {panel === 'book' && <Book progress={g.progress} onClose={() => setPanel(null)} onLook={onLook} />}
       {panel === 'badges' && <Badges progress={g.progress} onClose={() => setPanel(null)} />}
-      {panel === 'shop' && <Shop progress={g.progress} onBuy={onBuy} onEquip={onEquip} onGear={onGear} onClose={() => setPanel(null)} />}
+      {panel === 'shop' && <Shop progress={g.progress} onBuy={onBuy} onEquip={onEquip} onGear={onGear} onSkin={onSkin} onStone={onStone} onLook={onLook} onClose={() => setPanel(null)} />}
 
       {/* מה מחכה למסע הבא מהחנות */}
       {armed(g.progress).length > 0 && (

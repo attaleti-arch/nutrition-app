@@ -13,6 +13,17 @@ export function GearIcon({ id, size = 64, style }) {
 }
 
 const ICONS = {
+  stone: (
+    <g>
+      <path d="M50 8 L84 30 L76 76 L24 76 L16 30 Z" fill="#6EE6C8" />
+      <path d="M50 8 L84 30 L50 40 Z" fill="#B8F5E6" opacity=".8" />
+      <path d="M50 40 L84 30 L76 76 Z" fill="#3FBFA0" />
+      <path d="M50 40 L24 76 L16 30 Z" fill="#9AF0DA" opacity=".7" />
+      <path d="M50 40 L76 76 L24 76 Z" fill="#2E9C82" />
+      <circle cx="50" cy="8" r="4" fill="#FFF6DC" />
+      <path d="M14 18 L20 24 M86 16 L80 22 M50 90 V96" stroke="#FFD84A" strokeWidth="3" strokeLinecap="round" />
+    </g>
+  ),
   lantern: (
     <g>
       <rect x="36" y="14" width="28" height="10" rx="3" fill="#8A6A3A" />

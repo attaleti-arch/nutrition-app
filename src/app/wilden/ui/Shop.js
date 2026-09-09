@@ -6,6 +6,8 @@ import { ItemSvg, Wear, kidSvg } from './Wear'
 import { CreatureAura } from './Aura'
 import { stagedFor } from '../engine/stages'
 import { GEAR, ownsGear, itemCount, canBuyGear, MAX_ITEMS } from '../engine/gear'
+import { SKINS, ownsSkin, canBuySkin, canBuyStone, STONE_PRICE } from '../engine/skins'
+import { stageProgress } from '../engine/stages'
 import { GearIcon } from './GearIcons'
 
 // ─── החנות ───
@@ -13,13 +15,14 @@ import { GearIcon } from './GearIcons'
 // למעלה עם מה שהוא לובש, ולוחצים על פריט. לא נקנה ויש מטבעות — קונים והוא
 // לובש מיד. נקנה — לובש. לובש כבר — מוריד. אין "סל", אין אישור.
 
-export function Shop({ progress, onBuy, onEquip, onGear = null, onClose }) {
+export function Shop({ progress, onBuy, onEquip, onGear = null, onSkin = null, onStone = null, onLook = null, onClose }) {
   const have = progress?.creatures || []
   const [who, setWho] = useState(have[0] || KID)
   const coins = progress?.coins || 0
   const wear = wearOf(progress, who)
   const isKid = who === KID
-  const c = isKid ? null : stagedFor(progress, creatureById(who))
+  const base = isKid ? null : creatureById(who)
+  const c = isKid ? null : stagedFor(progress, base)
 
   const groups = [
     { title: 'כובעים', items: ITEMS.filter(i => i.slot === SLOT.HEAD) },
@@ -65,7 +68,7 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onClose }) {
         })}
       </div>
 
-      <p style={{ ...T.groupTitle, marginTop: 18 }}>להלביש</p>
+      <p style={{ ...T.groupTitle, marginTop: 18 }}>סקינים ולהלביש · למי?</p>
       {/* מי לובש */}
       <div style={T.whoRow}>
         {have.map(id => {
@@ -80,6 +83,45 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onClose }) {
           <span style={T.whoKid}>אני</span>
         </button>
       </div>
+
+      {/* ── סקינים ── "הבן שלי אומר סקינים." מראה חדש ליצור הנבחר, וסקין מהביצה אם בקע. */}
+      {!isKid && c && (
+        <div style={T.skinRow}>
+          <button onClick={() => onLook?.(who, 'base')} aria-label="מראה רגיל"
+            style={{ ...T.skinCard, borderColor: !c.look ? '#8FB57C' : '#2B382B' }}>
+            <div style={T.skinPic}><img src={base.live} alt="" style={T.skinImg} draggable={false} /></div>
+            <p style={T.skinName}>רגיל</p>
+            <p style={{ ...T.price, color: !c.look ? '#8FB57C' : '#9BA495' }}>{!c.look ? '✓ לובש' : 'ללבוש'}</p>
+          </button>
+          {SKINS.map(sk => {
+            const owned = ownsSkin(progress, who, sk.id)
+            const wearing = c.look === sk.id
+            const can = canBuySkin(progress, who, sk.id)
+            return (
+              <button key={sk.id} onClick={() => (wearing ? onLook?.(who, 'base') : owned ? onLook?.(who, sk.id) : can && onSkin?.(who, sk.id))}
+                disabled={!owned && !can} aria-label={`סקין ${sk.name}`}
+                style={{ ...T.skinCard, borderColor: wearing ? '#8FB57C' : owned ? '#F0C069' : '#2B382B', opacity: owned || can ? 1 : 0.55 }}>
+                <div style={T.skinPic}>
+                  <span style={{ ...T.skinAura, background: `radial-gradient(circle, ${sk.aura}, rgba(0,0,0,0) 65%)` }} />
+                  <img src={base.live} alt="" style={{ ...T.skinImg, filter: sk.filter, position: 'relative', zIndex: 1 }} draggable={false} />
+                </div>
+                <p style={T.skinName}>{base.gender === 'f' ? sk.nameF : sk.name}</p>
+                <p style={{ ...T.price, color: wearing ? '#8FB57C' : owned ? '#9BA495' : can ? '#E5A342' : '#767F71' }}>
+                  {wearing ? '✓ לובש' : owned ? 'ללבוש' : `🪙 ${sk.price}`}
+                </p>
+              </button>
+            )
+          })}
+          {/* אבן צמיחה: נקודת התפתחות ליצור הזה */}
+          <button onClick={() => canBuyStone(progress, who) && onStone?.(who)} disabled={!canBuyStone(progress, who)} aria-label="אבן צמיחה"
+            style={{ ...T.skinCard, borderColor: '#2B382B', opacity: canBuyStone(progress, who) ? 1 : 0.55 }}>
+            <div style={T.skinPic}><GearIcon id="stone" size={56} /></div>
+            <p style={T.skinName}>אבן צמיחה</p>
+            <p style={{ ...T.price, color: canBuyStone(progress, who) ? '#E5A342' : '#767F71' }}>🪙 {STONE_PRICE}</p>
+            <p style={T.skinSub}>{stageProgress(progress, who).next ? `+1 · עוד ${stageProgress(progress, who).left} ${base.gender === 'f' ? 'והיא גדלה' : 'והוא גדל'}` : 'כבר אגדי'}</p>
+          </button>
+        </div>
+      )}
 
       {/* התצוגה: הנבחר, עם מה שהוא לובש */}
       <div style={T.stage}>
@@ -150,6 +192,13 @@ const T = {
   name: { margin: '6px 0 0', fontSize: 13.5, fontWeight: 800, lineHeight: 1.25 },
   price: { margin: '3px 0 0', fontSize: 13, fontWeight: 800 },
   hint: { margin: '14px 0 0', fontSize: 13, color: '#767F71', textAlign: 'center' },
+  skinRow: { display: 'flex', gap: 8, overflowX: 'auto', padding: '8px 0 6px', marginTop: 6 },
+  skinCard: { flex: 'none', width: 112, background: '#161E17', border: '1.5px solid', borderRadius: 14, padding: '8px 6px', textAlign: 'center', color: '#E9E5D8', fontFamily: 'inherit', cursor: 'pointer' },
+  skinPic: { position: 'relative', height: 84, display: 'grid', placeItems: 'center', overflow: 'hidden', borderRadius: 10 },
+  skinAura: { position: 'absolute', left: '50%', top: '55%', width: '120%', height: '120%', transform: 'translate(-50%,-50%)', borderRadius: '50%' },
+  skinImg: { maxHeight: 80, maxWidth: 96, objectFit: 'contain' },
+  skinName: { margin: '6px 0 0', fontSize: 14, fontWeight: 900 },
+  skinSub: { margin: '3px 0 0', fontSize: 11.5, color: '#9BA495', lineHeight: 1.3 },
   gearGrid: { display: 'grid', gap: 8 },
   gearCard: { display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(135deg, #1C271E, #131A14)', border: '1.5px solid', borderRadius: 16, padding: '10px 12px', color: '#E9E5D8', fontFamily: 'inherit', cursor: 'pointer' },
   gearIcon: { position: 'relative', flex: 'none', width: 72, height: 72, borderRadius: 14, background: 'radial-gradient(circle at 50% 40%, #33423A, #1C261D 75%)', display: 'grid', placeItems: 'center' },

@@ -9,7 +9,7 @@ import { badgeList } from '../engine/badges'
 import { itemById } from '../engine/shop'
 import { Wear } from './Wear'
 import { CreatureAura, StageTag } from './Aura'
-import { STAGES, stageProgress, stagedFor, stagedName, hasLook } from '../engine/stages'
+import { STAGES, stageProgress, stagedFor, stagedName, hasLook, looksFor, lookName } from '../engine/stages'
 
 // ─── ספר היצורים, והישגים ───
 // עמוד לכל יצור: מי הוא, מה הוא מביא, כמה פעמים נתפס, באילו צבעים. מי
@@ -97,7 +97,7 @@ function CreaturePage({ id, progress, onClose, onLook }) {
             </div>}
       </div>
       <p style={B.pageHint}>{dressed ? `${c.name} עם ${Object.values(wear).map(w => itemById(w)?.name).filter(Boolean).join(' ו')}` : 'סובבו אותו עם האצבע'}</p>
-      <h3 style={B.pageName}>{stagedName(c, sp.stage)}{c.look ? ` ${variantName(c.look, c)}` : ''}</h3>
+      <h3 style={B.pageName}>{stagedName(c, sp.stage)}{c.look ? ` ${lookName(c.look, c)}` : ''}</h3>
       {/* שלושת השלבים: מה הושג, ומה הסף הבא */}
       <div style={B.stages} aria-label="שלבי התפתחות">
         {STAGES.map(st => (
@@ -107,10 +107,14 @@ function CreaturePage({ id, progress, onClose, onLook }) {
         ))}
       </div>
       {sp.next && <p style={B.pageGrow}>נתפס {sp.have} מ־{sp.need}. עוד {sp.left === 1 ? 'תפיסה אחת' : `${sp.left} תפיסות`}.</p>}
+      {/* המראה: רגיל, מה שבקע מהביצה, סקינים מהחנות */}
       {canLook && onLook && (
-        <button onClick={() => onLook(id, c.look ? 'base' : null)} style={B.lookBtn}>
-          {c.look ? `מראה: ${variantName(c.look, c)} · להחליף לרגיל` : `להחליף למראה מהביצה ✨ ${vs.map(v => variantName(v.variant, c)).filter(Boolean).join(' / ')}`}
-        </button>
+        <div style={B.looks} aria-label="מראה">
+          <button onClick={() => onLook(id, 'base')} style={{ ...B.lookChip, ...(c.look ? {} : B.lookOn) }}>רגיל</button>
+          {looksFor(progress, base).map(l => (
+            <button key={l} onClick={() => onLook(id, l)} style={{ ...B.lookChip, ...(c.look === l ? B.lookOn : {}) }}>✨ {lookName(l, c)}</button>
+          ))}
+        </div>
       )}
       <p style={B.pageLine}>"{creatureLine(id, line)}"</p>
       <div style={B.facts}>
@@ -167,6 +171,9 @@ const B = {
   stages: { display: 'flex', gap: 6, marginTop: 6 },
   stageDot: { padding: '4px 10px', borderRadius: 999, border: '1px solid #2B382B', fontSize: 12.5, fontWeight: 800 },
   pageGrow: { margin: '6px 0 0', fontSize: 13.5, color: '#9BA495' },
+  looks: { display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginTop: 10 },
+  lookChip: { padding: '6px 12px', borderRadius: 999, border: '1px solid #2B382B', background: 'transparent', color: '#E9E5D8', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' },
+  lookOn: { borderColor: '#F0C069', background: 'rgba(240,192,105,.18)', color: '#F0C069' },
   lookBtn: { marginTop: 10, padding: '8px 14px', borderRadius: 10, border: '1px solid #F0C069', background: 'transparent', color: '#F0C069', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' },
   img: { maxHeight: 116, maxWidth: '100%', objectFit: 'contain' },
   unknown: { fontSize: 54, fontWeight: 900, color: '#3A473A' },

@@ -9,7 +9,8 @@
 // דמות, גדולה יותר, עם הילה. המשחק עובד לפני שכל החומרים מוכנים.
 
 import { bondCredits } from './buddy.js'
-import { tintOf } from './egg.js'
+import { tintOf, variantName } from './egg.js'
+import { skinTint, skinById, ownsSkin, stoneCredits } from './skins.js'
 
 export const STAGES = [
   { n: 1, name: 'גור', need: 0, scale: 1 },
@@ -27,8 +28,9 @@ export function stageFor(points) {
   for (const st of STAGES) if ((points || 0) >= st.need) s = st.n
   return s
 }
-// הנקודות של יצור: תפיסות, ועוד אחת על כל 2 ק"מ שהלכו איתו כבן לוויה.
-export const stagePoints = (progress, id) => (progress?.caught?.[id] || 0) + bondCredits(progress, id)
+// הנקודות של יצור: תפיסות, ועוד אחת על כל 2 ק"מ שהלכו איתו כבן לוויה,
+// ועוד אחת על כל אבן צמיחה מהחנות.
+export const stagePoints = (progress, id) => (progress?.caught?.[id] || 0) + bondCredits(progress, id) + stoneCredits(progress, id)
 export const stageOf = (progress, id) => stageFor(stagePoints(progress, id))
 
 // לספר: { stage, have, need, next } — need הוא הסף של השלב הבא, null באגדי.
@@ -66,19 +68,31 @@ export const grewVerb = creature => (creature?.gender === 'f' ? 'גדלה' : 'ג
 // (progress.look[id] = 'base' | מזהה צבע).
 // צבע "נראה" אם יש לו דמות (creature.variants[id]) או גוון (egg.TINT).
 const wearable = (creature, id) => !!(creature?.variants?.[id] || tintOf(id))
+// מה היצור הזה יכול ללבוש: מהביצה (מה שבקע), ומהחנות (סקינים שנקנו).
+export function looksFor(progress, creature) {
+  if (!creature) return []
+  const out = []
+  for (const v of progress?.variants || []) {
+    if (v.creature === creature.id && wearable(creature, v.variant) && !out.includes(v.variant)) out.push(v.variant)
+  }
+  for (const s of progress?.skins?.[creature.id] || []) if (!out.includes(s)) out.push(s)
+  return out
+}
+const canWear = (progress, creature, id) => wearable(creature, id) ? (progress?.variants || []).some(v => v.creature === creature.id && v.variant === id) : ownsSkin(progress, creature.id, id)
 export function lookOf(progress, creature) {
   if (!creature) return null
   const pick = progress?.look?.[creature.id]
   if (pick === 'base') return null
-  if (pick && wearable(creature, pick)) return pick
+  if (pick && (canWear(progress, creature, pick) || creature.variants?.[pick])) return pick
   const had = (progress?.variants || []).filter(v => v.creature === creature.id && wearable(creature, v.variant))
   // דמות שלמה עדיפה על גוון, אם בקעו כמה צבעים
   const withArt = had.filter(v => creature.variants?.[v.variant])
   const list = withArt.length ? withArt : had
   return list.length ? list[list.length - 1].variant : null
 }
-export const hasLook = (progress, creature) =>
-  (progress?.variants || []).some(v => v.creature === creature.id && wearable(creature, v.variant))
+export const hasLook = (progress, creature) => looksFor(progress, creature).length > 0
+// השם של מראה: צבע מהביצה, או סקין.
+export const lookName = (id, creature) => variantName(id, creature) || (creature?.gender === 'f' ? skinById(id)?.nameF : skinById(id)?.name) || ''
 
 // היצור בשלב: אותו מרשם, עם הדמות של השלב אם יש, ובגודל של השלב.
 // look — צבע מהביצה עם דמות משלו: מנצח את דמות השלב, ובלי הילה.
@@ -87,7 +101,7 @@ export function staged(creature, stage = 1, look = null) {
   if (!creature) return null
   const n = Math.max(1, Math.min(MAX_STAGE, stage || 1))
   const lookArt = look && creature.variants?.[look] ? creature.variants[look] : null
-  const tint = !lookArt && look ? tintOf(look) : null
+  const tint = !lookArt && look ? (tintOf(look) || skinTint(look)) : null
   const art = lookArt || (n > 1 ? creature.stages?.[n] || null : null)
   const out = {
     ...creature,

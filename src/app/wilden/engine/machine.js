@@ -15,6 +15,7 @@ import { grantWeekly, walkSummary } from './weekly.js'
 import { evolvedBetween } from './stages.js'
 import { routeKm, poisFor, creatureCount, placePois, setRouteKm, POI } from './plan.js'
 import { modsFor, consume, buyGear } from './gear.js'
+import { buySkin, buyStone } from './skins.js'
 import { withExtraGold } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
@@ -77,6 +78,7 @@ export function initial() {
       routeKm: null,      // אורך המסלול שההורה בחר (ק"מ); null — הלוח
       look: {},           // { [creatureId]: 'base' | מזהה צבע } — המראה שנבחר בספר
       gear: [], items: {}, // ציוד למרדף: קבוע, וחד-פעמי עם כמות (ראה engine/gear.js)
+      skins: {}, stones: {}, // סקינים שנקנו ליצור, ואבני צמיחה (ראה engine/skins.js)
 
       // ── הבונוס השבועי ── יום ראשון של השבוע שבו כבר ניתן (ראה engine/weekly.js)
       weeklyBonus: null,
@@ -462,6 +464,20 @@ export function reduce(g, ev) {
       // קנו בשביל מישהו? הוא לובש מיד.
       if (ev.who && ev.slot) progress = equipItem(progress, ev.who, ev.slot, ev.id)
       return { ...g, progress }
+    }
+    // ── סקינים ואבן צמיחה ── ליצור מסוים. בבית בלבד.
+    case 'BUY_SKIN': {
+      if (g.state !== S.BROKEN_WORLD) return g
+      const progress = buySkin(g.progress, ev.creature, ev.skin)
+      return progress === g.progress ? g : { ...g, progress }
+    }
+    case 'BUY_STONE': {
+      if (g.state !== S.BROKEN_WORLD) return g
+      const progress = buyStone(g.progress, ev.creature)
+      if (progress === g.progress) return g
+      // אבן שמגדילה עכשיו — מסך ההתפתחות, כמו בפורטל
+      const evolved = evolvedBetween(g.progress, progress)
+      return { ...g, progress, evolved: evolved.length ? evolved : g.evolved || null }
     }
     // ── ציוד ── כלים למרדף. בבית בלבד; מטבעות יורדים מיד.
     case 'BUY_GEAR': {

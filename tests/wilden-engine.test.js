@@ -2255,3 +2255,42 @@ test('ציוד במכונה: קנייה בבית בלבד, היציאה שורפ
   const coins = withExtraGold([{ id: 'a', along: 100, value: 1 }, { id: 'gold', along: 700, value: 10, gold: true }, { id: 'b', along: 900, value: 1 }], null)
   assert.equal(coins.filter(c => c.gold).length, 2); assert.ok(coins.find(c => c.id === 'gold2'))
 })
+
+// ══════════════════════════════════════════════
+// ─── סקינים ואבן צמיחה ───
+import { SKINS, skinById, canBuySkin, buySkin, ownsSkin, canBuyStone, buyStone, STONE_PRICE, stoneCredits, mergeSkins } from '../src/app/wilden/engine/skins.js'
+import { looksFor, lookName } from '../src/app/wilden/engine/stages.js'
+
+test('סקינים: קונים ליצור שנתפס, הוא לובש מיד, ובספר אפשר להחליף בין רגיל / ביצה / סקין', () => {
+  assert.ok(SKINS.length >= 5)
+  const p0 = { ...initial().progress, coins: 100, creatures: ['gali'], variants: [{ creature: 'gali', variant: 'gold' }] }
+  assert.ok(!canBuySkin(p0, 'nimi', 'lava'), 'לא נתפס'); assert.ok(canBuySkin(p0, 'gali', 'lava'))
+  const p1 = buySkin(p0, 'gali', 'lava')
+  assert.equal(p1.coins, 55); assert.ok(ownsSkin(p1, 'gali', 'lava')); assert.equal(p1.look.gali, 'lava')
+  assert.equal(buySkin(p1, 'gali', 'lava'), p1, 'לא פעמיים')
+  const s = stagedFor(p1, CREATURES.gali)
+  assert.equal(s.look, 'lava'); assert.ok(s.tint.includes('sepia')); assert.equal(s.auraColor, skinById('lava').aura)
+  assert.deepEqual(looksFor(p1, CREATURES.gali), ['gold', 'lava'])
+  assert.equal(lookName('lava', CREATURES.gali), 'לבה'); assert.equal(lookName('gold', CREATURES.gali), 'זהובה')
+  // חזרה לזהוב, לרגיל
+  assert.equal(stagedFor({ ...p1, look: { gali: 'gold' } }, CREATURES.gali).look, 'gold')
+  assert.equal(stagedFor({ ...p1, look: { gali: 'base' } }, CREATURES.gali).look, null)
+  assert.equal(stagedFor({ ...p1, look: { gali: 'silver' } }, CREATURES.gali).look, 'gold', 'סקין שלא נקנה — לא לובשים; חוזרים למה שבקע')
+  // אבן צמיחה
+  assert.ok(canBuyStone(p1, 'gali')); assert.ok(!canBuyStone({ ...p1, coins: 10 }, 'gali'))
+  const p2 = buyStone(buyStone({ ...p1, coins: 200, caught: { gali: 1 } }, 'gali'), 'gali')
+  assert.equal(stoneCredits(p2, 'gali'), 2); assert.equal(stageOf(p2, 'gali'), 2, '1 תפיסה + 2 אבנים = בוגר')
+  assert.deepEqual(mergeSkins({ skins: { gali: ['lava'] }, stones: { gali: 1 } }, { skins: { gali: ['silver'], nimi: ['forest'] }, stones: { gali: 2 } }), { skins: { gali: ['lava', 'silver'], nimi: ['forest'] }, stones: { gali: 2 } })
+})
+
+test('סקינים במכונה: בבית בלבד; אבן שמגדילה פותחת את מסך ההתפתחות; נשמר לשרת', () => {
+  let g = { ...initial(), progress: { ...initial().progress, coins: 200, creatures: ['nimi'], caught: { nimi: 2 } } }
+  g = reduce(g, { type: 'BUY_SKIN', creature: 'nimi', skin: 'forest' })
+  assert.deepEqual(g.progress.skins, { nimi: ['forest'] }); assert.equal(g.progress.look.nimi, 'forest')
+  g = reduce(g, { type: 'BUY_STONE', creature: 'nimi' })
+  assert.equal(g.progress.stones.nimi, 1)
+  assert.deepEqual(g.evolved, [{ id: 'nimi', from: 1, to: 2 }], 'האבן השלישית מגדילה — מסך ההתפתחות')
+  const walking = started(['nimi'], { ...g, evolved: null })
+  assert.equal(reduce(walking, { type: 'BUY_SKIN', creature: 'nimi', skin: 'lava' }), walking)
+  assert.deepEqual(forServer(g).progress.skins, { nimi: ['forest'] }); assert.equal(forServer(g).progress.stones.nimi, 1)
+})

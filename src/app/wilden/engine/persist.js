@@ -75,6 +75,8 @@ export function forServer(g) {
       look: g.progress?.look ?? {},
       gear: g.progress?.gear ?? [],
       items: g.progress?.items ?? {},
+      skins: g.progress?.skins ?? {},
+      stones: g.progress?.stones ?? {},
       bond: g.progress?.bond ?? {},
       minutesTotal: g.progress?.minutesTotal ?? 0,
       lastWalk: g.progress?.lastWalk ?? null,
