@@ -13,7 +13,8 @@ import { sfxCatch, buzz } from '../engine/audio'
 export function Hatch({ hatched, onClose }) {
   const creature = creatureById(hatched?.creature)
   const variant = variantById(hatched?.variant)
-  const ready = useModelViewer(!!creature?.model)
+  const art = creature?.variants?.[variant?.id] || null
+  const ready = useModelViewer(!!creature?.model && !art)
   const ref = useRef(null)
   const [cracked, setCracked] = useState(false)
   const [shown, setShown] = useState(false)
@@ -55,7 +56,13 @@ export function Hatch({ hatched, onClose }) {
           <div style={S.egg} />
         </div>
       )}
-      {cracked && ready && creature.model && (
+      {/* צבע עם דמות משלו (הקליפ): הדמות עצמה, במקום גוון על המודל */}
+      {cracked && art && (
+        <div style={S.artWrap}>
+          <img src={art.live} alt="" draggable={false} style={S.art} />
+        </div>
+      )}
+      {cracked && !art && ready && creature.model && (
         <model-viewer ref={ref} src={creature.model}
           camera-orbit="-30deg 78deg auto" interaction-prompt="none" environment-image="neutral"
           shadow-intensity="0.7" exposure="1.1" auto-rotate auto-rotate-delay="0" rotation-per-second="18deg"
@@ -87,6 +94,8 @@ const S = {
     boxShadow: '0 20px 40px rgba(0,0,0,.5), inset -10px -14px 24px rgba(0,0,0,.12)',
     animation: 'wildenEggShake .6s ease-in-out infinite', transformOrigin: '50% 90%' },
   model: { position: 'absolute', inset: 0, width: '100%', height: '100%', transition: 'opacity .6s' },
+  artWrap: { position: 'absolute', left: 0, right: 0, top: '8%', height: '56%', display: 'grid', placeItems: 'center', animation: 'wildenGlowIn 1s ease-out' },
+  art: { height: '100%', width: 'auto', display: 'block' },
   text: { position: 'absolute', left: 0, right: 0, bottom: 40, padding: '0 24px', textAlign: 'center' },
   eyebrow: { margin: 0, fontSize: 13, fontWeight: 700, letterSpacing: '.14em', color: '#E5A342' },
   name: { margin: '6px 0 0', fontSize: 34, fontWeight: 900, color: '#E9E5D8', textShadow: '0 2px 14px rgba(0,0,0,.85)' },

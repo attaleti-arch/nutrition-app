@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { creatureById } from '../content/creatures'
-import { staged, stagedName, grewVerb, stageInfo } from '../engine/stages'
+import { staged, stagedName, grewVerb, stageInfo, lookOf } from '../engine/stages'
 import { sfxCheer, sfxFinish, buzz } from '../engine/audio'
 import { Aura } from './Aura'
 import { Wear } from './Wear'
@@ -11,7 +11,7 @@ import { Wear } from './Wear'
 // ומתוכו יוצא הגדול. Runway לא יודע להפוך דמות לדמות — הרגע הזה שלנו.
 // evolved: [{ id, from, to }]; מראים אחד אחרי השני.
 
-export function Evolve({ evolved, wearAll = {}, onClose }) {
+export function Evolve({ evolved, wearAll = {}, progress = null, onClose }) {
   const [i, setI] = useState(0)
   const ev = evolved?.[i]
   const base = creatureById(ev?.id)
@@ -24,7 +24,8 @@ export function Evolve({ evolved, wearAll = {}, onClose }) {
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [i, ev])
   if (!ev || !base) return null
-  const from = staged(base, ev.from), to = staged(base, ev.to)
+  const look = lookOf(progress, base)
+  const from = staged(base, ev.from, look), to = staged(base, ev.to, look)
   const cur = phase === 'after' ? to : from
   const next = () => (i + 1 < evolved.length ? setI(i + 1) : onClose?.())
   const gold = ev.to >= 3

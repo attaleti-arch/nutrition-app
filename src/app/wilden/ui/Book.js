@@ -9,14 +9,14 @@ import { badgeList } from '../engine/badges'
 import { itemById } from '../engine/shop'
 import { Wear } from './Wear'
 import { Aura, StageTag } from './Aura'
-import { STAGES, stageProgress, staged, stagedName } from '../engine/stages'
+import { STAGES, stageProgress, stagedFor, stagedName, hasLook } from '../engine/stages'
 
 // ─── ספר היצורים, והישגים ───
 // עמוד לכל יצור: מי הוא, מה הוא מביא, כמה פעמים נתפס, באילו צבעים. מי
 // שלא נתפס — צללית וסימן שאלה, כדי שיהיה מה לרצות. לחיצה על יצור שנתפס
 // פותחת אותו בתלת-ממד, לסובב עם האצבע — זה המקום של המודלים.
 
-export function Book({ progress, onClose }) {
+export function Book({ progress, onClose, onLook = null }) {
   const [open, setOpen] = useState(null)
   const have = progress?.creatures || []
   const caught = progress?.caught || {}
@@ -31,7 +31,7 @@ export function Book({ progress, onClose }) {
       <div style={B.grid}>
         {AVAILABLE.map(id => {
           const sp = stageProgress(progress, id)
-          const c = staged(CREATURES[id], sp.stage)
+          const c = stagedFor(progress, CREATURES[id])
           const known = have.includes(id)
           const n = caught[id] || 0
           const vs = variants.filter(v => v.creature === id)
@@ -62,14 +62,16 @@ export function Book({ progress, onClose }) {
           )
         })}
       </div>
-      {open && <CreaturePage id={open} progress={progress} onClose={() => setOpen(null)} />}
+      {open && <CreaturePage id={open} progress={progress} onClose={() => setOpen(null)} onLook={onLook} />}
     </div>
   )
 }
 
-function CreaturePage({ id, progress, onClose }) {
+function CreaturePage({ id, progress, onClose, onLook }) {
   const sp = stageProgress(progress, id)
-  const c = staged(creatureById(id), sp.stage)
+  const base = creatureById(id)
+  const c = stagedFor(progress, base)
+  const canLook = hasLook(progress, base)      // יש צבע מהביצה עם דמות משלו — אפשר להחליף מראה
   const ready = useModelViewer(!!c?.model)
   const ref = useRef(null)
   const [line, setLine] = useState(0)
@@ -105,6 +107,11 @@ function CreaturePage({ id, progress, onClose }) {
         ))}
       </div>
       {sp.next && <p style={B.pageGrow}>נתפס {sp.have} מ־{sp.need}. עוד {sp.left === 1 ? 'תפיסה אחת' : `${sp.left} תפיסות`}.</p>}
+      {canLook && onLook && (
+        <button onClick={() => onLook(id, c.look ? 'base' : null)} style={B.lookBtn}>
+          {c.look ? `מראה: ${variantById(c.look)?.name} · להחליף לרגיל` : 'להחליף למראה מהביצה ✨'}
+        </button>
+      )}
       <p style={B.pageLine}>"{creatureLine(id, line)}"</p>
       <div style={B.facts}>
         <span style={B.fact}>{RES_ICON[RES_OF[id]]} מביא {RES_NAME[RES_OF[id]]}</span>
@@ -160,12 +167,13 @@ const B = {
   stages: { display: 'flex', gap: 6, marginTop: 6 },
   stageDot: { padding: '4px 10px', borderRadius: 999, border: '1px solid #2B382B', fontSize: 12.5, fontWeight: 800 },
   pageGrow: { margin: '6px 0 0', fontSize: 13.5, color: '#9BA495' },
+  lookBtn: { marginTop: 10, padding: '8px 14px', borderRadius: 10, border: '1px solid #F0C069', background: 'transparent', color: '#F0C069', fontFamily: 'inherit', fontSize: 13.5, fontWeight: 800, cursor: 'pointer' },
   img: { maxHeight: 116, maxWidth: '100%', objectFit: 'contain' },
   unknown: { fontSize: 54, fontWeight: 900, color: '#3A473A' },
   name: { margin: '6px 0 0', fontSize: 17, fontWeight: 900 },
   sub: { margin: '2px 0 0', fontSize: 13, color: '#9BA495' },
   meta: { margin: '4px 0 0', fontSize: 12, color: '#767F71' },
-  page: { position: 'fixed', inset: 0, zIndex: 2900, background: 'radial-gradient(ellipse at 50% 35%, #1C261D, #0F150F 70%)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '18px 16px 30px' },
+  page: { position: 'fixed', inset: 0, zIndex: 2900, background: 'radial-gradient(ellipse at 50% 35%, #1C261D, #0F150F 70%)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '18px 16px 30px', overflowY: 'auto' },
   back: { alignSelf: 'flex-start', padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(233,229,216,.3)', background: 'transparent', color: '#E9E5D8', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer' },
   stage: { width: '100%', height: '48vh', display: 'grid', placeItems: 'center' },
   pageHint: { margin: 0, fontSize: 12.5, color: '#767F71' },

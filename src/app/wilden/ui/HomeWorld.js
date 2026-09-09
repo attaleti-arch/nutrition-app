@@ -5,7 +5,7 @@ import { activeQuest, questProgress, canComplete, worldState, creatureLine, RES_
 import { sfxAppear, sfxCheer, sfxFinish, buzz } from '../engine/audio'
 import { Wear } from './Wear'
 import { Aura } from './Aura'
-import { stageOf, staged } from '../engine/stages'
+import { stageOf, stagedFor } from '../engine/stages'
 
 // ─── עולם הבית ───
 // "לא מבינה מה ילד רואה במעמד הבית." עכשיו: הרקע שלה (החורבה בשקיעה,
@@ -99,7 +99,7 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
         const sp = SPOTS[id]
         // בשלב שלו: בוגר גדול ב-15%, אגדי ב-30% (לא הגודל המלא של הבמה — הבית צפוף).
         const stage = stageOf(progress, id)
-        const c = staged(creatureById(id), stage)
+        const c = stagedFor(progress, creatureById(id))
         if (!c || !sp || !c.live) return null
         const h = sp.h * (1 + (stage - 1) * 0.15)
         return (

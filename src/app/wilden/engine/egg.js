@@ -12,9 +12,13 @@
 export const EGG_PRICE = 40
 export const HATCH_M = 1500        // כמה הליכה מחממת ביצה. ~20 דקות.
 
+// זוהר: הקליפ הראשון של "נימי המפותח" (זנב פלאף, סימנים בטורקיז) — יפה מדי
+// בשביל לזרוק. ליצור שיש לו קליפ לצבע (creature.variants[id]) הצבע הוא
+// דמות שלמה; לשאר — גוון על המודל, כמו קודם.
 export const VARIANTS = [
-  { id: 'gold', name: 'זהוב', p: 0.70, tint: [1.35, 1.12, 0.55], glow: [0.35, 0.22, 0.02] },
+  { id: 'gold', name: 'זהוב', p: 0.55, tint: [1.35, 1.12, 0.55], glow: [0.35, 0.22, 0.02] },
   { id: 'night', name: 'לילה', p: 0.25, tint: [0.32, 0.34, 0.8], glow: [0.02, 0.03, 0.22] },
+  { id: 'glow', name: 'זוהר', p: 0.15, tint: [0.7, 1.2, 1.1], glow: [0.05, 0.3, 0.25] },
   { id: 'ice', name: 'קרח', p: 0.05, tint: [0.8, 1.05, 1.3], glow: [0.15, 0.3, 0.4] },
 ]
 export const variantById = id => VARIANTS.find(v => v.id === id) || null

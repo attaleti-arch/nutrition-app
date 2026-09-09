@@ -59,23 +59,43 @@ export function stagedName(creature, stage) {
 }
 export const grewVerb = creature => (creature?.gender === 'f' ? 'גדלה' : 'גדל')
 
+// ── המראה: צבע מהביצה שיש לו דמות ──
+// ביצה שבקעה נותנת צבע. ליצור שיש לו קליפ לצבע הזה (creature.variants[id])
+// זו דמות שלמה — והיא המראה שלו מעכשיו, אלא אם בחרו אחרת בספר
+// (progress.look[id] = 'base' | מזהה צבע).
+export function lookOf(progress, creature) {
+  if (!creature?.variants) return null
+  const pick = progress?.look?.[creature.id]
+  if (pick === 'base') return null
+  if (pick && creature.variants[pick]) return pick
+  const had = (progress?.variants || []).filter(v => v.creature === creature.id && creature.variants[v.variant])
+  return had.length ? had[had.length - 1].variant : null
+}
+export const hasLook = (progress, creature) =>
+  !!creature?.variants && (progress?.variants || []).some(v => v.creature === creature.id && creature.variants[v.variant])
+
 // היצור בשלב: אותו מרשם, עם הדמות של השלב אם יש, ובגודל של השלב.
-// aura — אין עדיין דמות לשלב הזה: מציירים הילה על הדמות הבסיסית.
-export function staged(creature, stage = 1) {
+// look — צבע מהביצה עם דמות משלו: מנצח את דמות השלב, ובלי הילה.
+// aura — אין דמות לשלב הזה: מציירים הילה על הדמות הבסיסית.
+export function staged(creature, stage = 1, look = null) {
   if (!creature) return null
   const n = Math.max(1, Math.min(MAX_STAGE, stage || 1))
-  if (n === 1) return { ...creature, stage: 1, aura: false }
-  const art = creature.stages?.[n] || null
-  return {
+  const lookArt = look && creature.variants?.[look] ? creature.variants[look] : null
+  const art = lookArt || (n > 1 ? creature.stages?.[n] || null : null)
+  const out = {
     ...creature,
-    // יש דמות לשלב: הקליפ שלה. מודל תלת-ממד וגזירות של שלב 1 לא "מבינים"
-    // — אחרת הבמה מציגה את הגור בתלת-ממד ליד הבוגר בקליפ.
+    // יש דמות: הקליפ שלה. מודל תלת-ממד וגזירות של הבסיס לא "מבינים" — אחרת
+    // הבמה מציגה את הגור בתלת-ממד ליד הבוגר בקליפ.
     ...(art ? { model: null, ios: null, sprites: null, anchors: null, ...art } : {}),
     stage: n,
-    aura: !art,
-    heightM: (creature.heightM || 0.5) * stageScale(n),
+    look: lookArt ? look : null,
+    aura: n > 1 && !art,
   }
+  if (n > 1) out.heightM = (creature.heightM || 0.5) * stageScale(n)
+  return out
 }
+// הכול מ-progress: השלב לפי התפיסות, המראה לפי הביצה.
+export const stagedFor = (progress, creature) => (creature ? staged(creature, stageOf(progress, creature.id), lookOf(progress, creature)) : null)
 
 // כמה יצורים הגיעו לשלב — להישגים.
 export const countAtStage = (progress, n) => [...idsOf(progress)].filter(id => stageOf(progress, id) >= n).length

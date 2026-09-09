@@ -4,7 +4,7 @@ import { creatureById } from '../content/creatures'
 import { ITEMS, SLOT, KID, owns, canBuy, wearOf } from '../engine/shop'
 import { ItemSvg, Wear, kidSvg } from './Wear'
 import { Aura } from './Aura'
-import { staged, stageOf } from '../engine/stages'
+import { stagedFor } from '../engine/stages'
 
 // ─── החנות ───
 // זרימה אחת: בוחרים מי (יצור שנתפס, או "אני" — הילד במפה), רואים אותו
@@ -17,7 +17,7 @@ export function Shop({ progress, onBuy, onEquip, onClose }) {
   const coins = progress?.coins || 0
   const wear = wearOf(progress, who)
   const isKid = who === KID
-  const c = isKid ? null : staged(creatureById(who), stageOf(progress, who))
+  const c = isKid ? null : stagedFor(progress, creatureById(who))
 
   const groups = [
     { title: 'כובעים', items: ITEMS.filter(i => i.slot === SLOT.HEAD) },

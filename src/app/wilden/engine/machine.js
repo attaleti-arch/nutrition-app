@@ -73,6 +73,7 @@ export function initial() {
       // ── בן לוויה ── מי יוצא איתך, וכמה מטרים הלכתם יחד (ראה engine/buddy.js)
       buddy: null, bond: {},
       routeKm: null,      // אורך המסלול שההורה בחר (ק"מ); null — הלוח
+      look: {},           // { [creatureId]: 'base' | מזהה צבע } — המראה שנבחר בספר
 
       // ── הבונוס השבועי ── יום ראשון של השבוע שבו כבר ניתן (ראה engine/weekly.js)
       weeklyBonus: null,
@@ -452,6 +453,13 @@ export function reduce(g, ev) {
       // קנו בשביל מישהו? הוא לובש מיד.
       if (ev.who && ev.slot) progress = equipItem(progress, ev.who, ev.slot, ev.id)
       return { ...g, progress }
+    }
+    // ── המראה ── צבע מהביצה עם דמות משלו, או הרגיל. בבית בלבד.
+    case 'SET_LOOK': {
+      if (g.state !== S.BROKEN_WORLD || !ev.id) return g
+      const look = { ...(g.progress.look || {}) }
+      if (ev.look == null) delete look[ev.id]; else look[ev.id] = ev.look
+      return { ...g, progress: { ...g.progress, look } }
     }
     // ── אורך המסלול ── ההורה בוחר קילומטרים. בבית בלבד.
     case 'SET_ROUTE_KM': {

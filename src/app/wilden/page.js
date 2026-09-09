@@ -22,7 +22,7 @@ import { GoldStage } from './ar/GoldStage'
 import { CoinRun } from './ar/CoinRun'
 import { Hatch } from './ui/Hatch'
 import { Evolve } from './ui/Evolve'
-import { staged, stageOf, stagedName, stageProgress } from './engine/stages'
+import { stagedFor, stageOf, stagedName, stageProgress } from './engine/stages'
 import { HomeWorld } from './ui/HomeWorld'
 import { Book, Badges } from './ui/Book'
 import { Shop } from './ui/Shop'
@@ -212,12 +212,12 @@ export default function Wilden() {
   // היצור של התחנה הנוכחית. (מסע ישן בלי תחנות — היצור של המסע.)
   // בשלב שלו (3 תפיסות = בוגר, 7 = אגדי): הדמות, הקליפ והגודל של השלב.
   const creatureBase = creatureById(g.run?.target?.creature || g.run?.creature) || todaysCreature(g.progress)
-  const creature = staged(creatureBase, stageOf(g.progress, creatureBase?.id))
+  const creature = stagedFor(g.progress, creatureBase)
   // מי נתפס הרגע: התחנה שסומנה done אחרונה.
   const justCaughtBase = g.state === S.CAUGHT
     ? creatureById(g.run.stops?.[Math.max(0, g.run.stop - (g.run.resolved ? 0 : 1))]?.creature || g.run.creature) || creatureBase
     : null
-  const justCaught = justCaughtBase ? staged(justCaughtBase, stageOf(g.progress, justCaughtBase.id)) : null
+  const justCaught = stagedFor(g.progress, justCaughtBase)
 
   return (
     <div dir="rtl" style={{ minHeight: '100dvh', background: C.bg, color: C.ink,
@@ -244,7 +244,7 @@ export default function Wilden() {
       )}
       {/* מי גדל במסע הזה — אחרי הביצה, לפני מסך הסיום */}
       {g.evolved?.length > 0 && (g.state === S.CLUE || g.state === S.RUN_COMPLETE) && (!g.hatched || hatchSeen) && !evolveSeen && (
-        <Evolve evolved={g.evolved} wearAll={g.progress.wear} onClose={() => setEvolveSeen(true)} />
+        <Evolve evolved={g.evolved} wearAll={g.progress.wear} progress={g.progress} onClose={() => setEvolveSeen(true)} />
       )}
 
       {/* הקליפ של היצור, אחרי "תפסתם אותו!" ולפני ספירת המטבעות */}
@@ -280,7 +280,8 @@ export default function Wilden() {
             onBuy={(id, who, slot) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_ITEM', id, who, slot }) }}
             onEquip={(who, slot, id) => { sfxAppear(); dispatch({ type: 'EQUIP', who, slot, id }) }}
             onBuddy={id => { sfxAppear(); dispatch({ type: 'SET_BUDDY', id }) }}
-            onKm={km => dispatch({ type: 'SET_ROUTE_KM', km })} P={P} />
+            onKm={km => dispatch({ type: 'SET_ROUTE_KM', km })}
+            onLook={(id, look) => { sfxAppear(); dispatch({ type: 'SET_LOOK', id, look }) }} P={P} />
         )}
 
         {g.state === S.PERMISSIONS && (
@@ -538,7 +539,7 @@ function poisText(pois) {
   return parts.join(' · ')
 }
 
-function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onBuddy, onKm, P }) {
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onBuddy, onKm, onLook, P }) {
   const [panel, setPanel] = useState(null)   // book | badges | shop
   const week = weeklyStatus(g.progress, today)
   const buddy = creatureById(g.progress.buddy)
@@ -575,7 +576,7 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onBudd
         <button onClick={() => setPanel('badges')} style={s.chip}>🏅 הישגים <b>{badgeCount(g.progress)}</b></button>
         <button onClick={() => setPanel('shop')} style={s.chip}>🛍️ חנות <b>🪙 {g.progress.coins || 0}</b></button>
       </div>
-      {panel === 'book' && <Book progress={g.progress} onClose={() => setPanel(null)} />}
+      {panel === 'book' && <Book progress={g.progress} onClose={() => setPanel(null)} onLook={onLook} />}
       {panel === 'badges' && <Badges progress={g.progress} onClose={() => setPanel(null)} />}
       {panel === 'shop' && <Shop progress={g.progress} onBuy={onBuy} onEquip={onEquip} onClose={() => setPanel(null)} />}
 

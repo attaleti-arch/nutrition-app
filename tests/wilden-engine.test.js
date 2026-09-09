@@ -1298,7 +1298,8 @@ import { EGG_PRICE, HATCH_M, VARIANTS, rollVariant, canBuyEgg, eggWarmth, warmth
 test('ביצה: ההגרלה לפי ההסתברויות, ולכל צבע יש שם וצבע', () => {
   assert.equal(VARIANTS.reduce((s, v) => s + v.p, 0).toFixed(2), '1.00')
   assert.equal(rollVariant(() => 0.1).id, 'gold')
-  assert.equal(rollVariant(() => 0.8).id, 'night')
+  assert.equal(rollVariant(() => 0.7).id, 'night')
+  assert.equal(rollVariant(() => 0.85).id, 'glow')
   assert.equal(rollVariant(() => 0.97).id, 'ice')
   for (const v of VARIANTS) { assert.ok(v.name); assert.equal(v.tint.length, 3); assert.equal(v.glow.length, 3) }
   // בהגרלה אמיתית קרח הוא נדיר
@@ -2152,4 +2153,38 @@ test('תוכנית במכונה: SET_ROUTE_KM בבית בלבד, והמסע נב
   assert.ok(h.run.coinRun.along < h.run.stops[0].along, 'הריצה לפני היצור הראשון')
   assert.equal(forServer(h).progress.routeKm, 3)
   assert.equal(mergeProgress2({ ...h.progress, walks: 5 }, { ...initial().progress, routeKm: 1 }).routeKm, 3, 'הבסיס קובע')
+})
+
+// ══════════════════════════════════════════════
+// ─── המראה מהביצה: צבע עם דמות משלו ───
+import { lookOf, hasLook, stagedFor } from '../src/app/wilden/engine/stages.js'
+
+test('מראה: ביצה שבקעה "זוהר" לנימי — הקליפ שלו הוא המראה; אפשר לחזור לרגיל; לאחרים — גוון בלבד', () => {
+  assert.ok(CREATURES.nimi.variants?.glow?.live, 'לנימי יש דמות לזוהר')
+  const p0 = { ...initial().progress, creatures: ['nimi', 'gali'], variants: [] }
+  assert.equal(lookOf(p0, CREATURES.nimi), null); assert.ok(!hasLook(p0, CREATURES.nimi))
+  const p1 = { ...p0, variants: [{ creature: 'nimi', variant: 'glow', at: 1 }, { creature: 'gali', variant: 'glow', at: 2 }] }
+  assert.equal(lookOf(p1, CREATURES.nimi), 'glow'); assert.ok(hasLook(p1, CREATURES.nimi))
+  assert.equal(lookOf(p1, CREATURES.gali), null, 'לגלי אין דמות לזוהר — נשאר גוון'); assert.ok(!hasLook(p1, CREATURES.gali))
+  const s = stagedFor(p1, CREATURES.nimi)
+  assert.equal(s.live, '/creatures/nimi/glow/live.webp'); assert.equal(s.look, 'glow'); assert.equal(s.model, null); assert.equal(s.aura, false)
+  // המראה מנצח את דמות השלב, בגודל של השלב
+  const s2 = stagedFor({ ...p1, caught: { nimi: 4 } }, CREATURES.nimi)
+  assert.equal(s2.stage, 2); assert.equal(s2.live, '/creatures/nimi/glow/live.webp'); assert.ok(s2.heightM > CREATURES.nimi.heightM)
+  // בחירה בספר: רגיל
+  assert.equal(lookOf({ ...p1, look: { nimi: 'base' } }, CREATURES.nimi), null)
+  assert.equal(stagedFor({ ...p1, look: { nimi: 'base' } }, CREATURES.nimi).live, CREATURES.nimi.live)
+  // צבע זהוב שבקע — בלי דמות: הבסיס
+  assert.equal(lookOf({ ...p0, variants: [{ creature: 'nimi', variant: 'gold' }] }, CREATURES.nimi), null)
+})
+
+test('מראה במכונה: SET_LOOK בבית, נשמר לשרת ובמיזוג הבסיס קובע', () => {
+  let g = { ...initial(), progress: { ...initial().progress, creatures: ['nimi'], variants: [{ creature: 'nimi', variant: 'glow', at: 1 }] } }
+  g = reduce(g, { type: 'SET_LOOK', id: 'nimi', look: 'base' })
+  assert.deepEqual(g.progress.look, { nimi: 'base' })
+  g = reduce(g, { type: 'SET_LOOK', id: 'nimi', look: null })
+  assert.deepEqual(g.progress.look, {})
+  assert.deepEqual(forServer(reduce(g, { type: 'SET_LOOK', id: 'nimi', look: 'base' })).progress.look, { nimi: 'base' })
+  const m = mergeProgress2({ ...g.progress, walks: 3, look: { nimi: 'base' } }, { ...initial().progress, look: { nimi: 'glow', gali: 'base' } })
+  assert.deepEqual(m.look, { nimi: 'base', gali: 'base' })
 })

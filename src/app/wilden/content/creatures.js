@@ -54,6 +54,12 @@ export const CREATURES = {
       2: { live: '/creatures/nimi/s2/live.webp', clip: '/creatures/nimi/s2/caught.mp4',
         anchors: { head: { x: 62, y: 17, h: 9 }, face: { x: 63, y: 24, h: 6 } } },
     },
+    // ── צבעים מהביצה עם דמות משלהם ── (ראה engine/egg.js, stages.lookOf)
+    // "זוהר": הקליפ הראשון של נימי המפותח — זנב פלאף, סימנים בטורקיז.
+    variants: {
+      glow: { live: '/creatures/nimi/glow/live.webp', clip: '/creatures/nimi/glow/caught.mp4',
+        anchors: { head: { x: 61, y: 23, h: 9 }, face: { x: 62, y: 32, h: 5 } } },
+    },
     heightM: 0.45,
     arMode: AR_MODE.GROUND,
     controller: 'tracks-true-or-false',

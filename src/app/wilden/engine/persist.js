@@ -72,6 +72,7 @@ export function forServer(g) {
       weeklyBonus: g.progress?.weeklyBonus ?? null,
       buddy: g.progress?.buddy ?? null,
       routeKm: g.progress?.routeKm ?? null,
+      look: g.progress?.look ?? {},
       bond: g.progress?.bond ?? {},
       minutesTotal: g.progress?.minutesTotal ?? 0,
       lastWalk: g.progress?.lastWalk ?? null,
