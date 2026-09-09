@@ -19,14 +19,14 @@ import { stageOf, stagedFor } from '../engine/stages'
 // איפה כל יצור עומד בעולם (אחוזים מהתפאורה), ובאיזה גודל (גובה ב-%).
 const SPOTS = {
   nimi: { x: 36, y: 63, h: 15, flip: true },
-  gali: { x: 76, y: 74, h: 12 },
+  gali: { x: 62, y: 79, h: 12 },
   lumi: { x: 24, y: 74, h: 18, flip: true },
-  bolder: { x: 80, y: 60, h: 22 },
+  bolder: { x: 84, y: 62, h: 22 },
   kraag: { x: 66, y: 71, h: 17, flip: true },
   tzel: { x: 88, y: 77, h: 15 },
   dabashon: { x: 20, y: 30, h: 11, air: true },
   ruchi: { x: 72, y: 24, h: 12, air: true, flip: true },
-  noga: { x: 47, y: 84, h: 19 },
+  noga: { x: 40, y: 87, h: 19 },
 }
 const GUARDIAN = { x: 52, y: 41, h: 24 }
 // הנחיל: היסטים באחוזי עולם מהמקום של הגדול, ומכפיל גודל (הרחוקים קטנים יותר — עומק).
@@ -204,7 +204,7 @@ const W = {
   groundShadow: { position: 'absolute', left: '15%', right: '15%', bottom: -4, height: 8, borderRadius: '50%', background: 'rgba(0,0,0,.35)', filter: 'blur(3px)', zIndex: -1 },
   zz: { position: 'absolute', top: -6, insetInlineEnd: -10, fontSize: 18 },
   mini: { position: 'absolute', pointerEvents: 'none', zIndex: 1, opacity: 0.96 },
-  building: { position: 'absolute', transform: 'translate(-50%,-100%)', zIndex: 1, pointerEvents: 'none' },
+  building: { position: 'absolute', transform: 'translate(-50%,-100%)', zIndex: 0, pointerEvents: 'none' },
   buildingTag: { position: 'absolute', left: '50%', top: '-10px', transform: 'translate(-50%,-100%)', whiteSpace: 'nowrap', background: 'rgba(15,21,15,.85)', border: '1px solid #F0C069', color: '#F0C069', borderRadius: 999, padding: '2px 8px', fontSize: 11.5, fontWeight: 800 },
   mark: { position: 'absolute', top: -8, insetInlineStart: -8, width: 24, height: 24, borderRadius: '50%', color: '#14200F', fontWeight: 900, fontSize: 15, display: 'grid', placeItems: 'center', boxShadow: '0 2px 6px rgba(0,0,0,.4)' },
   bubble: { position: 'absolute', display: 'block', bottom: '104%', left: '50%', transform: 'translateX(-50%)', minWidth: 150, maxWidth: 230, padding: '8px 12px', borderRadius: 12, background: 'rgba(233,229,216,.96)', color: '#14200F', fontSize: 13.5, fontWeight: 700, lineHeight: 1.4, textAlign: 'center', boxShadow: '0 4px 14px rgba(0,0,0,.35)', animation: 'wildenBubble 3.6s ease-out forwards', pointerEvents: 'none', zIndex: 5, whiteSpace: 'normal' },
