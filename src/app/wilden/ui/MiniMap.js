@@ -10,7 +10,7 @@ import { kidSvg } from './Wear'
 // ברור וכמה דמויות שפוגשים בדרך." זה המסך הראשי של ההליכה.
 //
 // "הדבר היחיד שלא נפתר זה ממשק המפות, הייתי שמחה שיהיה יותר ברור." אז:
-// אריחים נקיים עם שמות רחובות (CARTO Voyager, אותם נתונים של OSM אבל
+// אריחים עם שמות רחובות (OpenStreetMap, מרוככים קצת ב-CSS,
 // מעוצבים כמו מפת ניווט), מסלול עבה עם מסגרת לבנה וחיצים לכיוון
 // ההליכה, מה שכבר הלכנו באפור ומה שנשאר בכחול.
 //
@@ -129,11 +129,11 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
     const m = L.map(el.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false })
       .setView(at ? [at.lat, at.lng] : [32.08, 34.78], FOLLOW_ZOOM)
     // ── אריחי המפה, עם גיבוי ──
-    // CARTO Voyager: אותם נתונים של OpenStreetMap, מעוצבים כמו מפת ניווט —
-    // רחובות לבנים ורחבים, שמות ברורים, פחות רעש. אם השרת שלהם לא עונה
-    // מרשת סלולרית ואף אריח לא נטען — עוברים לאריחי OSM עצמם.
-    const main = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      maxZoom: 19, subdomains: 'abcd',
+    // אריחי OpenStreetMap עצמם. CARTO התחילו להטביע "API KEY REQUIRED" על
+    // האריחים בלי מפתח — היא ראתה את זה על המפה בטלפון. OSM לא דורש מפתח;
+    // מרככים אותם קצת ב-CSS כדי שהמסלול הכחול יבלוט. אם השרת לא עונה — גיבוי.
+    const main = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19, className: 'wilden-tiles',
     }).addTo(m)
     let ok = 0, bad = 0, swapped = false
     main.on('tileload', () => { ok++ })
@@ -142,7 +142,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
       if (!swapped && ok === 0 && bad >= 3) {
         swapped = true
         main.remove()
-        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(m)
+        L.tileLayer('https://{s}.tile.openstreetmap.de/{z}/{x}/{y}.png', { maxZoom: 18, subdomains: 'abc', className: 'wilden-tiles' }).addTo(m)
       }
     })
     m.on('dragstart', () => { follow.current = false; setFollowing(false) })
@@ -331,7 +331,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
         <span style={{ ...swatch, background: BLUE }} /> הדרך
         <span style={{ ...swatch, background: WALKED, marginInlineStart: 8 }} /> הלכנו
       </div>
-      <span style={attrib}>© OpenStreetMap, CARTO</span>
+      <span style={attrib}>© OpenStreetMap contributors</span>
     </div>
   )
 }
@@ -342,6 +342,7 @@ const CSS = `
 @keyframes wildenCoinFloat{0%,100%{transform:translateY(0) scaleX(1)}30%{transform:translateY(-3px) scaleX(.72)}50%{transform:translateY(-4px) scaleX(1)}80%{transform:translateY(-1px) scaleX(.86)}}
 @keyframes wildenCoinGone{0%{transform:scale(1) translateY(0);opacity:1}45%{transform:scale(1.7) translateY(-14px);opacity:1}100%{transform:scale(.2) translateY(-34px);opacity:0}}
 .leaflet-container{font-family:inherit}
+.wilden-tiles{filter:saturate(.72) brightness(1.03) contrast(.96)}
 .wr{transform:rotate(var(--wr,0deg));transition:transform .4s ease-out}
 .kid{transition:transform .5s ease-out;transform-origin:50% 50%}
 `
