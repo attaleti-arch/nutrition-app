@@ -1,14 +1,14 @@
 'use client'
 
 // ─── הילה ───
-// יצור שגדל אבל עוד אין לו דמות לשלב: אותה דמות, גדולה יותר, ומאחוריה
-// הילה שנושמת. בוגר — טורקיז-ירוק; אגדי — זהב. מאחורי התמונה (zIndex 0),
-// בלי filter על ה-WebP המונפש.
-export function Aura({ stage = 1, size = '110%' }) {
-  if (!stage || stage < 2) return null
+// שני שימושים: יצור שגדל בלי דמות לשלב (טורקיז לבוגר, זהב לאגדי), וצבע
+// מהביצה (color — הצבע של הגוון). מאחורי התמונה (zIndex 0), בלי filter על
+// ה-WebP המונפש עצמו.
+export function Aura({ stage = 1, size = '110%', color = null }) {
+  if (!color && (!stage || stage < 2)) return null
   const gold = stage >= 3
-  const c1 = gold ? 'rgba(255,214,110,.55)' : 'rgba(110,230,200,.45)'
-  const c2 = gold ? 'rgba(240,192,105,.18)' : 'rgba(90,200,170,.14)'
+  const c1 = color || (gold ? 'rgba(255,214,110,.55)' : 'rgba(110,230,200,.45)')
+  const c2 = color ? color.replace(/[\d.]+\)$/, '.16)') : gold ? 'rgba(240,192,105,.18)' : 'rgba(90,200,170,.14)'
   return (
     <span aria-hidden="true" style={{
       position: 'absolute', left: '50%', top: '55%', width: size, height: size, transform: 'translate(-50%,-50%)',
@@ -19,6 +19,14 @@ export function Aura({ stage = 1, size = '110%' }) {
       <style>{`@keyframes wildenAura { 0%,100% { opacity: .75; transform: translate(-50%,-50%) scale(1) } 50% { opacity: 1; transform: translate(-50%,-50%) scale(1.08) } }`}</style>
     </span>
   )
+}
+
+// ההילה של יצור בשלב/צבע: מה שצריך, או כלום.
+export function CreatureAura({ c, size }) {
+  if (!c) return null
+  if (c.auraColor) return <Aura stage={c.stage} size={size} color={c.auraColor} />
+  if (c.aura) return <Aura stage={c.stage} size={size} />
+  return null
 }
 
 // תג קטן: "בוגר" / "אגדי"

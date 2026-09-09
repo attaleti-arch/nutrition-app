@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useModelViewer } from '../hooks/useModelViewer'
 import { creatureById } from '../content/creatures'
-import { variantById } from '../engine/egg'
+import { variantById, tintOf } from '../engine/egg'
 import { sfxCatch, sfxCheer, sfxCrack, sfxHatch, buzz } from '../engine/audio'
 import { Aura } from './Aura'
 
@@ -27,7 +27,9 @@ export function Hatch({ hatched, onClose }) {
   const creature = creatureById(hatched?.creature)
   const variant = variantById(hatched?.variant)
   const art = creature?.variants?.[variant?.id] || null
-  const ready = useModelViewer(!!creature?.model && !art)
+  // בלי דמות לצבע: הגוון על הדמות החיה (כמו בבית ובספר), עם הילה בצבע.
+  const tint = !art && creature?.live ? tintOf(variant?.id) : null
+  const ready = useModelViewer(!!creature?.model && !art && !tint)
   const ref = useRef(null)
   const videoRef = useRef(null)
   const [phase, setPhase] = useState('egg')     // egg → flash → creature
@@ -150,7 +152,15 @@ export function Hatch({ hatched, onClose }) {
           </div>
         </div>
       )}
-      {rising && !art && ready && creature.model && (
+      {rising && tint && (
+        <div style={S.artWrap}>
+          <div style={S.rise}>
+            <Aura stage={2} size="130%" color={tint.aura} />
+            <img src={creature.live} alt="" draggable={false} style={{ ...S.art, filter: tint.filter }} />
+          </div>
+        </div>
+      )}
+      {rising && !art && !tint && ready && creature.model && (
         <div style={S.riseFull}>
           <model-viewer ref={ref} src={creature.model}
             camera-orbit="-30deg 78deg auto" interaction-prompt="none" environment-image="neutral"
@@ -158,7 +168,7 @@ export function Hatch({ hatched, onClose }) {
             style={{ ...S.model, opacity: shown ? 1 : 0, direction: 'ltr' }} />
         </div>
       )}
-      {rising && !art && !creature.model && (
+      {rising && !art && !tint && !creature.model && (
         <div style={S.artWrap}><div style={S.rise}><img src={creature.live} alt="" draggable={false} style={S.art} /></div></div>
       )}
 

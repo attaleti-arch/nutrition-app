@@ -8,7 +8,7 @@ import { useModelViewer } from '../hooks/useModelViewer'
 import { badgeList } from '../engine/badges'
 import { itemById } from '../engine/shop'
 import { Wear } from './Wear'
-import { Aura, StageTag } from './Aura'
+import { CreatureAura, StageTag } from './Aura'
 import { STAGES, stageProgress, stagedFor, stagedName, hasLook } from '../engine/stages'
 
 // ─── ספר היצורים, והישגים ───
@@ -41,8 +41,8 @@ export function Book({ progress, onClose, onLook = null }) {
               <div style={B.pic}>
                 {known
                   ? <div style={{ position: 'relative', height: 100 + (sp.stage - 1) * 8, width: 'fit-content' }}>
-                      {c.aura && <Aura stage={sp.stage} />}
-                      <img src={c.live || c.sprites?.hero} alt="" style={{ ...B.img, position: 'relative', zIndex: 1, maxHeight: '100%' }} draggable={false} />
+                      <CreatureAura c={c} />
+                      <img src={c.live || c.sprites?.hero} alt="" style={{ ...B.img, position: 'relative', zIndex: 1, maxHeight: '100%', filter: c.tint || 'none' }} draggable={false} />
                       <Wear id={id} wear={progress?.wear?.[id]} anchors={c.anchors} />
                     </div>
                   : <span style={B.unknown}>?</span>}
@@ -91,13 +91,13 @@ function CreaturePage({ id, progress, onClose, onLook }) {
               interaction-prompt="none" environment-image="neutral" shadow-intensity="0.7" exposure="1.05"
               style={{ width: '100%', height: '100%', background: 'transparent' }} />
           : <div style={{ position: 'relative', height: `${68 + (sp.stage - 1) * 12}%`, width: 'fit-content' }}>
-              {c.aura && <Aura stage={sp.stage} size="118%" />}
-              <img src={c.live || c.sprites?.hero} alt="" style={{ position: 'relative', zIndex: 1, height: '100%', width: 'auto', display: 'block' }} draggable={false} />
+              <CreatureAura c={c} size="118%" />
+              <img src={c.live || c.sprites?.hero} alt="" style={{ position: 'relative', zIndex: 1, height: '100%', width: 'auto', display: 'block', filter: c.tint || 'none' }} draggable={false} />
               <Wear id={id} wear={wear} anchors={c.anchors} />
             </div>}
       </div>
       <p style={B.pageHint}>{dressed ? `${c.name} עם ${Object.values(wear).map(w => itemById(w)?.name).filter(Boolean).join(' ו')}` : 'סובבו אותו עם האצבע'}</p>
-      <h3 style={B.pageName}>{stagedName(c, sp.stage)}</h3>
+      <h3 style={B.pageName}>{stagedName(c, sp.stage)}{c.look ? ` ${variantById(c.look)?.name || ''}` : ''}</h3>
       {/* שלושת השלבים: מה הושג, ומה הסף הבא */}
       <div style={B.stages} aria-label="שלבי התפתחות">
         {STAGES.map(st => (
@@ -109,7 +109,7 @@ function CreaturePage({ id, progress, onClose, onLook }) {
       {sp.next && <p style={B.pageGrow}>נתפס {sp.have} מ־{sp.need}. עוד {sp.left === 1 ? 'תפיסה אחת' : `${sp.left} תפיסות`}.</p>}
       {canLook && onLook && (
         <button onClick={() => onLook(id, c.look ? 'base' : null)} style={B.lookBtn}>
-          {c.look ? `מראה: ${variantById(c.look)?.name} · להחליף לרגיל` : 'להחליף למראה מהביצה ✨'}
+          {c.look ? `מראה: ${variantById(c.look)?.name} · להחליף לרגיל` : `להחליף למראה מהביצה ✨ ${vs.map(v => variantById(v.variant)?.name).filter(Boolean).join(' / ')}`}
         </button>
       )}
       <p style={B.pageLine}>"{creatureLine(id, line)}"</p>

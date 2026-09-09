@@ -40,9 +40,10 @@ export function CaughtClip({ creature, onDone, variant = 'caught' }) {
   if (!creature?.clip) return null
   return (
     <div style={S.wrap} dir="rtl" onClick={finish} role="button" aria-label="לדלג">
+      {/* צבע מהביצה בלי קליפ משלו: הגוון על הסרטון — אלמנט אחד, מסך מלא, זול */}
       <video ref={ref} src={creature.clip} playsInline muted autoPlay preload="auto"
         onPlaying={() => setReady(true)} onEnded={finish} onError={finish}
-        style={{ ...S.video, opacity: ready ? 1 : 0 }} />
+        style={{ ...S.video, opacity: ready ? 1 : 0, filter: creature.tint || 'none' }} />
       <div style={S.vignette} />
       <div style={S.text}>
         <p style={S.name}>{creature.name}</p>

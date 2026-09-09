@@ -23,6 +23,17 @@ export const VARIANTS = [
 ]
 export const variantById = id => VARIANTS.find(v => v.id === id) || null
 
+// ── הצבע על הדמות החיה ──
+// "הצבעים בדמו מושלמים." ליצור בלי קליפ לצבע: גוון על הקליפ הרגיל
+// (פילטר צבע — מטריצה, זול), והילה בצבע מאחוריו. הערכים מהדמו שאישרה.
+export const TINT = {
+  gold: { filter: 'sepia(1) saturate(2.6) hue-rotate(-12deg) brightness(1.08)', aura: 'rgba(255,214,110,.6)' },
+  night: { filter: 'hue-rotate(195deg) saturate(1.3) brightness(.78) contrast(1.1)', aura: 'rgba(90,110,255,.55)' },
+  ice: { filter: 'hue-rotate(150deg) saturate(.7) brightness(1.3)', aura: 'rgba(150,230,255,.6)' },
+  glow: { filter: 'hue-rotate(40deg) saturate(1.5) brightness(1.12)', aura: 'rgba(110,230,200,.6)' },
+}
+export const tintOf = id => TINT[id] || null
+
 export function rollVariant(rng = Math.random) {
   let r = rng()
   for (const v of VARIANTS) { if (r < v.p) return v; r -= v.p }

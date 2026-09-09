@@ -2165,7 +2165,9 @@ test('מראה: ביצה שבקעה "זוהר" לנימי — הקליפ שלו 
   assert.equal(lookOf(p0, CREATURES.nimi), null); assert.ok(!hasLook(p0, CREATURES.nimi))
   const p1 = { ...p0, variants: [{ creature: 'nimi', variant: 'glow', at: 1 }, { creature: 'gali', variant: 'glow', at: 2 }] }
   assert.equal(lookOf(p1, CREATURES.nimi), 'glow'); assert.ok(hasLook(p1, CREATURES.nimi))
-  assert.equal(lookOf(p1, CREATURES.gali), null, 'לגלי אין דמות לזוהר — נשאר גוון'); assert.ok(!hasLook(p1, CREATURES.gali))
+  assert.equal(lookOf(p1, CREATURES.gali), 'glow', 'לגלי אין דמות לזוהר — גוון'); assert.ok(hasLook(p1, CREATURES.gali))
+  const g = stagedFor(p1, CREATURES.gali)
+  assert.ok(g.tint && g.auraColor && g.look === 'glow' && g.live === CREATURES.gali.live && g.model === null, 'גוון על הקליפ הרגיל, בלי מודל')
   const s = stagedFor(p1, CREATURES.nimi)
   assert.equal(s.live, '/creatures/nimi/glow/live.webp'); assert.equal(s.look, 'glow'); assert.equal(s.model, null); assert.equal(s.aura, false)
   // המראה מנצח את דמות השלב, בגודל של השלב
@@ -2174,8 +2176,10 @@ test('מראה: ביצה שבקעה "זוהר" לנימי — הקליפ שלו 
   // בחירה בספר: רגיל
   assert.equal(lookOf({ ...p1, look: { nimi: 'base' } }, CREATURES.nimi), null)
   assert.equal(stagedFor({ ...p1, look: { nimi: 'base' } }, CREATURES.nimi).live, CREATURES.nimi.live)
-  // צבע זהוב שבקע — בלי דמות: הבסיס
-  assert.equal(lookOf({ ...p0, variants: [{ creature: 'nimi', variant: 'gold' }] }, CREATURES.nimi), null)
+  // צבע זהוב שבקע — בלי דמות: גוון זהב על הדמות הרגילה; אם גם זוהר בקע — הדמות עדיפה על הגוון
+  const gold = stagedFor({ ...p0, variants: [{ creature: 'nimi', variant: 'gold' }] }, CREATURES.nimi)
+  assert.equal(gold.look, 'gold'); assert.ok(gold.tint.includes('sepia')); assert.equal(gold.live, CREATURES.nimi.live)
+  assert.equal(lookOf({ ...p0, variants: [{ creature: 'nimi', variant: 'glow' }, { creature: 'nimi', variant: 'gold' }] }, CREATURES.nimi), 'glow')
 })
 
 test('מראה במכונה: SET_LOOK בבית, נשמר לשרת ובמיזוג הבסיס קובע', () => {

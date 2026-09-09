@@ -9,6 +9,7 @@
 // דמות, גדולה יותר, עם הילה. המשחק עובד לפני שכל החומרים מוכנים.
 
 import { bondCredits } from './buddy.js'
+import { tintOf } from './egg.js'
 
 export const STAGES = [
   { n: 1, name: 'גור', need: 0, scale: 1 },
@@ -63,16 +64,21 @@ export const grewVerb = creature => (creature?.gender === 'f' ? 'גדלה' : 'ג
 // ביצה שבקעה נותנת צבע. ליצור שיש לו קליפ לצבע הזה (creature.variants[id])
 // זו דמות שלמה — והיא המראה שלו מעכשיו, אלא אם בחרו אחרת בספר
 // (progress.look[id] = 'base' | מזהה צבע).
+// צבע "נראה" אם יש לו דמות (creature.variants[id]) או גוון (egg.TINT).
+const wearable = (creature, id) => !!(creature?.variants?.[id] || tintOf(id))
 export function lookOf(progress, creature) {
-  if (!creature?.variants) return null
+  if (!creature) return null
   const pick = progress?.look?.[creature.id]
   if (pick === 'base') return null
-  if (pick && creature.variants[pick]) return pick
-  const had = (progress?.variants || []).filter(v => v.creature === creature.id && creature.variants[v.variant])
-  return had.length ? had[had.length - 1].variant : null
+  if (pick && wearable(creature, pick)) return pick
+  const had = (progress?.variants || []).filter(v => v.creature === creature.id && wearable(creature, v.variant))
+  // דמות שלמה עדיפה על גוון, אם בקעו כמה צבעים
+  const withArt = had.filter(v => creature.variants?.[v.variant])
+  const list = withArt.length ? withArt : had
+  return list.length ? list[list.length - 1].variant : null
 }
 export const hasLook = (progress, creature) =>
-  !!creature?.variants && (progress?.variants || []).some(v => v.creature === creature.id && creature.variants[v.variant])
+  (progress?.variants || []).some(v => v.creature === creature.id && wearable(creature, v.variant))
 
 // היצור בשלב: אותו מרשם, עם הדמות של השלב אם יש, ובגודל של השלב.
 // look — צבע מהביצה עם דמות משלו: מנצח את דמות השלב, ובלי הילה.
@@ -81,6 +87,7 @@ export function staged(creature, stage = 1, look = null) {
   if (!creature) return null
   const n = Math.max(1, Math.min(MAX_STAGE, stage || 1))
   const lookArt = look && creature.variants?.[look] ? creature.variants[look] : null
+  const tint = !lookArt && look ? tintOf(look) : null
   const art = lookArt || (n > 1 ? creature.stages?.[n] || null : null)
   const out = {
     ...creature,
@@ -88,9 +95,13 @@ export function staged(creature, stage = 1, look = null) {
     // הבמה מציגה את הגור בתלת-ממד ליד הבוגר בקליפ.
     ...(art ? { model: null, ios: null, sprites: null, anchors: null, ...art } : {}),
     stage: n,
-    look: lookArt ? look : null,
+    look: lookArt || tint ? look : null,
+    // גוון: פילטר על הקליפ (של השלב), והילה בצבע. המודל יורד — הוא לא צבוע.
+    tint: tint ? tint.filter : null,
+    auraColor: tint ? tint.aura : null,
     aura: n > 1 && !art,
   }
+  if (tint) out.model = null
   if (n > 1) out.heightM = (creature.heightM || 0.5) * stageScale(n)
   return out
 }

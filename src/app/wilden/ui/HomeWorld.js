@@ -4,7 +4,7 @@ import { creatureById } from '../content/creatures'
 import { activeQuest, questProgress, canComplete, worldState, creatureLine, RES_NAME, RES_ICON } from '../engine/world'
 import { sfxAppear, sfxCheer, sfxFinish, buzz } from '../engine/audio'
 import { Wear } from './Wear'
-import { Aura } from './Aura'
+import { CreatureAura } from './Aura'
 import { stageOf, stagedFor } from '../engine/stages'
 
 // ─── עולם הבית ───
@@ -107,8 +107,8 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
             aria-label={c.name}
             style={{ ...W.spot, left: `${sp.x}%`, top: `${sp.y}%`, height: `${h}%`, animation: sp.air ? 'wildenHover 3.2s ease-in-out infinite' : 'none' }}>
             <div style={{ ...W.figure, width: 'fit-content', position: 'relative', transform: sp.flip ? 'scaleX(-1)' : 'none' }}>
-              {c.aura && <Aura stage={stage} />}
-              <img src={c.live} alt="" draggable={false} style={{ ...W.figure, position: 'relative', zIndex: 1 }} />
+              <CreatureAura c={c} />
+              <img src={c.live} alt="" draggable={false} style={{ ...W.figure, position: 'relative', zIndex: 1, filter: c.tint || 'none' }} />
               <Wear id={id} wear={progress?.wear?.[id]} anchors={c.anchors} />
             </div>
             {!sp.air && <span style={W.groundShadow} />}

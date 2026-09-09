@@ -35,8 +35,8 @@ export function Evolve({ evolved, wearAll = {}, progress = null, onClose }) {
       <div style={{ ...E.flash, opacity: phase === 'flash' ? 1 : 0 }} />
       <div style={{ ...E.stage, transform: `scale(${phase === 'after' ? 1 : 0.72})`, filter: phase === 'flash' ? 'brightness(3)' : 'none' }}>
         <div style={{ position: 'relative', height: '100%', width: 'fit-content' }}>
-          <Aura stage={cur.stage} size="120%" />
-          <img src={cur.live || cur.sprites?.hero} alt="" draggable={false} style={{ position: 'relative', zIndex: 1, height: '100%', width: 'auto', display: 'block' }} />
+          {cur.auraColor ? <Aura stage={cur.stage} size="120%" color={cur.auraColor} /> : <Aura stage={cur.stage} size="120%" />}
+          <img src={cur.live || cur.sprites?.hero} alt="" draggable={false} style={{ position: 'relative', zIndex: 1, height: '100%', width: 'auto', display: 'block', filter: cur.tint || 'none' }} />
           <Wear id={base.id} wear={wearAll?.[base.id]} anchors={cur.anchors} />
         </div>
       </div>

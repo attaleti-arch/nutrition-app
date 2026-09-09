@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { creatureById } from '../content/creatures'
 import { ITEMS, SLOT, KID, owns, canBuy, wearOf } from '../engine/shop'
 import { ItemSvg, Wear, kidSvg } from './Wear'
-import { Aura } from './Aura'
+import { CreatureAura } from './Aura'
 import { stagedFor } from '../engine/stages'
 
 // ─── החנות ───
@@ -60,8 +60,8 @@ export function Shop({ progress, onBuy, onEquip, onClose }) {
           ? <div style={T.kidBox} dangerouslySetInnerHTML={{ __html: kidSvg(0, wear) }} />
           : c && (
             <div style={{ position: 'relative', height: 176, width: 'fit-content' }}>
-              {c.aura && <Aura stage={c.stage} />}
-              <img src={c.live || c.sprites?.hero} alt="" style={{ position: 'relative', zIndex: 1, height: 176, width: 'auto', display: 'block' }} draggable={false} />
+              <CreatureAura c={c} />
+              <img src={c.live || c.sprites?.hero} alt="" style={{ position: 'relative', zIndex: 1, height: 176, width: 'auto', display: 'block', filter: c.tint || 'none' }} draggable={false} />
               <Wear id={who} wear={wear} anchors={c.anchors} />
             </div>
           )}

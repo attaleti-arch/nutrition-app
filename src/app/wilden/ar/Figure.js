@@ -47,7 +47,8 @@ export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approa
       {shadow ? <ShadowBlob faceLeft={faceLeft} />
         : !hideSprite && (
         <Sprite sprites={creature?.sprites} live={creature?.live} peeking={peeking} faceLeft={faceLeft} done={done} scale={scale} wear={wear} creatureId={creature?.id}
-          aura={creature?.aura ? creature.stage : 0} anchors={creature?.anchors || null} />
+          aura={creature?.aura ? creature.stage : 0} anchors={creature?.anchors || null}
+          auraColor={creature?.auraColor || null} tint={creature?.tint || null} />
       )}
     </div>
   )
@@ -99,7 +100,7 @@ export function Burst({ src, scale = 1.45 }) {
 // ── הדמות החיה ──
 // live הוא הקליפ של Runway בלי רקע (WebP מונפש). הוא מנצח את הספרייט
 // הסטטי בכל פאזה חוץ מהצצה, ששם יש ציור ייעודי אם קיים.
-function Sprite({ sprites, live, peeking, faceLeft, done, scale = 1, wear = null, creatureId = null, aura = 0, anchors = null }) {
+function Sprite({ sprites, live, peeking, faceLeft, done, scale = 1, wear = null, creatureId = null, aura = 0, anchors = null, auraColor = null, tint = null }) {
   if (!sprites && !live) return null
   if (peeking && sprites?.peek) {
     return <img src={sprites.peek} alt="" draggable={false}
@@ -110,14 +111,15 @@ function Sprite({ sprites, live, peeking, faceLeft, done, scale = 1, wear = null
   // העוטף הוא תיבת התמונה: הכובע מהחנות יושב עליו באחוזים, ומתהפך איתו.
   return (
     <div style={{ ...F.hero, width: 'fit-content', height: `${(34 * scale).toFixed(1)}vh`, transform: faceLeft ? 'scaleX(-1)' : 'none' }}>
-      {/* גדל בלי דמות לשלב: הילה מאחוריו */}
-      {aura > 1 && <Aura stage={aura} />}
+      {/* גדל בלי דמות לשלב, או צבע מהביצה: הילה מאחוריו */}
+      {auraColor ? <Aura stage={aura} color={auraColor} /> : aura > 1 && <Aura stage={aura} />}
       <img src={src} alt="" draggable={false} style={{
         position: 'relative', zIndex: 1,
         height: '100%', width: 'auto', display: 'block', userSelect: 'none', WebkitUserDrag: 'none',
-        // בלי filter על תמונה מונפשת: drop-shadow שמחושב מחדש 12 פעמים בשנייה
-        // על WebP מונפש תוקע את הדפדפן. הצל והזוהר מצוירים מאחור ב-CSS רגיל.
-        filter: live ? 'none' : done ? GLOW_DONE : 'drop-shadow(0 6px 10px rgba(0,0,0,.35))',
+        // בלי drop-shadow על תמונה מונפשת: מחושב מחדש 12 פעמים בשנייה על WebP
+        // מונפש ותוקע את הדפדפן. הצל והזוהר מצוירים מאחור ב-CSS רגיל. גוון
+        // (מטריצת צבע) — זול, ורק על יצור אחד בבמה.
+        filter: live ? (tint || 'none') : done ? GLOW_DONE : 'drop-shadow(0 6px 10px rgba(0,0,0,.35))',
       }} />
       {wear && creatureId && <Wear id={creatureId} wear={wear} anchors={anchors} />}
     </div>
