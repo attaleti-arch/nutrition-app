@@ -31,7 +31,9 @@ export function startMusic(mode) {
   const s = { mode, el }
   cur = s
   // בלי גישה (ספארי לפני מגע) — play נדחה בשקט; הנגיעה הבאה תנסה שוב.
-  el.play().then(() => fade(el, VOL, 1.6)).catch(() => { if (cur === s) cur = null })
+  // NotAllowedError = אין עוד מגע (ספארי): נשארים ומנסים שוב במגע הבא.
+  // כל שגיאה אחרת (קובץ חסר) = שקט, ולא מנסים שוב.
+  el.play().then(() => fade(el, VOL, 1.6)).catch(e => { if (cur === s && e?.name !== 'NotAllowedError') cur = null })
 }
 
 export function stopMusic(sec = 1.2) {
