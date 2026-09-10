@@ -29,7 +29,7 @@ export const SPOTS = {
   ruchi: { x: 90, y: 22, h: 12, air: true, flip: true },
   noga: { x: 40, y: 87, h: 19 },
 }
-export const GUARDIAN = { x: 52, y: 50, h: 24 }
+export const GUARDIAN = { x: 52, y: 47.5, h: 25 }
 // הנחיל: היסטים באחוזי עולם מהמקום של הגדול, ומכפיל גודל (הרחוקים קטנים יותר — עומק).
 const SWARM_OFFS = [[-9, -3, 0.45], [9, -2, 0.45], [-14, 4, 0.4], [14, 5, 0.4], [-5, 7, 0.5], [6, 8, 0.5]]
 const SWARM_BUDGET = 12

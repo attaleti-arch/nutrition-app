@@ -68,9 +68,8 @@ export function Intro({ onDone }) {
     // הסאונד לפי התסריט שלה: קסם עד הרעם וזהו; ברגע השבר — רעד; היער ההרוס
     // מיד אחריו, חלש, עד הצלליות של החיות; ונחירות רכות מהרגע שהוא אבן.
     later(7400, () => { try { stopMusic(0.3); sfxCrack(0.9); sfxRumble(3.2); buzz([80, 40, 120, 40, 200]) } catch (e) { /* */ } })
-    // היער ההרוס: מיד אחרי הרעם, חלש, ונמשך עד הצלליות של החיות.
+    // היער ההרוס: מיד אחרי הרעם, חלש, ונמשך עד שלוחצים "אני בפנים".
     later(8800, () => { try { startMusic('broken', 0.26) } catch (e) { /* */ } })
-    later(39200, () => { try { stopMusic(3) } catch (e) { /* */ } })
     later(27600, () => { snores.current = setInterval(() => { try { sfxSnore() } catch (e) { /* */ } }, 2800) })
     for (const t of [19400, 21200, 23000]) later(t, () => { try { buzz([60]) } catch (e) { /* */ } })
     later(25800, () => { try { sfxThud(0.7) } catch (e) { /* */ } })
@@ -132,10 +131,16 @@ export function Intro({ onDone }) {
               transform: `translate(-50%,-100%) ${phase === 'stop' || stone ? 'translateY(2%)' : ''}`,
               transition: 'transform 1.4s ease-in-out',
               animation: phase === 'nights' ? 'wildenStrain 1.8s ease-in-out infinite' : phase === 'healed' ? 'wildenBob 3.4s ease-in-out infinite' : 'none' }}>
+              {/* צל על הקרקע: מה שמחבר רגליים לאדמה */}
+              <div style={I.groundShadow} />
+              {/* ער: התמונה עצמה, בלי פילטר. ספארי באייפון מצייר תמונה עם פילטר
+                  מונפש כשקופה — "בעולם המואר הוא שקוף לחלוטין". */}
+              <img src="/world/guardian-still.png" alt="" draggable={false} style={{ ...I.gimg, opacity: stone ? 0 : 1 }} />
+              {/* העמעום של האור שבתוכו: שכבה כהה במסכה של הצללית שלו, רק שקיפות זזה */}
+              <div style={{ ...I.dim, opacity: stone ? 0 : (1 - glow) * 0.55 }} />
+              {/* אבן: אפור סטטי */}
               <img src="/world/guardian-still.png" alt="" draggable={false}
-                style={{ ...I.gimg, filter: `saturate(${0.5 + glow * 0.5}) brightness(${0.82 + glow * 0.18})`, opacity: stone ? 0 : 1 }} />
-              <img src="/world/guardian-still.png" alt="" draggable={false}
-                style={{ ...I.gimg, position: 'absolute', inset: 0, opacity: stone ? 1 : 0, filter: 'grayscale(1) brightness(.88) contrast(1.1)' }} />
+                style={{ ...I.gimg, position: 'absolute', inset: 0, opacity: stone ? 1 : 0, filter: 'grayscale(1) brightness(.92) contrast(1.1)' }} />
               {/* ההילה הזהובה של הסדקים: חיה, דועכת, כבויה */}
               <div style={{ ...I.aura, opacity: glow * 0.8, transition: 'opacity 2.4s ease' }} />
               {/* ארבעה סדקים קטנים: אבן, מים, ניצוץ, דבש */}
@@ -199,8 +204,11 @@ const I = {
   stage: { position: 'relative', width: '100%', aspectRatio: '3 / 4', maxHeight: '68vh', overflow: 'hidden', flex: 'none', borderBottomLeftRadius: 22, borderBottomRightRadius: 22, boxShadow: '0 10px 40px rgba(0,0,0,.6)' },
   bg: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' },
   item: { position: 'absolute', transform: 'translate(-50%,-100%)', pointerEvents: 'none', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.35))' },
-  guardian: { position: 'absolute', zIndex: 2, pointerEvents: 'none', filter: 'drop-shadow(0 8px 14px rgba(0,0,0,.6))' },
-  gimg: { height: '100%', width: 'auto', display: 'block', transition: 'opacity 1.2s ease, filter 2.4s ease' },
+  guardian: { position: 'absolute', zIndex: 2, pointerEvents: 'none' },
+  gimg: { height: '100%', width: 'auto', display: 'block', transition: 'opacity 1.2s ease' },
+  dim: { position: 'absolute', inset: 0, background: '#0a0c14', transition: 'opacity 2.4s ease', pointerEvents: 'none',
+    WebkitMaskImage: 'url(/world/guardian-still.png)', maskImage: 'url(/world/guardian-still.png)', WebkitMaskSize: '100% 100%', maskSize: '100% 100%', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat' },
+  groundShadow: { position: 'absolute', left: '12%', right: '12%', bottom: '-2%', height: '7%', borderRadius: '50%', background: 'rgba(0,0,0,.5)', filter: 'blur(3px)' },
   aura: { position: 'absolute', inset: '-12%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,200,90,.5) 0%, rgba(245,200,90,0) 65%)', pointerEvents: 'none', zIndex: -1 },
   crack: { position: 'absolute', width: 7, height: 7, borderRadius: '50%', transform: 'translate(-50%,-50%)' },
   eyes: { position: 'absolute', left: '50%', top: '14%', width: '46%', height: '14%', transform: 'translateX(-50%)', borderRadius: '50%',
