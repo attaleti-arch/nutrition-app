@@ -22,13 +22,31 @@ export function setMusicMuted(v) {
   if (musicOff) stopMusic(0.4)
 }
 
+// ── פתיחת הערוץ ב-iOS ──
+// ספארי מרשה ל-<audio> לנגן רק אם play() נקרא בתוך מגע. המוזיקה של החורבה
+// מתחילה מטיימר, שניות אחרי הלחיצה — ונחסמה בשקט: "אין מוזיקה עצובה, היא
+// נפסקת לחלוטין". הפתרון: בלחיצה עצמה יוצרים את שני האלמנטים ומנגנים
+// אותם אילמים לרגע. מאותו רגע הם "פתוחים", וטיימר יכול להפעיל אותם.
+const pool = {}
+export function primeMusic() {
+  if (typeof Audio === 'undefined') return
+  for (const mode of Object.keys(FILES)) {
+    if (pool[mode]) continue
+    const el = new Audio(FILES[mode]); el.loop = true; el.preload = 'auto'; el.volume = 0
+    pool[mode] = el
+    el.play().then(() => { if (cur?.el !== el) el.pause() }).catch(() => {})
+  }
+}
+
 export function startMusic(mode, vol = VOL) {
   if (musicOff || !mode || !FILES[mode] || typeof Audio === 'undefined') return
   if (cur?.mode === mode) return
   stopMusic(1.0)
   const target = Math.max(0, Math.min(1, vol))
-  const el = new Audio(FILES[mode])
+  const el = pool[mode] || new Audio(FILES[mode])
+  pool[mode] = el
   el.loop = true; el.preload = 'auto'; el.volume = 0
+  try { el.currentTime = 0 } catch (e) { /* */ }
   const s = { mode, el }
   cur = s
   // בלי גישה (ספארי לפני מגע) — play נדחה בשקט; הנגיעה הבאה תנסה שוב.
@@ -41,7 +59,7 @@ export function startMusic(mode, vol = VOL) {
 export function stopMusic(sec = 1.2) {
   const s = cur; if (!s) return
   cur = null
-  fade(s.el, 0, sec, () => { try { s.el.pause(); s.el.src = '' } catch (e) { /* */ } })
+  fade(s.el, 0, sec, () => { try { if (cur?.el !== s.el) s.el.pause() } catch (e) { /* */ } })
 }
 
 // נגיעה כלשהי אחרי שהדף נטען: אם המוזיקה נדחתה, לנסות שוב.

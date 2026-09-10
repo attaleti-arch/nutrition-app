@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { SPOTS, GUARDIAN } from './HomeWorld'
 import { BUILDINGS } from '../engine/world'
 import { sfxCrack, sfxAppear, sfxThud, sfxSleep, sfxRumble, sfxSnore, buzz } from '../engine/audio'
-import { startMusic, stopMusic } from '../engine/music'
+import { startMusic, stopMusic, primeMusic } from '../engine/music'
 
 // ─── הפתיחה: סיפור, לא הסבר ───
 // התסריט שלה, כמעט מילה במילה:
@@ -63,7 +63,7 @@ export function Intro({ onDone }) {
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
   const begin = () => {
-    try { sfxAppear(); startMusic('magic') } catch (e) { /* */ }
+    try { sfxAppear(); primeMusic(); startMusic('magic') } catch (e) { /* */ }
     for (const [t, ph, txt] of SCRIPT) later(t, () => { setPhase(ph); setLine(txt) })
     // הסאונד לפי התסריט שלה: קסם עד הרעם וזהו; ברגע השבר — רעד; היער ההרוס
     // מיד אחריו, חלש, עד הצלליות של החיות; ונחירות רכות מהרגע שהוא אבן.
@@ -89,7 +89,7 @@ export function Intro({ onDone }) {
   const zoomed = phase === 'cracks' || phase === 'needs'
   const fleeing = phase === 'flash' || phase === 'broken'
   // האור של השומר: מלא עד הלילות, דועך בהם, כבוי כשהוא אבן
-  const glow = phase === 'nights' ? 0.45 : phase === 'stop' ? 0.15 : stone ? 0 : 1
+  const glow = phase === 'nights' ? 0.5 : phase === 'stop' ? 0.2 : stone ? 0 : 1
 
   return (
     <div style={I.wrap} className="wildenIntro">
@@ -129,13 +129,13 @@ export function Intro({ onDone }) {
           {/* השומר, בשער, מהתמונה הראשונה ועד הסוף */}
           {phase !== 'start' && (
             <div style={{ ...I.guardian, left: `${GUARDIAN.x}%`, top: `${GUARDIAN.y}%`, height: `${GUARDIAN.h}%`,
-              transform: `translate(-50%,-100%) ${phase === 'stop' || stone ? 'scaleY(.9) translateY(4%)' : ''}`,
+              transform: `translate(-50%,-100%) ${phase === 'stop' || stone ? 'translateY(2%)' : ''}`,
               transition: 'transform 1.4s ease-in-out',
               animation: phase === 'nights' ? 'wildenStrain 1.8s ease-in-out infinite' : phase === 'healed' ? 'wildenBob 3.4s ease-in-out infinite' : 'none' }}>
               <img src="/world/guardian-still.png" alt="" draggable={false}
-                style={{ ...I.gimg, filter: `saturate(${0.4 + glow * 0.6}) brightness(${0.6 + glow * 0.4})`, opacity: stone ? 0 : 1 }} />
+                style={{ ...I.gimg, filter: `saturate(${0.5 + glow * 0.5}) brightness(${0.82 + glow * 0.18})`, opacity: stone ? 0 : 1 }} />
               <img src="/world/guardian-still.png" alt="" draggable={false}
-                style={{ ...I.gimg, position: 'absolute', inset: 0, opacity: stone ? 1 : 0, filter: 'grayscale(1) brightness(.62) contrast(.95)' }} />
+                style={{ ...I.gimg, position: 'absolute', inset: 0, opacity: stone ? 1 : 0, filter: 'grayscale(1) brightness(.88) contrast(1.1)' }} />
               {/* ההילה הזהובה של הסדקים: חיה, דועכת, כבויה */}
               <div style={{ ...I.aura, opacity: glow * 0.8, transition: 'opacity 2.4s ease' }} />
               {/* ארבעה סדקים קטנים: אבן, מים, ניצוץ, דבש */}
