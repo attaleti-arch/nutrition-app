@@ -175,6 +175,45 @@ export function sfxSleep() {
   tone({ freq: 262, dur: 1.1, type: 'triangle', vol: 0.1, delay: 0.95 })
 }
 
+// רעד: רעש נמוך מסונן שעולה ויורד — האדמה זזה. ונחירה: נשיפה מסוננת
+// שיורדת בגובה, אחת. הפתיחה קוראת לה כל כמה שניות כשהשומר אבן.
+export function sfxRumble(dur = 2.4, vol = 0.5) {
+  const c = ac(); if (!c || muted) return
+  const t0 = c.currentTime
+  const frames = Math.floor(c.sampleRate * dur)
+  const buf = c.createBuffer(1, frames, c.sampleRate)
+  const d = buf.getChannelData(0)
+  let last = 0
+  for (let i = 0; i < frames; i++) { last = (last + (Math.random() * 2 - 1) * 0.02) * 0.995; d[i] = last * 30 }   // רעש חום
+  const src = c.createBufferSource(); src.buffer = buf
+  const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 110
+  const g = c.createGain()
+  g.gain.setValueAtTime(0.0001, t0)
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.25)
+  g.gain.setValueAtTime(vol, t0 + dur * 0.55)
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur)
+  src.connect(lp); lp.connect(g); g.connect(master)
+  src.start(t0); src.stop(t0 + dur + 0.05)
+}
+export function sfxSnore(vol = 0.12) {
+  const c = ac(); if (!c || muted) return
+  const t0 = c.currentTime
+  const dur = 0.9
+  const frames = Math.floor(c.sampleRate * dur)
+  const buf = c.createBuffer(1, frames, c.sampleRate)
+  const d = buf.getChannelData(0)
+  for (let i = 0; i < frames; i++) d[i] = Math.random() * 2 - 1
+  const src = c.createBufferSource(); src.buffer = buf
+  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 2.2
+  bp.frequency.setValueAtTime(320, t0); bp.frequency.exponentialRampToValueAtTime(140, t0 + dur)
+  const g = c.createGain()
+  g.gain.setValueAtTime(0.0001, t0)
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.2)
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur)
+  src.connect(bp); bp.connect(g); g.connect(master)
+  src.start(t0); src.stop(t0 + dur + 0.05)
+}
+
 export function sfxHatch() {
   if (muted) return
   noise({ dur: 0.55, freq: 2600, q: 0.5, vol: 0.16 })                             // ווש

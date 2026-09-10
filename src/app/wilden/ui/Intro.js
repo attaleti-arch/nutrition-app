@@ -2,8 +2,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { SPOTS, GUARDIAN } from './HomeWorld'
 import { BUILDINGS } from '../engine/world'
-import { sfxCrack, sfxAppear, sfxThud, sfxSleep, buzz } from '../engine/audio'
-import { startMusic } from '../engine/music'
+import { sfxCrack, sfxAppear, sfxThud, sfxSleep, sfxRumble, sfxSnore, buzz } from '../engine/audio'
+import { startMusic, stopMusic } from '../engine/music'
 
 // ─── הפתיחה: סיפור, לא הסבר ───
 // התסריט שלה, כמעט מילה במילה:
@@ -65,14 +65,21 @@ export function Intro({ onDone }) {
   const begin = () => {
     try { sfxAppear(); startMusic('magic') } catch (e) { /* */ }
     for (const [t, ph, txt] of SCRIPT) later(t, () => { setPhase(ph); setLine(txt) })
-    later(7400, () => { try { sfxCrack(0.9); buzz([80, 40, 120, 40, 200]); startMusic('broken') } catch (e) { /* */ } })
+    // הסאונד לפי התסריט שלה: קסם לכמה שניות וזהו; ברגע השבר — רעד; יער הרוס
+    // לכמה שניות עד השומר; ואז שקט, ונחירות רכות כשהוא אבן.
+    later(7400, () => { try { stopMusic(0.3); sfxCrack(0.9); sfxRumble(3.2); buzz([80, 40, 120, 40, 200]) } catch (e) { /* */ } })
+    later(9000, () => { try { startMusic('broken') } catch (e) { /* */ } })
+    later(13600, () => { try { stopMusic(2.5) } catch (e) { /* */ } })
+    later(27600, () => { snores.current = setInterval(() => { try { sfxSnore() } catch (e) { /* */ } }, 2800) })
     for (const t of [19400, 21200, 23000]) later(t, () => { try { buzz([60]) } catch (e) { /* */ } })
     later(25800, () => { try { sfxThud(0.7) } catch (e) { /* */ } })
     later(27600, () => { try { sfxSleep() } catch (e) { /* */ } })
     for (let i = 0; i < 4; i++) later(35200 + i * 700, () => { setNeedN(i + 1); try { sfxAppear() } catch (e) { /* */ } })
     later(44400, () => { try { sfxAppear(); buzz([40, 30, 40]) } catch (e) { /* */ } })
   }
-  const finish = () => { markIntroSeen(); onDone?.() }
+  const snores = useRef(null)
+  useEffect(() => () => clearInterval(snores.current), [])
+  const finish = () => { clearInterval(snores.current); try { stopMusic(0.5) } catch (e) { /* */ } markIntroSeen(); onDone?.() }
 
   const P = ['start', 'healed', 'flash', 'broken', 'stay', 'nights', 'stop', 'stone', 'cracks', 'needs', 'outside', 'eyes']
   const at = ph => P.indexOf(phase) >= P.indexOf(ph)
