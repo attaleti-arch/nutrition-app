@@ -25,7 +25,7 @@ export const introSeen = () => { try { return localStorage.getItem(INTRO_KEY) ==
 export const markIntroSeen = () => { try { localStorage.setItem(INTRO_KEY, '1') } catch (e) { /* */ } }
 
 const CAST = ['nimi', 'dabashon', 'gali', 'bolder', 'lumi', 'ruchi', 'noga']
-const LINES_HEALED = ['היה פעם עולם.', 'מלא חיים, אור, ומים שזורמים.']
+const LINES_HEALED = ['היה פעם עולם.', 'והשומר שמר עליו.']
 const LINES_BROKEN = ['ואז משהו נשבר.', 'היצורים ברחו. האור כבה.']
 
 export function Intro({ onDone }) {
@@ -89,6 +89,10 @@ export function Intro({ onDone }) {
             {asleep && <span style={I.zz}>💤</span>}
           </div>
         )}
+        {phase === 'healed' && (
+          <img src="/world/guardian-still.png" alt="" draggable={false}
+            style={{ ...I.item, left: `${GUARDIAN.x}%`, top: `${GUARDIAN.y}%`, height: `${GUARDIAN.h}%`, width: 'auto', animation: 'wildenPop .6s ease-out both, wildenBob 3.4s ease-in-out infinite', animationDelay: '.2s, 1s' }} />
+        )}
         {phase === 'healed' && CAST.map((id, i) => {
           const sp = SPOTS[id]; if (!sp) return null
           return (
@@ -113,13 +117,13 @@ export function Intro({ onDone }) {
         )}
         {phase === 'healed' && <p key={'h' + line} style={I.line}>{LINES_HEALED[line]}</p>}
         {phase === 'broken' && <p key={'b' + line} style={I.line}>{LINES_BROKEN[line]}</p>}
-        {phase === 'wait' && <p style={I.line}>השומר מחכה בשער.</p>}
-        {phase === 'guardian' && <p style={I.line}>הוא כבד. הוא עייף.</p>}
-        {(phase === 'settle' || phase === 'sleep') && <p style={I.line}>{phase === 'sleep' ? 'ונרדם.' : 'הוא חוזר למקומו…'}</p>}
+        {phase === 'wait' && <p style={I.line}>רק השומר נשאר בשער.</p>}
+        {phase === 'guardian' && <p style={I.line}>הוא שמר, ושמר, ושמר…</p>}
+        {(phase === 'settle' || phase === 'sleep') && <p key={phase} style={I.line}>{phase === 'sleep' ? 'והוא נרדם. אבן.' : 'עד שנגמר לו הכוח.'}</p>}
         {phase === 'ask' && (
           <>
-            <p style={I.line}>השומר ישן בשער.</p>
-            <p style={I.sub}>תעזרו להעיר אותו ולבנות את העולם מחדש?</p>
+            <p style={I.line}>רק אבן, מים, ניצוץ ודבש יעירו אותו.</p>
+            <p style={I.sub}>היצורים יודעים איפה למצוא. הם בחוץ. תעזרו?</p>
             <button onClick={finish} style={I.cta}>אני בפנים!</button>
           </>
         )}
