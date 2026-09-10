@@ -50,12 +50,6 @@ export function unlockAudio() {
   return true
 }
 
-// הגרף עצמו, למוזיקת הרקע (engine/music.js) — אותו הקשר, אותו master.
-export function audioGraph() {
-  const c = ac()
-  return c ? { ctx: c, master, muted } : null
-}
-
 export function setMuted(v) {
   muted = !!v
   if (master) master.gain.value = muted ? 0 : 0.9

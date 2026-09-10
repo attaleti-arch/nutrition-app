@@ -10,7 +10,7 @@ import { useProfile } from './hooks/useProfile'
 import { ProfileGate, ProfileBar } from './ui/ProfileGate'
 import { Intro, introSeen as introAlreadySeen } from './ui/Intro'
 import { worldState } from './engine/world'
-import { startMusic, stopMusic, musicMuted, setMusicMuted } from './engine/music'
+import { startMusic, stopMusic, musicMuted, setMusicMuted, retryMusic } from './engine/music'
 import { Beacon, BeaconLine, BEACON_CSS } from './ui/Beacon'
 import { Stage } from './ar/Stage'
 import { useGeo } from './hooks/useGeo'
@@ -93,6 +93,11 @@ export default function Wilden() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [atHome, built, musicOff])
   const toggleMusic = () => { const v = !musicOff; setMusicMuted(v); setMusicOff(v) }
+  useEffect(() => {
+    const on = () => retryMusic()
+    window.addEventListener('pointerdown', on, { passive: true })
+    return () => window.removeEventListener('pointerdown', on)
+  }, [])
 
   // ── חלון הצצה למצב, מאחורי ?debug=1 ──
   // גם לבדיקות אוטומטיות וגם לרגע שבו הורה בפיילוט אומר "זה תקוע" ואני
