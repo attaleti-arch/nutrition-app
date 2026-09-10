@@ -104,7 +104,7 @@ const fitPad = m => { const sz = m.getSize(); return [sz.x / 6 + 28, sz.y / 6 + 
 
 const coinKey = c => `${c.lat.toFixed(6)},${c.lng.toFixed(6)}`
 
-export function MiniMap({ home, path, pos, along = 0, heading = null, stops = [], nextStop = 0, reveal = true, known = [], creatureImg, coins = [], coinRun = null, height = '46vh', kid = null, buddyImg = null }) {
+export function MiniMap({ home, path, pos, along = 0, heading = null, stops = [], nextStop = 0, reveal = true, known = [], creatureImg, coins = [], coinRun = null, flowerRun = null, height = '46vh', kid = null, buddyImg = null }) {
   // מה הילד לובש (חנות) — נקרא כשמציירים את הדמות. לא משתנה באמצע הליכה.
   const kidRef = useRef(kid); kidRef.current = kid
   const buddyRef = useRef(buddyImg); buddyRef.current = buddyImg
@@ -220,6 +220,17 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
     lay.current.coinRun = L.marker([coinRun.lat, coinRun.lng], { interactive: false, zIndexOffset: 600, icon: L.divIcon({ className: '', iconSize: [54, 40], iconAnchor: [27, 20],
       html: upright(`<div style="width:54px;height:40px;display:grid;place-items:center;border-radius:12px;background:rgba(255,216,74,.22);border:2px solid #E5A342;box-shadow:0 2px 6px rgba(0,0,0,.35);animation:wildenPin 1.6s ease-in-out infinite"><div style="display:flex;gap:-4px;align-items:flex-end">${coinSvg(14, false, 1)}${coinSvg(18, true, 2)}${coinSvg(14, false, 3)}</div><span style="position:absolute;bottom:-9px;font-size:9px;font-weight:900;background:#E5A342;color:#14200F;border-radius:999px;padding:0 5px">20 שנ׳</span></div>`) }) }).addTo(m)
   }, [ready, coinRun?.lat, coinRun?.lng, coinRun?.done])
+
+  // ── ריצת הפרחים: סימן ורוד, אותו "20 שנ׳" ──
+  useEffect(() => {
+    const m = map.current
+    if (!m) return
+    const L = Lmod
+    lay.current.flowerRun?.remove(); lay.current.flowerRun = null
+    if (!flowerRun || flowerRun.done) return
+    lay.current.flowerRun = L.marker([flowerRun.lat, flowerRun.lng], { interactive: false, zIndexOffset: 600, icon: L.divIcon({ className: '', iconSize: [54, 40], iconAnchor: [27, 20],
+      html: upright(`<div style="width:54px;height:40px;display:grid;place-items:center;border-radius:12px;background:rgba(255,182,213,.28);border:2px solid #E68AB8;box-shadow:0 2px 6px rgba(0,0,0,.35);animation:wildenPin 1.6s ease-in-out infinite"><img src="/world/flower.png" alt="" style="height:30px;width:auto;display:block"/><span style="position:absolute;bottom:-9px;font-size:9px;font-weight:900;background:#E68AB8;color:#14200F;border-radius:999px;padding:0 5px">20 שנ׳</span></div>`) }) }).addTo(m)
+  }, [ready, flowerRun?.lat, flowerRun?.lng, flowerRun?.done])
 
   // ── המטבעות ──
   // סמן לכל מטבע, לפי מקום. מטבע שנאסף לא נמחק מיד: הוא קופץ, גדל

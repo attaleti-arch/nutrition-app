@@ -92,7 +92,11 @@ const SIDE = {
 // wear: { head, face } — מונח בתוך תיבה שגודלה = תיבת התמונה (position:
 // relative על העוטף). flip — כשהתמונה הפוכה, גם הפריט.
 // anchors — עוגנים של הדמות בשלב הזה (creature.stages[n].anchors); בלי — של שלב 1.
-export function Wear({ id, wear, flip = false, anchors = null }) {
+// "מהחנות להעיף את הפפיונים וכובעי המסיבות. כל מה שמעפן בגרפיקה להעיף."
+// הכובעים המצוירים לא נראים טוב על הדמויות המצוירות-באמת. לא מציירים
+// אותם יותר; מה שנקנה נשאר בזיכרון (מיזוג, שרת), פשוט לא על הגוף.
+export function Wear() { return null }
+function WearLegacy({ id, wear, flip = false, anchors = null }) {
   const a = anchors || ANCHORS[id]
   if (!a || !wear) return null
   return (

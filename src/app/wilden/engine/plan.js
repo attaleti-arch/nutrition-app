@@ -14,7 +14,7 @@ import { freshEnd, STOP_BUFFER } from './placement.js'
 
 export const ROUTE_KM = [1, 1.5, 2, 3, 4]
 export const KID_KMH = 3.3                  // קצב הליכה של ילד, לטיימר
-export const POI = { CREATURE: 'creature', RUN: 'run', GOLD: 'gold' }
+export const POI = { CREATURE: 'creature', RUN: 'run', GOLD: 'gold', FLOWERS: 'flowers' }
 export const MIN_GAP_M = 200                // פחות מזה בין נקודות — מוותרים על אחת
 
 export const defaultKm = walks => (walks === 0 ? 2.2 : 3.2)
@@ -29,26 +29,30 @@ export function setRouteKm(progress, km) {
 }
 
 // מה בדרך, לפי האורך. הסדר קבוע: מטבעות קודם, היצור אחרון.
+// פרחים: "כמו מטבעות, לפחות 20 שניות לאסוף בקפיצה או ריצה, ושיראו אותם."
+// אותה ריצה של 20 שניות, עם פרחים, מ-2 ק"מ ומעלה (בקצר אין מקום לעוד תחנה).
 export function poisFor(km, walks = 0) {
   if (km <= 1.5) return [walks % 2 ? POI.GOLD : POI.RUN, POI.CREATURE]
-  if (km < 3) return [POI.RUN, POI.GOLD, POI.CREATURE]
-  return [POI.RUN, POI.CREATURE, POI.GOLD, POI.CREATURE]
+  if (km < 3) return [POI.RUN, POI.FLOWERS, POI.GOLD, POI.CREATURE]
+  return [POI.RUN, POI.CREATURE, POI.FLOWERS, POI.GOLD, POI.CREATURE]
 }
 export const creatureCount = pois => pois.filter(k => k === POI.CREATURE).length
 
 // מניחים את הנקודות על המסלול. creatures: מי בתחנות, לפי הסדר.
-// מחזיר { stops, coinRun, goldAlong } — מה שהמכונה צריכה.
+// מחזיר { stops, coinRun, flowerRun, goldAlong } — מה שהמכונה צריכה.
 export function placePois(path, kinds, { creatures = ['nimi'], buffer = STOP_BUFFER, freshEndM = null } = {}) {
-  const out = { stops: [], coinRun: null, goldAlong: null }
+  const out = { stops: [], coinRun: null, flowerRun: null, goldAlong: null }
   if (!path || path.length < 2 || !kinds?.length) return out
   const total = pathLength(path)
   const fe = freshEndM ?? freshEnd(path)
   const end = Math.min(total - buffer, Math.max(fe, buffer + 200))
   const usable = Math.max(0, end - buffer)
-  // צפוף מדי? מוותרים על מטבעות לפני שמוותרים על יצור — אבל יצור אחד לפחות תמיד.
+  // צפוף מדי? מוותרים על תחנות לפני שמוותרים על יצור — אבל יצור אחד לפחות תמיד.
   let list = [...kinds]
   while (list.length > 1 && (usable * 0.85) / list.length < MIN_GAP_M) {
-    const drop = list.lastIndexOf(POI.GOLD) >= 0 ? list.lastIndexOf(POI.GOLD)
+    // צפוף: קודם מוותרים על הפרחים, אחר כך על הזהב, אחר כך על ריצת המטבעות.
+    const drop = list.lastIndexOf(POI.FLOWERS) >= 0 ? list.lastIndexOf(POI.FLOWERS)
+      : list.lastIndexOf(POI.GOLD) >= 0 ? list.lastIndexOf(POI.GOLD)
       : list.lastIndexOf(POI.RUN) >= 0 ? list.lastIndexOf(POI.RUN) : list.indexOf(POI.CREATURE)
     list.splice(drop, 1)
   }
@@ -63,6 +67,7 @@ export function placePois(path, kinds, { creatures = ['nimi'], buffer = STOP_BUF
     const pt = { lat: p.point.lat, lng: p.point.lng, along: at }
     if (kind === POI.CREATURE) out.stops.push({ ...pt, creature: who[ci++ % who.length], done: false })
     else if (kind === POI.RUN) out.coinRun = { ...pt, done: false }
+    else if (kind === POI.FLOWERS) out.flowerRun = { ...pt, done: false }
     else if (kind === POI.GOLD) out.goldAlong = at
   })
   return out

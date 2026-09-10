@@ -98,6 +98,13 @@ export function coinRunNearby(run, pos) {
   return haversine(cr, pos) <= COIN_RUN_NEAR_M ? cr : null
 }
 
+// ריצת הפרחים: אותו טווח, אותה נקודה אחת במסלול.
+export function flowerRunNearby(run, pos) {
+  const fr = run?.flowerRun
+  if (!fr || fr.done || !pos) return null
+  return haversine(fr, pos) <= COIN_RUN_NEAR_M ? fr : null
+}
+
 export const GOLD_NEAR_M = 22
 export function goldNearby(coins, pos) {
   const g = (coins || []).find(c => c.gold && !c.taken)

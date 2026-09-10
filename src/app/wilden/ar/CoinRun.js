@@ -18,7 +18,16 @@ import * as CR from '../engine/coinRun'
 const FOV = 62
 const TICK = 120
 
-export function CoinRun({ onDone, onClose }) {
+// theme: 'coins' (ברירת מחדל) או 'flowers' — אותה ריצה, פרחים במקום מטבעות.
+// "כמו מטבעות, לפחות 20 שניות לאסוף בקפיצה או ריצה, ושיראו אותם."
+const THEMES = {
+  coins: { icon: '🪙', ask: 'ריצת מטבעות! הטלפון צריך להרגיש את הצעדים ולדעת לאן הוא מכוון.', go: 'רוצו! אספו כמה שיותר!', aim: 'רוצו קדימה וכוונו את הטלפון למטבע. גבוה? הרימו יד!', unit: 'מטבעות' },
+  flowers: { icon: '🌸', ask: 'שדה פרחים! הטלפון צריך להרגיש את הצעדים ולדעת לאן הוא מכוון.', go: 'רוצו! קטפו כמה שיותר פרחים!', aim: 'רוצו קדימה וכוונו את הטלפון לפרח. גבוה? קפצו והרימו יד!', unit: 'פרחים' },
+}
+
+export function CoinRun({ onDone, onClose, theme = 'coins' }) {
+  const th = THEMES[theme] || THEMES.coins
+  const flowers = theme === 'flowers'
   const camera = useCamera()
   const { videoRef } = camera
   const cam = camera.state
@@ -111,7 +120,7 @@ export function CoinRun({ onDone, onClose }) {
 
       {askNeeded && (
         <div style={S.ask} onClick={e => e.stopPropagation()}>
-          <p style={S.askLine}>ריצת מטבעות! הטלפון צריך להרגיש את הצעדים ולדעת לאן הוא מכוון.</p>
+          <p style={S.askLine}>{th.ask}</p>
           <button onClick={askAll} style={S.askBtn}>אפשר לי לרוץ</button>
         </div>
       )}
@@ -132,6 +141,11 @@ export function CoinRun({ onDone, onClose }) {
         return (
           <div key={c.id} style={{ ...S.coinAt, left: `${50 + (dx / (FOV / 2)) * 50}%`, top: `${52 - dy * 1.5}%`,
             opacity: Math.max(0.55, 1 - Math.abs(dx) / 70) }} aria-hidden="true">
+            {flowers ? (
+              <img src="/world/flower.png" alt="" draggable={false}
+                style={{ width: size * 1.15, height: 'auto', display: 'block', animation: `wildenSway ${c.high ? 1.6 : 2.4}s ease-in-out infinite`,
+                  filter: inReach ? 'drop-shadow(0 0 16px rgba(255,255,255,.95)) brightness(1.15)' : 'drop-shadow(0 4px 8px rgba(0,0,0,.45))' }} />
+            ) : (
             <div style={{ width: size, height: size, perspective: 500 }}>
               <div style={{ ...S.coin, width: size, height: size, animation: `wildenSpin ${c.high ? 1.4 : 2}s linear infinite`,
                 boxShadow: inReach ? '0 0 34px rgba(255,216,74,.9), inset 0 0 0 6px rgba(184,134,11,.55)' : S.coin.boxShadow,
@@ -139,6 +153,7 @@ export function CoinRun({ onDone, onClose }) {
                 <span style={{ ...S.face, fontSize: size * 0.5 }}>{c.value > 1 ? '2' : 'W'}</span>
               </div>
             </div>
+            )}
             {c.high && c.rel < 7 && <span style={S.upHint}>⬆</span>}
           </div>
         )
@@ -154,10 +169,10 @@ export function CoinRun({ onDone, onClose }) {
             <div style={S.timerBar}><div style={{ ...S.timerFill, width: `${(left / CR.DURATION_MS) * 100}%`, background: left < 5000 ? '#E0523A' : '#E5A342' }} /></div>
             <span style={S.timerNum}>{Math.ceil(left / 1000)}</span>
           </div>
-          <div style={S.score}>🪙 {s.got}</div>
+          <div style={S.score}>{th.icon} {s.got}</div>
           <div style={S.hint}>
-            <p style={S.big}>רוצו! אספו כמה שיותר!</p>
-            <p style={S.sub}>{steps.live ? 'רוצו קדימה וכוונו את הטלפון למטבע. גבוה? הרימו יד!'
+            <p style={S.big}>{th.go}</p>
+            <p style={S.sub}>{steps.live ? th.aim
               : steps.perm === 'none' || steps.perm === 'denied' ? 'בטלפון הזה אין מד צעדים: לחצו על המסך כדי לרוץ.'
               : 'מחכים לחיישן… בינתיים לחצו על המסך כדי לרוץ.'}</p>
             {!hasSensors && (
@@ -171,8 +186,8 @@ export function CoinRun({ onDone, onClose }) {
       {sum && (
         <div style={S.center}>
           <p style={S.big}>{sum.value >= 12 ? 'וואו!' : sum.value >= 6 ? 'יפה מאוד!' : 'כל הכבוד!'}</p>
-          <p style={S.result}>🪙 {sum.value}</p>
-          <p style={S.sub}>{sum.taken} מתוך {sum.total} מטבעות</p>
+          <p style={S.result}>{th.icon} {sum.value}</p>
+          <p style={S.sub}>{sum.taken} מתוך {sum.total} {th.unit}</p>
         </div>
       )}
 
@@ -182,6 +197,7 @@ export function CoinRun({ onDone, onClose }) {
 }
 
 const CSS = `
+@keyframes wildenSway { 0%,100% { transform: rotate(-6deg) } 50% { transform: rotate(6deg) translateY(-3px) } }
 @keyframes wildenSpin { from { transform: rotateY(0deg) } to { transform: rotateY(360deg) } }
 @keyframes wildenPop { 0% { transform: translate(-50%,-50%) scale(.6); opacity: 0 } 20% { transform: translate(-50%,-50%) scale(1.3); opacity: 1 } 100% { transform: translate(-50%,-140%) scale(1); opacity: 0 } }
 @keyframes wildenCountIn { 0% { transform: scale(1.6); opacity: 0 } 30% { transform: scale(1); opacity: 1 } 100% { opacity: 1 } }

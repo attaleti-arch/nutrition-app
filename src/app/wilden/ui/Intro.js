@@ -71,7 +71,7 @@ export function Intro({ onDone }) {
     // היער ההרוס: מיד אחרי הרעם, חלש, ונמשך עד שלוחצים "אני בפנים".
     later(8800, () => { try { startMusic('broken', 0.26) } catch (e) { /* */ } })
     // נחירות: "רמז עדין" — שקטות מאוד, כל ארבע שניות, מהרגע שהוא אבן.
-    later(29000, () => { try { sfxSnore() } catch (e) { /* */ } snores.current = setInterval(() => { try { sfxSnore() } catch (e) { /* */ } }, 4000) })
+    later(29000, () => { try { sfxSnore(0.16) } catch (e) { /* */ } snores.current = setInterval(() => { try { sfxSnore(0.16) } catch (e) { /* */ } }, 3600) })
     for (const t of [19400, 21200, 23000]) later(t, () => { try { buzz([60]) } catch (e) { /* */ } })
     later(25800, () => { try { sfxThud(0.7) } catch (e) { /* */ } })
     later(27600, () => { try { sfxSleep() } catch (e) { /* */ } })
@@ -135,18 +135,12 @@ export function Intro({ onDone }) {
               animation: phase === 'nights' ? 'wildenStrain 1.8s ease-in-out infinite' : phase === 'healed' ? 'wildenBob 3.4s ease-in-out infinite' : 'none' }}>
               {/* צל על הקרקע: מה שמחבר רגליים לאדמה */}
               <div style={I.groundShadow} />
-              {/* ער: התמונה עצמה, בלי פילטר. ספארי באייפון מצייר תמונה עם פילטר
-                  מונפש כשקופה — "בעולם המואר הוא שקוף לחלוטין". */}
-              {/* רקע כהה מאחוריו: בלי זה גוף האבן הבהיר נבלע באור של השער */}
-              <div style={I.backing} />
-              {/* ער: הדמות עם האור והתנועה הקלה, זו שהיא אוהבת */}
+              {/* בדיוק כמו בבית, ששם הוא נראה טוב: תמונה אחת, בלי מסכות, בלי
+                  רקעים, בלי פילטרים מונפשים. ער — הקליפ עם האור; אבן — הסטילס האפור. */}
               <img src="/world/guardian.webp" alt="" draggable={false} style={{ ...I.gimg, opacity: stone ? 0 : 1 }} />
-              {/* העמעום של האור שבתוכו: שכבה כהה במסכה של הצללית שלו, רק שקיפות זזה */}
-              <div style={{ ...I.dim, opacity: stone ? 0 : (1 - glow) * 0.55 }} />
-              {/* אבן: אפור סטטי */}
               <img src="/world/guardian-still.png" alt="" draggable={false}
-                style={{ ...I.gimg, position: 'absolute', inset: 0, opacity: stone ? 1 : 0, filter: 'grayscale(1) brightness(.92) contrast(1.1)' }} />
-              {/* ההילה הזהובה של הסדקים: חיה, דועכת, כבויה */}
+                style={{ ...I.gimg, position: 'absolute', inset: 0, opacity: stone ? 1 : 0, filter: 'grayscale(1) brightness(.62) contrast(.95)' }} />
+              {/* האור שבתוכו: ההילה בלבד דועכת */}
               <div style={{ ...I.aura, opacity: glow * 0.8, transition: 'opacity 2.4s ease' }} />
               {/* ארבעה סדקים קטנים: אבן, מים, ניצוץ, דבש */}
               {(phase === 'cracks' || phase === 'needs') && NEEDS.map((n, i) => (
@@ -211,9 +205,6 @@ const I = {
   item: { position: 'absolute', transform: 'translate(-50%,-100%)', pointerEvents: 'none', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.35))' },
   guardian: { position: 'absolute', zIndex: 2, pointerEvents: 'none' },
   gimg: { height: '100%', width: 'auto', display: 'block', transition: 'opacity 1.2s ease' },
-  dim: { position: 'absolute', inset: 0, background: '#0a0c14', transition: 'opacity 2.4s ease', pointerEvents: 'none',
-    WebkitMaskImage: 'url(/world/guardian-still.png)', maskImage: 'url(/world/guardian-still.png)', WebkitMaskSize: '100% 100%', maskSize: '100% 100%', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat' },
-  backing: { position: 'absolute', inset: '-6% -30% -4% -30%', borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 60%, rgba(10,12,20,.55) 0%, rgba(10,12,20,.25) 45%, rgba(10,12,20,0) 72%)', pointerEvents: 'none' },
   groundShadow: { position: 'absolute', left: '12%', right: '12%', bottom: '-2%', height: '7%', borderRadius: '50%', background: 'rgba(0,0,0,.5)', filter: 'blur(3px)' },
   aura: { position: 'absolute', inset: '-12%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,200,90,.5) 0%, rgba(245,200,90,0) 65%)', pointerEvents: 'none', zIndex: -1 },
   crack: { position: 'absolute', width: 7, height: 7, borderRadius: '50%', transform: 'translate(-50%,-50%)' },

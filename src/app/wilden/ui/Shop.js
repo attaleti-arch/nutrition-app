@@ -24,9 +24,8 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onSkin = null, o
   const base = isKid ? null : creatureById(who)
   const c = isKid ? null : stagedFor(progress, base)
 
+  // בלי כובעים ופפיונים: רק החולצה של הילד במפה (צבע, לא ציור נוסף).
   const groups = [
-    { title: 'כובעים', items: ITEMS.filter(i => i.slot === SLOT.HEAD) },
-    !isKid && { title: 'על הפנים', items: ITEMS.filter(i => i.slot === SLOT.FACE) },
     isKid && { title: 'חולצה', items: ITEMS.filter(i => i.slot === SLOT.SHIRT) },
   ].filter(Boolean)
 
@@ -173,8 +172,7 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onSkin = null, o
           </div>
         </div>
       ))}
-      {!have.length && <p style={T.hint}>הכובעים הם ליצורים שנתפסו. עד אז — הדמות שלך במפה.</p>}
-      <p style={T.hint}>מטבעות אוספים בדרך. פריט שנקנה פעם אחת אפשר ללבוש על כל אחד.</p>
+      {isKid && <p style={T.hint}>מטבעות אוספים בדרך.</p>}
     </div>
   )
 }

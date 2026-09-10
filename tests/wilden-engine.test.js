@@ -2105,9 +2105,9 @@ test('תוכנית: בלי בחירה — הלוח; עם בחירה — הק"מ 
   assert.equal(setRouteKm({}, 3).routeKm, 3)
   assert.equal(plannedMin(1), 18); assert.equal(plannedMin(3), 55)
   assert.deepEqual(poisFor(1, 0), ['run', 'creature']); assert.deepEqual(poisFor(1.5, 1), ['gold', 'creature'], 'לסירוגין')
-  assert.deepEqual(poisFor(2, 0), ['run', 'gold', 'creature'])
-  assert.deepEqual(poisFor(3, 0), ['run', 'creature', 'gold', 'creature']); assert.equal(creatureCount(poisFor(4, 0)), 2)
-  assert.deepEqual(poisFor(2.2, 0), ['run', 'gold', 'creature'], 'הלוח הישן: מסע 1 — יצור אחד'); assert.equal(creatureCount(poisFor(3.2, 1)), 2)
+  assert.deepEqual(poisFor(2, 0), ['run', 'flowers', 'gold', 'creature'])
+  assert.deepEqual(poisFor(3, 0), ['run', 'creature', 'flowers', 'gold', 'creature']); assert.equal(creatureCount(poisFor(4, 0)), 2)
+  assert.deepEqual(poisFor(2.2, 0), ['run', 'flowers', 'gold', 'creature'], 'הלוח הישן: מסע 1 — יצור אחד'); assert.equal(creatureCount(poisFor(3.2, 1)), 2)
 })
 
 test('תוכנית: הנקודות מפוזרות שווה, היצור אחרון, ובמסלול צפוף מוותרים על מטבעות', () => {
@@ -2364,4 +2364,25 @@ test('מפתח ORS שהודבק מטלפון: תווי כיווניות וזנב
   assert.equal(cleanKey('Bearer ' + real + '\n'), real)
   assert.equal(cleanKey(''), '')
   assert.equal(cleanKey('notakey'), 'notakey')     // לא base64 של JSON — מחזירים כמו שהוא, השרת של ORS יגיד
+})
+
+test('פרחים: ריצה של 20 שניות כמו המטבעות — בתוכנית, על המסלול, ובסוף הביתה כמשאב וכמטבעות', async () => {
+  const { poisFor, placePois, POI } = await import('../src/app/wilden/engine/plan.js')
+  const { flowerRunNearby } = await import('../src/app/wilden/engine/coins.js')
+  assert.ok(!poisFor(1, 1).includes(POI.FLOWERS), 'בקצר אין מקום לפרחים')
+  assert.ok(poisFor(2).includes(POI.FLOWERS) && poisFor(3).includes(POI.FLOWERS))
+  // מסלול ישר של 3 ק"מ
+  const path = Array.from({ length: 31 }, (_, i) => ({ lat: 32.08 + i * 0.0009, lng: 34.78 }))
+  const plan = placePois(path, poisFor(3), { creatures: ['nimi', 'gali'] })
+  assert.ok(plan.flowerRun && !plan.flowerRun.done && plan.coinRun && plan.stops.length === 2)
+  assert.ok(plan.flowerRun.along > plan.coinRun.along, 'הפרחים אחרי המטבעות')
+  assert.ok(flowerRunNearby({ flowerRun: plan.flowerRun }, plan.flowerRun), 'ליד הנקודה — נפתח')
+  assert.equal(flowerRunNearby({ flowerRun: { ...plan.flowerRun, done: true } }, plan.flowerRun), null)
+  // במכונה: הריצה נסגרת, פרח = מטבע, ובסוף המסע פרחים בבית
+  let g = { ...initial(), state: 'SEARCH', run: { flowerRun: { ...plan.flowerRun }, coinsTaken: 3, coins: [], stops: [], walked: 100 } }
+  g = reduce(g, { type: 'FLOWER_RUN_DONE', got: 7, t: 5 })
+  assert.equal(g.run.flowerRun.done, true); assert.equal(g.run.flowerRun.got, 7)
+  assert.equal(g.run.coinsTaken, 10)
+  assert.equal(g.run.lastCoin.flowers, true)
+  assert.equal(reduce(g, { type: 'FLOWER_RUN_DONE', got: 2 }), g, 'פעם אחת')
 })

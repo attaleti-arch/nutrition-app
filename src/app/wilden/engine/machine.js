@@ -209,11 +209,12 @@ export function reduce(g, ev) {
       // מפת אוצר: עוד זהב, בחלק השני של הדרך
       if (g.run.mods?.extraGold) coins = withExtraGold(coins, ev.path)
       const coinRun = plan.coinRun
+      const flowerRun = plan.flowerRun
       return {
         ...g,
         state: S.SEARCH,
         run: { ...g.run, path: ev.path, home: ev.home ?? g.run.home, stops, stop: 0,
-          target: stops[0] || null, resolved: false, coins, coinRun, coinsTaken: g.run.coinsTaken || 0,
+          target: stops[0] || null, resolved: false, coins, coinRun, flowerRun, coinsTaken: g.run.coinsTaken || 0,
           walkStartedAt: ev.t ?? g.run.walkStartedAt ?? null },
       }
     }
@@ -354,6 +355,23 @@ export function reduce(g, ev) {
       }
     }
 
+    // ── ריצת הפרחים נגמרה ──
+    // כל פרח שנאסף: פרח הביתה (משאב), ומטבע אחד — "כמו מטבעות".
+    case 'FLOWER_RUN_DONE': {
+      const r = g.run
+      if (!r?.flowerRun || r.flowerRun.done) return g
+      const got = Math.max(0, ev.got || 0)
+      return {
+        ...g,
+        run: {
+          ...r,
+          flowerRun: { ...r.flowerRun, done: true, got },
+          coinsTaken: (r.coinsTaken || 0) + got,
+          lastCoin: got ? { t: ev.t ?? Date.now(), gold: false, n: got, run: true, flowers: true } : r.lastCoin,
+        },
+      }
+    }
+
     // ── ריצת המטבעות נגמרה ──
     // מה שנאסף בריצה נכנס למונה (כפול בדרך הביתה), והנקודה נסגרת.
     case 'COIN_RUN_DONE': {
@@ -410,6 +428,8 @@ export function reduce(g, ev) {
       // מבנים שעובדים (7 מאותו יצור) מייצרים בכל מסע: הכוורת — דבש.
       const made = produce({ caught }).made
       for (const m of made) res[m.product] = (res[m.product] || 0) + 1
+      // פרחים מהריצה: הביתה, כמשאב.
+      if (r.flowerRun?.done && r.flowerRun.got) res.flowers = (res.flowers || 0) + r.flowerRun.got
       const goldTaken = (r.coins || []).some(c => c.gold && c.taken) ? 1 : 0
       const runDone = r.coinRun?.done ? 1 : 0
       const walkDays = [...(g.progress.walkDays || [])]

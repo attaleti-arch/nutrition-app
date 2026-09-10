@@ -19,7 +19,7 @@ import { useRoute } from './hooks/useRoute'
 import { MiniMap } from './ui/MiniMap'
 import { turnsFor, nextCue, cueText, floorCue, cueGlyph, timeLeftMs, fmtClock } from './engine/turns'
 import { pathLength } from './engine/geo'
-import { heatDistance, loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, coinRunNearby, plannedMs, AVAILABLE } from './engine/coins'
+import { heatDistance, loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, coinRunNearby, flowerRunNearby, plannedMs, AVAILABLE } from './engine/coins'
 import { cheer, milestone } from './content/cheers'
 import { GoldStage } from './ar/GoldStage'
 import { CoinRun } from './ar/CoinRun'
@@ -203,6 +203,14 @@ export default function Wilden() {
     if (nearRun && !runSkipped && !runOpen) { unlockAudio(); setRunOpen(true) }
     if (!nearRun && runSkipped) setRunSkipped(false)
   }, [nearRun, runSkipped, runOpen])
+  // ── ריצת הפרחים ── אותו דבר, עם פרחים.
+  const [flowersOpen, setFlowersOpen] = useState(false)
+  const [flowersSkipped, setFlowersSkipped] = useState(false)
+  const nearFlowers = g.state === S.SEARCH && !goldOpen && !runOpen ? flowerRunNearby(g.run, g.run?.pos) : null
+  useEffect(() => {
+    if (nearFlowers && !flowersSkipped && !flowersOpen) { unlockAudio(); setFlowersOpen(true) }
+    if (!nearFlowers && flowersSkipped) setFlowersSkipped(false)
+  }, [nearFlowers, flowersSkipped, flowersOpen])
 
   // ── גלינג ──
   // המנוע אוסף, הדף מצלצל. lastCoin משתנה בכל איסוף; זהב מצלצל יותר.
@@ -261,6 +269,13 @@ export default function Wilden() {
         <CoinRun
           onDone={sum => { dispatch({ type: 'COIN_RUN_DONE', got: sum.value, t: Date.now() }); setRunOpen(false) }}
           onClose={() => { setRunOpen(false); setRunSkipped(true) }} />
+      )}
+
+      {/* ריצת הפרחים: עשרים שניות, פרחים במקום מטבעות */}
+      {g.state === S.SEARCH && flowersOpen && (
+        <CoinRun theme="flowers"
+          onDone={sum => { dispatch({ type: 'FLOWER_RUN_DONE', got: sum.taken, t: Date.now() }); setFlowersOpen(false) }}
+          onClose={() => { setFlowersOpen(false); setFlowersSkipped(true) }} />
       )}
 
       {/* הביצה בקעה: מסך אחד מעל הכול, לפני הבית */}
@@ -805,7 +820,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
   return (
     <>
       <div style={s.mapWrap}>
-        <MiniMap home={r.home} path={r.path} pos={geo.pos} along={r.along || 0} heading={orient.heading} coinRun={r.coinRun}
+        <MiniMap home={r.home} path={r.path} pos={geo.pos} along={r.along || 0} heading={orient.heading} coinRun={r.coinRun} flowerRun={r.flowerRun}
           stops={r.stops || (r.target ? [r.target] : [])} nextStop={r.stops ? r.stop : 0}
           reveal={reveal} known={g.progress.creatures} creatureImg={creature?.sprites?.hero}
           coins={r.coins} height="100%" kid={g.progress.wear?.kid || null} buddyImg={buddy?.live || null} />
