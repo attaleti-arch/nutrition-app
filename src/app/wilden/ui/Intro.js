@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { SPOTS, GUARDIAN } from './HomeWorld'
+import { SPOTS } from './HomeWorld'
 import { BUILDINGS } from '../engine/world'
 import { sfxCrack, sfxAppear, sfxThud, sfxSleep, sfxRumble, sfxSnore, buzz } from '../engine/audio'
 import { startMusic, stopMusic, primeMusic } from '../engine/music'
@@ -18,11 +18,17 @@ import { tr } from '../i18n'
 //
 // הבמה, לא סרטון: הסרטונים שלה של העולם, היצורים כתמונות קלות (מסך ראשון
 // על רשת סלולרית), והשומר עם שני מצבים — ער ואבן. הכול בזמנים קבועים,
-// ויש "לדלג". בערך 44 שניות.
+// ויש "לדלג". בערך 43 שניות.
 
 const INTRO_KEY = 'wilden_intro_v1'
 export const introSeen = () => { try { return localStorage.getItem(INTRO_KEY) === '1' } catch (e) { return true } }
 export const markIntroSeen = () => { try { localStorage.setItem(INTRO_KEY, '1') } catch (e) { /* */ } }
+
+// ── איפה השומר עומד בפתיחה ──
+// "הוא גם נראה באוויר": במקום שלו בבית הרגליים נופלות בדיוק על השפה הרחוקה
+// של הכד, ואז הוא נראה מרחף מעליו. בפתיחה, שבה רואים אותו גדול ולבד, הוא
+// עומד לפני הכד על אבני הריצפה — קרקע שרואים שהיא קרקע.
+const GUARD = { x: 30, y: 58, h: 29 }
 
 const CAST = ['nimi', 'dabashon', 'gali', 'bolder', 'lumi', 'ruchi', 'noga']
 // לאן כל אחד בורח: הצד הקרוב של המסך
@@ -44,19 +50,21 @@ const SCRIPT = [
   [9800, 'portal', 'והיצורים… נעלמו.'],
   [12400, 'flash', ''],
   [13200, 'broken', 'האור כבה. המים נעצרו.'],
-  // "הסצנה ארוכה מדי": הבמה סביב הקליפ התקצרה — משפט אחד שהוא נשאר, ומיד
-  // הקליפ שלו מחזיק את השער; ובסופו מעבר מהיר לאבן. הקליפ עצמו שלם, 8 שנ'.
-  [15600, 'stay', 'אבל השומר לא ברח. הוא נשאר בשער.'],
-  [18000, 'push', 'הוא שמר לילה ועוד לילה…'],
-  [22000, 'push', 'עד שהאור שבתוכו כמעט נגמר.'],
-  [26000, 'stop', 'ואז הוא נעצר.'],
-  [27400, 'stone', 'והפך לאבן.'],
-  [29800, 'cracks', 'אבל הוא לא אבוד.'],
-  [32000, 'cracks', 'כדי להעיר אותו, צריך להחזיר ארבעה דברים שהעולם איבד:'],
-  [35000, 'needs', 'אבן. מים. ניצוץ. ודבש.'],
-  [39000, 'outside', 'היצורים לקחו איתם את הדרך אליהם.'],
-  [41600, 'outside', 'והם שם בחוץ.'],
-  [44200, 'eyes', 'תמצאו אותם.'],
+  // "ממש ארוך, וחוזרים לתמונה הזו שלוש פעמים": הבמה הרחבה עם השומר נשארת
+  // פעמיים בלבד — העולם החי, ורגע השבר — ומיד הקליפ שלו מחזיק את השער.
+  // כשהוא נגמר לא חוזרים לתמונה הרחבה: נכנסים אליו מקרוב, שם הוא נעצר,
+  // הופך לאבן, והסדקים נדלקים. הקליפ עצמו שלם, שמונה שניות.
+  [15400, 'stay', 'אבל השומר לא ברח. הוא נשאר בשער.'],
+  [17600, 'push', 'הוא שמר לילה ועוד לילה…'],
+  [21600, 'push', 'עד שהאור שבתוכו כמעט נגמר.'],
+  [25600, 'stop', 'ואז הוא נעצר.'],
+  [26800, 'stone', 'והפך לאבן.'],
+  [29000, 'cracks', 'אבל הוא לא אבוד.'],
+  [31000, 'cracks', 'כדי להעיר אותו, צריך להחזיר ארבעה דברים שהעולם איבד:'],
+  [33800, 'needs', 'אבן. מים. ניצוץ. ודבש.'],
+  [37600, 'outside', 'היצורים לקחו איתם את הדרך אליהם.'],
+  [40200, 'outside', 'והם שם בחוץ.'],
+  [42600, 'eyes', 'תמצאו אותם.'],
 ]
 
 export function Intro({ onDone }) {
@@ -75,12 +83,12 @@ export function Intro({ onDone }) {
     later(7400, () => { try { stopMusic(0.3); sfxRumble(3.2); buzz([80, 40, 120, 40, 200]) } catch (e) { /* */ } })
     later(8800, () => { try { startMusic('broken', 0.26) } catch (e) { /* */ } })
     later(12400, () => { try { sfxCrack(0.9); buzz([60, 30, 90]) } catch (e) { /* */ } })
-    for (const t of [18600, 21000, 23400]) later(t, () => { try { buzz([60]); sfxThud(0.35) } catch (e) { /* */ } })
-    later(26000, () => { try { sfxThud(0.7) } catch (e) { /* */ } })
-    later(27400, () => { try { sfxSleep() } catch (e) { /* */ } })
-    later(28800, () => { try { sfxSnore(0.16) } catch (e) { /* */ } snores.current = setInterval(() => { try { sfxSnore(0.16) } catch (e) { /* */ } }, 3600) })
-    for (let i = 0; i < 4; i++) later(35000 + i * 700, () => { setNeedN(i + 1); try { sfxAppear() } catch (e) { /* */ } })
-    later(44200, () => { try { sfxAppear(); buzz([40, 30, 40]) } catch (e) { /* */ } })
+    for (const t of [18200, 20600, 23000]) later(t, () => { try { buzz([60]); sfxThud(0.35) } catch (e) { /* */ } })
+    later(25600, () => { try { sfxThud(0.7) } catch (e) { /* */ } })
+    later(26800, () => { try { sfxSleep() } catch (e) { /* */ } })
+    later(28200, () => { try { sfxSnore(0.16) } catch (e) { /* */ } snores.current = setInterval(() => { try { sfxSnore(0.16) } catch (e) { /* */ } }, 3600) })
+    for (let i = 0; i < 4; i++) later(33800 + i * 700, () => { setNeedN(i + 1); try { sfxAppear() } catch (e) { /* */ } })
+    later(42600, () => { try { sfxAppear(); buzz([40, 30, 40]) } catch (e) { /* */ } })
   }
   const snores = useRef(null)
   useEffect(() => () => clearInterval(snores.current), [])
@@ -90,7 +98,8 @@ export function Intro({ onDone }) {
   const at = ph => P.indexOf(phase) >= P.indexOf(ph)
   const broken = at('flash')
   const stone = at('stone')
-  const zoomed = phase === 'cracks' || phase === 'needs'
+  // הזום מתחיל ברגע שהקליפ נגמר: במקום לחזור לתמונה הרחבה, נכנסים אליו.
+  const zoomed = phase === 'stop' || phase === 'stone' || phase === 'cracks' || phase === 'needs'
   const fleeing = false
   const clip = phase === 'portal' ? 'portal' : phase === 'push' ? 'push' : null
   // האור של השומר: מלא עד הלילות, דועך בהם, כבוי כשהוא אבן
@@ -107,7 +116,7 @@ export function Intro({ onDone }) {
     <div style={I.wrap} className="wildenIntro">
       <style>{CSS}</style>
       <div style={I.stage}>
-        <div style={{ ...I.bg, transformOrigin: `${GUARDIAN.x}% ${GUARDIAN.y - GUARDIAN.h * 0.55}%`,
+        <div style={{ ...I.bg, transformOrigin: `${GUARD.x}% ${GUARD.y - GUARD.h * 0.55}%`,
           transform: zoomed ? 'scale(2.3)' : 'scale(1)', transition: 'transform 1.4s ease-in-out' }}>
           <img src={broken ? '/world/broken.jpg' : '/world/healed.jpg'} alt="" style={I.bg} draggable={false} />
           {phase !== 'start' && (
@@ -140,13 +149,15 @@ export function Intro({ onDone }) {
           {/* הקליפים שלה: הפורטל (היצורים מתאיידים) ודחיפת השער (לילה ועוד לילה) */}
           <video ref={portalRef} src="/world/intro/portal.mp4" muted playsInline preload="auto"
             style={{ ...I.bg, zIndex: 3, opacity: clip === 'portal' ? 1 : 0, transition: 'opacity .5s ease', pointerEvents: 'none' }} />
+          {/* יציאה מהירה מהקליפ: הזום פנימה מתחיל באותו רגע, ואם הוא נשאר
+              על המסך גם הקליפ נמתח איתו. */}
           <video ref={pushRef} src="/world/intro/push.mp4" muted playsInline preload="auto" poster="/world/intro/push-last.jpg"
-            style={{ ...I.bg, zIndex: 3, opacity: clip === 'push' ? 1 : 0, transition: 'opacity .8s ease', pointerEvents: 'none' }} />
+            style={{ ...I.bg, zIndex: 3, opacity: clip === 'push' ? 1 : 0, transition: 'opacity .35s ease', pointerEvents: 'none' }} />
           {/* לילה ועוד לילה: כחול עמוק שעולה ויורד פעמיים, מעל הקליפ */}
           <div style={{ ...I.bg, background: '#060a18', opacity: 0, animation: phase === 'push' ? 'wildenNights 7.6s ease-in-out both' : 'none', pointerEvents: 'none', zIndex: 4 }} />
           {/* השומר, בשער, מהתמונה הראשונה ועד הסוף — חוץ מכשהקליפ שלו רץ */}
           {phase !== 'start' && !clip && (
-            <div style={{ ...I.guardian, left: `${GUARDIAN.x}%`, top: `${GUARDIAN.y}%`, height: `${GUARDIAN.h}%`,
+            <div style={{ ...I.guardian, left: `${GUARD.x}%`, top: `${GUARD.y}%`, height: `${GUARD.h}%`,
               transform: `translate(-50%,-100%) ${phase === 'stop' || stone ? 'translateY(2%)' : ''}`,
               transition: 'transform 1.4s ease-in-out',
               animation: phase === 'nights' ? 'wildenStrain 1.8s ease-in-out infinite' : phase === 'healed' ? 'wildenBob 3.4s ease-in-out infinite' : 'none' }}>
