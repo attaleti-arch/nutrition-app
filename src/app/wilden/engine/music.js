@@ -10,7 +10,7 @@
 
 const KEY = 'wilden_music_v1'
 const FILES = { magic: '/world/music/magic.mp3', broken: '/world/music/broken.mp3' }
-const VOL = 0.45
+const VOL = 0.3
 let cur = null            // { mode, el }
 let musicOff = false
 try { musicOff = typeof localStorage !== 'undefined' && localStorage.getItem(KEY) === 'off' } catch (e) { /* */ }
