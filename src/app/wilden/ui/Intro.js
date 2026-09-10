@@ -65,11 +65,12 @@ export function Intro({ onDone }) {
   const begin = () => {
     try { sfxAppear(); startMusic('magic') } catch (e) { /* */ }
     for (const [t, ph, txt] of SCRIPT) later(t, () => { setPhase(ph); setLine(txt) })
-    // הסאונד לפי התסריט שלה: קסם לכמה שניות וזהו; ברגע השבר — רעד; יער הרוס
-    // לכמה שניות עד השומר; ואז שקט, ונחירות רכות כשהוא אבן.
+    // הסאונד לפי התסריט שלה: קסם עד הרעם וזהו; ברגע השבר — רעד; היער ההרוס
+    // מיד אחריו, חלש, עד הצלליות של החיות; ונחירות רכות מהרגע שהוא אבן.
     later(7400, () => { try { stopMusic(0.3); sfxCrack(0.9); sfxRumble(3.2); buzz([80, 40, 120, 40, 200]) } catch (e) { /* */ } })
-    later(9000, () => { try { startMusic('broken') } catch (e) { /* */ } })
-    later(13600, () => { try { stopMusic(2.5) } catch (e) { /* */ } })
+    // היער ההרוס: מיד אחרי הרעם, חלש, ונמשך עד הצלליות של החיות.
+    later(8800, () => { try { startMusic('broken', 0.26) } catch (e) { /* */ } })
+    later(39200, () => { try { stopMusic(3) } catch (e) { /* */ } })
     later(27600, () => { snores.current = setInterval(() => { try { sfxSnore() } catch (e) { /* */ } }, 2800) })
     for (const t of [19400, 21200, 23000]) later(t, () => { try { buzz([60]) } catch (e) { /* */ } })
     later(25800, () => { try { sfxThud(0.7) } catch (e) { /* */ } })

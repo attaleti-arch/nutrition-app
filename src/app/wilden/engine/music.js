@@ -22,10 +22,11 @@ export function setMusicMuted(v) {
   if (musicOff) stopMusic(0.4)
 }
 
-export function startMusic(mode) {
+export function startMusic(mode, vol = VOL) {
   if (musicOff || !mode || !FILES[mode] || typeof Audio === 'undefined') return
   if (cur?.mode === mode) return
   stopMusic(1.0)
+  const target = Math.max(0, Math.min(1, vol))
   const el = new Audio(FILES[mode])
   el.loop = true; el.preload = 'auto'; el.volume = 0
   const s = { mode, el }
@@ -33,7 +34,8 @@ export function startMusic(mode) {
   // בלי גישה (ספארי לפני מגע) — play נדחה בשקט; הנגיעה הבאה תנסה שוב.
   // NotAllowedError = אין עוד מגע (ספארי): נשארים ומנסים שוב במגע הבא.
   // כל שגיאה אחרת (קובץ חסר) = שקט, ולא מנסים שוב.
-  el.play().then(() => fade(el, VOL, 1.6)).catch(e => { if (cur === s && e?.name !== 'NotAllowedError') cur = null })
+  s.vol = target
+  el.play().then(() => fade(el, target, 1.6)).catch(e => { if (cur === s && e?.name !== 'NotAllowedError') cur = null })
 }
 
 export function stopMusic(sec = 1.2) {
@@ -44,7 +46,7 @@ export function stopMusic(sec = 1.2) {
 
 // נגיעה כלשהי אחרי שהדף נטען: אם המוזיקה נדחתה, לנסות שוב.
 export function retryMusic() {
-  if (cur && cur.el.paused) cur.el.play().then(() => fade(cur.el, VOL, 1.2)).catch(() => {})
+  if (cur && cur.el.paused) cur.el.play().then(() => fade(cur.el, cur.vol ?? VOL, 1.2)).catch(() => {})
 }
 
 function fade(el, to, sec, done) {
