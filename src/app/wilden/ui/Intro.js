@@ -70,7 +70,8 @@ export function Intro({ onDone }) {
     later(7400, () => { try { stopMusic(0.3); sfxCrack(0.9); sfxRumble(3.2); buzz([80, 40, 120, 40, 200]) } catch (e) { /* */ } })
     // היער ההרוס: מיד אחרי הרעם, חלש, ונמשך עד שלוחצים "אני בפנים".
     later(8800, () => { try { startMusic('broken', 0.26) } catch (e) { /* */ } })
-    later(27600, () => { snores.current = setInterval(() => { try { sfxSnore() } catch (e) { /* */ } }, 2800) })
+    // נחירות: "רמז עדין" — שקטות מאוד, כל ארבע שניות, מהרגע שהוא אבן.
+    later(29000, () => { try { sfxSnore() } catch (e) { /* */ } snores.current = setInterval(() => { try { sfxSnore() } catch (e) { /* */ } }, 4000) })
     for (const t of [19400, 21200, 23000]) later(t, () => { try { buzz([60]) } catch (e) { /* */ } })
     later(25800, () => { try { sfxThud(0.7) } catch (e) { /* */ } })
     later(27600, () => { try { sfxSleep() } catch (e) { /* */ } })

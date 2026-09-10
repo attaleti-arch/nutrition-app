@@ -195,23 +195,26 @@ export function sfxRumble(dur = 2.4, vol = 0.5) {
   src.connect(lp); lp.connect(g); g.connect(master)
   src.start(t0); src.stop(t0 + dur + 0.05)
 }
-export function sfxSnore(vol = 0.12) {
+export function sfxSnore(vol = 0.06) {
   const c = ac(); if (!c || muted) return
   const t0 = c.currentTime
-  const dur = 0.9
+  // שאיפה: רשרוש מסונן שיורד בגובה
+  const dur = 1.1
   const frames = Math.floor(c.sampleRate * dur)
   const buf = c.createBuffer(1, frames, c.sampleRate)
   const d = buf.getChannelData(0)
   for (let i = 0; i < frames; i++) d[i] = Math.random() * 2 - 1
   const src = c.createBufferSource(); src.buffer = buf
-  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 2.2
-  bp.frequency.setValueAtTime(320, t0); bp.frequency.exponentialRampToValueAtTime(140, t0 + dur)
+  const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.Q.value = 3
+  bp.frequency.setValueAtTime(260, t0); bp.frequency.exponentialRampToValueAtTime(120, t0 + dur)
   const g = c.createGain()
   g.gain.setValueAtTime(0.0001, t0)
-  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.2)
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.35)
   g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur)
   src.connect(bp); bp.connect(g); g.connect(master)
   src.start(t0); src.stop(t0 + dur + 0.05)
+  // נשיפה: טון נמוך ורך, עוד יותר שקט
+  tone({ freq: 95, glideTo: 70, dur: 0.6, type: 'sine', vol: vol * 0.5, delay: dur + 0.15 })
 }
 
 export function sfxHatch() {
