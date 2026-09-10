@@ -18,7 +18,7 @@ import { tr } from '../i18n'
 //
 // הבמה, לא סרטון: הסרטונים שלה של העולם, היצורים כתמונות קלות (מסך ראשון
 // על רשת סלולרית), והשומר עם שני מצבים — ער ואבן. הכול בזמנים קבועים,
-// ויש "לדלג". בערך 45 שניות.
+// ויש "לדלג". בערך 44 שניות.
 
 const INTRO_KEY = 'wilden_intro_v1'
 export const introSeen = () => { try { return localStorage.getItem(INTRO_KEY) === '1' } catch (e) { return true } }
@@ -44,18 +44,19 @@ const SCRIPT = [
   [9800, 'portal', 'והיצורים… נעלמו.'],
   [12400, 'flash', ''],
   [13200, 'broken', 'האור כבה. המים נעצרו.'],
-  [15600, 'stay', 'אבל השומר לא ברח.'],
-  [18000, 'stay', 'הוא נשאר בשער.'],
-  [20400, 'push', 'הוא שמר לילה ועוד לילה…'],
-  [24400, 'push', 'עד שהאור שבתוכו כמעט נגמר.'],
-  [28400, 'stop', 'ואז הוא נעצר.'],
-  [30200, 'stone', 'והפך לאבן.'],
-  [32600, 'cracks', 'אבל הוא לא אבוד.'],
-  [34800, 'cracks', 'כדי להעיר אותו, צריך להחזיר ארבעה דברים שהעולם איבד:'],
-  [37800, 'needs', 'אבן. מים. ניצוץ. ודבש.'],
-  [41800, 'outside', 'היצורים לקחו איתם את הדרך אליהם.'],
-  [44400, 'outside', 'והם שם בחוץ.'],
-  [47000, 'eyes', 'תמצאו אותם.'],
+  // "הסצנה ארוכה מדי": הבמה סביב הקליפ התקצרה — משפט אחד שהוא נשאר, ומיד
+  // הקליפ שלו מחזיק את השער; ובסופו מעבר מהיר לאבן. הקליפ עצמו שלם, 8 שנ'.
+  [15600, 'stay', 'אבל השומר לא ברח. הוא נשאר בשער.'],
+  [18000, 'push', 'הוא שמר לילה ועוד לילה…'],
+  [22000, 'push', 'עד שהאור שבתוכו כמעט נגמר.'],
+  [26000, 'stop', 'ואז הוא נעצר.'],
+  [27400, 'stone', 'והפך לאבן.'],
+  [29800, 'cracks', 'אבל הוא לא אבוד.'],
+  [32000, 'cracks', 'כדי להעיר אותו, צריך להחזיר ארבעה דברים שהעולם איבד:'],
+  [35000, 'needs', 'אבן. מים. ניצוץ. ודבש.'],
+  [39000, 'outside', 'היצורים לקחו איתם את הדרך אליהם.'],
+  [41600, 'outside', 'והם שם בחוץ.'],
+  [44200, 'eyes', 'תמצאו אותם.'],
 ]
 
 export function Intro({ onDone }) {
@@ -74,12 +75,12 @@ export function Intro({ onDone }) {
     later(7400, () => { try { stopMusic(0.3); sfxRumble(3.2); buzz([80, 40, 120, 40, 200]) } catch (e) { /* */ } })
     later(8800, () => { try { startMusic('broken', 0.26) } catch (e) { /* */ } })
     later(12400, () => { try { sfxCrack(0.9); buzz([60, 30, 90]) } catch (e) { /* */ } })
-    for (const t of [21000, 23400, 25800]) later(t, () => { try { buzz([60]); sfxThud(0.35) } catch (e) { /* */ } })
-    later(28400, () => { try { sfxThud(0.7) } catch (e) { /* */ } })
-    later(30200, () => { try { sfxSleep() } catch (e) { /* */ } })
-    later(31600, () => { try { sfxSnore(0.16) } catch (e) { /* */ } snores.current = setInterval(() => { try { sfxSnore(0.16) } catch (e) { /* */ } }, 3600) })
-    for (let i = 0; i < 4; i++) later(37800 + i * 700, () => { setNeedN(i + 1); try { sfxAppear() } catch (e) { /* */ } })
-    later(47000, () => { try { sfxAppear(); buzz([40, 30, 40]) } catch (e) { /* */ } })
+    for (const t of [18600, 21000, 23400]) later(t, () => { try { buzz([60]); sfxThud(0.35) } catch (e) { /* */ } })
+    later(26000, () => { try { sfxThud(0.7) } catch (e) { /* */ } })
+    later(27400, () => { try { sfxSleep() } catch (e) { /* */ } })
+    later(28800, () => { try { sfxSnore(0.16) } catch (e) { /* */ } snores.current = setInterval(() => { try { sfxSnore(0.16) } catch (e) { /* */ } }, 3600) })
+    for (let i = 0; i < 4; i++) later(35000 + i * 700, () => { setNeedN(i + 1); try { sfxAppear() } catch (e) { /* */ } })
+    later(44200, () => { try { sfxAppear(); buzz([40, 30, 40]) } catch (e) { /* */ } })
   }
   const snores = useRef(null)
   useEffect(() => () => clearInterval(snores.current), [])
