@@ -54,3 +54,23 @@ export function daySeed(d = new Date()) {
   const start = Date.UTC(d.getFullYear(), 0, 1)
   return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - start) / 86400000)
 }
+
+// ── ניקוי המפתח ──
+// מפתח של ORS הוא base64 של JSON קטן ({"org","id","h"}). כשמדביקים אותו
+// מטלפון בעברית נדבקים אליו תווי כיווניות וזנב כמו "0 in" — וזה מה שנשמר
+// ב-Vercel. במקום לבקש להדביק שוב: מסירים כל מה שאינו base64, ואם זה לא
+// מפוענח, חותכים אחרי סימן ה-= האחרון (ריפוד base64 תמיד בסוף).
+export function cleanKey(raw) {
+  let k = String(raw || '').replace(/^Bearer\s+/i, '').replace(/[^A-Za-z0-9+/=_-]/g, '')
+  if (!k) return ''
+  if (looksLikeKey(k)) return k
+  const eq = k.lastIndexOf('=')
+  if (eq > 0 && looksLikeKey(k.slice(0, eq + 1))) return k.slice(0, eq + 1)
+  return k
+}
+function looksLikeKey(k) {
+  try {
+    const json = JSON.parse(typeof atob === 'function' ? atob(k) : Buffer.from(k, 'base64').toString('utf8'))
+    return !!(json && json.org && json.id)
+  } catch (e) { return false }
+}

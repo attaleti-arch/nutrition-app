@@ -6,7 +6,7 @@
 // המטמון: אותה דלת + אותו אורך + אותו זרע = אותה תשובה לכל המופעים,
 // לשבוע. 2000 בקשות ביום במפתח חינמי — לפיילוט זה הרבה, אבל לא אינסוף.
 
-import { orsBody, parseOrs } from '../../engine/ors'
+import { orsBody, parseOrs, cleanKey } from '../../engine/ors'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -30,7 +30,7 @@ const EDGE = 'public, max-age=3600, s-maxage=604800, stale-while-revalidate=2592
 
 export async function GET(req) {
   // מפתח שהודבק עם רווח או שורה חדשה בסוף מפיל את fetch מיד ("invalid header value").
-  const key = (process.env.ORS_API_KEY || '').replace(/^Bearer\s+/i, '').replace(/[^\x21-\x7e]/g, '')
+  const key = cleanKey(process.env.ORS_API_KEY)
   if (!key) return Response.json({ error: 'no key' }, { status: 404, headers: { 'cache-control': 'no-store' } })
 
   const u = new URL(req.url)

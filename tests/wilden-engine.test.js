@@ -2354,3 +2354,14 @@ test('מנוע ניווט: בונים בקשת לולאה ומפענחים תש�
   assert.equal(daySeed(new Date(2026, 0, 1)), 0)
   assert.equal(daySeed(new Date(2026, 0, 2)), 1)
 })
+
+test('מפתח ORS שהודבק מטלפון: תווי כיווניות וזנב "0 in" יורדים, המפתח האמיתי נשאר', async () => {
+  const { cleanKey } = await import('../src/app/wilden/engine/ors.js')
+  const real = Buffer.from(JSON.stringify({ org: '5b3ce3597851110001cf6248', id: 'abc', h: 'murmur64' })).toString('base64')
+  assert.equal(cleanKey(real), real)
+  assert.equal(cleanKey('⁨' + real + '⁩0 in'), real)
+  assert.equal(cleanKey(real + '0in'), real)
+  assert.equal(cleanKey('Bearer ' + real + '\n'), real)
+  assert.equal(cleanKey(''), '')
+  assert.equal(cleanKey('notakey'), 'notakey')     // לא base64 של JSON — מחזירים כמו שהוא, השרת של ORS יגיד
+})
