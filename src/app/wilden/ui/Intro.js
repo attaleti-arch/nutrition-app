@@ -5,130 +5,166 @@ import { BUILDINGS } from '../engine/world'
 import { sfxCrack, sfxAppear, sfxThud, sfxSleep, buzz } from '../engine/audio'
 import { startMusic } from '../engine/music'
 
-// ─── סרטון הפתיחה ───
-// "סרטון פתיחה שמראה את כל פוטנציאל העולם המתוקן, ואז פלאש לעולם ההרוס
-// ובקשה לעזור לבנות אותו." פעם אחת, בפעם הראשונה על הטלפון, לפני השם.
+// ─── הפתיחה: סיפור, לא הסבר ───
+// התסריט שלה, כמעט מילה במילה:
+//   1. העולם לפני — חי, והשומר בשער.
+//   2. השבר — הבזק, האור כבה, היצורים בורחים.
+//   3. הוא היחיד שלא ברח.
+//   4. המחיר — לילה ועוד לילה, האור שבתוכו נגמר, והוא הופך לאבן.
+//   5. מה יכול להעיר אותו — ארבעה סדקים: אבן, מים, ניצוץ, דבש. היצורים
+//      לקחו איתם את הדרך. הם בחוץ. "תמצאו אותם."
+// ואז הבית, והפסל נותן את האות הראשון: "אבן…"
 //
-// לא סרטון מוכן אלא במה: הסרטון של העולם המתוקן שלה, ועליו היצורים והמבנים
-// (תמונות קלות, לא האנימציות — זה המסך הראשון על רשת סלולרית). ואז פלאש,
-// סדק, רעידה — והחורבה. הטקסט קצר: ילד בן שבע לא קורא פסקאות.
-//
-// לחיצה ראשונה ("להתחיל") כי בלי מגע אייפון לא משמיע כלום.
-//
-// ואז השומר: "אולי אחרי 'השומר כבר מחכה' פלאש, רקע שחור, ואנימציית שומר
-// רוקעת ומתכווצת למקומו ונרדם." — פלאש שני, חושך, השומר ענק רוקע שלוש
-// פעמים (רעידה + בום), מתכווץ אל המקום שלו בשער בזמן שהחורבה חוזרת,
-// ונרדם: אבן אפורה, 💤. אז מבקשים עזרה.
+// הבמה, לא סרטון: הסרטונים שלה של העולם, היצורים כתמונות קלות (מסך ראשון
+// על רשת סלולרית), והשומר עם שני מצבים — ער ואבן. הכול בזמנים קבועים,
+// ויש "לדלג". בערך 45 שניות.
 
 const INTRO_KEY = 'wilden_intro_v1'
 export const introSeen = () => { try { return localStorage.getItem(INTRO_KEY) === '1' } catch (e) { return true } }
 export const markIntroSeen = () => { try { localStorage.setItem(INTRO_KEY, '1') } catch (e) { /* */ } }
 
 const CAST = ['nimi', 'dabashon', 'gali', 'bolder', 'lumi', 'ruchi', 'noga']
-const LINES_HEALED = ['היה פעם עולם.', 'והשומר שמר עליו.']
-const LINES_BROKEN = ['ואז משהו נשבר.', 'היצורים ברחו. האור כבה.']
+// לאן כל אחד בורח: הצד הקרוב של המסך
+const FLEE = { nimi: [-60, 10], dabashon: [-40, -60], gali: [30, 60], bolder: [70, 20], lumi: [-70, 30], ruchi: [60, -60], noga: [-30, 70] }
+const NEEDS = [
+  { icon: '🪨', word: 'אבן', color: '#C9B79C', at: [38, 62] },
+  { icon: '💧', word: 'מים', color: '#7CC4F0', at: [60, 48] },
+  { icon: '✨', word: 'ניצוץ', color: '#F5D66B', at: [46, 36] },
+  { icon: '🍯', word: 'דבש', color: '#F0A93A', at: [58, 74] },
+]
+
+// [זמן במילישניות, שלב, שורה]
+const SCRIPT = [
+  [0, 'healed', 'פעם העולם הזה היה מלא חיים.'],
+  [3400, 'healed', 'ובשער עמד השומר. הוא שמר שהכול יישאר בטוח.'],
+  [7400, 'flash', ''],
+  [8200, 'broken', 'ואז, ברגע אחד… משהו נשבר.'],
+  [11000, 'broken', 'האור כבה. המים נעצרו. והיצורים ברחו.'],
+  [14200, 'stay', 'אבל השומר לא ברח.'],
+  [16600, 'stay', 'הוא נשאר בשער.'],
+  [19000, 'nights', 'הוא שמר לילה ועוד לילה…'],
+  [22800, 'nights', 'עד שהאור שבתוכו כמעט נגמר.'],
+  [25800, 'stop', 'ואז הוא נעצר.'],
+  [27600, 'stone', 'והפך לאבן.'],
+  [30000, 'cracks', 'אבל הוא לא אבוד.'],
+  [32200, 'cracks', 'כדי להעיר אותו, צריך להחזיר ארבעה דברים שהעולם איבד:'],
+  [35200, 'needs', 'אבן. מים. ניצוץ. ודבש.'],
+  [39200, 'outside', 'היצורים לקחו איתם את הדרך אליהם.'],
+  [41800, 'outside', 'והם שם בחוץ.'],
+  [44400, 'eyes', 'תמצאו אותם.'],
+]
 
 export function Intro({ onDone }) {
-  const [phase, setPhase] = useState('start')   // start | healed | flash | broken | ask
-  const [line, setLine] = useState(0)
+  const [phase, setPhase] = useState('start')
+  const [line, setLine] = useState('')
+  const [needN, setNeedN] = useState(0)
   const timers = useRef([])
   const later = (ms, fn) => { timers.current.push(setTimeout(fn, ms)) }
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
   const begin = () => {
     try { sfxAppear(); startMusic('magic') } catch (e) { /* */ }
-    setPhase('healed'); setLine(0)
-    later(3200, () => setLine(1))
-    later(7000, () => {
-      setPhase('flash')
-      try { sfxCrack(0.9); buzz([80, 40, 120, 40, 200]); startMusic('broken') } catch (e) { /* */ }
-    })
-    later(7900, () => { setPhase('broken'); setLine(0) })
-    later(10600, () => setLine(1))
-    later(13600, () => setPhase('wait'))
-    later(16200, () => { setPhase('flash2'); try { sfxCrack(0.6) } catch (e) { /* */ } })
-    later(17000, () => setPhase('guardian'))
-    for (const [i, t] of [17400, 18300, 19200].entries()) later(t, () => { setStomp(i + 1); try { sfxThud(1 - i * 0.15); buzz([90]) } catch (e) { /* */ } })
-    later(20200, () => setPhase('settle'))
-    later(21800, () => { setPhase('sleep'); try { sfxSleep() } catch (e) { /* */ } })
-    later(23400, () => setPhase('ask'))
+    for (const [t, ph, txt] of SCRIPT) later(t, () => { setPhase(ph); setLine(txt) })
+    later(7400, () => { try { sfxCrack(0.9); buzz([80, 40, 120, 40, 200]); startMusic('broken') } catch (e) { /* */ } })
+    for (const t of [19400, 21200, 23000]) later(t, () => { try { buzz([60]) } catch (e) { /* */ } })
+    later(25800, () => { try { sfxThud(0.7) } catch (e) { /* */ } })
+    later(27600, () => { try { sfxSleep() } catch (e) { /* */ } })
+    for (let i = 0; i < 4; i++) later(35200 + i * 700, () => { setNeedN(i + 1); try { sfxAppear() } catch (e) { /* */ } })
+    later(44400, () => { try { sfxAppear(); buzz([40, 30, 40]) } catch (e) { /* */ } })
   }
-  const [stomp, setStomp] = useState(0)
   const finish = () => { markIntroSeen(); onDone?.() }
 
-  const broken = !['start', 'healed'].includes(phase)
-  const guardianPhase = ['guardian', 'settle', 'sleep', 'ask'].includes(phase)
-  const big = phase === 'guardian'          // ענק, על שחור, רוקע
-  const asleep = phase === 'sleep' || phase === 'ask'
+  const P = ['start', 'healed', 'flash', 'broken', 'stay', 'nights', 'stop', 'stone', 'cracks', 'needs', 'outside', 'eyes']
+  const at = ph => P.indexOf(phase) >= P.indexOf(ph)
+  const broken = at('flash')
+  const stone = at('stone')
+  const zoomed = phase === 'cracks' || phase === 'needs'
+  const fleeing = phase === 'flash' || phase === 'broken'
+  // האור של השומר: מלא עד הלילות, דועך בהם, כבוי כשהוא אבן
+  const glow = phase === 'nights' ? 0.45 : phase === 'stop' ? 0.15 : stone ? 0 : 1
+
   return (
     <div style={I.wrap} className="wildenIntro">
       <style>{CSS}</style>
-      {/* במה ביחס 3:4 שממלאת את הגובה, כמו כרטיס העולם — כך המקומות של
-          היצורים והמבנים (אחוזים) נופלים בדיוק על התפאורה גם במסך צר. */}
       <div style={I.stage}>
-       <div style={{ ...I.bg, animation: phase === 'healed' ? 'wildenKen 8s ease-out forwards' : 'none', transformOrigin: '50% 60%' }}>
-        <img src={broken ? '/world/broken.jpg' : '/world/healed.jpg'} alt="" style={I.bg} draggable={false} />
-        {phase !== 'start' && (
-          <video key={broken ? 'b' : 'h'} src={broken ? '/world/broken.mp4' : '/world/healed.mp4'} poster={broken ? '/world/broken.jpg' : '/world/healed.jpg'}
-            autoPlay muted loop playsInline style={I.bg} />
-        )}
-        {/* הפוטנציאל: היצורים והמבנים, במקומות שלהם בבית */}
-        {phase === 'healed' && BUILDINGS.map(b => (
-          <img key={b.id} src={b.img} alt="" draggable={false}
-            style={{ ...I.item, left: `${b.spot.x}%`, top: `${b.spot.y}%`, width: `${b.spot.w}%`, animation: 'wildenPop .6s ease-out both', animationDelay: `${0.4 + (b.id.length % 4) * 0.2}s` }} />
-        ))}
-        {/* חושך לשומר: עולה בפלאש השני, יורד כשהוא מתיישב במקומו */}
-        <div style={{ ...I.bg, background: '#000', opacity: big || phase === 'flash2' ? 1 : 0, transition: 'opacity 1.2s ease', pointerEvents: 'none', zIndex: 1 }} />
-        {guardianPhase && (
-          <div style={{ ...I.guardian,
-            left: big ? '50%' : `${GUARDIAN.x}%`, top: big ? '96%' : `${GUARDIAN.y}%`, height: big ? '82%' : `${GUARDIAN.h}%`,
-            transition: big ? 'none' : 'left 1.4s ease-in-out, top 1.4s ease-in-out, height 1.4s ease-in-out',
-            animation: big && stomp ? `wildenStomp .5s ease-out ${stomp}` : 'none' }}>
-            <img src="/world/guardian.webp" alt="" draggable={false} style={{ ...I.gimg, opacity: asleep ? 0 : 1 }} />
-            <img src="/world/guardian-still.png" alt="" draggable={false} style={{ ...I.gimg, position: 'absolute', inset: 0, opacity: asleep ? 1 : 0, filter: 'grayscale(1) brightness(.62) contrast(.95)' }} />
-            {asleep && <span style={I.zz}>💤</span>}
-          </div>
-        )}
-        {phase === 'healed' && (
-          <img src="/world/guardian-still.png" alt="" draggable={false}
-            style={{ ...I.item, left: `${GUARDIAN.x}%`, top: `${GUARDIAN.y}%`, height: `${GUARDIAN.h}%`, width: 'auto', animation: 'wildenPop .6s ease-out both, wildenBob 3.4s ease-in-out infinite', animationDelay: '.2s, 1s' }} />
-        )}
-        {phase === 'healed' && CAST.map((id, i) => {
-          const sp = SPOTS[id]; if (!sp) return null
-          return (
-            <img key={id} src={`/creatures/${id}/poster.webp`} alt="" draggable={false}
-              style={{ ...I.item, left: `${sp.x}%`, top: `${sp.y}%`, height: `${sp.h}%`, width: 'auto',
-                animation: `wildenPop .6s ease-out both, ${sp.air ? 'wildenFloat' : 'wildenBob'} ${2.6 + i * 0.3}s ease-in-out infinite`, animationDelay: `${0.8 + i * 0.25}s, ${1.2 + i * 0.4}s` }} />
-          )
-        })}
-       </div>
+        <div style={{ ...I.bg, transformOrigin: `${GUARDIAN.x}% ${GUARDIAN.y - GUARDIAN.h * 0.55}%`,
+          transform: zoomed ? 'scale(2.3)' : 'scale(1)', transition: 'transform 1.4s ease-in-out' }}>
+          <img src={broken ? '/world/broken.jpg' : '/world/healed.jpg'} alt="" style={I.bg} draggable={false} />
+          {phase !== 'start' && (
+            <video key={broken ? 'b' : 'h'} src={broken ? '/world/broken.mp4' : '/world/healed.mp4'} poster={broken ? '/world/broken.jpg' : '/world/healed.jpg'}
+              autoPlay muted loop playsInline style={I.bg} />
+          )}
+          {/* המבנים: רק בעולם החי */}
+          {phase === 'healed' && BUILDINGS.map(b => (
+            <img key={b.id} src={b.img} alt="" draggable={false}
+              style={{ ...I.item, left: `${b.spot.x}%`, top: `${b.spot.y}%`, width: `${b.spot.w}%`, animation: 'wildenPop .6s ease-out both', animationDelay: `${0.4 + (b.id.length % 4) * 0.2}s` }} />
+          ))}
+          {/* היצורים: בעולם החי — חיים; בשבר — בורחים לצדדים; בסוף — צלליות, "הם שם בחוץ" */}
+          {(phase === 'healed' || fleeing || at('outside')) && CAST.map((id, i) => {
+            const sp = SPOTS[id]; if (!sp) return null
+            const silhouette = at('outside')
+            const [fx, fy] = FLEE[id]
+            return (
+              <img key={id} src={`/creatures/${id}/poster.webp`} alt="" draggable={false}
+                style={{ ...I.item, left: `${sp.x}%`, top: `${sp.y}%`, height: `${sp.h}%`, width: 'auto',
+                  '--fx': `${fx}vw`, '--fy': `${fy}vh`,
+                  filter: silhouette ? 'brightness(0) blur(1px)' : I.item.filter,
+                  opacity: silhouette ? 0.55 : 1,
+                  animation: fleeing ? 'wildenFlee 1.1s ease-in both'
+                    : silhouette ? `wildenPop .8s ease-out both`
+                    : `wildenPop .6s ease-out both, ${sp.air ? 'wildenFloat' : 'wildenBob'} ${2.6 + i * 0.3}s ease-in-out infinite`,
+                  animationDelay: fleeing ? `${i * 0.08}s` : silhouette ? `${0.3 + i * 0.2}s` : `${0.8 + i * 0.25}s, ${1.2 + i * 0.4}s` }} />
+            )
+          })}
+          {/* לילה ועוד לילה: כחול עמוק שעולה ויורד פעמיים */}
+          <div style={{ ...I.bg, background: '#060a18', opacity: 0, animation: phase === 'nights' ? 'wildenNights 6.6s ease-in-out both' : 'none', pointerEvents: 'none', zIndex: 1 }} />
+          {/* השומר, בשער, מהתמונה הראשונה ועד הסוף */}
+          {phase !== 'start' && (
+            <div style={{ ...I.guardian, left: `${GUARDIAN.x}%`, top: `${GUARDIAN.y}%`, height: `${GUARDIAN.h}%`,
+              transform: `translate(-50%,-100%) ${phase === 'stop' || stone ? 'scaleY(.9) translateY(4%)' : ''}`,
+              transition: 'transform 1.4s ease-in-out',
+              animation: phase === 'nights' ? 'wildenStrain 1.8s ease-in-out infinite' : phase === 'healed' ? 'wildenBob 3.4s ease-in-out infinite' : 'none' }}>
+              <img src="/world/guardian-still.png" alt="" draggable={false}
+                style={{ ...I.gimg, filter: `saturate(${0.4 + glow * 0.6}) brightness(${0.6 + glow * 0.4})`, opacity: stone ? 0 : 1 }} />
+              <img src="/world/guardian-still.png" alt="" draggable={false}
+                style={{ ...I.gimg, position: 'absolute', inset: 0, opacity: stone ? 1 : 0, filter: 'grayscale(1) brightness(.62) contrast(.95)' }} />
+              {/* ההילה הזהובה של הסדקים: חיה, דועכת, כבויה */}
+              <div style={{ ...I.aura, opacity: glow * 0.8, transition: 'opacity 2.4s ease' }} />
+              {/* ארבעה סדקים קטנים: אבן, מים, ניצוץ, דבש */}
+              {(phase === 'cracks' || phase === 'needs') && NEEDS.map((n, i) => (
+                <span key={n.word} style={{ ...I.crack, left: `${n.at[0]}%`, top: `${n.at[1]}%`, background: n.color, boxShadow: `0 0 6px 2px ${n.color}`,
+                  animation: 'wildenCrackIn .5s ease-out both', animationDelay: `${0.6 + i * 0.25}s` }} />
+              ))}
+              {/* העיניים נדלקות לשבריר שנייה */}
+              {phase === 'eyes' && <div style={I.eyes} />}
+            </div>
+          )}
+        </div>
       </div>
 
-      {broken && <div style={I.grey} />}
-      {(phase === 'flash' || phase === 'flash2') && <div style={I.flash} />}
+      {broken && !zoomed && <div style={I.grey} />}
+      {phase === 'flash' && <div style={I.flash} />}
       {phase === 'flash' && <div style={I.cracks} />}
 
       <div style={{ ...I.text, animation: phase === 'flash' ? 'wildenShake .5s ease-out' : 'none' }}>
-        {phase === 'start' && (
+        {phase === 'start' ? (
           <>
             <p style={I.eyebrow}>WILDEN</p>
             <button onClick={begin} style={I.cta}>להתחיל</button>
           </>
-        )}
-        {phase === 'healed' && <p key={'h' + line} style={I.line}>{LINES_HEALED[line]}</p>}
-        {phase === 'broken' && <p key={'b' + line} style={I.line}>{LINES_BROKEN[line]}</p>}
-        {phase === 'wait' && <p style={I.line}>רק השומר נשאר בשער.</p>}
-        {phase === 'guardian' && <p style={I.line}>הוא שמר, ושמר, ושמר…</p>}
-        {(phase === 'settle' || phase === 'sleep') && <p key={phase} style={I.line}>{phase === 'sleep' ? 'והוא נרדם. אבן.' : 'עד שנגמר לו הכוח.'}</p>}
-        {phase === 'ask' && (
+        ) : (
           <>
-            <p style={I.line}>רק אבן, מים, ניצוץ ודבש יעירו אותו.</p>
-            <p style={I.sub}>היצורים יודעים איפה למצוא. הם בחוץ. תעזרו?</p>
-            <button onClick={finish} style={I.cta}>אני בפנים!</button>
+            <p key={line} style={I.line}>{line}</p>
+            {phase === 'needs' && (
+              <div style={I.needs}>
+                {NEEDS.slice(0, needN).map(n => <span key={n.word} style={{ ...I.need, borderColor: n.color }}>{n.icon} {n.word}</span>)}
+              </div>
+            )}
+            {phase === 'eyes' && <button onClick={finish} style={I.cta}>יוצאים לחפש</button>}
           </>
         )}
       </div>
-      {phase !== 'start' && phase !== 'ask' && (
+      {phase !== 'start' && phase !== 'eyes' && (
         <button onClick={finish} style={I.skip} aria-label="לדלג">לדלג</button>
       )}
     </div>
@@ -136,34 +172,40 @@ export function Intro({ onDone }) {
 }
 
 const CSS = `
-@keyframes wildenKen { 0% { transform: scale(1) } 100% { transform: scale(1.1) } }
 @keyframes wildenPop { 0% { opacity: 0; transform: translate(-50%,-100%) scale(.6) } 100% { opacity: 1; transform: translate(-50%,-100%) scale(1) } }
+@keyframes wildenFlee { 0% { opacity: 1; transform: translate(-50%,-100%) } 100% { opacity: 0; transform: translate(calc(-50% + var(--fx)), calc(-100% + var(--fy))) scale(.7) } }
 @keyframes wildenBob { 0%,100% { margin-top: 0 } 50% { margin-top: -4px } }
 @keyframes wildenFloat { 0%,100% { margin-top: 0 } 50% { margin-top: -10px } }
 @keyframes wildenFlash { 0% { opacity: 1 } 100% { opacity: 0 } }
 @keyframes wildenLine { 0% { opacity: 0; transform: translateY(8px) } 100% { opacity: 1; transform: translateY(0) } }
-@keyframes wildenStomp { 0% { transform: translate(-50%,-100%) scaleY(1.06) scaleX(.96) } 30% { transform: translate(-50%,-100%) scaleY(.94) scaleX(1.06) } 55% { transform: translate(-51%,-100%) } 75% { transform: translate(-49%,-100%) } 100% { transform: translate(-50%,-100%) } }
+@keyframes wildenNights { 0% { opacity: 0 } 22% { opacity: .62 } 45% { opacity: .05 } 70% { opacity: .68 } 100% { opacity: .1 } }
+@keyframes wildenStrain { 0%,100% { margin-left: 0 } 25% { margin-left: -3px } 75% { margin-left: 3px } }
+@keyframes wildenCrackIn { 0% { opacity: 0; transform: translate(-50%,-50%) scale(.2) } 100% { opacity: 1; transform: translate(-50%,-50%) scale(1) } }
+@keyframes wildenEyes { 0% { opacity: 0 } 30% { opacity: 1 } 100% { opacity: 0 } }
 @keyframes wildenShake { 0%,100% { transform: translate(0,0) } 15% { transform: translate(-7px,4px) } 30% { transform: translate(6px,-5px) } 45% { transform: translate(-5px,-3px) } 60% { transform: translate(4px,4px) } 80% { transform: translate(-2px,1px) } }
 @media (prefers-reduced-motion: reduce) { .wildenIntro * { animation-duration: .01s !important } }
 `
 
 const I = {
-  // הבמה ברוחב המסך ביחס 3:4 (כמו כרטיס העולם בבית), הטקסט מתחתיה — כלום לא נחתך.
   wrap: { position: 'fixed', inset: 0, zIndex: 4000, background: '#0F150F', overflow: 'hidden', color: '#E9E5D8', fontFamily: 'inherit', display: 'flex', flexDirection: 'column' },
   stage: { position: 'relative', width: '100%', aspectRatio: '3 / 4', maxHeight: '68vh', overflow: 'hidden', flex: 'none', borderBottomLeftRadius: 22, borderBottomRightRadius: 22, boxShadow: '0 10px 40px rgba(0,0,0,.6)' },
   bg: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' },
   item: { position: 'absolute', transform: 'translate(-50%,-100%)', pointerEvents: 'none', filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.35))' },
+  guardian: { position: 'absolute', zIndex: 2, pointerEvents: 'none', filter: 'drop-shadow(0 8px 14px rgba(0,0,0,.6))' },
+  gimg: { height: '100%', width: 'auto', display: 'block', transition: 'opacity 1.2s ease, filter 2.4s ease' },
+  aura: { position: 'absolute', inset: '-12%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,200,90,.5) 0%, rgba(245,200,90,0) 65%)', pointerEvents: 'none', zIndex: -1 },
+  crack: { position: 'absolute', width: 7, height: 7, borderRadius: '50%', transform: 'translate(-50%,-50%)' },
+  eyes: { position: 'absolute', left: '50%', top: '14%', width: '46%', height: '14%', transform: 'translateX(-50%)', borderRadius: '50%',
+    background: 'radial-gradient(ellipse, rgba(255,240,180,.95) 0%, rgba(255,220,120,.4) 45%, rgba(255,220,120,0) 70%)', animation: 'wildenEyes 1.4s ease-out both' },
   grey: { position: 'absolute', top: 0, insetInline: 0, aspectRatio: '3 / 4', maxHeight: '68vh', background: 'rgba(15,21,15,.35)', pointerEvents: 'none' },
   flash: { position: 'absolute', inset: 0, background: '#fff', animation: 'wildenFlash .9s ease-out forwards', pointerEvents: 'none', zIndex: 2 },
   cracks: { position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none', mixBlendMode: 'multiply',
     background: 'linear-gradient(115deg, transparent 49.6%, #000 49.9%, #000 50.1%, transparent 50.4%), linear-gradient(35deg, transparent 39.7%, #000 39.9%, #000 40.1%, transparent 40.3%), linear-gradient(160deg, transparent 62.7%, #000 62.9%, #000 63.1%, transparent 63.3%)' },
-  guardian: { position: 'absolute', transform: 'translate(-50%,-100%)', zIndex: 2, pointerEvents: 'none', filter: 'drop-shadow(0 8px 14px rgba(0,0,0,.6))' },
-  gimg: { height: '100%', width: 'auto', display: 'block', transition: 'opacity 1.2s ease' },
-  zz: { position: 'absolute', top: -6, insetInlineEnd: -10, fontSize: 22, animation: 'wildenFloat 2.4s ease-in-out infinite' },
   text: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '16px 24px max(24px, env(safe-area-inset-bottom))', textAlign: 'center', zIndex: 4 },
   eyebrow: { margin: 0, letterSpacing: 6, fontWeight: 900, color: '#E5A342', fontSize: 22 },
-  line: { margin: 0, fontSize: 30, fontWeight: 900, lineHeight: 1.25, textShadow: '0 2px 12px rgba(0,0,0,.8)', animation: 'wildenLine .7s ease-out both' },
-  sub: { margin: 0, fontSize: 19, fontWeight: 700, color: '#E9E5D8', textShadow: '0 2px 10px rgba(0,0,0,.8)', animation: 'wildenLine .7s ease-out .3s both' },
+  line: { margin: 0, fontSize: 26, fontWeight: 900, lineHeight: 1.3, textShadow: '0 2px 12px rgba(0,0,0,.8)', animation: 'wildenLine .7s ease-out both', textWrap: 'balance' },
+  needs: { display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'center' },
+  need: { border: '2px solid', borderRadius: 999, padding: '6px 12px', fontSize: 16, fontWeight: 800, background: 'rgba(15,21,15,.8)', animation: 'wildenLine .4s ease-out both' },
   cta: { marginTop: 8, padding: '16px 40px', borderRadius: 999, border: 'none', background: '#E5A342', color: '#14200F', fontSize: 20, fontWeight: 900, fontFamily: 'inherit', cursor: 'pointer', boxShadow: '0 6px 24px rgba(229,163,66,.35)', animation: 'wildenLine .7s ease-out .6s both' },
   skip: { position: 'absolute', top: 'max(14px, env(safe-area-inset-top))', insetInlineStart: 14, zIndex: 5, background: 'rgba(15,21,15,.55)', color: '#E9E5D8', border: '1px solid rgba(233,229,216,.3)', borderRadius: 999, padding: '6px 14px', fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' },
 }

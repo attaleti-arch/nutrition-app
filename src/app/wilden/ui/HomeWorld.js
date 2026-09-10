@@ -41,7 +41,7 @@ function BuildingGlow({ id }) {
   return <div aria-hidden="true" style={{ width: '100%', aspectRatio: '1', borderRadius: '50%', background: `radial-gradient(circle, ${c} 0%, transparent 65%)` }} />
 }
 
-export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
+export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWord = false }) {
   const world = worldState(progress)
   const quest = activeQuest(progress)
   const ready = canComplete(progress, quest)
@@ -61,6 +61,14 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0 }) {
   // כמה מהעולם נרפא: 0 — החורבה שלה; 1 — התמונה המתוקנת שלה, לגמרי.
   const heal = world.total ? Math.min(1, world.built / world.total) : 0
   const healed = heal >= 1
+
+  // "ואז נכנסים ישר למשחק, והפסל בבית נותן את האות הראשון: אבן…"
+  useEffect(() => {
+    if (!firstWord) return
+    const id = setTimeout(() => say('guardian', 'אבן…'), 1400)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [firstWord])
 
   const give = () => {
     if (!quest || !ready || giving) return

@@ -80,6 +80,8 @@ export default function Wilden() {
   const P = useProfile({ g, dispatch, booted })
   // סרטון הפתיחה: פעם אחת על הטלפון, לפני השם. null = עוד לא בדקנו.
   const [intro, setIntro] = useState(null)
+  // אחרי הפתיחה, הפסל בבית נותן את האות הראשון: "אבן…"
+  const [firstWord, setFirstWord] = useState(false)
   useEffect(() => { setIntro(!introAlreadySeen()) }, [])
   // מוזיקת רקע בבית: חורבה עד שהכול נבנה, קסם אחרי. בטיול — שקט (הרחוב מספיק).
   const atHome = g.state === S.BROKEN_WORLD && intro !== true
@@ -300,7 +302,7 @@ export default function Wilden() {
         {/* הפתיחה: לכל מי שפותח את המשחק בפעם הראשונה על הטלפון הזה — גם מי
             שכבר יש לו שם. פעם אחת, ואפשר לראות שוב מהשורה של השחקן. */}
         {g.state === S.BROKEN_WORLD && P.loaded && !P.switching && intro && (
-          <Intro onDone={() => setIntro(false)} />
+          <Intro onDone={() => { setIntro(false); setFirstWord(true) }} />
         )}
         {g.state === S.BROKEN_WORLD && P.needsGate && (P.switching || intro === false) && (
           <ProfileGate P={P} switching={P.switching} />
@@ -314,7 +316,7 @@ export default function Wilden() {
             onLook={(id, look) => { sfxAppear(); dispatch({ type: 'SET_LOOK', id, look }) }}
             onGear={(id, pay) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_GEAR', id, pay }) }}
             onSkin={(creature, skin) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_SKIN', creature, skin }) }}
-            onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }} P={P} onIntro={() => setIntro(true)} music={{ off: musicOff, toggle: toggleMusic }} />
+            onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }} P={P} onIntro={() => setIntro(true)} music={{ off: musicOff, toggle: toggleMusic }} firstWord={firstWord} />
         )}
 
         {g.state === S.PERMISSIONS && (
@@ -575,7 +577,7 @@ function poisText(pois) {
   return parts.join(' · ')
 }
 
-function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onKm, onLook, P, onIntro, music }) {
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onKm, onLook, P, onIntro, music, firstWord }) {
   const [panel, setPanel] = useState(null)   // book | badges | shop
   const week = weeklyStatus(g.progress, today)
   const buddy = creatureById(g.progress.buddy)
@@ -607,7 +609,7 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
 
       {/* העולם עצמו: התפאורה שלה, היצורים החיים, והשומר שמבקש. */}
       <div style={{ margin: '16px 0 10px' }}>
-        <HomeWorld progress={g.progress} walks={walks} onQuest={onQuest} />
+        <HomeWorld progress={g.progress} walks={walks} onQuest={onQuest} firstWord={firstWord} />
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
         <button onClick={() => setPanel('book')} style={s.chip}>📖 ספר היצורים <b>{g.progress.creatures.length}/{AVAILABLE.length}</b></button>
