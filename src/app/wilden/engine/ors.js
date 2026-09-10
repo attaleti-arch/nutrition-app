@@ -59,13 +59,15 @@ export function daySeed(d = new Date()) {
 // מפתח של ORS הוא base64 של JSON קטן ({"org","id","h"}). כשמדביקים אותו
 // מטלפון בעברית נדבקים אליו תווי כיווניות וזנב כמו "0 in" — וזה מה שנשמר
 // ב-Vercel. במקום לבקש להדביק שוב: מסירים כל מה שאינו base64, ואם זה לא
-// מפוענח, חותכים אחרי סימן ה-= האחרון (ריפוד base64 תמיד בסוף).
+// מפוענח, מקצצים מהסוף עד שהוא כן.
 export function cleanKey(raw) {
   let k = String(raw || '').replace(/^Bearer\s+/i, '').replace(/[^A-Za-z0-9+/=_-]/g, '')
   if (!k) return ''
-  if (looksLikeKey(k)) return k
-  const eq = k.lastIndexOf('=')
-  if (eq > 0 && looksLikeKey(k.slice(0, eq + 1))) return k.slice(0, eq + 1)
+  // מקצצים מהסוף תו-תו (עד 8) עד שמתקבל JSON תקין — הזנב הזר תמיד בסוף.
+  for (let cut = 0; cut <= 8 && cut < k.length; cut++) {
+    const c = k.slice(0, k.length - cut)
+    if (looksLikeKey(c)) return c
+  }
   return k
 }
 function looksLikeKey(k) {
