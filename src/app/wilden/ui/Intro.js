@@ -107,7 +107,8 @@ export function Intro({ onDone }) {
             <img key={b.id} src={b.img} alt="" draggable={false}
               style={{ ...I.item, left: `${b.spot.x}%`, top: `${b.spot.y}%`, width: `${b.spot.w}%`, animation: 'wildenPop .6s ease-out both', animationDelay: `${0.4 + (b.id.length % 4) * 0.2}s` }} />
           ))}
-          {/* היצורים: בעולם החי — חיים; בשבר — בורחים לצדדים; בסוף — צלליות, "הם שם בחוץ" */}
+          {/* היצורים: בעולם החי — חיים; בשבר — מתאדים בעדינות, אחד אחרי השני, עולים
+              קצת ומיטשטשים ("לא כאילו גלגלו עליהם כדור באולינג"); בסוף — צלליות */}
           {(phase === 'healed' || fleeing || at('outside')) && CAST.map((id, i) => {
             const sp = SPOTS[id]; if (!sp) return null
             const silhouette = at('outside')
@@ -118,10 +119,10 @@ export function Intro({ onDone }) {
                   '--fx': `${fx}vw`, '--fy': `${fy}vh`,
                   filter: silhouette ? 'brightness(0) blur(1px)' : I.item.filter,
                   opacity: silhouette ? 0.55 : 1,
-                  animation: fleeing ? 'wildenFlee 1.1s ease-in both'
+                  animation: fleeing ? 'wildenFlee 2.2s ease-in-out both'
                     : silhouette ? `wildenPop .8s ease-out both`
                     : `wildenPop .6s ease-out both, ${sp.air ? 'wildenFloat' : 'wildenBob'} ${2.6 + i * 0.3}s ease-in-out infinite`,
-                  animationDelay: fleeing ? `${i * 0.08}s` : silhouette ? `${0.3 + i * 0.2}s` : `${0.8 + i * 0.25}s, ${1.2 + i * 0.4}s` }} />
+                  animationDelay: fleeing ? `${i * 0.18}s` : silhouette ? `${0.3 + i * 0.2}s` : `${0.8 + i * 0.25}s, ${1.2 + i * 0.4}s` }} />
             )
           })}
           {/* לילה ועוד לילה: כחול עמוק שעולה ויורד פעמיים */}
@@ -190,7 +191,7 @@ export function Intro({ onDone }) {
 
 const CSS = `
 @keyframes wildenPop { 0% { opacity: 0; transform: translate(-50%,-100%) scale(.6) } 100% { opacity: 1; transform: translate(-50%,-100%) scale(1) } }
-@keyframes wildenFlee { 0% { opacity: 1; transform: translate(-50%,-100%) } 100% { opacity: 0; transform: translate(calc(-50% + var(--fx)), calc(-100% + var(--fy))) scale(.7) } }
+@keyframes wildenFlee { 0% { opacity: 1; filter: blur(0) } 100% { opacity: 0; transform: translate(-50%,-112%); filter: blur(6px) } }
 @keyframes wildenBob { 0%,100% { margin-top: 0 } 50% { margin-top: -4px } }
 @keyframes wildenFloat { 0%,100% { margin-top: 0 } 50% { margin-top: -10px } }
 @keyframes wildenFlash { 0% { opacity: 1 } 100% { opacity: 0 } }
