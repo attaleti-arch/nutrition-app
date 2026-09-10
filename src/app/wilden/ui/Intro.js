@@ -117,7 +117,7 @@ export function Intro({ onDone }) {
       <style>{CSS}</style>
       <div style={I.stage}>
         <div style={{ ...I.bg, transformOrigin: `${GUARD.x}% ${GUARD.y - GUARD.h * 0.55}%`,
-          transform: zoomed ? 'scale(2.3)' : 'scale(1)', transition: 'transform 1.4s ease-in-out' }}>
+          transform: zoomed ? 'scale(2)' : 'scale(1)', transition: 'transform 1.4s ease-in-out' }}>
           <img src={broken ? '/world/broken.jpg' : '/world/healed.jpg'} alt="" style={I.bg} draggable={false} />
           {phase !== 'start' && (
             <video key={broken ? 'b' : 'h'} src={broken ? '/world/broken.mp4' : '/world/healed.mp4'} poster={broken ? '/world/broken.jpg' : '/world/healed.jpg'}
