@@ -34,24 +34,27 @@ const NEEDS = [
 ]
 
 // [זמן במילישניות, שלב, שורה]
+// שני קליפים שלה מרנוואי: 'portal' — היצורים מתאיידים לתוך פורטל בשער (5 שנ');
+// 'push' — השומר דוחף את דלתות השער לילה ועוד לילה (8 שנ'). השאר במה.
 const SCRIPT = [
   [0, 'healed', 'פעם העולם הזה היה מלא חיים.'],
   [3400, 'healed', 'ובשער עמד השומר. הוא שמר שהכול יישאר בטוח.'],
-  [7400, 'flash', ''],
-  [8200, 'broken', 'ואז, ברגע אחד… משהו נשבר.'],
-  [11000, 'broken', 'האור כבה. המים נעצרו. והיצורים ברחו.'],
-  [14200, 'stay', 'אבל השומר לא ברח.'],
-  [16600, 'stay', 'הוא נשאר בשער.'],
-  [19000, 'nights', 'הוא שמר לילה ועוד לילה…'],
-  [22800, 'nights', 'עד שהאור שבתוכו כמעט נגמר.'],
-  [25800, 'stop', 'ואז הוא נעצר.'],
-  [27600, 'stone', 'והפך לאבן.'],
-  [30000, 'cracks', 'אבל הוא לא אבוד.'],
-  [32200, 'cracks', 'כדי להעיר אותו, צריך להחזיר ארבעה דברים שהעולם איבד:'],
-  [35200, 'needs', 'אבן. מים. ניצוץ. ודבש.'],
-  [39200, 'outside', 'היצורים לקחו איתם את הדרך אליהם.'],
-  [41800, 'outside', 'והם שם בחוץ.'],
-  [44400, 'eyes', 'תמצאו אותם.'],
+  [7400, 'portal', 'ואז, ברגע אחד… משהו נשבר.'],
+  [9800, 'portal', 'והיצורים… נעלמו.'],
+  [12400, 'flash', ''],
+  [13200, 'broken', 'האור כבה. המים נעצרו.'],
+  [15600, 'stay', 'אבל השומר לא ברח.'],
+  [18000, 'stay', 'הוא נשאר בשער.'],
+  [20400, 'push', 'הוא שמר לילה ועוד לילה…'],
+  [24400, 'push', 'עד שהאור שבתוכו כמעט נגמר.'],
+  [28400, 'stop', 'ואז הוא נעצר.'],
+  [30200, 'stone', 'והפך לאבן.'],
+  [32600, 'cracks', 'אבל הוא לא אבוד.'],
+  [34800, 'cracks', 'כדי להעיר אותו, צריך להחזיר ארבעה דברים שהעולם איבד:'],
+  [37800, 'needs', 'אבן. מים. ניצוץ. ודבש.'],
+  [41800, 'outside', 'היצורים לקחו איתם את הדרך אליהם.'],
+  [44400, 'outside', 'והם שם בחוץ.'],
+  [47000, 'eyes', 'תמצאו אותם.'],
 ]
 
 export function Intro({ onDone }) {
@@ -66,30 +69,37 @@ export function Intro({ onDone }) {
     try { sfxAppear(); primeMusic(); startMusic('magic') } catch (e) { /* */ }
     for (const [t, ph, txt] of SCRIPT) later(t, () => { setPhase(ph); setLine(txt) })
     // הסאונד לפי התסריט שלה: קסם עד הרעם וזהו; ברגע השבר — רעד; היער ההרוס
-    // מיד אחריו, חלש, עד הצלליות של החיות; ונחירות רכות מהרגע שהוא אבן.
-    later(7400, () => { try { stopMusic(0.3); sfxCrack(0.9); sfxRumble(3.2); buzz([80, 40, 120, 40, 200]) } catch (e) { /* */ } })
-    // היער ההרוס: מיד אחרי הרעם, חלש, ונמשך עד שלוחצים "אני בפנים".
+    // מיד אחריו, חלש, עד "אני בפנים"; נחירות רכות מהרגע שהוא אבן.
+    later(7400, () => { try { stopMusic(0.3); sfxRumble(3.2); buzz([80, 40, 120, 40, 200]) } catch (e) { /* */ } })
     later(8800, () => { try { startMusic('broken', 0.26) } catch (e) { /* */ } })
-    // נחירות: "רמז עדין" — שקטות מאוד, כל ארבע שניות, מהרגע שהוא אבן.
-    later(29000, () => { try { sfxSnore(0.16) } catch (e) { /* */ } snores.current = setInterval(() => { try { sfxSnore(0.16) } catch (e) { /* */ } }, 3600) })
-    for (const t of [19400, 21200, 23000]) later(t, () => { try { buzz([60]) } catch (e) { /* */ } })
-    later(25800, () => { try { sfxThud(0.7) } catch (e) { /* */ } })
-    later(27600, () => { try { sfxSleep() } catch (e) { /* */ } })
-    for (let i = 0; i < 4; i++) later(35200 + i * 700, () => { setNeedN(i + 1); try { sfxAppear() } catch (e) { /* */ } })
-    later(44400, () => { try { sfxAppear(); buzz([40, 30, 40]) } catch (e) { /* */ } })
+    later(12400, () => { try { sfxCrack(0.9); buzz([60, 30, 90]) } catch (e) { /* */ } })
+    for (const t of [21000, 23400, 25800]) later(t, () => { try { buzz([60]); sfxThud(0.35) } catch (e) { /* */ } })
+    later(28400, () => { try { sfxThud(0.7) } catch (e) { /* */ } })
+    later(30200, () => { try { sfxSleep() } catch (e) { /* */ } })
+    later(31600, () => { try { sfxSnore(0.16) } catch (e) { /* */ } snores.current = setInterval(() => { try { sfxSnore(0.16) } catch (e) { /* */ } }, 3600) })
+    for (let i = 0; i < 4; i++) later(37800 + i * 700, () => { setNeedN(i + 1); try { sfxAppear() } catch (e) { /* */ } })
+    later(47000, () => { try { sfxAppear(); buzz([40, 30, 40]) } catch (e) { /* */ } })
   }
   const snores = useRef(null)
   useEffect(() => () => clearInterval(snores.current), [])
   const finish = () => { clearInterval(snores.current); try { stopMusic(0.5) } catch (e) { /* */ } markIntroSeen(); onDone?.() }
 
-  const P = ['start', 'healed', 'flash', 'broken', 'stay', 'nights', 'stop', 'stone', 'cracks', 'needs', 'outside', 'eyes']
+  const P = ['start', 'healed', 'portal', 'flash', 'broken', 'stay', 'push', 'stop', 'stone', 'cracks', 'needs', 'outside', 'eyes']
   const at = ph => P.indexOf(phase) >= P.indexOf(ph)
   const broken = at('flash')
   const stone = at('stone')
   const zoomed = phase === 'cracks' || phase === 'needs'
-  const fleeing = phase === 'flash' || phase === 'broken'
+  const fleeing = false
+  const clip = phase === 'portal' ? 'portal' : phase === 'push' ? 'push' : null
   // האור של השומר: מלא עד הלילות, דועך בהם, כבוי כשהוא אבן
-  const glow = phase === 'nights' ? 0.5 : phase === 'stop' ? 0.2 : stone ? 0 : 1
+  const glow = phase === 'push' ? 0.5 : phase === 'stop' ? 0.2 : stone ? 0 : 1
+  // הקליפים: מוכנים מראש (מושתקים, בלי קול — מותר בלי מגע), ומתנגנים כשהשלב מגיע
+  const portalRef = useRef(null), pushRef = useRef(null)
+  useEffect(() => {
+    const v = clip === 'portal' ? portalRef.current : clip === 'push' ? pushRef.current : null
+    if (!v) return
+    try { v.currentTime = 0; v.play().catch(() => {}) } catch (e) { /* */ }
+  }, [clip])
 
   return (
     <div style={I.wrap} className="wildenIntro">
@@ -103,13 +113,13 @@ export function Intro({ onDone }) {
               autoPlay muted loop playsInline style={I.bg} />
           )}
           {/* המבנים: רק בעולם החי */}
-          {phase === 'healed' && BUILDINGS.map(b => (
+          {(phase === 'healed' || phase === 'portal') && BUILDINGS.map(b => (
             <img key={b.id} src={b.img} alt="" draggable={false}
               style={{ ...I.item, left: `${b.spot.x}%`, top: `${b.spot.y}%`, width: `${b.spot.w}%`, animation: 'wildenPop .6s ease-out both', animationDelay: `${0.4 + (b.id.length % 4) * 0.2}s` }} />
           ))}
           {/* היצורים: בעולם החי — חיים; בשבר — מתאדים בעדינות, אחד אחרי השני, עולים
               קצת ומיטשטשים ("לא כאילו גלגלו עליהם כדור באולינג"); בסוף — צלליות */}
-          {(phase === 'healed' || fleeing || at('outside')) && CAST.map((id, i) => {
+          {(phase === 'healed' || phase === 'portal' || at('outside')) && CAST.map((id, i) => {
             const sp = SPOTS[id]; if (!sp) return null
             const silhouette = at('outside')
             const [fx, fy] = FLEE[id]
@@ -125,10 +135,15 @@ export function Intro({ onDone }) {
                   animationDelay: fleeing ? `${i * 0.18}s` : silhouette ? `${0.3 + i * 0.2}s` : `${0.8 + i * 0.25}s, ${1.2 + i * 0.4}s` }} />
             )
           })}
-          {/* לילה ועוד לילה: כחול עמוק שעולה ויורד פעמיים */}
-          <div style={{ ...I.bg, background: '#060a18', opacity: 0, animation: phase === 'nights' ? 'wildenNights 6.6s ease-in-out both' : 'none', pointerEvents: 'none', zIndex: 1 }} />
-          {/* השומר, בשער, מהתמונה הראשונה ועד הסוף */}
-          {phase !== 'start' && (
+          {/* הקליפים שלה: הפורטל (היצורים מתאיידים) ודחיפת השער (לילה ועוד לילה) */}
+          <video ref={portalRef} src="/world/intro/portal.mp4" muted playsInline preload="auto"
+            style={{ ...I.bg, zIndex: 3, opacity: clip === 'portal' ? 1 : 0, transition: 'opacity .5s ease', pointerEvents: 'none' }} />
+          <video ref={pushRef} src="/world/intro/push.mp4" muted playsInline preload="auto" poster="/world/intro/push-last.jpg"
+            style={{ ...I.bg, zIndex: 3, opacity: clip === 'push' ? 1 : 0, transition: 'opacity .8s ease', pointerEvents: 'none' }} />
+          {/* לילה ועוד לילה: כחול עמוק שעולה ויורד פעמיים, מעל הקליפ */}
+          <div style={{ ...I.bg, background: '#060a18', opacity: 0, animation: phase === 'push' ? 'wildenNights 7.6s ease-in-out both' : 'none', pointerEvents: 'none', zIndex: 4 }} />
+          {/* השומר, בשער, מהתמונה הראשונה ועד הסוף — חוץ מכשהקליפ שלו רץ */}
+          {phase !== 'start' && !clip && (
             <div style={{ ...I.guardian, left: `${GUARDIAN.x}%`, top: `${GUARDIAN.y}%`, height: `${GUARDIAN.h}%`,
               transform: `translate(-50%,-100%) ${phase === 'stop' || stone ? 'translateY(2%)' : ''}`,
               transition: 'transform 1.4s ease-in-out',
