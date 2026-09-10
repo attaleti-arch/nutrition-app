@@ -22,14 +22,14 @@ export const SPOTS = {
   nimi: { x: 36, y: 63, h: 15, flip: true },
   gali: { x: 62, y: 79, h: 12 },
   lumi: { x: 24, y: 74, h: 18, flip: true },
-  bolder: { x: 84, y: 62, h: 22 },
+  bolder: { x: 77, y: 80, h: 22 },
   kraag: { x: 66, y: 71, h: 17, flip: true },
-  tzel: { x: 88, y: 77, h: 15 },
+  tzel: { x: 91, y: 86, h: 15 },
   dabashon: { x: 20, y: 30, h: 11, air: true },
   ruchi: { x: 90, y: 22, h: 12, air: true, flip: true },
   noga: { x: 40, y: 87, h: 19 },
 }
-export const GUARDIAN = { x: 52, y: 41, h: 24 }
+export const GUARDIAN = { x: 52, y: 50, h: 24 }
 // הנחיל: היסטים באחוזי עולם מהמקום של הגדול, ומכפיל גודל (הרחוקים קטנים יותר — עומק).
 const SWARM_OFFS = [[-9, -3, 0.45], [9, -2, 0.45], [-14, 4, 0.4], [14, 5, 0.4], [-5, 7, 0.5], [6, 8, 0.5]]
 const SWARM_BUDGET = 12
