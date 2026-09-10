@@ -136,7 +136,10 @@ export function Intro({ onDone }) {
               <div style={I.groundShadow} />
               {/* ער: התמונה עצמה, בלי פילטר. ספארי באייפון מצייר תמונה עם פילטר
                   מונפש כשקופה — "בעולם המואר הוא שקוף לחלוטין". */}
-              <img src="/world/guardian-still.png" alt="" draggable={false} style={{ ...I.gimg, opacity: stone ? 0 : 1 }} />
+              {/* רקע כהה מאחוריו: בלי זה גוף האבן הבהיר נבלע באור של השער */}
+              <div style={I.backing} />
+              {/* ער: הדמות עם האור והתנועה הקלה, זו שהיא אוהבת */}
+              <img src="/world/guardian.webp" alt="" draggable={false} style={{ ...I.gimg, opacity: stone ? 0 : 1 }} />
               {/* העמעום של האור שבתוכו: שכבה כהה במסכה של הצללית שלו, רק שקיפות זזה */}
               <div style={{ ...I.dim, opacity: stone ? 0 : (1 - glow) * 0.55 }} />
               {/* אבן: אפור סטטי */}
@@ -209,6 +212,7 @@ const I = {
   gimg: { height: '100%', width: 'auto', display: 'block', transition: 'opacity 1.2s ease' },
   dim: { position: 'absolute', inset: 0, background: '#0a0c14', transition: 'opacity 2.4s ease', pointerEvents: 'none',
     WebkitMaskImage: 'url(/world/guardian-still.png)', maskImage: 'url(/world/guardian-still.png)', WebkitMaskSize: '100% 100%', maskSize: '100% 100%', WebkitMaskRepeat: 'no-repeat', maskRepeat: 'no-repeat' },
+  backing: { position: 'absolute', inset: '-6% -30% -4% -30%', borderRadius: '50%', background: 'radial-gradient(ellipse at 50% 60%, rgba(10,12,20,.55) 0%, rgba(10,12,20,.25) 45%, rgba(10,12,20,0) 72%)', pointerEvents: 'none' },
   groundShadow: { position: 'absolute', left: '12%', right: '12%', bottom: '-2%', height: '7%', borderRadius: '50%', background: 'rgba(0,0,0,.5)', filter: 'blur(3px)' },
   aura: { position: 'absolute', inset: '-12%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,200,90,.5) 0%, rgba(245,200,90,0) 65%)', pointerEvents: 'none', zIndex: -1 },
   crack: { position: 'absolute', width: 7, height: 7, borderRadius: '50%', transform: 'translate(-50%,-50%)' },
