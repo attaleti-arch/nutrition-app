@@ -5,7 +5,8 @@ export const DE = {
   // ── הפתיחה ──
   'פעם העולם הזה היה מלא חיים.': 'Früher war diese Welt voller Leben.',
   'ובשער עמד השומר. הוא שמר שהכול יישאר בטוח.': 'Und am Tor stand der Wächter. Er passte auf, dass alles sicher blieb.',
-  'ואז, ברגע אחד… משהו נשבר.': 'Und dann, ganz plötzlich… zerbrach etwas.',
+  'ואז, ברגע אחד…': 'Und dann, ganz plötzlich…',
+  'משהו נשבר.': 'Etwas zerbrach.',
   'והיצורים… נעלמו.': 'Und die Wesen… verschwanden.',
   'האור כבה. המים נעצרו.': 'Das Licht ging aus. Das Wasser blieb stehen.',
   'אבל השומר לא ברח. הוא נשאר בשער.': 'Aber der Wächter lief nicht weg. Er blieb am Tor.',

@@ -1,8 +1,8 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { SPOTS } from './HomeWorld'
+import { SPOTS, GUARDIAN } from './HomeWorld'
 import { BUILDINGS } from '../engine/world'
-import { sfxCrack, sfxAppear, sfxThud, sfxSleep, sfxRumble, sfxSnore, buzz } from '../engine/audio'
+import { sfxBreak, sfxAppear, sfxThud, sfxSleep, sfxRumble, sfxSnore, buzz } from '../engine/audio'
 import { startMusic, stopMusic, primeMusic } from '../engine/music'
 import { tr } from '../i18n'
 
@@ -18,17 +18,15 @@ import { tr } from '../i18n'
 //
 // הבמה, לא סרטון: הסרטונים שלה של העולם, היצורים כתמונות קלות (מסך ראשון
 // על רשת סלולרית), והשומר עם שני מצבים — ער ואבן. הכול בזמנים קבועים,
-// ויש "לדלג". בערך 43 שניות.
+// ויש "לדלג". בערך 44 שניות.
 
 const INTRO_KEY = 'wilden_intro_v1'
 export const introSeen = () => { try { return localStorage.getItem(INTRO_KEY) === '1' } catch (e) { return true } }
 export const markIntroSeen = () => { try { localStorage.setItem(INTRO_KEY, '1') } catch (e) { /* */ } }
 
-// ── איפה השומר עומד בפתיחה ──
-// "הוא גם נראה באוויר": במקום שלו בבית הרגליים נופלות בדיוק על השפה הרחוקה
-// של הכד, ואז הוא נראה מרחף מעליו. בפתיחה, שבה רואים אותו גדול ולבד, הוא
-// עומד לפני הכד על אבני הריצפה — קרקע שרואים שהיא קרקע.
-const GUARD = { x: 30, y: 58, h: 29 }
+// המקום של השומר הוא אחד, בפתיחה ובבית (ui/HomeWorld): לפני הכד, על
+// אבני הריצפה. כך הוא לא מרחף, וגם לא קופץ כשהפתיחה נגמרת.
+const GUARD = GUARDIAN
 
 const CAST = ['nimi', 'dabashon', 'gali', 'bolder', 'lumi', 'ruchi', 'noga']
 // לאן כל אחד בורח: הצד הקרוב של המסך
@@ -43,28 +41,33 @@ const NEEDS = [
 // [זמן במילישניות, שלב, שורה]
 // שני קליפים שלה מרנוואי: 'portal' — היצורים מתאיידים לתוך פורטל בשער (5 שנ');
 // 'push' — השומר דוחף את דלתות השער לילה ועוד לילה (8 שנ'). השאר במה.
+// ── הסדר של השבר ──
+// "רגע אחד העולם נשבר נמצא לפני שהיצורים מתאיידים, ואז יש את השבר": השורה
+// הכריזה על השבר בזמן שהיצורים עוד נעלמו, וההבזק שאחריה היה שבר שני, חלש.
+// עכשיו זה רגע אחד: הפורטל נפתח, הם נעלמים, ורק אז המסך נשבר — עם המילה
+// והצליל באותה שנייה.
 const SCRIPT = [
   [0, 'healed', 'פעם העולם הזה היה מלא חיים.'],
-  [3400, 'healed', 'ובשער עמד השומר. הוא שמר שהכול יישאר בטוח.'],
-  [7400, 'portal', 'ואז, ברגע אחד… משהו נשבר.'],
-  [9800, 'portal', 'והיצורים… נעלמו.'],
-  [12400, 'flash', ''],
-  [13200, 'broken', 'האור כבה. המים נעצרו.'],
+  [3200, 'healed', 'ובשער עמד השומר. הוא שמר שהכול יישאר בטוח.'],
+  [6800, 'portal', 'ואז, ברגע אחד…'],
+  [9600, 'portal', 'והיצורים… נעלמו.'],
+  [11900, 'flash', 'משהו נשבר.'],
+  [14300, 'broken', 'האור כבה. המים נעצרו.'],
   // "ממש ארוך, וחוזרים לתמונה הזו שלוש פעמים": הבמה הרחבה עם השומר נשארת
   // פעמיים בלבד — העולם החי, ורגע השבר — ומיד הקליפ שלו מחזיק את השער.
   // כשהוא נגמר לא חוזרים לתמונה הרחבה: נכנסים אליו מקרוב, שם הוא נעצר,
   // הופך לאבן, והסדקים נדלקים. הקליפ עצמו שלם, שמונה שניות.
-  [15400, 'stay', 'אבל השומר לא ברח. הוא נשאר בשער.'],
-  [17600, 'push', 'הוא שמר לילה ועוד לילה…'],
-  [21600, 'push', 'עד שהאור שבתוכו כמעט נגמר.'],
-  [25600, 'stop', 'ואז הוא נעצר.'],
-  [26800, 'stone', 'והפך לאבן.'],
-  [29000, 'cracks', 'אבל הוא לא אבוד.'],
-  [31000, 'cracks', 'כדי להעיר אותו, צריך להחזיר ארבעה דברים שהעולם איבד:'],
-  [33800, 'needs', 'אבן. מים. ניצוץ. ודבש.'],
-  [37600, 'outside', 'היצורים לקחו איתם את הדרך אליהם.'],
-  [40200, 'outside', 'והם שם בחוץ.'],
-  [42600, 'eyes', 'תמצאו אותם.'],
+  [16500, 'stay', 'אבל השומר לא ברח. הוא נשאר בשער.'],
+  [18700, 'push', 'הוא שמר לילה ועוד לילה…'],
+  [22700, 'push', 'עד שהאור שבתוכו כמעט נגמר.'],
+  [26700, 'stop', 'ואז הוא נעצר.'],
+  [27900, 'stone', 'והפך לאבן.'],
+  [30100, 'cracks', 'אבל הוא לא אבוד.'],
+  [32100, 'cracks', 'כדי להעיר אותו, צריך להחזיר ארבעה דברים שהעולם איבד:'],
+  [34900, 'needs', 'אבן. מים. ניצוץ. ודבש.'],
+  [38700, 'outside', 'היצורים לקחו איתם את הדרך אליהם.'],
+  [41300, 'outside', 'והם שם בחוץ.'],
+  [43700, 'eyes', 'תמצאו אותם.'],
 ]
 
 export function Intro({ onDone }) {
@@ -80,15 +83,18 @@ export function Intro({ onDone }) {
     for (const [t, ph, txt] of SCRIPT) later(t, () => { setPhase(ph); setLine(txt) })
     // הסאונד לפי התסריט שלה: קסם עד הרעם וזהו; ברגע השבר — רעד; היער ההרוס
     // מיד אחריו, חלש, עד "אני בפנים"; נחירות רכות מהרגע שהוא אבן.
-    later(7400, () => { try { stopMusic(0.3); sfxRumble(3.2); buzz([80, 40, 120, 40, 200]) } catch (e) { /* */ } })
-    later(8800, () => { try { startMusic('broken', 0.26) } catch (e) { /* */ } })
-    later(12400, () => { try { sfxCrack(0.9); buzz([60, 30, 90]) } catch (e) { /* */ } })
-    for (const t of [18200, 20600, 23000]) later(t, () => { try { buzz([60]); sfxThud(0.35) } catch (e) { /* */ } })
-    later(25600, () => { try { sfxThud(0.7) } catch (e) { /* */ } })
-    later(26800, () => { try { sfxSleep() } catch (e) { /* */ } })
-    later(28200, () => { try { sfxSnore(0.16) } catch (e) { /* */ } snores.current = setInterval(() => { try { sfxSnore(0.16) } catch (e) { /* */ } }, 3600) })
-    for (let i = 0; i < 4; i++) later(33800 + i * 700, () => { setNeedN(i + 1); try { sfxAppear() } catch (e) { /* */ } })
-    later(42600, () => { try { sfxAppear(); buzz([40, 30, 40]) } catch (e) { /* */ } })
+    // הפורטל נפתח: רעד נמוך מתחת למוזיקה הקסומה, שקט מספיק כדי שלא ישמע
+    // כמו השבר עצמו — רק אי-נוחות שגדלה.
+    later(6800, () => { try { sfxRumble(5.0, 0.16) } catch (e) { /* */ } })
+    // השבר: המילה, ההבזק והצליל באותה שנייה. המוזיקה הקסומה נחתכת כאן.
+    later(11900, () => { try { stopMusic(0.25); sfxBreak(); buzz([120, 60, 220, 60, 300]) } catch (e) { /* */ } })
+    later(13300, () => { try { startMusic('broken', 0.26) } catch (e) { /* */ } })
+    for (const t of [19300, 21700, 24100]) later(t, () => { try { buzz([60]); sfxThud(0.35) } catch (e) { /* */ } })
+    later(26700, () => { try { sfxThud(0.7) } catch (e) { /* */ } })
+    later(27900, () => { try { sfxSleep() } catch (e) { /* */ } })
+    later(29300, () => { try { sfxSnore(0.16) } catch (e) { /* */ } snores.current = setInterval(() => { try { sfxSnore(0.16) } catch (e) { /* */ } }, 3600) })
+    for (let i = 0; i < 4; i++) later(34900 + i * 700, () => { setNeedN(i + 1); try { sfxAppear() } catch (e) { /* */ } })
+    later(43700, () => { try { sfxAppear(); buzz([40, 30, 40]) } catch (e) { /* */ } })
   }
   const snores = useRef(null)
   useEffect(() => () => clearInterval(snores.current), [])
@@ -217,6 +223,7 @@ const CSS = `
 @keyframes wildenBob { 0%,100% { margin-top: 0 } 50% { margin-top: -4px } }
 @keyframes wildenFloat { 0%,100% { margin-top: 0 } 50% { margin-top: -10px } }
 @keyframes wildenFlash { 0% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes wildenCracksOut { 0% { opacity: 0 } 5% { opacity: 1 } 45% { opacity: .9 } 100% { opacity: 0 } }
 @keyframes wildenLine { 0% { opacity: 0; transform: translateY(8px) } 100% { opacity: 1; transform: translateY(0) } }
 @keyframes wildenNights { 0% { opacity: 0 } 22% { opacity: .62 } 45% { opacity: .05 } 70% { opacity: .68 } 100% { opacity: .1 } }
 @keyframes wildenStrain { 0%,100% { margin-left: 0 } 25% { margin-left: -3px } 75% { margin-left: 3px } }
@@ -240,7 +247,10 @@ const I = {
     background: 'radial-gradient(ellipse, rgba(255,240,180,.95) 0%, rgba(255,220,120,.4) 45%, rgba(255,220,120,0) 70%)', animation: 'wildenEyes 1.4s ease-out both' },
   grey: { position: 'absolute', top: 0, insetInline: 0, aspectRatio: '3 / 4', maxHeight: '68vh', background: 'rgba(15,21,15,.35)', pointerEvents: 'none' },
   flash: { position: 'absolute', inset: 0, background: '#fff', animation: 'wildenFlash .9s ease-out forwards', pointerEvents: 'none', zIndex: 2 },
+  // הסדקים על המסך: נפתחים בבת אחת ודועכים. קודם הם נשארו קפואים כל עוד
+  // ההבזק על המסך, וזה קפא ביחד עם השורה.
   cracks: { position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none', mixBlendMode: 'multiply',
+    animation: 'wildenCracksOut 2.3s ease-out forwards',
     background: 'linear-gradient(115deg, transparent 49.6%, #000 49.9%, #000 50.1%, transparent 50.4%), linear-gradient(35deg, transparent 39.7%, #000 39.9%, #000 40.1%, transparent 40.3%), linear-gradient(160deg, transparent 62.7%, #000 62.9%, #000 63.1%, transparent 63.3%)' },
   text: { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '16px 24px max(24px, env(safe-area-inset-bottom))', textAlign: 'center', zIndex: 4 },
   eyebrow: { margin: 0, letterSpacing: 6, fontWeight: 900, color: '#E5A342', fontSize: 22 },

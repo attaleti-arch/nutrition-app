@@ -195,6 +195,19 @@ export function sfxRumble(dur = 2.4, vol = 0.5) {
   src.connect(lp); lp.connect(g); g.connect(master)
   src.start(t0); src.stop(t0 + dur + 0.05)
 }
+// ── רגע השבר ──
+// "הצליל משמעותית פחות חזק." עד עכשיו הרעד היה בפתיחת הפורטל, וברגע שבו
+// המסך נשבר באמת נשמע רק סדק קטן. זה ההפך. כאן: צניחה עמוקה שמרגישים
+// בחזה, נפץ חד מעליה, שברים שנופלים, וזנב של רעד. הכול יחד, פעם אחת.
+export function sfxBreak() {
+  if (muted) return
+  tone({ freq: 96, glideTo: 26, dur: 1.5, type: 'sine', vol: 0.5 })          // הצניחה
+  tone({ freq: 180, glideTo: 44, dur: 0.7, type: 'triangle', vol: 0.24 })    // גוף
+  noise({ dur: 0.14, freq: 2400, q: 1.3, vol: 0.3 })                         // הנפץ
+  noise({ dur: 1.1, freq: 520, q: 0.6, vol: 0.18, delay: 0.07 })             // שברים נופלים
+  sfxRumble(3.4, 0.5)                                                        // הזנב
+}
+
 export function sfxSnore(vol = 0.06) {
   const c = ac(); if (!c || muted) return
   const t0 = c.currentTime
