@@ -10,6 +10,8 @@
 //
 // טהור. progress.gear — קבוע; progress.items — { id: כמה }.
 
+import { tr } from '../i18n/index.js'
+
 export const GEAR = [
   { id: 'lantern', kind: 'key', name: 'פנס', price: 40, effect: 'lantern', value: true, opens: 'tzel',
     desc: 'פותח את צל: בלי אור הוא רק צל. ומאיר את הרחוב בערב.', how: 'מפתח. פעם אחת, לתמיד.', lock: 'צל מחכה ברחוב החשוך. צריך פנס' },
@@ -35,7 +37,7 @@ export const ownsGear = (progress, id) => (progress?.gear || []).includes(id)
 export const itemCount = (progress, id) => progress?.items?.[id] || 0
 export const keyFor = creatureId => KEYS[creatureId] || null
 // למסך הבית: "צל מחכה ברחוב החשוך. צריך פנס (40)"
-export const lockLine = creatureId => { const g = gearById(KEYS[creatureId]); return g ? `${g.lock} (${g.price})` : '' }
+export const lockLine = creatureId => { const g = gearById(KEYS[creatureId]); return g ? `${tr(g.lock)} (${g.price})` : '' }
 export const unlocked = (progress, creatureId) => !KEYS[creatureId] || ownsGear(progress, KEYS[creatureId])
 
 // pay: 'coins' | 'honey' — חד-פעמי אפשר לקנות בדבש (ראה honey בפריט)

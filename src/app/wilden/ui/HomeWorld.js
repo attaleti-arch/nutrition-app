@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePinch } from './usePinch'
+import { tr } from '../i18n'
 import { creatureById } from '../content/creatures'
 import { activeQuest, questProgress, canComplete, worldState, creatureLine, RES_NAME, RES_ICON, swarmOf, buildings } from '../engine/world'
 import { sfxAppear, sfxCheer, sfxFinish, buzz } from '../engine/audio'
@@ -65,7 +66,7 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
   // "ואז נכנסים ישר למשחק, והפסל בבית נותן את האות הראשון: אבן…"
   useEffect(() => {
     if (!firstWord) return
-    const id = setTimeout(() => say('guardian', 'אבן…'), 1400)
+    const id = setTimeout(() => say('guardian', tr('אבן…')), 1400)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [firstWord])
@@ -113,7 +114,7 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
       {!healed && world.gateOpen && <div style={W.gateLight} aria-hidden="true" />}
 
       {/* השומר: פסל כבוי, או ער */}
-      <button onClick={() => { setGuardOpen(v => !v); try { sfxAppear() } catch (e) { /* */ } }} aria-label="השומר"
+      <button onClick={() => { setGuardOpen(v => !v); try { sfxAppear() } catch (e) { /* */ } }} aria-label={tr('השומר')}
         style={{ ...W.spot, left: `${GUARDIAN.x}%`, top: `${GUARDIAN.y}%`, height: `${GUARDIAN.h}%` }}>
         {world.guardianAwake
           ? <img src="/world/guardian.webp" alt="" style={W.figure} draggable={false} />
@@ -166,9 +167,9 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
       {/* ── מבנים ── שבע מאותו יצור: המבנה שלו מופיע ומייצר בכל מסע. התמונה
           שלה כשתגיע (img); עד אז — ציור. */}
       {buildings(progress).filter(b => b.built).map(b => (
-        <div key={b.id} style={{ ...W.building, left: `${b.spot.x}%`, top: `${b.spot.y}%`, width: `${b.spot.w}%` }} aria-label={b.name}>
+        <div key={b.id} style={{ ...W.building, left: `${b.spot.x}%`, top: `${b.spot.y}%`, width: `${b.spot.w}%` }} aria-label={tr(b.name)}>
           {b.img ? <img src={b.live || b.img} alt="" style={{ width: '100%', display: 'block' }} draggable={false} /> : <BuildingGlow id={b.id} />}
-          <span style={W.buildingTag}>{RES_ICON[b.product]} +1 בכל מסע</span>
+          <span style={W.buildingTag}>{RES_ICON[b.product]} {tr('+1 בכל מסע')}</span>
         </div>
       ))}
 
@@ -181,26 +182,26 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
       {/* הבקשה של השומר */}
       {quest && guardOpen && (
         <div style={W.questCard} onClick={e => e.stopPropagation()}>
-          <p style={W.questTitle}>{world.guardianAwake ? 'השומר' : 'פסל אבן, כבוי'} · {quest.title}</p>
-          <p style={W.questAsk}>{quest.ask}</p>
+          <p style={W.questTitle}>{world.guardianAwake ? tr('השומר') : tr('פסל אבן, כבוי')} · {tr(quest.title)}</p>
+          <p style={W.questAsk}>{tr(quest.ask)}</p>
           <div style={W.needs}>
             {questProgress(progress, quest).map(n => (
               <span key={n.res} style={{ ...W.need, borderColor: n.have >= n.need ? '#8FB57C' : 'rgba(233,229,216,.25)' }}>
-                {RES_ICON[n.res] || '•'} {RES_NAME[n.res] || n.res} <b>{n.have}/{n.need}</b>
+                {RES_ICON[n.res] || '•'} {tr(RES_NAME[n.res] || n.res)} <b>{n.have}/{n.need}</b>
               </span>
             ))}
           </div>
           {ready
-            ? <button onClick={give} disabled={giving} style={W.give}>{giving ? '…' : `לתת לו · +${quest.coins} 🪙`}</button>
-            : <p style={W.hint}>{quest.hint}</p>}
+            ? <button onClick={give} disabled={giving} style={W.give}>{giving ? '…' : tr('לתת לו · +{n} 🪙', { n: quest.coins })}</button>
+            : <p style={W.hint}>{tr(quest.hint)}</p>}
         </div>
       )}
       {!quest && (
-        <div style={W.builtAll}>העולם נבנה מחדש. הבוקר חזר. כל הכבוד — השער פתוח, ההמשך בקרוב.</div>
+        <div style={W.builtAll}>{tr('העולם נבנה מחדש. הבוקר חזר. כל הכבוד — השער פתוח, ההמשך בקרוב.')}</div>
       )}
 
       {/* כמה נבנה */}
-      <div style={W.progress} aria-label="התקדמות העולם">
+      <div style={W.progress} aria-label={tr('התקדמות העולם')}>
         {Array.from({ length: world.total }, (_, i) => <span key={i} style={{ ...W.dot, background: i < world.built ? '#E5A342' : 'rgba(233,229,216,.25)' }} />)}
       </div>
     </div>

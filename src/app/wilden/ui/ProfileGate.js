@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { normCode, CODE_LEN } from '../engine/profile'
+import { tr, getLang } from '../i18n'
 
 // ─── מי יוצא היום? ───
 // מסך אחד לפני העולם: שם, או קוד של מישהו שכבר שיחק. בלי סיסמה, בלי
@@ -14,22 +15,22 @@ export function ProfileGate({ P, switching }) {
   return (
     <>
       <p style={s.eyebrow}>WILDEN</p>
-      <h1 style={s.h1}>{switching ? 'מי משחק עכשיו?' : 'מי יוצא היום?'}</h1>
+      <h1 style={s.h1}>{tr(switching ? 'מי משחק עכשיו?' : 'מי יוצא היום?')}</h1>
       <p style={s.lede}>
         {switching
-          ? 'שחקן אחר על אותו טלפון. העולם של הקודם שמור בקוד שלו.'
-          : 'השם נשאר בטלפון. תקבלו קוד קצר כדי לחזור לעולם שלכם מכל טלפון.'}
+          ? tr('שחקן אחר על אותו טלפון. העולם של הקודם שמור בקוד שלו.')
+          : tr('השם נשאר בטלפון. תקבלו קוד קצר כדי לחזור לעולם שלכם מכל טלפון.')}
       </p>
 
       {mode === 'new' ? (
         <>
-          <input value={name} onChange={e => setName(e.target.value)} placeholder="השם שלי"
+          <input value={name} onChange={e => setName(e.target.value)} placeholder={tr('השם שלי')}
             maxLength={20} autoComplete="off" style={s.input} aria-label="שם" />
           <button onClick={() => P.create(name)} disabled={!name.trim()} style={{ ...s.cta, opacity: name.trim() ? 1 : .5 }}>
-            זה אני
+            {tr('זה אני')}
           </button>
-          <button onClick={() => setMode('code')} style={{ ...s.cta, ...s.ctaGhost }}>יש לי קוד</button>
-          {!P.server && <p style={s.note}>השרת עוד לא מחובר, אז השמירה בטלפון הזה בלבד.</p>}
+          <button onClick={() => setMode('code')} style={{ ...s.cta, ...s.ctaGhost }}>{tr('יש לי קוד')}</button>
+          {!P.server && <p style={s.note}>{tr('השרת עוד לא מחובר, אז השמירה בטלפון הזה בלבד.')}</p>}
         </>
       ) : (
         <>
@@ -38,39 +39,40 @@ export function ProfileGate({ P, switching }) {
             style={{ ...s.input, ...s.code }} aria-label="קוד" dir="ltr" />
           <button onClick={() => P.restore(code)} disabled={P.busy || code.length < CODE_LEN}
             style={{ ...s.cta, opacity: code.length < CODE_LEN ? .5 : 1 }}>
-            {P.busy ? 'מחפשים…' : 'לחזור לעולם שלי'}
+            {tr(P.busy ? 'מחפשים…' : 'לחזור לעולם שלי')}
           </button>
-          <button onClick={() => setMode('new')} style={{ ...s.cta, ...s.ctaGhost }}>שחקן חדש</button>
+          <button onClick={() => setMode('new')} style={{ ...s.cta, ...s.ctaGhost }}>{tr('שחקן חדש')}</button>
           {P.error && <p style={s.warn}>{errText(P.error)}</p>}
-          {!P.server && <p style={s.note}>השרת עוד לא מחובר, אז אי אפשר לשחזר עכשיו. אפשר להתחיל בלי קוד.</p>}
+          {!P.server && <p style={s.note}>{tr('השרת עוד לא מחובר, אז אי אפשר לשחזר עכשיו. אפשר להתחיל בלי קוד.')}</p>}
         </>
       )}
-      {switching && <button onClick={P.cancelSwitch} style={{ ...s.cta, ...s.ctaGhost }}>ביטול</button>}
+      {switching && <button onClick={P.cancelSwitch} style={{ ...s.cta, ...s.ctaGhost }}>{tr('ביטול')}</button>}
     </>
   )
 }
 
 function errText(e) {
-  if (e === 'not-found') return 'לא מצאנו קוד כזה. בדקו שוב את חמשת התווים.'
-  if (e === 'short') return `הקוד הוא ${CODE_LEN} תווים.`
-  if (e === 'no-server') return 'השרת לא מחובר עכשיו.'
-  return 'אין חיבור לשרת. נסו שוב עוד רגע.'
+  if (e === 'not-found') return tr('לא מצאנו קוד כזה. בדקו שוב את חמשת התווים.')
+  if (e === 'short') return tr('הקוד הוא {n} תווים.', { n: CODE_LEN })
+  if (e === 'no-server') return tr('השרת לא מחובר עכשיו.')
+  return tr('אין חיבור לשרת. נסו שוב עוד רגע.')
 }
 
 // ── שורת השחקן במסך הבית ──
-export function ProfileBar({ P, onIntro, music }) {
+export function ProfileBar({ P, onIntro, music, onLang }) {
   const p = P.profile
   if (!p) return null
-  const st = !P.server ? 'שמור בטלפון בלבד' : P.sync.ok ? 'שמור בענן' : P.sync.reason === 'never' ? 'עוד לא נשמר בענן' : 'לא הצלחנו לשמור בענן'
+  const st = tr(!P.server ? 'שמור בטלפון בלבד' : P.sync.ok ? 'שמור בענן' : P.sync.reason === 'never' ? 'עוד לא נשמר בענן' : 'לא הצלחנו לשמור בענן')
   const col = !P.server ? '#9BA495' : P.sync.ok ? '#8FB57C' : '#D97F5A'
   return (
     <div style={s.bar}>
       <span>👤 <b style={{ color: '#E9E5D8' }}>{p.name}</b></span>
-      <span>קוד <b style={s.codeChip}>{p.code}</b></span>
+      <span>{tr('קוד')} <b style={s.codeChip}>{p.code}</b></span>
       <span style={{ color: col }}>{st}</span>
-      <button onClick={P.switchPlayer} style={s.link}>להחליף שחקן</button>
-      {onIntro && <button onClick={onIntro} style={s.link}>הפתיחה</button>}
+      <button onClick={P.switchPlayer} style={s.link}>{tr('להחליף שחקן')}</button>
+      {onIntro && <button onClick={onIntro} style={s.link}>{tr('הפתיחה')}</button>}
       {music && <button onClick={music.toggle} style={s.link} aria-label={music.off ? 'להפעיל מוזיקה' : 'להשתיק מוזיקה'}>{music.off ? '🔇' : '🎵'}</button>}
+      {onLang && <button onClick={onLang} style={s.link} aria-label="שפה">🌐 {getLang() === 'de' ? 'עברית' : 'DE'}</button>}
     </div>
   )
 }

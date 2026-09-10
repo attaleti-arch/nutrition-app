@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import { tr, dirOf } from '../i18n'
 import { creatureById } from '../content/creatures'
 import { ITEMS, SLOT, KID, owns, canBuy, wearOf } from '../engine/shop'
 import { ItemSvg, Wear, kidSvg } from './Wear'
@@ -26,7 +27,7 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onSkin = null, o
 
   // בלי כובעים ופפיונים: רק החולצה של הילד במפה (צבע, לא ציור נוסף).
   const groups = [
-    isKid && { title: 'חולצה', items: ITEMS.filter(i => i.slot === SLOT.SHIRT) },
+    isKid && { title: tr('חולצה'), items: ITEMS.filter(i => i.slot === SLOT.SHIRT) },
   ].filter(Boolean)
 
   const tap = item => {
@@ -36,15 +37,15 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onSkin = null, o
   }
 
   return (
-    <div style={T.wrap} dir="rtl">
+    <div style={T.wrap} dir={dirOf()}>
       <div style={T.top}>
-        <h2 style={T.h2}>החנות</h2>
+        <h2 style={T.h2}>{tr('החנות')}</h2>
         <span style={T.coins}>🪙 {coins}</span>
-        <button onClick={onClose} style={T.close}>סגור</button>
+        <button onClick={onClose} style={T.close}>{tr('סגור')}</button>
       </div>
 
       {/* ── ציוד למרדף ── "משהו שמקל על המרדף." כלים עם השפעה אמיתית, קודם. */}
-      <p style={T.groupTitle}>ציוד למרדף</p>
+      <p style={T.groupTitle}>{tr('ציוד למרדף')}</p>
       <div style={T.gearGrid}>
         {GEAR.map(item => {
           const owned = item.kind !== 'item' && ownsGear(progress, item.id)
@@ -55,16 +56,16 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onSkin = null, o
             <div key={item.id} style={{ ...T.gearCard, borderColor: owned ? '#8FB57C' : n > 0 ? '#F0C069' : '#2B382B', opacity: can || canHoney || owned || n > 0 ? 1 : 0.55 }}>
               <div style={T.gearIcon}><GearIcon id={item.id} size={64} />{n > 0 && <span style={T.gearCount}>×{n}</span>}</div>
               <div style={{ flex: 1, textAlign: 'start' }}>
-                <p style={T.gearName}>{item.name} {item.kind === 'item' ? <span style={T.once}>חד־פעמי</span> : <span style={{ ...T.once, color: '#8FB57C', borderColor: 'rgba(143,181,124,.5)' }}>🔑 מפתח</span>}</p>
-                <p style={T.gearDesc}>{item.desc}</p>
-                {owned ? <p style={{ ...T.gearPrice, color: '#8FB57C' }}>✓ יש לכם, לתמיד</p>
-                  : item.kind === 'item' && n >= MAX_ITEMS ? <p style={{ ...T.gearPrice, color: '#767F71' }}>יש {n} — המקסימום</p>
+                <p style={T.gearName}>{tr(item.name)} {item.kind === 'item' ? <span style={T.once}>{tr('חד־פעמי')}</span> : <span style={{ ...T.once, color: '#8FB57C', borderColor: 'rgba(143,181,124,.5)' }}>{tr('🔑 מפתח')}</span>}</p>
+                <p style={T.gearDesc}>{tr(item.desc)}</p>
+                {owned ? <p style={{ ...T.gearPrice, color: '#8FB57C' }}>{tr('✓ יש לכם, לתמיד')}</p>
+                  : item.kind === 'item' && n >= MAX_ITEMS ? <p style={{ ...T.gearPrice, color: '#767F71' }}>{tr('יש {n} — המקסימום', { n })}</p>
                   : (
                     <div style={T.payRow}>
-                      <button onClick={() => can && onGear?.(item.id, 'coins')} disabled={!can} aria-label={item.name}
+                      <button onClick={() => can && onGear?.(item.id, 'coins')} disabled={!can} aria-label={tr(item.name)}
                         style={{ ...T.payBtn, borderColor: can ? '#E5A342' : '#2B382B', color: can ? '#E5A342' : '#767F71' }}>🪙 {item.price}</button>
                       {item.honey && (
-                        <button onClick={() => canHoney && onGear?.(item.id, 'honey')} disabled={!canHoney} aria-label={`${item.name} בדבש`}
+                        <button onClick={() => canHoney && onGear?.(item.id, 'honey')} disabled={!canHoney} aria-label={`${tr(item.name)} ${tr('בדבש')}`}
                           style={{ ...T.payBtn, borderColor: canHoney ? '#F0C069' : '#2B382B', color: canHoney ? '#F0C069' : '#767F71' }}>🍯 {item.honey}</button>
                       )}
                     </div>
@@ -75,30 +76,30 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onSkin = null, o
         })}
       </div>
 
-      <p style={{ ...T.groupTitle, marginTop: 18 }}>סקינים ולהלביש · למי?</p>
+      <p style={{ ...T.groupTitle, marginTop: 18 }}>{tr('סקינים ולהלביש · למי?')}</p>
       {/* מי לובש */}
       <div style={T.whoRow}>
         {have.map(id => {
           const cc = creatureById(id); if (!cc) return null
           return (
-            <button key={id} onClick={() => setWho(id)} aria-label={cc.name} style={{ ...T.who, borderColor: who === id ? '#E5A342' : '#2B382B' }}>
+            <button key={id} onClick={() => setWho(id)} aria-label={tr(cc.name)} style={{ ...T.who, borderColor: who === id ? '#E5A342' : '#2B382B' }}>
               <img src={cc.live || cc.sprites?.hero} alt="" style={T.whoImg} draggable={false} />
             </button>
           )
         })}
-        <button onClick={() => setWho(KID)} aria-label="אני" style={{ ...T.who, borderColor: isKid ? '#E5A342' : '#2B382B' }}>
-          <span style={T.whoKid}>אני</span>
+        <button onClick={() => setWho(KID)} aria-label={tr('אני')} style={{ ...T.who, borderColor: isKid ? '#E5A342' : '#2B382B' }}>
+          <span style={T.whoKid}>{tr('אני')}</span>
         </button>
       </div>
 
       {/* ── סקינים ── "הבן שלי אומר סקינים." מראה חדש ליצור הנבחר, וסקין מהביצה אם בקע. */}
       {!isKid && c && (
         <div style={T.skinRow}>
-          <button onClick={() => onLook?.(who, 'base')} aria-label="מראה רגיל"
+          <button onClick={() => onLook?.(who, 'base')} aria-label={tr('מראה רגיל')}
             style={{ ...T.skinCard, borderColor: !c.look ? '#8FB57C' : '#2B382B' }}>
             <div style={T.skinPic}><img src={base.live} alt="" style={T.skinImg} draggable={false} /></div>
-            <p style={T.skinName}>רגיל</p>
-            <p style={{ ...T.price, color: !c.look ? '#8FB57C' : '#9BA495' }}>{!c.look ? '✓ לובש' : 'ללבוש'}</p>
+            <p style={T.skinName}>{tr('רגיל')}</p>
+            <p style={{ ...T.price, color: !c.look ? '#8FB57C' : '#9BA495' }}>{!c.look ? tr('✓ לובש') : tr('ללבוש')}</p>
           </button>
           {SKINS.map(sk => {
             const owned = ownsSkin(progress, who, sk.id)
@@ -106,26 +107,26 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onSkin = null, o
             const can = canBuySkin(progress, who, sk.id)
             return (
               <button key={sk.id} onClick={() => (wearing ? onLook?.(who, 'base') : owned ? onLook?.(who, sk.id) : can && onSkin?.(who, sk.id))}
-                disabled={!owned && !can} aria-label={`סקין ${sk.name}`}
+                disabled={!owned && !can} aria-label={`${tr('סקין')} ${tr(sk.name)}`}
                 style={{ ...T.skinCard, borderColor: wearing ? '#8FB57C' : owned ? '#F0C069' : '#2B382B', opacity: owned || can ? 1 : 0.55 }}>
                 <div style={T.skinPic}>
                   <span style={{ ...T.skinAura, background: `radial-gradient(circle, ${sk.aura}, rgba(0,0,0,0) 65%)` }} />
                   <img src={base.live} alt="" style={{ ...T.skinImg, filter: sk.filter, position: 'relative', zIndex: 1 }} draggable={false} />
                 </div>
-                <p style={T.skinName}>{base.gender === 'f' ? sk.nameF : sk.name}</p>
+                <p style={T.skinName}>{tr(base.gender === 'f' ? sk.nameF : sk.name)}</p>
                 <p style={{ ...T.price, color: wearing ? '#8FB57C' : owned ? '#9BA495' : can ? '#E5A342' : '#767F71' }}>
-                  {wearing ? '✓ לובש' : owned ? 'ללבוש' : `🪙 ${sk.price}`}
+                  {wearing ? tr('✓ לובש') : owned ? tr('ללבוש') : `🪙 ${sk.price}`}
                 </p>
               </button>
             )
           })}
           {/* אבן צמיחה: נקודת התפתחות ליצור הזה */}
-          <button onClick={() => canBuyStone(progress, who) && onStone?.(who)} disabled={!canBuyStone(progress, who)} aria-label="אבן צמיחה"
+          <button onClick={() => canBuyStone(progress, who) && onStone?.(who)} disabled={!canBuyStone(progress, who)} aria-label={tr('אבן צמיחה')}
             style={{ ...T.skinCard, borderColor: '#2B382B', opacity: canBuyStone(progress, who) ? 1 : 0.55 }}>
             <div style={T.skinPic}><GearIcon id="stone" size={56} /></div>
-            <p style={T.skinName}>אבן צמיחה</p>
+            <p style={T.skinName}>{tr('אבן צמיחה')}</p>
             <p style={{ ...T.price, color: canBuyStone(progress, who) ? '#E5A342' : '#767F71' }}>🪙 {STONE_PRICE}</p>
-            <p style={T.skinSub}>{stageProgress(progress, who).next ? `+1 · עוד ${stageProgress(progress, who).left} ${base.gender === 'f' ? 'והיא גדלה' : 'והוא גדל'}` : 'כבר אגדי'}</p>
+            <p style={T.skinSub}>{stageProgress(progress, who).next ? `+1 · ${tr('עוד')} ${stageProgress(progress, who).left} ${base.gender === 'f' ? tr('והיא גדלה') : tr('והוא גדל')}` : tr('כבר אגדי')}</p>
           </button>
         </div>
       )}
@@ -142,7 +143,7 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onSkin = null, o
             </div>
           )}
       </div>
-      <p style={T.stageName}>{isKid ? 'הדמות שלך במפה' : c?.name}</p>
+      <p style={T.stageName}>{isKid ? tr('הדמות שלך במפה') : tr(c?.name)}</p>
 
       {/* הפריטים */}
       {groups.map(gr => (
@@ -162,9 +163,9 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onSkin = null, o
                       ? <span style={{ ...T.shirt, background: item.color, borderColor: item.dark }} />
                       : <ItemSvg id={item.id} style={{ height: 52, width: 'auto' }} />}
                   </div>
-                  <p style={T.name}>{item.name}</p>
+                  <p style={T.name}>{tr(item.name)}</p>
                   <p style={{ ...T.price, color: wearing ? '#8FB57C' : owned ? '#9BA495' : '#E5A342' }}>
-                    {wearing ? '✓ לובש' : owned ? 'יש · ללבוש' : `🪙 ${item.price}`}
+                    {wearing ? tr('✓ לובש') : owned ? tr('יש · ללבוש') : `🪙 ${item.price}`}
                   </p>
                 </button>
               )
@@ -172,7 +173,7 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onSkin = null, o
           </div>
         </div>
       ))}
-      {isKid && <p style={T.hint}>מטבעות אוספים בדרך.</p>}
+      {isKid && <p style={T.hint}>{tr('מטבעות אוספים בדרך.')}</p>}
     </div>
   )
 }

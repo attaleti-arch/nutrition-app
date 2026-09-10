@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { tr, dirOf } from '../i18n'
 import { useMotion } from '../hooks/useMotion'
 import { useCamera } from '../hooks/useCamera'
 import { camText } from '../engine/camera'
@@ -57,8 +58,8 @@ export function GoldStage({ value = 10, onTaken, onClose }) {
       {cam !== 'on' && <div style={S.backdrop} />}
       {cam === 'off' && camera.canRetry && !jumped && (
         <div style={S.camNote}>
-          {camText(camera.reason).t}
-          <button onClick={camera.retry} style={S.camRetry}>לנסות לפתוח מצלמה</button>
+          {tr(camText(camera.reason).t)}
+          <button onClick={camera.retry} style={S.camRetry}>{tr('לנסות לפתוח מצלמה')}</button>
         </div>
       )}
 
@@ -66,7 +67,7 @@ export function GoldStage({ value = 10, onTaken, onClose }) {
           דורסת את ה-translate של המרכוז והמטבע זז הצידה. */}
       <div style={S.coinAnchor}>
         <div style={{ ...S.coinWrap, animation: jumped ? 'none' : 'wildenFloat 2.4s ease-in-out infinite' }}>
-          <button aria-label="מטבע הזהב" disabled={!canTap && !jumped} onClick={() => canTap && finish({ airMs: 0, peakG: 0, tapped: true })}
+          <button aria-label={tr('מטבע הזהב')} disabled={!canTap && !jumped} onClick={() => canTap && finish({ airMs: 0, peakG: 0, tapped: true })}
             style={{ ...S.coinBtn, ...(jumped ? S.coinTaken : {}) }}>
             <div style={{ ...S.coin, animation: jumped ? 'none' : 'wildenSpin 2.2s linear infinite' }}>
               <div style={S.coinFace}>W</div>
@@ -78,8 +79,8 @@ export function GoldStage({ value = 10, onTaken, onClose }) {
 
       {askNeeded && (
         <div style={S.ask}>
-          <p style={S.askLine}>מטבע זהב! כדי לקפוץ אליו, הטלפון צריך להרגיש את הקפיצה.</p>
-          <button onClick={motion.request} style={S.askBtn}>אפשר לי לקפוץ</button>
+          <p style={S.askLine}>{tr('מטבע זהב! כדי לקפוץ אליו, הטלפון צריך להרגיש את הקפיצה.')}</p>
+          <button onClick={motion.request} style={S.askBtn}>{tr('אפשר לי לקפוץ')}</button>
         </div>
       )}
 
@@ -87,26 +88,26 @@ export function GoldStage({ value = 10, onTaken, onClose }) {
         {jumped ? (
           <>
             <p style={S.big}>+{value} 🪙</p>
-            <p style={S.sub}>{jumped.tapped ? 'הזהב שלכם.' : `קפיצה של ${jumpHeightCm(jumped.airMs)} ס״מ!`}</p>
+            <p style={S.sub}>{jumped.tapped ? tr('הזהב שלכם.') : tr('קפיצה של {n} ס״מ!', { n: jumpHeightCm(jumped.airMs) })}</p>
           </>
         ) : (
           <>
-            <p style={S.big}>קפצו ותפסו אותו!</p>
+            <p style={S.big}>{tr('קפצו ותפסו אותו!')}</p>
             <p style={S.sub}>
-              {motion.perm === 'none' ? 'בטלפון הזה אין מד תאוצה — עוד רגע אפשר ללחוץ עליו.'
-                : motion.live ? 'הטלפון ביד, ו… קפיצה!'
-                : 'מחכים לחיישן…'}
+              {motion.perm === 'none' ? tr('בטלפון הזה אין מד תאוצה — עוד רגע אפשר ללחוץ עליו.')
+                : motion.live ? tr('הטלפון ביד, ו… קפיצה!')
+                : tr('מחכים לחיישן…')}
             </p>
-            {canTap && <p style={S.sub}>או פשוט ללחוץ על המטבע.</p>}
+            {canTap && <p style={S.sub}>{tr('או פשוט ללחוץ על המטבע.')}</p>}
           </>
         )}
         {/* מד כיוון: מה החיישן רואה. לבדיקה עם הבן שלה. */}
         <p style={S.meter}>
-          חיישן: {motion.live ? 'פעיל' : motion.perm} · שיא {peakG.toFixed(2)}g · {phase}
+          {tr('חיישן:')} {motion.live ? tr('פעיל') : motion.perm} · {tr('שיא')} {peakG.toFixed(2)}g · {phase}
         </p>
       </div>
 
-      <button onClick={onClose} style={S.back}>אחר כך</button>
+      <button onClick={onClose} style={S.back}>{tr('אחר כך')}</button>
       <style>{CSS}</style>
     </div>
   )

@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { tr, dirOf } from '../i18n'
 import { useOrient, angleDelta } from '../hooks/useOrient'
 import { useSteps } from '../hooks/useSteps'
 import { useCamera } from '../hooks/useCamera'
@@ -112,22 +113,22 @@ export function CoinRun({ onDone, onClose, theme = 'coins' }) {
       {cam !== 'on' && <div style={S.backdrop} />}
       {cam === 'off' && camera.canRetry && (
         <div style={S.camNote}>
-          {camText(camera.reason).t}
-          <button onClick={e => { e.stopPropagation(); camera.retry() }} style={S.camRetry}>לנסות לפתוח מצלמה</button>
+          {tr(camText(camera.reason).t)}
+          <button onClick={e => { e.stopPropagation(); camera.retry() }} style={S.camRetry}>{tr('לנסות לפתוח מצלמה')}</button>
         </div>
       )}
       <style>{CSS}</style>
 
       {askNeeded && (
         <div style={S.ask} onClick={e => e.stopPropagation()}>
-          <p style={S.askLine}>{th.ask}</p>
-          <button onClick={askAll} style={S.askBtn}>אפשר לי לרוץ</button>
+          <p style={S.askLine}>{tr(th.ask)}</p>
+          <button onClick={askAll} style={S.askBtn}>{tr('אפשר לי לרוץ')}</button>
         </div>
       )}
 
       {/* הספירה לאחור */}
       {countdown > 0 && !askNeeded && (
-        <div style={S.center}><p style={S.count}>{countdown}</p><p style={S.countSub}>מוכנים לרוץ?</p></div>
+        <div style={S.center}><p style={S.count}>{countdown}</p><p style={S.countSub}>{tr('מוכנים לרוץ?')}</p></div>
       )}
 
       {/* המטבעות: כל אחד במקום שלו על המסך לפי הכיוון והגובה, וגדל כשמתקרב */}
@@ -171,12 +172,12 @@ export function CoinRun({ onDone, onClose, theme = 'coins' }) {
           </div>
           <div style={S.score}>{th.icon} {s.got}</div>
           <div style={S.hint}>
-            <p style={S.big}>{th.go}</p>
-            <p style={S.sub}>{steps.live ? th.aim
-              : steps.perm === 'none' || steps.perm === 'denied' ? 'בטלפון הזה אין מד צעדים: לחצו על המסך כדי לרוץ.'
-              : 'מחכים לחיישן… בינתיים לחצו על המסך כדי לרוץ.'}</p>
+            <p style={S.big}>{tr(th.go)}</p>
+            <p style={S.sub}>{steps.live ? tr(th.aim)
+              : steps.perm === 'none' || steps.perm === 'denied' ? tr('בטלפון הזה אין מד צעדים: לחצו על המסך כדי לרוץ.')
+              : tr('מחכים לחיישן… בינתיים לחצו על המסך כדי לרוץ.')}</p>
             {!hasSensors && (
-              <input type="range" min="0" max="359" value={swipe} aria-label="סריקה" onClick={e => e.stopPropagation()}
+              <input type="range" min="0" max="359" value={swipe} aria-label={tr('סריקה')} onClick={e => e.stopPropagation()}
                 onChange={e => setSwipe(Number(e.target.value))} style={S.scan} />
             )}
           </div>
@@ -185,13 +186,13 @@ export function CoinRun({ onDone, onClose, theme = 'coins' }) {
 
       {sum && (
         <div style={S.center}>
-          <p style={S.big}>{sum.value >= 12 ? 'וואו!' : sum.value >= 6 ? 'יפה מאוד!' : 'כל הכבוד!'}</p>
+          <p style={S.big}>{sum.value >= 12 ? tr('וואו!') : sum.value >= 6 ? tr('יפה מאוד!') : tr('כל הכבוד!')}</p>
           <p style={S.result}>{th.icon} {sum.value}</p>
-          <p style={S.sub}>{sum.taken} מתוך {sum.total} {th.unit}</p>
+          <p style={S.sub}>{tr('{a} מתוך {b} {unit}', { a: sum.taken, b: sum.total, unit: tr(th.unit) })}</p>
         </div>
       )}
 
-      <button onClick={e => { e.stopPropagation(); onClose?.() }} style={S.back}>אחר כך</button>
+      <button onClick={e => { e.stopPropagation(); onClose?.() }} style={S.back}>{tr('אחר כך')}</button>
     </div>
   )
 }

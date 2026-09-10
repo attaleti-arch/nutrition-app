@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { tr, dirOf } from '../i18n'
 import { useModelViewer } from '../hooks/useModelViewer'
 import { creatureById } from '../content/creatures'
 import { variantById, variantName, tintOf } from '../engine/egg'
@@ -115,14 +116,14 @@ export function Hatch({ hatched, onClose }) {
   }, [ready, variant, art, phase])
 
   if (!creature || !variant) return null
-  const name = `${creature.name} ${variantName(variant.id, creature)}`
+  const name = `${tr(creature.name)} ${tr(variantName(variant.id, creature))}`
   const f = creature.gender === 'f'
   const rising = phase === 'creature'
   const k = cracks / CRACKS.length
-  const eggLine = cracks === 0 ? 'הביצה נסדקת…' : cracks < 3 ? 'עוד סדק…' : cracks < 5 ? 'משהו זז בפנים!' : 'עכשיו!'
+  const eggLine = cracks === 0 ? tr('הביצה נסדקת…') : cracks < 3 ? tr('עוד סדק…') : cracks < 5 ? tr('משהו זז בפנים!') : tr('עכשיו!')
 
   return (
-    <div style={S.wrap} dir="rtl">
+    <div style={S.wrap} dir={dirOf()}>
       <div style={{ ...S.glow(variant), opacity: rising ? 1 : 0.2 + 0.5 * k }} />
 
       {/* הביצה: הסרטון שלה, או המצוירת. המסך מזדעזע בכל סדק (key מפעיל מחדש). */}
@@ -187,10 +188,10 @@ export function Hatch({ hatched, onClose }) {
       )}
 
       <div style={S.text}>
-        <p style={S.eyebrow}>{rising ? (whistle ? 'משרוקית הזהב קראה!' : 'הביצה בקעה!') : whistle ? '' : eggLine}</p>
+        <p style={S.eyebrow}>{rising ? (whistle ? tr('משרוקית הזהב קראה!') : tr('הביצה בקעה!')) : whistle ? '' : eggLine}</p>
         {rising && <p style={S.name}>{name}</p>}
-        {rising && <p style={S.sub}>{variant.id === 'ice' ? 'נדיר מאוד. כמעט אף אחד לא ראה כזה.' : variant.id === 'night' ? (f ? 'נדיר. היא זוהרת בחושך.' : 'נדיר. הוא זוהר בחושך.') : variant.id === 'glow' ? (f ? 'הסימנים שלה דולקים.' : 'הסימנים שלו דולקים.') : (f ? 'היא נוצצת.' : 'הוא נוצץ.')}</p>}
-        {rising && <button onClick={onClose} style={S.cta}>לעולם</button>}
+        {rising && <p style={S.sub}>{variant.id === 'ice' ? tr('נדיר מאוד. כמעט אף אחד לא ראה כזה.') : variant.id === 'night' ? (f ? tr('נדיר. היא זוהרת בחושך.') : tr('נדיר. הוא זוהר בחושך.')) : variant.id === 'glow' ? (f ? tr('הסימנים שלה דולקים.') : tr('הסימנים שלו דולקים.')) : (f ? tr('היא נוצצת.') : tr('הוא נוצץ.'))}</p>}
+        {rising && <button onClick={onClose} style={S.cta}>{tr('לעולם')}</button>}
       </div>
       <style>{CSS}</style>
     </div>

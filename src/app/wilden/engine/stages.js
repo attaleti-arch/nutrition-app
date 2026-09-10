@@ -11,6 +11,7 @@
 import { bondCredits } from './buddy.js'
 import { tintOf, variantName } from './egg.js'
 import { skinTint, skinById, ownsSkin, stoneCredits } from './skins.js'
+import { tr } from '../i18n/index.js'
 
 export const STAGES = [
   { n: 1, name: 'גור', need: 0, scale: 1 },
@@ -58,9 +59,9 @@ const STAGE_TITLE = { 2: { m: 'הבוגר', f: 'הבוגרת' }, 3: { m: 'האג
 export function stagedName(creature, stage) {
   if (!creature) return ''
   const t = STAGE_TITLE[stage]?.[creature.gender === 'f' ? 'f' : 'm']
-  return t ? `${creature.name} ${t}` : creature.name
+  return t ? `${tr(creature.name)} ${tr(t)}` : tr(creature.name)
 }
-export const grewVerb = creature => (creature?.gender === 'f' ? 'גדלה' : 'גדל')
+export const grewVerb = creature => (creature?.gender === 'f' ? tr('גדלה') : tr('גדל'))
 
 // ── המראה: צבע מהביצה שיש לו דמות ──
 // ביצה שבקעה נותנת צבע. ליצור שיש לו קליפ לצבע הזה (creature.variants[id])

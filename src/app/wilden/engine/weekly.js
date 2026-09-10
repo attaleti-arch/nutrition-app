@@ -6,6 +6,8 @@
 //
 // טהור. ימים הם מפתחות YYYY-MM-DD (persist.dayKey), כמו walkDays.
 
+import { tr } from '../i18n/index.js'
+
 export const WEEKLY_GOAL = 3
 export const WEEKLY_COINS = 40
 
@@ -60,4 +62,4 @@ export function walkSummary({ walked = 0, startedAt = null, t = null } = {}) {
   const steps = Math.round(meters / KID_STRIDE_M / 50) * 50
   return { meters, minutes, steps }
 }
-export const km = m => (m >= 1000 ? `${(m / 1000).toFixed(1)} ק״מ` : `${m} מ׳`)
+export const km = m => (m >= 1000 ? `${(m / 1000).toFixed(1)} ${tr('ק״מ')}` : `${m} ${tr('מ׳')}`)

@@ -4,6 +4,7 @@
 // טהור, בלי React, כדי שאפשר יהיה לבדוק על מסלול סינתטי.
 
 import { bearing, haversine } from './geo.js'
+import { tr } from '../i18n/index.js'
 
 export const TURN_DEG = 35          // פחות מזה — "ישר"
 export const SHARP_DEG = 120
@@ -79,12 +80,14 @@ export function floorCue(cue, straightM) {
   return straightM > cue.dist ? { ...cue, dist: straightM } : cue
 }
 
-export function cueText(cue, targetName = 'היעד') {
+// הניסוח עובר דרך tr: בגרמנית סדר המילים אחר ("Jetzt links abbiegen"), אז
+// כל משפט הוא תבנית עם משתנים ולא הדבקה של מילים.
+export function cueText(cue, targetName = tr('היעד')) {
   const m = Math.round(cue.dist / 10) * 10
   if (cue.kind === 'target') {
-    return m <= 30 ? `${targetName} כאן.` : `ישר ${m} מ׳ עד ${targetName}.`
+    return m <= 30 ? tr('{t} כאן.', { t: targetName }) : tr('ישר {m} מ׳ עד {t}.', { m, t: targetName })
   }
-  const word = cue.dir === 'left' ? 'פנו שמאלה' : cue.dir === 'right' ? 'פנו ימינה' : 'הסתובבו'
-  const to = cue.street ? ` ל${cue.street}` : ''
-  return m <= 20 ? `${word}${to} עכשיו.` : `עוד ${m} מ׳ ${word}${to}.`
+  const word = cue.dir === 'left' ? tr('פנו שמאלה') : cue.dir === 'right' ? tr('פנו ימינה') : tr('הסתובבו')
+  const to = cue.street ? tr(' ל{s}', { s: cue.street }) : ''
+  return m <= 20 ? tr('{w}{to} עכשיו.', { w: word, to }) : tr('עוד {m} מ׳ {w}{to}.', { m, w: word, to })
 }

@@ -13,6 +13,7 @@ import { camText } from '../engine/camera'
 import { sfxAppear, sfxRustle, sfxCatch, buzz, startVoice, sfxVoice } from '../engine/audio'
 import { bearing, haversine } from '../engine/geo'
 import { cheer } from '../content/cheers'
+import { tr } from '../i18n'
 
 // ─── במה המפגש ───
 // שני מצבים, מכניקה אחת. מצלמה שנדחתה אינה דילוג על המפגש אלא רקע אחר
@@ -290,8 +291,8 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
       {dark && <Lantern on={!!mods?.lantern} />}
       {camState === 'on' && !videoLive && (
         <div style={S.camNote}>
-          המצלמה אושרה אבל התמונה לא הגיעה.
-          <button onClick={cam.retry} style={S.camRetry}>לפתוח מצלמה שוב</button>
+          {tr('המצלמה אושרה אבל התמונה לא הגיעה.')}
+          <button onClick={cam.retry} style={S.camRetry}>{tr('לפתוח מצלמה שוב')}</button>
         </div>
       )}
       {camState === 'denied' && <StoryBackdrop />}
@@ -299,18 +300,18 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
           שוב מתוך לחיצה (ספארי לא פותח מצלמה בלי מגע). */}
       {camState === 'denied' && !done && (
         <div style={S.camNote}>
-          <b>{camText(cam.reason).t}</b> {camText(cam.reason).how}
-          {cam.canRetry && <button onClick={cam.retry} style={S.camRetry}>לנסות לפתוח מצלמה</button>}
+          <b>{tr(camText(cam.reason).t)}</b> {tr(camText(cam.reason).how)}
+          {cam.canRetry && <button onClick={cam.retry} style={S.camRetry}>{tr('לנסות לפתוח מצלמה')}</button>}
         </div>
       )}
-      {camState === 'starting' && <div style={S.center}><p style={S.dim}>פותחים מצלמה…</p></div>}
+      {camState === 'starting' && <div style={S.center}><p style={S.dim}>{tr('פותחים מצלמה…')}</p></div>}
 
       {/* הרשאת חיישנים באייפון חייבת לצאת מלחיצה אמיתית, אחרת ספארי
           מתעלמת בשקט ואף אחד לא יודע למה כלום לא זז. */}
       {askNeeded && (
         <div style={S.ask}>
-          <p style={S.askLine}>הרימו את הטלפון וסובבו כדי לחפש</p>
-          <button onClick={askAll} style={S.askBtn}>אפשר לי לחפש</button>
+          <p style={S.askLine}>{tr('הרימו את הטלפון וסובבו כדי לחפש')}</p>
+          <button onClick={askAll} style={S.askBtn}>{tr('אפשר לי לחפש')}</button>
         </div>
       )}
 
@@ -350,7 +351,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
       {/* אזור הלחיצה על היצור: גדול, שקוף, במקום שבו הוא נראה. ילד לוחץ
           על הדמות — לא על כפתור. */}
       {!done && ct && ctVisible && (
-        <button aria-label="לחצו על היצור" onClick={doTap} style={{
+        <button aria-label={tr('לחצו על היצור')} onClick={doTap} style={{
           ...S.tapArea,
           left: `${50 + (Math.max(-0.6, Math.min(0.6, ct.dx / (FOV / 2)))) * 50}%`,
           top: `${52 - ct.dy * 1.5}%`,
@@ -377,33 +378,33 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
       {done && (
         <div style={S.doneWrap}>
           <CreatureFigure creature={creature} done scale={1.35} hideSprite={hideSprite} wear={wear} />
-          <p style={S.foundName}>{creature?.name}</p>
-          <p style={S.foundLine}>{cheer('catch', Math.floor((cs?.hidden || 0) / 37))} תפסתם אותו!</p>
+          <p style={S.foundName}>{tr(creature?.name)}</p>
+          <p style={S.foundLine}>{tr(cheer('catch', Math.floor((cs?.hidden || 0) / 37)))} {tr('תפסתם אותו!')}</p>
         </div>
       )}
 
       {!done && (
         <div style={S.hint}>
-          <p style={S.hintLine}>{flash || copy.line}</p>
-          {copy.sub && !flash && <p style={S.hintSub}>{copy.sub}</p>}
+          <p style={S.hintLine}>{flash || tr(copy.line)}</p>
+          {copy.sub && !flash && <p style={S.hintSub}>{tr(copy.sub)}</p>}
           {chasing && (
-            <div style={S.distWrap} aria-label="מרחק">
+            <div style={S.distWrap} aria-label={tr('מרחק')}>
               <div style={S.distBar}><div style={{ ...S.distFill, width: `${Math.round(100 * (1 - Math.min(1, cs.dist / 12)))}%` }} /></div>
-              <span style={S.distNum}>{Math.max(1, Math.round(cs.dist))} מ׳</span>
+              <span style={S.distNum}>{Math.max(1, Math.round(cs.dist))} {tr('מ׳')}</span>
             </div>
           )}
           {canCatch && (
-            <button onClick={doCatch} style={S.catchBtn}>לתפוס!</button>
+            <button onClick={doCatch} style={S.catchBtn}>{tr('לתפוס!')}</button>
           )}
           {!hasSensors && (
-            <input type="range" min="0" max="359" value={swipe} aria-label="סריקה"
+            <input type="range" min="0" max="359" value={swipe} aria-label={tr('סריקה')}
               onChange={e => setSwipe(Number(e.target.value))} style={S.scan} />
           )}
-          {hasSensors && !absolute && <p style={S.hintSub}>סובבו סיבוב שלם פעם אחת כדי לכייל.</p>}
+          {hasSensors && !absolute && <p style={S.hintSub}>{tr('סובבו סיבוב שלם פעם אחת כדי לכייל.')}</p>}
         </div>
       )}
 
-      <button onClick={onGiveUp} style={S.back}>חזרה</button>
+      <button onClick={onGiveUp} style={S.back}>{tr('חזרה')}</button>
     </div>
   )
 }
@@ -430,7 +431,7 @@ function fire(kind, setFlash, setShake, creatureId = null) {
   if (!m) return
   try { m.sfx?.(); buzz(m.buzz) } catch (e) { /* אודיו לא קריטי */ }
   if (!m.t) return
-  setFlash(m.t)
+  setFlash(m.t ? tr(m.t) : m.t)
   setTimeout(() => setFlash(null), 1400)
 }
 

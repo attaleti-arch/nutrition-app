@@ -9,6 +9,7 @@ import { briefFor, homeFor, todaysCreature } from './content/briefs'
 import { useProfile } from './hooks/useProfile'
 import { ProfileGate, ProfileBar } from './ui/ProfileGate'
 import { Intro, introSeen as introAlreadySeen } from './ui/Intro'
+import { tr, detectLang, setLang, getLang, dirOf } from './i18n'
 import { worldState } from './engine/world'
 import { startMusic, stopMusic, musicMuted, setMusicMuted, retryMusic } from './engine/music'
 import { Beacon, BeaconLine, BEACON_CSS } from './ui/Beacon'
@@ -79,6 +80,10 @@ export default function Wilden() {
   // walks חוזר לאפס והמשחק שולח שוב ושוב לתפוס את נימי.
   const P = useProfile({ g, dispatch, booted })
   // סרטון הפתיחה: פעם אחת על הטלפון, לפני השם. null = עוד לא בדקנו.
+  // שפה: מהטלפון, או מה שנבחר ב-🌐. מתעדכן אחרי הטעינה כדי שהשרת והדפדפן יסכימו.
+  const [lang, setLangState] = useState('he')
+  useEffect(() => { const l = detectLang(); setLang(l); setLangState(l) }, [])
+  const toggleLang = () => { setLang(getLang() === 'de' ? 'he' : 'de'); window.location.reload() }
   const [intro, setIntro] = useState(null)
   // אחרי הפתיחה, הפסל בבית נותן את האות הראשון: "אבן…"
   const [firstWord, setFirstWord] = useState(false)
@@ -240,7 +245,7 @@ export default function Wilden() {
     )
   }
 
-  if (!booted) return <Shell><p style={{ color: C.muted, textAlign: 'center' }}>רגע…</p></Shell>
+  if (!booted) return <Shell><p style={{ color: C.muted, textAlign: 'center' }}>{tr('רגע…')}</p></Shell>
 
   // היצור של התחנה הנוכחית. (מסע ישן בלי תחנות — היצור של המסע.)
   // בשלב שלו (3 תפיסות = בוגר, 7 = אגדי): הדמות, הקליפ והגודל של השלב.
@@ -253,7 +258,7 @@ export default function Wilden() {
   const justCaught = stagedFor(g.progress, justCaughtBase)
 
   return (
-    <div dir="rtl" style={{ minHeight: '100dvh', background: C.bg, color: C.ink,
+    <div dir={dirOf()} lang={lang} style={{ minHeight: '100dvh', background: C.bg, color: C.ink,
       fontFamily: '"Heebo", system-ui, -apple-system, sans-serif' }}>
       <style dangerouslySetInnerHTML={{ __html: BEACON_CSS + PAGE_CSS }} />
 
@@ -312,7 +317,7 @@ export default function Wilden() {
 
       <Shell>
         {g.state === S.BROKEN_WORLD && !P.loaded && (
-          <p style={{ color: C.muted, textAlign: 'center' }}>רגע…</p>
+          <p style={{ color: C.muted, textAlign: 'center' }}>{tr('רגע…')}</p>
         )}
         {/* הפתיחה: לכל מי שפותח את המשחק בפעם הראשונה על הטלפון הזה — גם מי
             שכבר יש לו שם. פעם אחת, ואפשר לראות שוב מהשורה של השחקן. */}
@@ -331,33 +336,32 @@ export default function Wilden() {
             onLook={(id, look) => { sfxAppear(); dispatch({ type: 'SET_LOOK', id, look }) }}
             onGear={(id, pay) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_GEAR', id, pay }) }}
             onSkin={(creature, skin) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_SKIN', creature, skin }) }}
-            onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }} P={P} onIntro={() => setIntro(true)} music={{ off: musicOff, toggle: toggleMusic }} firstWord={firstWord} />
+            onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }} P={P} onIntro={() => setIntro(true)} music={{ off: musicOff, toggle: toggleMusic }} firstWord={firstWord} onLang={toggleLang} />
         )}
 
         {g.state === S.PERMISSIONS && (
-          <Panel eyebrow="לפני שיוצאים">
-            <h2 style={s.h2}>הביקון צריך לדעת איפה אתם</h2>
+          <Panel eyebrow={tr('לפני שיוצאים')}>
+            <h2 style={s.h2}>{tr('הביקון צריך לדעת איפה אתם')}</h2>
             <p style={s.body}>
-              הוא בונה מסלול סביב המקום שבו אתם עומדים. <b>המיקום נשאר בטלפון</b> ולא
-              נשלח לשום מקום.
+              {tr('הוא בונה מסלול סביב המקום שבו אתם עומדים.')} <b>{tr('המיקום נשאר בטלפון')}</b> {tr('ולא נשלח לשום מקום.')}
             </p>
             <button onClick={askLocation} style={s.cta} disabled={geo.asking}>
-              {geo.asking ? 'רגע…' : 'אישור מיקום'}
+              {geo.asking ? tr('רגע…') : tr('אישור מיקום')}
             </button>
-            {geo.err === 'denied' && <p style={s.warn}>בלי מיקום אי אפשר לצאת למסע.</p>}
+            {geo.err === 'denied' && <p style={s.warn}>{tr('בלי מיקום אי אפשר לצאת למסע.')}</p>}
           </Panel>
         )}
 
         {g.state === S.ROUTE_BUILDING && (
-          <Panel eyebrow="בונים מסלול">
-            <h2 style={s.h2}>בודקים אילו רחובות יש כאן</h2>
+          <Panel eyebrow={tr('בונים מסלול')}>
+            <h2 style={s.h2}>{tr('בודקים אילו רחובות יש כאן')}</h2>
             <p style={s.body}>
-              מרחיקים את המסלול משדות, מאזורי תעשייה ומכבישים סואנים.
+              {tr('מרחיקים את המסלול משדות, מאזורי תעשייה ומכבישים סואנים.')}
             </p>
             {route.status === 'slow' && (
               <>
-                <p style={s.warn}>לוקח יותר מהרגיל.</p>
-                <button onClick={route.skip} style={{ ...s.cta, ...s.ctaGhost }}>לדלג עכשיו</button>
+                <p style={s.warn}>{tr('לוקח יותר מהרגיל.')}</p>
+                <button onClick={route.skip} style={{ ...s.cta, ...s.ctaGhost }}>{tr('לדלג עכשיו')}</button>
               </>
             )}
           </Panel>
@@ -377,50 +381,50 @@ export default function Wilden() {
         )}
 
         {g.state === S.CAUGHT && (
-          <Panel eyebrow="נתפס!">
+          <Panel eyebrow={tr('נתפס!')}>
             <div style={{ textAlign: 'center', margin: '10px 0 18px' }}>
               <p style={{ fontSize: 30, fontWeight: 900, margin: 0, color: C.amber }}>
-                {creatureById(g.run.stops?.[Math.max(0, g.run.stop - (g.run.resolved ? 0 : 1))]?.creature || g.run.creature)?.name || creature?.name}
+                {tr(creatureById(g.run.stops?.[Math.max(0, g.run.stop - (g.run.resolved ? 0 : 1))]?.creature || g.run.creature)?.name || creature?.name)}
               </p>
-              <p style={{ ...s.cheer }}>{cheer('catch', (g.progress.creatures?.length || 0) + (g.run.stop || 0))}</p>
-              <p style={{ ...s.body, marginTop: 4 }}>תפסתם אותו! הוא באוסף שלכם.</p>
+              <p style={{ ...s.cheer }}>{tr(cheer('catch', (g.progress.creatures?.length || 0) + (g.run.stop || 0)))}</p>
+              <p style={{ ...s.body, marginTop: 4 }}>{tr('תפסתם אותו! הוא באוסף שלכם.')}</p>
               <Tally total={g.run.coinsTaken || 0} bonus={g.run.catchBonus || 0} />
               {g.run.stops && (
                 <p style={{ ...s.body, marginTop: 0, color: C.faint }}>
                   {g.run.resolved
-                    ? 'זה היה האחרון בדרך.'
-                    : `עוד ${g.run.stops.length - g.run.stop} מחכים בדרך.`}
+                    ? tr('זה היה האחרון בדרך.')
+                    : tr('עוד {n} מחכים בדרך.', { n: g.run.stops.length - g.run.stop })}
                 </p>
               )}
             </div>
             {g.run.resolved ? (
               <>
                 <button onClick={() => { sfxAppear(); dispatch({ type: 'CONTINUE' }) }} style={s.cta}>
-                  חוזרים הביתה. הוא איתכם — מטבעות כפול
+                  {tr('חוזרים הביתה. הוא איתכם — מטבעות כפול')}
                 </button>
                 {/* "שאחרי התפיסה הסיבוב ממשיך עד הבית": הפורטל נפתח רק ליד הבית. */}
                 {atHome(g.run) && (
                   <button onClick={() => { sfxAppear(); dispatch({ type: 'PORTAL_OPEN' }) }} style={{ ...s.cta, ...s.ctaGhost }}>
-                    🏠 הגענו. לפתוח את הפורטל
+                    {tr('🏠 הגענו. לפתוח את הפורטל')}
                   </button>
                 )}
               </>
             ) : (
               <button onClick={() => { sfxAppear(); dispatch({ type: 'CONTINUE' }) }} style={s.cta}>
-                להמשיך בדרך
+                {tr('להמשיך בדרך')}
               </button>
             )}
           </Panel>
         )}
 
         {g.state === S.PORTAL && (
-          <Panel eyebrow="הפורטל">
-            <h2 style={s.h2}>הביקון נפתח</h2>
+          <Panel eyebrow={tr('הפורטל')}>
+            <h2 style={s.h2}>{tr('הביקון נפתח')}</h2>
             <p style={s.body}>
-              הקשת מתמלאת אור. {creature?.name} נכנס פנימה — והפעם לא לבד.
+              {tr('הקשת מתמלאת אור. {name} נכנס פנימה — והפעם לא לבד.', { name: tr(creature?.name) })}
             </p>
             <button onClick={() => { sfxFinish(); dispatch({ type: 'PORTAL_ENTERED', t: Date.now() }) }} style={s.cta}>
-              לחזור הביתה
+              {tr('לחזור הביתה')}
             </button>
           </Panel>
         )}
@@ -428,37 +432,37 @@ export default function Wilden() {
         {g.state === S.CLUE && (() => {
           const h = homeFor(g.run, g.progress)
           return (
-            <Panel eyebrow="בעולם">
-              <p style={s.body}>{h.line}</p>
+            <Panel eyebrow={tr('בעולם')}>
+              <p style={s.body}>{tr(h.line)}</p>
               <div style={s.clue}>
-                <p style={s.clueLine}>{h.clue.line}</p>
-                <p style={s.clueSub}>{h.clue.sub}</p>
+                <p style={s.clueLine}>{tr(h.clue.line)}</p>
+                <p style={s.clueSub}>{tr(h.clue.sub)}</p>
               </div>
               <NewBadges ids={g.newBadges} />
-              <button onClick={() => dispatch({ type: 'CLUE_SEEN' })} style={s.cta}>הבנתי</button>
+              <button onClick={() => dispatch({ type: 'CLUE_SEEN' })} style={s.cta}>{tr('הבנתי')}</button>
             </Panel>
           )
         })()}
 
         {g.state === S.RUN_COMPLETE && (
-          <Panel eyebrow="המסע נגמר">
-            <h2 style={s.h2}>{g.progress.creatures.length ? 'הוא חי בעולם שלכם עכשיו.' : 'חזרתם.'}</h2>
+          <Panel eyebrow={tr('המסע נגמר')}>
+            <h2 style={s.h2}>{g.progress.creatures.length ? tr('הוא חי בעולם שלכם עכשיו.') : tr('חזרתם.')}</h2>
             <NewBadges ids={g.newBadges} />
             {g.made?.length > 0 && (
-              <p style={s.made}>🏠 {g.made.map(m => `${BUILDINGS.find(b => b.id === m.id)?.name || m.id} ${RES_ICONS[m.product] || ''} +1`).join(' · ')}</p>
+              <p style={s.made}>🏠 {g.made.map(m => `${tr(BUILDINGS.find(b => b.id === m.id)?.name || m.id)} ${RES_ICONS[m.product] || ''} +1`).join(' · ')}</p>
             )}
             <ParentCard walk={g.progress.lastWalk && { ...g.progress.lastWalk, buddy: g.progress.buddy, stageProgress: g.progress.buddy ? stageProgress(g.progress, g.progress.buddy) : null }} gift={g.weeklyGift} />
             <Stats g={g} />
-            <button onClick={() => dispatch({ type: 'RUN_CLOSED' })} style={s.cta}>לעולם</button>
+            <button onClick={() => dispatch({ type: 'RUN_CLOSED' })} style={s.cta}>{tr('לעולם')}</button>
           </Panel>
         )}
 
         {g.state === S.ABORTED && (
-          <Panel eyebrow="עצרנו">
-            <h2 style={s.h2}>הכול נשמר</h2>
-            <p style={s.body}>מה שאספתם נשאר. אפשר לצאת שוב מתי שבא לכם.</p>
+          <Panel eyebrow={tr('עצרנו')}>
+            <h2 style={s.h2}>{tr('הכול נשמר')}</h2>
+            <p style={s.body}>{tr('מה שאספתם נשאר. אפשר לצאת שוב מתי שבא לכם.')}</p>
             <ParentCard walk={g.progress.lastWalk} />
-            <button onClick={() => dispatch({ type: 'RUN_CLOSED' })} style={s.cta}>לעולם</button>
+            <button onClick={() => dispatch({ type: 'RUN_CLOSED' })} style={s.cta}>{tr('לעולם')}</button>
           </Panel>
         )}
       </Shell>
@@ -488,7 +492,7 @@ function Tally({ total, bonus }) {
   return (
     <div style={s.tally}>
       <span key={n} style={s.tallyN}>🪙 {n}</span>
-      {bonus > 0 && <span style={s.tallyBonus}>+{bonus} על התפיסה</span>}
+      {bonus > 0 && <span style={s.tallyBonus}>+{bonus} {tr('על התפיסה')}</span>}
     </div>
   )
 }
@@ -517,18 +521,18 @@ function RouteFailed({ route, detail, onRetry, onAbort }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [detail])
   return (
-    <Panel eyebrow={planner ? 'אין מסלול כאן' : 'הרחובות לא הגיעו'}>
-      <h2 style={s.h2}>{planner ? 'לא מצאנו מסלול ברחובות שכאן' : 'לא הצלחנו להביא את מפת הרחובות'}</h2>
+    <Panel eyebrow={planner ? tr('אין מסלול כאן') : tr('הרחובות לא הגיעו')}>
+      <h2 style={s.h2}>{planner ? tr('לא מצאנו מסלול ברחובות שכאן') : tr('לא הצלחנו להביא את מפת הרחובות')}</h2>
       <p style={s.body}>
         {planner
-          ? 'הרחובות הגיעו, אבל אין בהם דרך שיוצאת מהבית וחוזרת אליו, גם לא הלוך ושוב. אולי הבית רחוק מרחוב ממופה. נסו להתחיל מפינת רחוב קרובה.'
+          ? tr('הרחובות הגיעו, אבל אין בהם דרך שיוצאת מהבית וחוזרת אליו, גם לא הלוך ושוב. אולי הבית רחוק מרחוב ממופה. נסו להתחיל מפינת רחוב קרובה.')
           : blocked
-            ? 'שרת המפות חסם אותנו זמנית אחרי כמה ניסיונות ברצף. זה עובר תוך דקה.'
-            : 'שרת המפות לא ענה בזמן. זה קורה, בעיקר מרשת סלולרית.'}
-        {' '}המסלול הוא רק על רחובות אמיתיים, ולכן לא ממציאים אחד.
+            ? tr('שרת המפות חסם אותנו זמנית אחרי כמה ניסיונות ברצף. זה עובר תוך דקה.')
+            : tr('שרת המפות לא ענה בזמן. זה קורה, בעיקר מרשת סלולרית.')}
+        {' '}{tr('המסלול הוא רק על רחובות אמיתיים, ולכן לא ממציאים אחד.')}
       </p>
       {autoRef.current < MAX_AUTO && left > 0 && (
-        <p style={s.body}>מנסים שוב לבד בעוד <b>{left}</b> שניות.</p>
+        <p style={s.body}>{tr('מנסים שוב לבד בעוד')} <b>{left}</b> {tr('שניות.')}</p>
       )}
       {/* מי נכשל ולמה. זה מה שצריך לצלם ולשלוח לי. */}
       {(detail || route.reason) && (
@@ -536,8 +540,8 @@ function RouteFailed({ route, detail, onRetry, onAbort }) {
           {route.reason}{detail ? ' — ' + detail : ''}
         </p>
       )}
-      <button onClick={onRetry} style={s.cta}>לנסות שוב עכשיו</button>
-      <button onClick={onAbort} style={{ ...s.cta, ...s.ctaGhost }}>לא עכשיו</button>
+      <button onClick={onRetry} style={s.cta}>{tr('לנסות שוב עכשיו')}</button>
+      <button onClick={onAbort} style={{ ...s.cta, ...s.ctaGhost }}>{tr('לא עכשיו')}</button>
     </Panel>
   )
 }
@@ -550,7 +554,7 @@ function NewBadges({ ids }) {
   if (!ids?.length) return null
   return (
     <div style={s.newBadges}>
-      {ids.map(id => { const b = badgeById(id); return b ? <span key={id} style={s.newBadge}>{b.icon} {b.name}</span> : null })}
+      {ids.map(id => { const b = badgeById(id); return b ? <span key={id} style={s.newBadge}>{b.icon} {tr(b.name)}</span> : null })}
     </div>
   )
 }
@@ -560,17 +564,17 @@ function ParentCard({ walk, gift = null }) {
   if (!walk || (!walk.meters && !walk.minutes)) return null
   return (
     <div style={s.parent}>
-      <p style={s.parentEyebrow}>להורים</p>
+      <p style={s.parentEyebrow}>{tr('להורים')}</p>
       <p style={s.parentLine}>
-        היום הלכתם <b>{km(walk.meters)}</b>
-        {walk.minutes > 0 && <> · <b>{walk.minutes} דקות</b> בחוץ</>}
-        {walk.steps > 0 && <> · כ־<b>{walk.steps.toLocaleString('he-IL')}</b> צעדים</>}.
+        {tr('היום הלכתם')} <b>{km(walk.meters)}</b>
+        {walk.minutes > 0 && <> · <b>{walk.minutes} {tr('דקות')}</b> {tr('בחוץ')}</>}
+        {walk.steps > 0 && <> · {tr('כ־')}<b>{walk.steps.toLocaleString(getLang() === 'de' ? 'de-DE' : 'he-IL')}</b> {tr('צעדים')}</>}.
       </p>
       {walk.buddy && (() => { const b = creatureById(walk.buddy); const sp = walk.stageProgress; return b ? (
-        <p style={s.parentBuddy}>🐾 {km(walk.meters)} עם {b.name}{sp?.next ? ` · עוד ${sp.left === 1 ? 'תפיסה אחת' : `${sp.left} תפיסות`} או ${km(sp.left * BOND_M)} יחד — ${b.gender === 'f' ? 'והיא גדלה' : 'והוא גדל'}` : ''}</p>
+        <p style={s.parentBuddy}>🐾 {km(walk.meters)} {tr('עם')} {tr(b.name)}{sp?.next ? ` · ${tr('עוד')} ${sp.left === 1 ? tr('תפיסה אחת') : tr('{n} תפיסות', { n: sp.left })} ${tr('או')} ${km(sp.left * BOND_M)} ${tr('יחד')} — ${b.gender === 'f' ? tr('והיא גדלה') : tr('והוא גדל')}` : ''}</p>
       ) : null })()}
-      {gift === 'egg' && <p style={s.parentGift}>🥚 שלושה מסעות השבוע — ביצה על הביקון, מתנה.</p>}
-      {gift === 'coins' && <p style={s.parentGift}>🪙 שלושה מסעות השבוע — {WEEKLY_COINS} מטבעות בונוס.</p>}
+      {gift === 'egg' && <p style={s.parentGift}>{tr('🥚 שלושה מסעות השבוע — ביצה על הביקון, מתנה.')}</p>}
+      {gift === 'coins' && <p style={s.parentGift}>{tr('🪙 שלושה מסעות השבוע — {n} מטבעות בונוס.', { n: WEEKLY_COINS })}</p>}
     </div>
   )
 }
@@ -586,13 +590,14 @@ function atHome(run) {
 // מה בדרך, במילים של ילד
 function poisText(pois) {
   const n = pois.filter(k => k === 'creature').length
-  const parts = [n === 1 ? 'יצור אחד' : `${n} יצורים`]
-  if (pois.includes('run')) parts.push('ריצת מטבעות')
-  if (pois.includes('gold')) parts.push('קפיצה לזהב')
+  const parts = [n === 1 ? tr('יצור אחד') : tr('{n} יצורים', { n })]
+  if (pois.includes('run')) parts.push(tr('ריצת מטבעות'))
+  if (pois.includes('flowers')) parts.push(tr('ריצת פרחים'))
+  if (pois.includes('gold')) parts.push(tr('קפיצה לזהב'))
   return parts.join(' · ')
 }
 
-function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onKm, onLook, P, onIntro, music, firstWord }) {
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onKm, onLook, P, onIntro, music, firstWord, onLang }) {
   const [panel, setPanel] = useState(null)   // book | badges | shop
   const week = weeklyStatus(g.progress, today)
   const buddy = creatureById(g.progress.buddy)
@@ -612,14 +617,14 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
   return (
     <>
       <p style={s.eyebrow}>WILDEN</p>
-      {P && <ProfileBar P={P} onIntro={onIntro} music={music} />}
-      <h1 style={s.h1}>{first ? 'העולם שלך נשבר.' : 'העולם שלך חוזר לאט.'}</h1>
+      {P && <ProfileBar P={P} onIntro={onIntro} music={music} onLang={onLang} />}
+      <h1 style={s.h1}>{first ? tr('העולם שלך נשבר.') : tr('העולם שלך חוזר לאט.')}</h1>
       <p style={s.lede}>
         {first
-          ? 'הם לא נעלמו. הם נמצאים בצד שלנו.'
+          ? tr('הם לא נעלמו. הם נמצאים בצד שלנו.')
           : g.progress.creatures.length === 1
-            ? 'אחד כבר חי כאן. השאר עדיין בחוץ.'
-            : `${g.progress.creatures.length} כבר חיים כאן. עוד מחכים בחוץ.`}
+            ? tr('אחד כבר חי כאן. השאר עדיין בחוץ.')
+            : tr('{n} כבר חיים כאן. עוד מחכים בחוץ.', { n: g.progress.creatures.length })}
       </p>
 
       {/* העולם עצמו: התפאורה שלה, היצורים החיים, והשומר שמבקש. */}
@@ -627,9 +632,9 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
         <HomeWorld progress={g.progress} walks={walks} onQuest={onQuest} firstWord={firstWord} />
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
-        <button onClick={() => setPanel('book')} style={s.chip}>📖 ספר היצורים <b>{g.progress.creatures.length}/{AVAILABLE.length}</b></button>
-        <button onClick={() => setPanel('badges')} style={s.chip}>🏅 הישגים <b>{badgeCount(g.progress)}</b></button>
-        <button onClick={() => setPanel('shop')} style={s.chip}>🛍️ חנות <b>🪙 {g.progress.coins || 0}</b></button>
+        <button onClick={() => setPanel('book')} style={s.chip}>📖 {tr('ספר היצורים')} <b>{g.progress.creatures.length}/{AVAILABLE.length}</b></button>
+        <button onClick={() => setPanel('badges')} style={s.chip}>🏅 {tr('הישגים')} <b>{badgeCount(g.progress)}</b></button>
+        <button onClick={() => setPanel('shop')} style={s.chip}>🛍️ {tr('חנות')} <b>🪙 {g.progress.coins || 0}</b></button>
       </div>
       {panel === 'book' && <Book progress={g.progress} onClose={() => setPanel(null)} onLook={onLook} />}
       {panel === 'badges' && <Badges progress={g.progress} onClose={() => setPanel(null)} />}
@@ -637,91 +642,91 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
 
       {/* מה מחכה למסע הבא מהחנות */}
       {armed(g.progress).length > 0 && (
-        <p style={s.armed}>🎒 למסע הבא: {armed(g.progress).map(it => `${it.name}${it.n > 1 ? ` ×${it.n}` : ''}`).join(' · ')}</p>
+        <p style={s.armed}>🎒 {tr('למסע הבא:')} {armed(g.progress).map(it => `${tr(it.name)}${it.n > 1 ? ` ×${it.n}` : ''}`).join(' · ')}</p>
       )}
 
       {/* בן לוויה: מי יוצא איתך היום. על המפה לידך, וכל 2 ק"מ יחד = תפיסה להתפתחות שלו. */}
       {g.progress.creatures.length > 0 && (
-        <div style={s.buddyRow} aria-label="בן לוויה">
-          <p style={s.buddyTitle}>{buddy ? <>יוצא איתך: <b>{stagedName(buddy, stageOf(g.progress, buddy.id))}</b> · {km(bondOf(g.progress, buddy.id))} יחד</> : 'מי יוצא איתך היום?'}</p>
+        <div style={s.buddyRow} aria-label={tr('בן לוויה')}>
+          <p style={s.buddyTitle}>{buddy ? <>{tr('יוצא איתך:')} <b>{tr(stagedName(buddy, stageOf(g.progress, buddy.id)))}</b> · {km(bondOf(g.progress, buddy.id))} {tr('יחד')}</> : tr('מי יוצא איתך היום?')}</p>
           <div style={s.buddyPick}>
             {g.progress.creatures.map(id => {
               const c = creatureById(id); if (!c) return null
               const on = g.progress.buddy === id
               return (
-                <button key={id} onClick={() => onBuddy(on ? null : id)} aria-label={`בן לוויה: ${c.name}`}
+                <button key={id} onClick={() => onBuddy(on ? null : id)} aria-label={`${tr('בן לוויה')}: ${tr(c.name)}`}
                   style={{ ...s.buddyChip, borderColor: on ? C.amber : C.line, background: on ? 'rgba(229,163,66,.18)' : C.card }}>
                   <img src={c.live || c.sprites?.hero} alt="" style={s.buddyImg} draggable={false} />
                 </button>
               )
             })}
           </div>
-          {!buddy && <p style={s.buddyHint}>הוא ילך לידך על המפה, וכל 2 ק״מ יחד נספרים לו כתפיסה.</p>}
+          {!buddy && <p style={s.buddyHint}>{tr('הוא ילך לידך על המפה, וכל 2 ק״מ יחד נספרים לו כתפיסה.')}</p>}
         </div>
       )}
 
       {/* השבוע: שלושה מסעות בין ראשון לשבת — ביצה. לא רצף שנשבר: מונה שמתאפס ביום ראשון. */}
-      <div style={s.weekly} aria-label="השבוע">
+      <div style={s.weekly} aria-label={tr('השבוע')}>
         <span style={{ display: 'flex', gap: 5 }}>
           {Array.from({ length: week.need }, (_, i) => <span key={i} style={{ ...s.weekDot, background: i < week.have ? C.amber : 'transparent' }} />)}
         </span>
         <span>{week.done
-          ? 'הבונוס השבועי התקבל. בשבוע הבא — שוב.'
-          : `${week.have}/${week.need} מסעות השבוע · ב־${week.need} מקבלים ${week.gift === 'egg' ? 'ביצה 🥚' : `🪙 ${WEEKLY_COINS}`}`}</span>
+          ? tr('הבונוס השבועי התקבל. בשבוע הבא — שוב.')
+          : tr('{have}/{need} מסעות השבוע · ב־{need} מקבלים {gift}', { have: week.have, need: week.need, gift: week.gift === 'egg' ? tr('ביצה 🥚') : `🪙 ${WEEKLY_COINS}` })}</span>
       </div>
 
       {/* הלוח של הבן שלה: מסע 1 — 30 דקות ונימי. אחר כך 45 דקות ושניים
           בדרך. מהשלישי — מטבעות פותחים יצור שלישי. */}
       <div style={s.plan}>
-        <span>🚶 {routeLen} ק״מ · ~{plannedMin(routeLen)} דק׳</span>
+        <span>🚶 {routeLen} {tr('ק״מ')} · ~{plannedMin(routeLen)} {tr('דק׳')}</span>
         <span>🪙 <b>{g.progress.coins || 0}</b></span>
-        <span>{`${keyed.creatures.map(id => creatureById(id)?.name).filter(Boolean).join(' ו') || who?.name || 'יצורים'} בדרך`}</span>
+        <span>{tr('{names} בדרך', { names: keyed.creatures.map(id => tr(creatureById(id)?.name)).filter(Boolean).join(tr(' ו')) || tr(who?.name) || tr('יצורים') })}</span>
       </div>
-      {keyed.locked.map(id => <p key={id} style={s.locked}>🔒 {lockLine(id)}. בינתיים {creatureById(keyed.creatures[keyed.creatures.length - 1])?.name} במקומו.</p>)}
+      {keyed.locked.map(id => <p key={id} style={s.locked}>🔒 {tr(lockLine(id))}. {tr('בינתיים {name} במקומו.', { name: tr(creatureById(keyed.creatures[keyed.creatures.length - 1])?.name) })}</p>)}
 
       {/* להורה: אורך המסלול. במקום לנחש — 1 עד 4 ק"מ, וממנו הזמן ומה בדרך. */}
-      <div style={s.kmRow} aria-label="אורך המסלול">
-        <p style={s.kmTitle}>להורה · אורך המסלול</p>
+      <div style={s.kmRow} aria-label={tr('אורך המסלול')}>
+        <p style={s.kmTitle}>{tr('להורה · אורך המסלול')}</p>
         <div style={s.kmPick}>
           {ROUTE_KM.map(k => (
             <button key={k} onClick={() => onKm(k)} style={{ ...s.kmChip, borderColor: g.progress.routeKm === k ? C.amber : C.line, background: g.progress.routeKm === k ? 'rgba(229,163,66,.18)' : C.card, color: g.progress.routeKm === k ? C.amber : C.ink }}>
-              {k} ק״מ
+              {k} {tr('ק״מ')}
             </button>
           ))}
         </div>
-        <p style={s.kmHint}>{poisText(pois)}{g.progress.routeKm ? '' : ' · לא נבחר: לפי הלוח'}</p>
+        <p style={s.kmHint}>{poisText(pois)}{g.progress.routeKm ? '' : tr(' · לא נבחר: לפי הלוח')}</p>
       </div>
 
       {storyOpen ? (
         <>
           <div style={s.brief}>
-            <p style={s.briefLine}>{brief.line}</p>
-            <p style={s.briefSub}>{brief.sub}</p>
+            <p style={s.briefLine}>{tr(brief.line)}</p>
+            <p style={s.briefSub}>{tr(brief.sub)}</p>
           </div>
-          <button onClick={() => onStart(RUN.STORY)} style={s.cta}>{brief.cta}</button>
+          <button onClick={() => onStart(RUN.STORY)} style={s.cta}>{tr(brief.cta)}</button>
           {extraOk && (
             <button onClick={() => onStart(RUN.STORY, true)} style={{ ...s.cta, ...s.ctaGold }}>
-              🪙 {WALK_PLAN.extraCost} — לפתוח יצור שלישי בדרך
+              🪙 {WALK_PLAN.extraCost} — {tr('לפתוח יצור שלישי בדרך')}
             </button>
           )}
-          <button onClick={() => onStart(RUN.FREE)} style={{ ...s.cta, ...s.ctaGhost }}>צא לחקור</button>
+          <button onClick={() => onStart(RUN.FREE)} style={{ ...s.cta, ...s.ctaGhost }}>{tr('צא לחקור')}</button>
         </>
       ) : (
         <>
           <div style={s.brief}>
-            <p style={s.briefLine}>המסע הבא ייפתח מחר{who ? ` — ${who.name} בדרך` : ''}.</p>
-            <p style={s.briefSub}>אבל אפשר לצאת לחקור מתי שבא לכם{who ? `, וגם ${who.name} שם` : ''}.</p>
+            <p style={s.briefLine}>{tr('המסע הבא ייפתח מחר')}{who ? tr(' — {name} בדרך', { name: tr(who.name) }) : ''}.</p>
+            <p style={s.briefSub}>{tr('אבל אפשר לצאת לחקור מתי שבא לכם')}{who ? tr(', וגם {name} שם', { name: tr(who.name) }) : ''}.</p>
           </div>
-          <button onClick={() => onStart(RUN.FREE)} style={s.cta}>צא לחקור</button>
+          <button onClick={() => onStart(RUN.FREE)} style={s.cta}>{tr('צא לחקור')}</button>
           {extraOk && (
             <button onClick={() => onStart(RUN.FREE, true)} style={{ ...s.cta, ...s.ctaGold }}>
-              🪙 {WALK_PLAN.extraCost} — לפתוח יצור שלישי בדרך
+              🪙 {WALK_PLAN.extraCost} — {tr('לפתוח יצור שלישי בדרך')}
             </button>
           )}
         </>
       )}
       {walks >= WALK_PLAN.extraFromWalk && !extraOk && (
-        <p style={s.note}>יצור שלישי בדרך עולה {WALK_PLAN.extraCost} מטבעות. יש לכם {g.progress.coins || 0}.</p>
+        <p style={s.note}>{tr('יצור שלישי בדרך עולה {cost} מטבעות. יש לכם {have}.', { cost: WALK_PLAN.extraCost, have: g.progress.coins || 0 })}</p>
       )}
 
       {/* הביצה: קונים במטבעות, היא מתחממת בהליכה, בוקעת בפורטל. מי ובאיזה
@@ -730,20 +735,20 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
         <div style={s.eggCard}>
           <span style={s.eggIcon}>🥚</span>
           <div>
-            <p style={s.briefLine}>יש ביצה על הביקון.</p>
-            <p style={s.briefSub}>היא מתחממת בהליכה. אחרי מסע ארוך היא תבקע בפורטל.</p>
+            <p style={s.briefLine}>{tr('יש ביצה על הביקון.')}</p>
+            <p style={s.briefSub}>{tr('היא מתחממת בהליכה. אחרי מסע ארוך היא תבקע בפורטל.')}</p>
           </div>
         </div>
       ) : canBuyEgg(g.progress) ? (
         <button onClick={onEgg} style={{ ...s.cta, ...s.ctaGhost, display: 'flex', alignItems: 'center', gap: 12, textAlign: 'start' }}>
           <span style={s.eggIcon}>🥚</span>
-          <span>🪙 {EGG_PRICE} — ביצה<br /><span style={{ fontSize: 13.5, color: C.muted, fontWeight: 500 }}>מי בפנים? באיזה צבע? מגלים רק כשהיא בוקעת.</span></span>
+          <span>🪙 {EGG_PRICE} — {tr('ביצה')}<br /><span style={{ fontSize: 13.5, color: C.muted, fontWeight: 500 }}>{tr('מי בפנים? באיזה צבע? מגלים רק כשהיא בוקעת.')}</span></span>
         </button>
       ) : g.progress.creatures.length > 0 && (
-        <p style={s.note}>🥚 ביצה עולה {EGG_PRICE} מטבעות. יש לכם {g.progress.coins || 0}.</p>
+        <p style={s.note}>{tr('🥚 ביצה עולה {cost} מטבעות. יש לכם {have}.', { cost: EGG_PRICE, have: g.progress.coins || 0 })}</p>
       )}
 
-      {g.notice === 'no-location' && <p style={s.warn}>בלי אישור מיקום אי אפשר לצאת.</p>}
+      {g.notice === 'no-location' && <p style={s.warn}>{tr('בלי אישור מיקום אי אפשר לצאת.')}</p>}
       <Stats g={g} />
     </>
   )
@@ -774,7 +779,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
     prevRef.current = { coins: r.coinsTaken || 0, along: r.along || 0 }
     if (!m) return
     try { sfxCheer(); buzz([30, 30, 30]) } catch (e) { /* לא קריטי */ }
-    setToast(m.text)
+    setToast(tr(m.text))
     const id = setTimeout(() => setToast(null), 3200)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -808,7 +813,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
     saidRef.current = buddyKey
     const line = buddyLine(buddy.id, buddyKey)
     if (!line) return
-    setToast(`${buddy.name}: ${line}`)
+    setToast(`${tr(buddy.name)}: ${tr(line)}`)
     const id = setTimeout(() => setToast(null), 3600)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -830,9 +835,9 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
 
         {/* רצף ההליכה: מתמלא כשהולכים בלי לעצור; מלא = דחף לדקתיים. */}
         {!homeward && (
-          <div style={{ ...s.streak, ...(boost ? s.streakOn : {}) }} aria-label="רצף הליכה">
+          <div style={{ ...s.streak, ...(boost ? s.streakOn : {}) }} aria-label={tr('רצף הליכה')}>
             <div style={s.streakBar}><div style={{ ...s.streakFill, width: `${Math.round(fill * 100)}%`, background: boost ? '#FFD84A' : '#8FB57C' }} /></div>
-            <span style={s.streakWord}>{boost ? `⚡ דחף! ${Math.ceil(boostLeftMs(r.streak, now) / 1000)} שנ׳` : fill > 0.02 ? 'בלי לעצור…' : 'רצף'}</span>
+            <span style={s.streakWord}>{boost ? tr('⚡ דחף! {n} שנ׳', { n: Math.ceil(boostLeftMs(r.streak, now) / 1000) }) : fill > 0.02 ? tr('בלי לעצור…') : tr('רצף')}</span>
           </div>
         )}
 
@@ -843,7 +848,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
             <span style={s.burstPlus}>+{burst.gold ? 10 : burst.n}{homeward ? '×2' : ''}</span>
           </div>
         )}
-        {toast && <div style={s.toast}>{buddy && toast.startsWith(buddy.name + ':') && <img src={buddy.live} alt="" style={s.toastBuddy} />}{toast}</div>}
+        {toast && <div style={s.toast}>{buddy && toast.startsWith(tr(buddy.name) + ':') && <img src={buddy.live} alt="" style={s.toastBuddy} />}{toast}</div>}
 
         {/* ההוראה, מעל המפה */}
         <div style={s.navOverlay}>
@@ -851,18 +856,18 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
             {/* חץ גדול: ילד רואה חץ לפני שהוא קורא מילה */}
             <span style={s.navGlyph} aria-hidden="true">{cueGlyph(cue)}</span>
             <p style={s.navLine}>
-              {homeward ? (cue ? cueText(cue, 'הבית') : 'חוזרים הביתה. הוא איתכם.')
-                : cue ? cueText(cue, reveal ? 'הסימן' : 'הפנייה הבאה')
-                : 'יוצאים לדרך.'}
+              {homeward ? (cue ? cueText(cue, tr('הבית')) : tr('חוזרים הביתה. הוא איתכם.'))
+                : cue ? cueText(cue, reveal ? tr('הסימן') : tr('הפנייה הבאה'))
+                : tr('יוצאים לדרך.')}
             </p>
           </div>
           <p style={s.navSub}>
             {left != null && <><span style={{ color: left < 5 * 60000 ? C.amber : C.ink }}>⏱ <b>{fmtClock(left)}</b></span> · </>}
-            הביתה: <b>{fmtM(Math.max(0, total - along))}</b>
-            {r.stops && !homeward && <> · יצורים בדרך: <b>{stopsLeft}</b></>}
-            {homeward && <> · מטבעות כפול</>}
-            {r.used?.length > 0 && <> · 🎒 {r.used.map(id => gearById(id)?.name).filter(Boolean).join(', ')}</>}
-            {g.progress.egg && <> · 🥚 <b>{warmthWord(eggWarmth(r.walked))}</b></>}
+            {tr('הביתה:')} <b>{fmtM(Math.max(0, total - along))}</b>
+            {r.stops && !homeward && <> · {tr('יצורים בדרך:')} <b>{stopsLeft}</b></>}
+            {homeward && <> · {tr('מטבעות כפול')}</>}
+            {r.used?.length > 0 && <> · 🎒 {r.used.map(id => tr(gearById(id)?.name)).filter(Boolean).join(', ')}</>}
+            {g.progress.egg && <> · 🥚 <b>{tr(warmthWord(eggWarmth(r.walked)))}</b></>}
           </p>
         </div>
 
@@ -871,7 +876,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
           <div style={s.heat}>
             <div style={s.heatBar}><div style={{ ...s.heatFill, width: `${Math.round(heat.t * 100)}%`,
               background: heat.t >= 0.85 ? '#E0523A' : heat.t >= 0.65 ? '#E5A342' : heat.t >= 0.45 ? '#D9C25A' : '#6C9BD1' }} /></div>
-            <span style={{ ...s.heatWord, color: heat.t >= 0.85 ? '#F0A08C' : heat.t >= 0.65 ? '#F0C069' : C.ink }}>{heat.word}</span>
+            <span style={{ ...s.heatWord, color: heat.t >= 0.85 ? '#F0A08C' : heat.t >= 0.65 ? '#F0C069' : C.ink }}>{tr(heat.word)}</span>
           </div>
         )}
 
@@ -879,37 +884,37 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
         {near && (
           <div style={s.beaconOverlay}>
             <Beacon power={view.power} phase={view.phase} arrow={view.arrow} bearing={view.bearing ?? 0} size={84} />
-            <p style={s.beaconOverlayLine}>{view.line}</p>
+            <p style={s.beaconOverlayLine}>{tr(view.line)}</p>
           </div>
         )}
 
         {view.canSearch && !homeward && (
-          <button onClick={onSearch} style={s.searchOverlay}>👁 משהו כאן. לחפש</button>
+          <button onClick={onSearch} style={s.searchOverlay}>{tr('👁 משהו כאן. לחפש')}</button>
         )}
         {/* הדרך הביתה היא חלק מהמסע: הפורטל נפתח רק כשמגיעים. עד אז — כמה נשאר. */}
         {homeward && (atHome(r)
-          ? <button onClick={onPortal} style={s.searchOverlay}>🏠 הגענו. לפתוח את הפורטל</button>
-          : <p style={s.stopOverlay}>🏠 עוד {fmtM(Math.max(0, total - along))} הביתה. הוא איתכם.</p>)}
+          ? <button onClick={onPortal} style={s.searchOverlay}>{tr('🏠 הגענו. לפתוח את הפורטל')}</button>
+          : <p style={s.stopOverlay}>{tr('🏠 עוד {d} הביתה. הוא איתכם.', { d: fmtM(Math.max(0, total - along)) })}</p>)}
         {!view.canSearch && view.phase === PHASE.VERY_CLOSE && (
-          <p style={s.stopOverlay}>הסימן כאן. עצרו במקום בטוח.</p>
+          <p style={s.stopOverlay}>{tr('הסימן כאן. עצרו במקום בטוח.')}</p>
         )}
       </div>
 
       <GpsPanel geo={geo} run={g.run} />
       {/* מסלול שהוא לא הלולאה שתוכננה: הלוך ושוב, או קצר יותר. אומרים. */}
-      {note && !degraded && <p style={s.note}>{note}</p>}
+      {note && !degraded && <p style={s.note}>{tr(note)}</p>}
       {degraded && (
         <p style={s.note}>
           {reason === 'no-loop' || reason === 'short-loop'
-            ? 'לא מצאנו כאן לולאה שחוזרת הביתה. המסלול כללי — עברו עליו לפני שיוצאים.'
+            ? tr('לא מצאנו כאן לולאה שחוזרת הביתה. המסלול כללי — עברו עליו לפני שיוצאים.')
             : reason === 'empty' || reason === 'no-node'
-              ? 'לא מצאנו רחובות ממופים סביב הבית. המסלול כללי — עברו עליו לפני שיוצאים.'
-              : 'לא הצלחנו להתחבר למפה כרגע. המסלול כללי — עברו עליו לפני שיוצאים.'}
+              ? tr('לא מצאנו רחובות ממופים סביב הבית. המסלול כללי — עברו עליו לפני שיוצאים.')
+              : tr('לא הצלחנו להתחבר למפה כרגע. המסלול כללי — עברו עליו לפני שיוצאים.')}
           {reason && <span style={{ opacity: .55 }}> ({reason})</span>}
         </p>
       )}
 
-      <button onClick={onAbort} style={{ ...s.cta, ...s.ctaGhost, marginTop: 26 }}>לעצור</button>
+      <button onClick={onAbort} style={{ ...s.cta, ...s.ctaGhost, marginTop: 26 }}>{tr('לעצור')}</button>
     </>
   )
 }
@@ -931,31 +936,31 @@ function GpsPanel({ geo, run }) {
 
   let issue = null
   if (geo.err === 'denied') {
-    issue = { t: 'המיקום חסום', how: 'הגדרות ← Safari ← מיקום ← אפשר' }
+    issue = { t: tr('המיקום חסום'), how: tr('הגדרות ← Safari ← מיקום ← אפשר') }
   } else if (!geo.fixes) {
-    issue = { t: 'עוד לא הגיעה קריאת מיקום אחת', how: 'צאו החוצה ותנו לזה כמה שניות' }
+    issue = { t: tr('עוד לא הגיעה קריאת מיקום אחת'), how: tr('צאו החוצה ותנו לזה כמה שניות') }
   } else if (since != null && since > 30) {
-    issue = { t: `המיקום לא התעדכן ${since} שניות`, how: 'ייתכן שמצב חיסכון בסוללה פועל — כבו אותו' }
+    issue = { t: tr('המיקום לא התעדכן {n} שניות', { n: since }), how: tr('ייתכן שמצב חיסכון בסוללה פועל — כבו אותו') }
   } else if (acc != null && acc > ACC_COARSE) {
     issue = {
-      t: `הטלפון נותן מיקום מקורב בלבד (${Math.round(acc)} מ׳)`,
-      how: 'הגדרות ← פרטיות ואבטחה ← שירותי מיקום ← אתרי Safari ← הפעילו «מיקום מדויק»',
+      t: tr('הטלפון נותן מיקום מקורב בלבד ({n} מ׳)', { n: Math.round(acc) }),
+      how: tr('הגדרות ← פרטיות ואבטחה ← שירותי מיקום ← אתרי Safari ← הפעילו «מיקום מדויק»'),
     }
   } else if (acc != null && acc > ACC_DIRECTION) {
-    issue = { t: `קליטה חלשה (${Math.round(acc)} מ׳)`, how: 'צאו מתחת לבניין או לחניון — זה משתפר תוך כדי הליכה' }
+    issue = { t: tr('קליטה חלשה ({n} מ׳)', { n: Math.round(acc) }), how: tr('צאו מתחת לבניין או לחניון — זה משתפר תוך כדי הליכה') }
   } else if (walked === 0 && geo.fixes > 20) {
-    issue = { t: 'הטלפון מעדכן מיקום אבל לא רואה תנועה', how: 'זה תקין אם עומדים. אם אתם הולכים — תגידו לי.' }
+    issue = { t: tr('הטלפון מעדכן מיקום אבל לא רואה תנועה'), how: tr('זה תקין אם עומדים. אם אתם הולכים — תגידו לי.') }
   }
 
   return (
     <div style={s.gps}>
       <div style={s.gpsRow}>
-        <span>דיוק <b style={{ color: acc == null ? C.faint : acc <= ACC_GATE ? C.green : acc <= ACC_DIRECTION ? C.amber : C.red }}>
-          {acc == null ? '—' : Math.round(acc) + ' מ׳'}</b></span>
-        <span>נצבר <b style={{ color: walked >= WALK_GATE ? C.green : C.faint }}>{walked} מ׳</b></span>
-        <span>קריאות <b style={{ color: geo.fixes ? C.green : C.red }}>{geo.fixes}</b></span>
-        {since != null && <span>לפני <b>{since}ש׳</b></span>}
-        <span style={{ color: C.faint }}>גרסה <b style={{ color: C.faint }}>{process.env.NEXT_PUBLIC_BUILD}</b></span>
+        <span>{tr('דיוק')} <b style={{ color: acc == null ? C.faint : acc <= ACC_GATE ? C.green : acc <= ACC_DIRECTION ? C.amber : C.red }}>
+          {acc == null ? '—' : Math.round(acc) + ' ' + tr('מ׳')}</b></span>
+        <span>{tr('נצבר')} <b style={{ color: walked >= WALK_GATE ? C.green : C.faint }}>{walked} {tr('מ׳')}</b></span>
+        <span>{tr('קריאות')} <b style={{ color: geo.fixes ? C.green : C.red }}>{geo.fixes}</b></span>
+        {since != null && <span>{tr('לפני')} <b>{since}{tr('ש׳')}</b></span>}
+        <span style={{ color: C.faint }}>{tr('גרסה')} <b style={{ color: C.faint }}>{process.env.NEXT_PUBLIC_BUILD}</b></span>
       </div>
       {issue && (
         <div style={s.gpsIssue}>
@@ -973,16 +978,16 @@ function Stats({ g }) {
   if (!g.progress.missionsCompleted && !kinds.length && !g.progress.creatures.length) return null
   return (
     <div style={s.stats}>
-      <div><b style={s.statN}>{g.progress.creatures.length}</b><span style={s.statL}>יצורים</span></div>
-      <div><b style={s.statN}>{g.progress.missionsCompleted}</b><span style={s.statL}>מסעות</span></div>
-      {(g.progress.minutesTotal || 0) > 0 && <div><b style={s.statN}>{g.progress.minutesTotal}</b><span style={s.statL}>דקות בחוץ</span></div>}
+      <div><b style={s.statN}>{g.progress.creatures.length}</b><span style={s.statL}>{tr('יצורים')}</span></div>
+      <div><b style={s.statN}>{g.progress.missionsCompleted}</b><span style={s.statL}>{tr('מסעות')}</span></div>
+      {(g.progress.minutesTotal || 0) > 0 && <div><b style={s.statN}>{g.progress.minutesTotal}</b><span style={s.statL}>{tr('דקות בחוץ')}</span></div>}
       {kinds.map(([k, v]) => (
-        <div key={k}><b style={s.statN}>{v}</b><span style={s.statL}>{RES_NAME[k] || k}</span></div>
+        <div key={k}><b style={s.statN}>{v}</b><span style={s.statL}>{tr(RES_NAME[k] || k)}</span></div>
       ))}
       {(g.progress.variants || []).length > 0 && (
         <div style={{ flexBasis: '100%', display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 4 }}>
           {g.progress.variants.map((v, i) => (
-            <span key={i} style={s.variantChip}>✨ {creatureById(v.creature)?.name} {variantName(v.variant, creatureById(v.creature))}</span>
+            <span key={i} style={s.variantChip}>✨ {tr(creatureById(v.creature)?.name)} {tr(variantName(v.variant, creatureById(v.creature)))}</span>
           ))}
         </div>
       )}
@@ -1007,7 +1012,7 @@ function Shell({ children }) {
 }
 
 function fmtM(m) {
-  return m >= 1000 ? `${(m / 1000).toFixed(1)} ק״מ` : `${Math.round(m / 10) * 10} מ׳`
+  return m >= 1000 ? `${(m / 1000).toFixed(1)} ${tr('ק״מ')}` : `${Math.round(m / 10) * 10} ${tr('מ׳')}`
 }
 
 const s = {

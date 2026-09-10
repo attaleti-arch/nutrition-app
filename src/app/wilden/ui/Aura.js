@@ -1,4 +1,5 @@
 'use client'
+import { tr } from '../i18n'
 
 // ─── הילה ───
 // שני שימושים: יצור שגדל בלי דמות לשלב (טורקיז לבוגר, זהב לאגדי), וצבע
@@ -35,6 +36,6 @@ export function StageTag({ stage, style }) {
   const gold = stage >= 3
   return (
     <span style={{ padding: '2px 8px', borderRadius: 999, fontSize: 11.5, fontWeight: 900,
-      background: gold ? '#F0C069' : '#6EE6C8', color: '#14200F', ...style }}>{gold ? '✦ אגדי' : '▲ בוגר'}</span>
+      background: gold ? '#F0C069' : '#6EE6C8', color: '#14200F', ...style }}>{gold ? '✦ ' + tr('אגדי') : '▲ ' + tr('בוגר')}</span>
   )
 }

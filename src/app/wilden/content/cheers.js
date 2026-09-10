@@ -3,6 +3,8 @@
 // דטרמיניסטית לפי מונה כדי שבדיקה תדע מה תצא, ולא יחזור אותו משפט
 // פעמיים ברצף.
 
+import { tr } from '../i18n/index.js'
+
 export const CHEERS = {
   catch: ['כל הכבוד!', 'וואו, תפסתם אותו!', 'איזה ציידים!', 'מדהים! הוא שלכם.', 'יש! עוד אחד בעולם.'],
   coins: ['ממשיכים ככה!', 'הארנק מתמלא!', 'גלינג! עוד אחד.', 'איזה קצב!'],
@@ -22,6 +24,6 @@ export const COIN_MILESTONE = 10
 export function milestone({ coinsBefore = 0, coinsNow = 0, alongBefore = 0, alongNow = 0, total = 0 } = {}) {
   if (total > 0 && alongBefore < total / 2 && alongNow >= total / 2) return { kind: 'half', text: cheer('half', Math.floor(alongNow)) }
   const a = Math.floor(coinsBefore / COIN_MILESTONE), b = Math.floor(coinsNow / COIN_MILESTONE)
-  if (b > a && coinsNow > 0) return { kind: 'coins', text: `${b * COIN_MILESTONE} מטבעות! ${cheer('coins', b)}` }
+  if (b > a && coinsNow > 0) return { kind: 'coins', text: tr('{n} מטבעות! {c}', { n: b * COIN_MILESTONE, c: tr(cheer('coins', b)) }) }
   return null
 }

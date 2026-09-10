@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { tr } from '../i18n'
 import { bearing as bearingOf, haversine } from '../engine/geo'
 import { routeArrows, splitAt, routeDirAt } from '../engine/mapLines'
 import { angleDelta } from '../hooks/useOrient'
@@ -218,7 +219,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
     lay.current.coinRun?.remove(); lay.current.coinRun = null
     if (!coinRun || coinRun.done) return
     lay.current.coinRun = L.marker([coinRun.lat, coinRun.lng], { interactive: false, zIndexOffset: 600, icon: L.divIcon({ className: '', iconSize: [54, 40], iconAnchor: [27, 20],
-      html: upright(`<div style="width:54px;height:40px;display:grid;place-items:center;border-radius:12px;background:rgba(255,216,74,.22);border:2px solid #E5A342;box-shadow:0 2px 6px rgba(0,0,0,.35);animation:wildenPin 1.6s ease-in-out infinite"><div style="display:flex;gap:-4px;align-items:flex-end">${coinSvg(14, false, 1)}${coinSvg(18, true, 2)}${coinSvg(14, false, 3)}</div><span style="position:absolute;bottom:-9px;font-size:9px;font-weight:900;background:#E5A342;color:#14200F;border-radius:999px;padding:0 5px">20 שנ׳</span></div>`) }) }).addTo(m)
+      html: upright(`<div style="width:54px;height:40px;display:grid;place-items:center;border-radius:12px;background:rgba(255,216,74,.22);border:2px solid #E5A342;box-shadow:0 2px 6px rgba(0,0,0,.35);animation:wildenPin 1.6s ease-in-out infinite"><div style="display:flex;gap:-4px;align-items:flex-end">${coinSvg(14, false, 1)}${coinSvg(18, true, 2)}${coinSvg(14, false, 3)}</div><span style="position:absolute;bottom:-9px;font-size:9px;font-weight:900;background:#E5A342;color:#14200F;border-radius:999px;padding:0 5px">${tr('20 שנ׳')}</span></div>`) }) }).addTo(m)
   }, [ready, coinRun?.lat, coinRun?.lng, coinRun?.done])
 
   // ── ריצת הפרחים: סימן ורוד, אותו "20 שנ׳" ──
@@ -229,7 +230,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
     lay.current.flowerRun?.remove(); lay.current.flowerRun = null
     if (!flowerRun || flowerRun.done) return
     lay.current.flowerRun = L.marker([flowerRun.lat, flowerRun.lng], { interactive: false, zIndexOffset: 600, icon: L.divIcon({ className: '', iconSize: [54, 40], iconAnchor: [27, 20],
-      html: upright(`<div style="width:54px;height:40px;display:grid;place-items:center;border-radius:12px;background:rgba(255,182,213,.28);border:2px solid #E68AB8;box-shadow:0 2px 6px rgba(0,0,0,.35);animation:wildenPin 1.6s ease-in-out infinite"><img src="/world/flower.png" alt="" style="height:30px;width:auto;display:block"/><span style="position:absolute;bottom:-9px;font-size:9px;font-weight:900;background:#E68AB8;color:#14200F;border-radius:999px;padding:0 5px">20 שנ׳</span></div>`) }) }).addTo(m)
+      html: upright(`<div style="width:54px;height:40px;display:grid;place-items:center;border-radius:12px;background:rgba(255,182,213,.28);border:2px solid #E68AB8;box-shadow:0 2px 6px rgba(0,0,0,.35);animation:wildenPin 1.6s ease-in-out infinite"><img src="/world/flower.png" alt="" style="height:30px;width:auto;display:block"/><span style="position:absolute;bottom:-9px;font-size:9px;font-weight:900;background:#E68AB8;color:#14200F;border-radius:999px;padding:0 5px">${tr('20 שנ׳')}</span></div>`) }) }).addTo(m)
   }, [ready, flowerRun?.lat, flowerRun?.lng, flowerRun?.done])
 
   // ── המטבעות ──
@@ -324,13 +325,13 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
       <style>{CSS}</style>
       {/* המפה גדולה מהחלון ב-50% לכל כיוון, כדי שכשהיא מסתובבת לא רואים פינות ריקות */}
       <div ref={el} style={{ position: 'absolute', inset: '-25%', transform: 'rotate(var(--rot))', transition: 'transform .4s ease-out', willChange: 'transform' }} />
-      {!ready && <p style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', margin: 0, color: '#4B554B', fontSize: 14 }}>טוענים מפה…</p>}
+      {!ready && <p style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', margin: 0, color: '#4B554B', fontSize: 14 }}>{tr('טוענים מפה…')}</p>}
       <div style={{ position: 'absolute', bottom: 10, insetInlineStart: 10, zIndex: 500, display: 'flex', gap: 8 }}>
-        {!following && <button onClick={recenter} style={btn}>לאיפה שאני</button>}
-        <button onClick={showAll} style={{ ...btn, background: 'rgba(15,21,15,.8)', color: '#E9E5D8' }}>כל המסלול</button>
+        {!following && <button onClick={recenter} style={btn}>{tr('לאיפה שאני')}</button>}
+        <button onClick={showAll} style={{ ...btn, background: 'rgba(15,21,15,.8)', color: '#E9E5D8' }}>{tr('כל המסלול')}</button>
       </div>
       {/* מצפן: לחיצה מחליפה בין "קדימה למעלה" ל"צפון למעלה". המחט תמיד מצביעה צפונה. */}
-      <button onClick={() => setHeadingUp(v => !v)} style={compassBtn} aria-label={headingUp ? 'צפון למעלה' : 'הכיוון שלי למעלה'} title={headingUp ? 'צפון למעלה' : 'הכיוון שלי למעלה'}>
+      <button onClick={() => setHeadingUp(v => !v)} style={compassBtn} aria-label={headingUp ? tr('צפון למעלה') : tr('הכיוון שלי למעלה')} title={headingUp ? tr('צפון למעלה') : tr('הכיוון שלי למעלה')}>
         <svg width="30" height="30" viewBox="0 0 30 30" style={{ display: 'block', transform: 'rotate(var(--rot))', transition: 'transform .4s ease-out' }}>
           <circle cx="15" cy="15" r="13" fill="#fff" stroke="#2B382B" strokeWidth="1.5" />
           <path d="M15 4 L19 15 L15 13 L11 15 Z" fill="#E0523A" />
@@ -339,8 +340,8 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
       </button>
       {/* מקרא קטן: כחול = לאן, אפור = מאיפה. פעם אחת ולתמיד, בלי מילים רבות. */}
       <div style={legend} aria-hidden="true">
-        <span style={{ ...swatch, background: BLUE }} /> הדרך
-        <span style={{ ...swatch, background: WALKED, marginInlineStart: 8 }} /> הלכנו
+        <span style={{ ...swatch, background: BLUE }} /> {tr('הדרך')}
+        <span style={{ ...swatch, background: WALKED, marginInlineStart: 8 }} /> {tr('הלכנו')}
       </div>
       <span style={attrib}>© OpenStreetMap contributors</span>
     </div>

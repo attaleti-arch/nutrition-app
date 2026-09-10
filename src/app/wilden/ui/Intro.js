@@ -4,6 +4,7 @@ import { SPOTS, GUARDIAN } from './HomeWorld'
 import { BUILDINGS } from '../engine/world'
 import { sfxCrack, sfxAppear, sfxThud, sfxSleep, sfxRumble, sfxSnore, buzz } from '../engine/audio'
 import { startMusic, stopMusic, primeMusic } from '../engine/music'
+import { tr } from '../i18n'
 
 // ─── הפתיחה: סיפור, לא הסבר ───
 // התסריט שלה, כמעט מילה במילה:
@@ -177,22 +178,22 @@ export function Intro({ onDone }) {
         {phase === 'start' ? (
           <>
             <p style={I.eyebrow}>WILDEN</p>
-            <button onClick={begin} style={I.cta}>להתחיל</button>
+            <button onClick={begin} style={I.cta}>{tr('להתחיל')}</button>
           </>
         ) : (
           <>
-            <p key={line} style={I.line}>{line}</p>
+            <p key={line} style={I.line}>{tr(line)}</p>
             {phase === 'needs' && (
               <div style={I.needs}>
-                {NEEDS.slice(0, needN).map(n => <span key={n.word} style={{ ...I.need, borderColor: n.color }}>{n.icon} {n.word}</span>)}
+                {NEEDS.slice(0, needN).map(n => <span key={n.word} style={{ ...I.need, borderColor: n.color }}>{n.icon} {tr(n.word)}</span>)}
               </div>
             )}
-            {phase === 'eyes' && <button onClick={finish} style={I.cta}>יוצאים לחפש</button>}
+            {phase === 'eyes' && <button onClick={finish} style={I.cta}>{tr('יוצאים לחפש')}</button>}
           </>
         )}
       </div>
       {phase !== 'start' && phase !== 'eyes' && (
-        <button onClick={finish} style={I.skip} aria-label="לדלג">לדלג</button>
+        <button onClick={finish} style={I.skip} aria-label="לדלג">{tr('לדלג')}</button>
       )}
     </div>
   )

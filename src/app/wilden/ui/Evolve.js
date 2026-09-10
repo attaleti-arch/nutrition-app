@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { tr, dirOf } from '../i18n'
 import { creatureById } from '../content/creatures'
 import { staged, stagedName, grewVerb, stageInfo, lookOf } from '../engine/stages'
 import { sfxCheer, sfxFinish, buzz } from '../engine/audio'
@@ -30,7 +31,7 @@ export function Evolve({ evolved, wearAll = {}, progress = null, onClose }) {
   const next = () => (i + 1 < evolved.length ? setI(i + 1) : onClose?.())
   const gold = ev.to >= 3
   return (
-    <div style={E.wrap} dir="rtl">
+    <div style={E.wrap} dir={dirOf()}>
       <div style={{ ...E.glow, opacity: phase === 'before' ? 0.35 : 1, background: gold ? E.goldBg : E.tealBg }} />
       <div style={{ ...E.flash, opacity: phase === 'flash' ? 1 : 0 }} />
       <div style={{ ...E.stage, transform: `scale(${phase === 'after' ? 1 : 0.72})`, filter: phase === 'flash' ? 'brightness(3)' : 'none' }}>
@@ -41,10 +42,10 @@ export function Evolve({ evolved, wearAll = {}, progress = null, onClose }) {
         </div>
       </div>
       <div style={E.text}>
-        <p style={E.eyebrow}>{phase === 'after' ? (gold ? 'אגדי!' : `${base.name} ${grewVerb(base)}!`) : 'משהו קורה…'}</p>
+        <p style={E.eyebrow}>{phase === 'after' ? (gold ? tr('אגדי!') : `${tr(base.name)} ${grewVerb(base)}!`) : tr('משהו קורה…')}</p>
         {phase === 'after' && <p style={E.name}>{stagedName(base, ev.to)}</p>}
-        {phase === 'after' && <p style={E.sub}>{gold ? 'השלב האחרון. כמעט אף אחד לא הגיע לכאן.' : `שלב ${ev.to} מ־3. ${stageInfo(3).need} תפיסות — והוא אגדי.`}</p>}
-        {phase === 'after' && <button onClick={next} style={E.cta}>{i + 1 < evolved.length ? 'הבא' : 'לעולם'}</button>}
+        {phase === 'after' && <p style={E.sub}>{gold ? tr('השלב האחרון. כמעט אף אחד לא הגיע לכאן.') : tr('שלב {n} מ־3. {need} תפיסות — והוא אגדי.', { n: ev.to, need: stageInfo(3).need })}</p>}
+        {phase === 'after' && <button onClick={next} style={E.cta}>{i + 1 < evolved.length ? tr('הבא') : tr('לעולם')}</button>}
       </div>
     </div>
   )

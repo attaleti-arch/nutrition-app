@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { tr } from '../i18n'
 
 // ─── הקליפ אחרי התפיסה ───
 // "נראה לי שאחרי כל תפיסה נעשה סרטון Runway לדמות." הרגע שבו היצור חי:
@@ -39,20 +40,20 @@ export function CaughtClip({ creature, onDone, variant = 'caught' }) {
 
   if (!creature?.clip) return null
   return (
-    <div style={S.wrap} dir="rtl" onClick={finish} role="button" aria-label="לדלג">
+    <div style={S.wrap} onClick={finish} role="button" aria-label={tr('לדלג')}>
       {/* צבע מהביצה בלי קליפ משלו: הגוון על הסרטון — אלמנט אחד, מסך מלא, זול */}
       <video ref={ref} src={creature.clip} playsInline muted autoPlay preload="auto"
         onPlaying={() => setReady(true)} onEnded={finish} onError={finish}
         style={{ ...S.video, opacity: ready ? 1 : 0, filter: creature.tint || 'none' }} />
       <div style={S.vignette} />
       <div style={S.text}>
-        <p style={S.name}>{creature.name}</p>
-        <p style={S.sub}>{reveal ? 'הוא כאן. הביטו סביב.' : creature.brings ? `הוא מביא ${creature.brings} לעולם.` : 'הוא באוסף שלכם.'}</p>
+        <p style={S.name}>{tr(creature.name)}</p>
+        <p style={S.sub}>{reveal ? tr('הוא כאן. הביטו סביב.') : creature.brings ? tr('הוא מביא {res} לעולם.', { res: tr(creature.brings) }) : tr('הוא באוסף שלכם.')}</p>
       </div>
       {/* הפלאש: לבן-ענבר שנעלם בכניסה, וחוזר ביציאה לפני המצלמה */}
       {reveal && <div key={closing ? 'out' : 'in'} style={{ ...S.flash, animation: closing ? 'wildenFlashOut .42s ease-in forwards' : 'wildenFlashIn .6s ease-out forwards' }} />}
       <style>{CSS}</style>
-      <button onClick={finish} style={S.skip}>לדלג</button>
+      <button onClick={finish} style={S.skip}>{tr('לדלג')}</button>
     </div>
   )
 }
