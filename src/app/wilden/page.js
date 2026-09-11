@@ -818,7 +818,15 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
   const along = r.along || 0
   const homeward = !!r.resolved
   const distToTarget = r.target && r.pos ? haversine(r.pos, r.target) : null
-  const cue = r.target ? floorCue(nextCue(turns, along, r.target.along), homeward ? null : distToTarget) : null
+  // ── הדרך הביתה היא עדיין מסלול ──
+  // "אני רוצה שאחרי התפיסה המסלול ימשיך." אחרי התפיסה האחרונה היעד נשאר
+  // התחנה שכבר עברנו — כלומר מאחורינו — ואז ההוראה קפאה על "הבית כאן"
+  // וכל הפניות נעלמו, בדיוק כשצריך אותן. עכשיו היעד הוא סוף המסלול:
+  // אותם חצים, אותם שמות רחובות, עד הדלת.
+  const distHome = r.home && r.pos ? haversine(r.pos, r.home) : null
+  const cue = homeward
+    ? floorCue(nextCue(turns, along, total), distHome)
+    : r.target ? floorCue(nextCue(turns, along, r.target.along), distToTarget) : null
   const toTarget = r.target ? Math.max(0, r.target.along - along) : null
   const stopsLeft = r.stops ? r.stops.filter(x => !x.done).length : 1
   // ── חם־קר ──

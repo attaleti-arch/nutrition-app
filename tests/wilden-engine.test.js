@@ -1449,6 +1449,25 @@ test('הוראות: שם הרחוב נוסע עם הפנייה, וחץ גדול 
   assert.equal(cueText({ kind: 'turn', dir: 'left', dist: 100 }), 'עוד 100 מ׳ פנו שמאלה.')
 })
 
+test('הוראות: בדרך הביתה היעד הוא סוף המסלול, והפניות ממשיכות', () => {
+  // מסלול: צפונה 200, ימינה 200. התחנה הייתה ב-100 — כבר עברנו אותה.
+  const a = HOME, b = destination(HOME, 0, 200), c = destination(b, 90, 200)
+  const path = [{ ...a, street: 'הרצל' }, { ...b, street: 'הרצל' }, { ...c, street: 'ביאליק' }]
+  const turns = turnsFor2(path)
+  // כך זה היה אחרי התפיסה: היעד מאחור → "הגעת", בלי פנייה אחת.
+  const stale = nextCue(turns, 150, 100)
+  assert.equal(stale.kind, 'target')
+  assert.equal(stale.dist, 0)
+  // וכך זה עכשיו: היעד הוא סוף המסלול, והפנייה הבאה חוזרת.
+  const cue = nextCue(turns, 150, 400)
+  assert.equal(cue.kind, 'turn')
+  assert.equal(cue.street, 'ביאליק')
+  assert.equal(cueText(cue, 'הבית'), 'עוד 50 מ׳ פנו ימינה לביאליק.')
+  // ואחרי הפנייה האחרונה — כמה נשאר עד הדלת, לא "הבית כאן".
+  const last = nextCue(turns, 250, 400)
+  assert.equal(cueText(last, 'הבית'), 'ישר 150 מ׳ עד הבית.')
+})
+
 test('הוראות: הגרף שומר את שם הרחוב על הקשת, והלולאה מחזירה אותו', () => {
   const p = (b, d) => destination(HOME, b, d)
   const ways = [
