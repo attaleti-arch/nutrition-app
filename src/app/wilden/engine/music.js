@@ -28,20 +28,31 @@ export function setMusicMuted(v) {
 // נפסקת לחלוטין". הפתרון: בלחיצה עצמה יוצרים את שני האלמנטים ומנגנים
 // אותם אילמים לרגע. מאותו רגע הם "פתוחים", וטיימר יכול להפעיל אותם.
 const pool = {}
+const make = mode => { const el = new Audio(FILES[mode]); el.loop = true; el.preload = 'auto'; el.volume = 0; return el }
+
+// טעינה מוקדמת, בלי לנגן: רק מתחילה להוריד את הקובץ כדי שברגע שמותר לנגן
+// הוא כבר כאן. "שלא יהיה שקט" בהתחלה.
+export function preloadMusic() {
+  if (typeof Audio === 'undefined') return
+  for (const mode of Object.keys(FILES)) if (!pool[mode]) pool[mode] = make(mode)
+}
+
 export function primeMusic() {
   if (typeof Audio === 'undefined') return
   for (const mode of Object.keys(FILES)) {
-    if (pool[mode]) continue
-    const el = new Audio(FILES[mode]); el.loop = true; el.preload = 'auto'; el.volume = 0
-    pool[mode] = el
-    el.play().then(() => { if (cur?.el !== el) el.pause() }).catch(() => {})
+    const el = pool[mode] || (pool[mode] = make(mode))
+    if (cur?.el === el) continue                       // זה שמנגן עכשיו — לא לגעת בו
+    el.play().then(() => { if (cur?.el !== el) { el.pause(); try { el.currentTime = 0 } catch (e) { /* */ } } }).catch(() => {})
   }
 }
 
 export function startMusic(mode, vol = VOL) {
   if (musicOff || !mode || !FILES[mode] || typeof Audio === 'undefined') return
-  if (cur?.mode === mode) return
-  stopMusic(1.0)
+  // אותו מצב רוח שכבר מנגן — לא לגעת. אבל אם הוא נדחה קודם (ספארי לפני מגע)
+  // הוא רשום כ"נוכחי" ועומד — ואז כן מנסים שוב, בלי דעיכה כפולה.
+  const same = cur?.mode === mode
+  if (same && !cur.el.paused) return
+  if (!same) stopMusic(1.0)
   const target = Math.max(0, Math.min(1, vol))
   const el = pool[mode] || new Audio(FILES[mode])
   pool[mode] = el
