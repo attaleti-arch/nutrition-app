@@ -31,11 +31,12 @@ const GUARD = GUARDIAN
 const CAST = ['nimi', 'dabashon', 'gali', 'bolder', 'lumi', 'ruchi', 'noga']
 // לאן כל אחד בורח: הצד הקרוב של המסך
 const FLEE = { nimi: [-60, 10], dabashon: [-40, -60], gali: [30, 60], bolder: [70, 20], lumi: [-70, 30], ruchi: [60, -60], noga: [-30, 70] }
+// המיקומים הם אחוזים מהדמות. הם הוזזו יחד עם חיתוך השוליים הריקים מהקובץ.
 const NEEDS = [
-  { icon: '🪨', word: 'אבן', color: '#C9B79C', at: [38, 62] },
-  { icon: '💧', word: 'מים', color: '#7CC4F0', at: [60, 48] },
-  { icon: '✨', word: 'ניצוץ', color: '#F5D66B', at: [46, 36] },
-  { icon: '🍯', word: 'דבש', color: '#F0A93A', at: [58, 74] },
+  { icon: '🪨', word: 'אבן', color: '#C9B79C', at: [37, 74] },
+  { icon: '💧', word: 'מים', color: '#7CC4F0', at: [61, 51] },
+  { icon: '✨', word: 'ניצוץ', color: '#F5D66B', at: [46, 31] },
+  { icon: '🍯', word: 'דבש', color: '#F0A93A', at: [59, 94] },
 ]
 
 // [זמן במילישניות, שלב, שורה]
@@ -237,7 +238,7 @@ const I = {
   groundShadow: { position: 'absolute', left: '12%', right: '12%', bottom: '-2%', height: '7%', borderRadius: '50%', background: 'rgba(0,0,0,.5)', filter: 'blur(3px)' },
   aura: { position: 'absolute', inset: '-12%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(245,200,90,.5) 0%, rgba(245,200,90,0) 65%)', pointerEvents: 'none', zIndex: -1 },
   crack: { position: 'absolute', width: 7, height: 7, borderRadius: '50%', transform: 'translate(-50%,-50%)' },
-  eyes: { position: 'absolute', left: '50%', top: '14%', width: '46%', height: '14%', transform: 'translateX(-50%)', borderRadius: '50%',
+  eyes: { position: 'absolute', left: '50%', top: '6%', width: '46%', height: '13%', transform: 'translateX(-50%)', borderRadius: '50%',
     background: 'radial-gradient(ellipse, rgba(255,240,180,.95) 0%, rgba(255,220,120,.4) 45%, rgba(255,220,120,0) 70%)', animation: 'wildenEyes 1.4s ease-out both' },
   grey: { position: 'absolute', top: 0, insetInline: 0, aspectRatio: '3 / 4', maxHeight: '68vh', background: 'rgba(15,21,15,.35)', pointerEvents: 'none' },
   flash: { position: 'absolute', inset: 0, background: '#fff', animation: 'wildenFlash .9s ease-out forwards', pointerEvents: 'none', zIndex: 2 },
