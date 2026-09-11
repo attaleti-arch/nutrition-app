@@ -60,6 +60,10 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   const askAll = () => { request(); steps.request() }
   // יש מד צעדים חי? אז לחיצה ומבט לא מחליפים ריצה.
   const stepsLiveRef = useRef(false); stepsLiveRef.current = steps.live
+  // מתי נספר צעד אחרון. ילד שמחזיק את הטלפון מורם מול הפנים כמעט לא
+  // מייצר צעדים, ואז הלחיצה על היצור חוזרת להיות דרך להתקדם.
+  const lastStepAt = useRef(0)
+  const STALE_STEPS_MS = 8000
 
   const ctrl = controllerFor(creature)
   const modelSrc = useModelSrc(creature)
@@ -112,6 +116,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
       const t = Date.now()
       setNow(t)
       const n = steps.take()
+      if (n > 0) lastStepAt.current = t
       setCs(prev => {
         let next = prev
         for (let i = 0; i < n && ctrl.onStep; i++) {
@@ -124,6 +129,32 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
     }, TICK_CHASE)
     return () => clearInterval(id)
   }, [cs?.phase, ctrl, steps.take])
+
+  // ── הליכה אמיתית, לא רק מד הצעדים ──
+  // ה-GPS יודע שזזנו גם כשהטלפון מורם והמד שותק. כל מטר וחצי של הליכה
+  // שווה צעד. מדידה גרועה (דיוק חלש, קפיצה) לא נספרת.
+  const lastPos = useRef(null)
+  useEffect(() => {
+    if (!pos || !cs || !ctrl?.onStep || ctrl.isDone(cs)) { lastPos.current = pos || lastPos.current; return }
+    const prev = lastPos.current
+    lastPos.current = pos
+    if (!prev || (pos.acc ?? 99) > 25) return
+    const moved = haversine(prev, pos)
+    if (!(moved > 1.2 && moved < 30)) return
+    const n = Math.min(4, Math.round(moved / 1.6))
+    if (n < 1) return
+    const t = Date.now()
+    lastStepAt.current = t
+    setCs(p => {
+      let next = p
+      for (let i = 0; i < n; i++) {
+        const r = ctrl.onStep(next, t)
+        if (r.state !== next) { next = r.state; if (r.feedback) fire(r.feedback, setFlash, setShake, creatureIdRef.current) }
+      }
+      return next
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pos])
 
   // מיקום כל יעד ביחס למה שרואים עכשיו. בלי חיישנים אין גובה, ולכן
   // החיפוש אופקי בלבד — אחרת יעד שנקבע לו גובה בלתי ניתן למציאה.
@@ -209,7 +240,11 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   const doTap = () => {
     if (!ctrl?.onTap) return
     setCs(prev => {
-      const r = ctrl.onTap(prev, Math.random, Date.now(), { steps: stepsLiveRef.current })
+      const t = Date.now()
+      // מד צעדים "חי" אבל שקט כבר שמונה שניות = הוא לא באמת סופר. אז
+      // הלחיצה מקרבת, כמו בטלפון בלי חיישנים.
+      const counting = stepsLiveRef.current && t - lastStepAt.current < STALE_STEPS_MS
+      const r = ctrl.onTap(prev, Math.random, t, { steps: counting })
       if (r.state !== prev) fire(r.feedback, setFlash, setShake, creatureIdRef.current)
       return r.state
     })

@@ -1507,7 +1507,7 @@ test('עידוד: כל 10 מטבעות, חצי דרך פעם אחת, ולא או
 // "הדמות תהיה טיפה מרוחקת והוא ירוץ אליה, 'תמהר להתקרב שלא תברח', ואז
 // 2 בריחות קטנות ותפיסה." אותו שלד לכולם, סגנון בריחה לפי האופי.
 // ═══════════════════════════════════════════════════════════════
-import { makeChase, PHASE as CH, START_M, FLEE_AT_M, STEP_M, TAP_M, IDLE_MS, MAX_M, STOMP_HIDE_MS, scaleFor } from '../src/app/wilden/ar/controllers/chase.js'
+import { makeChase, PHASE as CH, START_M, FLEE_AT_M, STEP_M, TAP_M, IDLE_MS, MAX_M, STOMP_HIDE_MS, TIRED_MS, scaleFor } from '../src/app/wilden/ar/controllers/chase.js'
 
 const runCtl = makeChase({ id: 'run', target: 'creature', style: 'run' })
 const seq = (...vals) => { let i = 0; return () => vals[i++ % vals.length] }
@@ -1565,13 +1565,23 @@ test('מרדף: שתי בריחות לכיוון אחר, ובפעם השלישי
   assert.deepEqual(runCtl.targets(c.state), [])
 })
 
+test('מרדף: אחרי ארבעים שניות הוא מתעייף ונעצר — אפשר לתפוס', () => {
+  const s = runCtl.start(0)
+  const mid = runCtl.onTick(s, TIRED_MS - 1000)
+  assert.notEqual(mid.phase, CH.NEAR, 'לפני הזמן — עוד רץ')
+  const tired = runCtl.onTick(mid, TIRED_MS + 10)
+  assert.equal(tired.phase, CH.NEAR, 'ואז נעצר')
+  assert.equal(tired.ready, true)
+  assert.equal(runCtl.onTap(tired).feedback, 'catch', 'ואפשר לתפוס')
+})
+
 test('מרדף: עומדים — הוא מתרחק לאט. בלי חיישנים — לחיצה מקרבת', () => {
   const s = runCtl.start(0)
   const s1 = runCtl.onTick(s, 1000)
   assert.equal(s1.dist, START_M, 'בשניות הראשונות לא מתרחק')
   const s2 = runCtl.onTick(s1, IDLE_MS + 3000)
   assert.ok(s2.dist > START_M && s2.dist <= MAX_M, `אחרי עמידה מתרחק: ${s2.dist}`)
-  const s3 = runCtl.onTick(s2, IDLE_MS + 60000)
+  const s3 = runCtl.onTick(s2, IDLE_MS + 26000)
   assert.equal(s3.dist, MAX_M, 'ולא מעבר לתקרה')
   const tapped = runCtl.onTap(s, Math.random, 500).state
   assert.equal(tapped.dist, START_M - TAP_M, 'לחיצה מקרבת')

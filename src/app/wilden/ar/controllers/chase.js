@@ -19,12 +19,19 @@
 
 export const PHASE = { FAR: 'FAR', FLEE: 'FLEE', NEAR: 'NEAR', DONE: 'DONE' }
 
+// ── המספרים אחרי השטח ──
+// "זה לא עובד התפיסה": בשדה היצור נתקע על 4–6 מ' ולא ירד. הסיבה היא שילד
+// מחזיק את הטלפון מורם מול הפנים כדי לראות אותו, ובתנוחה הזאת מד הצעדים
+// כמעט לא סופר — בזמן שההתרחקות של העמידה כן רצה. לכן: צעד מקרב יותר,
+// ההתרחקות חצי, סבלנות ארוכה יותר לפני שהיא מתחילה, ואחרי ארבעים שניות
+// הוא פשוט מתעייף ונעצר. אף ילד לא נשאר תקוע מול יצור שלא מגיע.
 export const START_M = 9          // מרחק התחלתי
 export const FLEE_AT_M = 3.2      // מתחת לזה — בורח (או נעצר, בפעם השלישית)
-export const STEP_M = 0.75        // כמה מתקרבים בצעד
+export const STEP_M = 0.95        // כמה מתקרבים בצעד
 export const TAP_M = 1.5          // בלי חיישנים: לחיצה מקרבת
-export const DRIFT_MPS = 0.5      // כמה מתרחק בשנייה של עמידה
-export const IDLE_MS = 2500       // אחרי כמה זמן עמידה מתחיל להתרחק
+export const DRIFT_MPS = 0.25     // כמה מתרחק בשנייה של עמידה
+export const IDLE_MS = 4000       // אחרי כמה זמן עמידה מתחיל להתרחק
+export const TIRED_MS = 40000     // אחרי כמה זמן מרדף הוא נעצר מעייפות
 export const MAX_M = 13
 export const FLEES = 2            // שתי בריחות, ואז נעצר
 export const FLEE_SHOW_MS = 1400  // כמה זמן "הוא ברח!" לפני שחוזרים ל"רוצו"
@@ -120,7 +127,7 @@ export function makeChase({ id, target, style = 'run', copy = null }) {
       const side = rng() < 0.5 ? -1 : 1
       return {
         phase: PHASE.FAR, style, hidden: norm(ref + side * rnd(rng, 25, 55)),
-        dist: mods?.startM ?? START_M, flees: 0, lastMoveT: t, tickT: t, fleeT: 0,
+        dist: mods?.startM ?? START_M, flees: 0, lastMoveT: t, tickT: t, fleeT: 0, startT: t,
         streakFrom: null, ready: false, hiddenUntil: 0, dustAt: null,
         mods: mods || null,
       }
@@ -165,6 +172,9 @@ export function makeChase({ id, target, style = 'run', copy = null }) {
       if (s.phase === PHASE.DONE || s.phase === PHASE.NEAR) return s
       // tickT=0 = עוד לא תקתק: הדגימה הראשונה רק מכיילת, בלי להרחיק.
       const dt = s.tickT ? Math.max(0, t - s.tickT) / 1000 : 0
+      // מרדף ארוך מדי: הוא מתעייף ונעצר, ואפשר לתפוס. זה גם הסיפור וגם
+      // הרשת שמונעת מילד להישאר מול יצור שלא מתקרב לעולם.
+      if (s.startT != null && t - s.startT >= TIRED_MS) return settle(s, t).state
       let next = s.tickT === t ? s : { ...s, tickT: t }
       if (s.phase === PHASE.FLEE && t - s.fleeT >= FLEE_SHOW_MS && t >= (s.hiddenUntil || 0)) {
         next = { ...next, phase: PHASE.FAR }

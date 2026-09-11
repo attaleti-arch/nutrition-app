@@ -91,16 +91,18 @@ export default function Wilden() {
   const [firstWord, setFirstWord] = useState(false)
   useEffect(() => { setIntro(!introAlreadySeen()) }, [])
   // מוזיקת רקע בבית: חורבה עד שהכול נבנה, קסם אחרי. בטיול — שקט (הרחוב מספיק).
-  const atHome = g.state === S.BROKEN_WORLD && intro !== true
+  // onHomeScreen ולא atHome: atHome היא הפונקציה שבודקת אם הילד ליד הדלת,
+  // ושם זהה כאן היה מסתיר אותה בתוך הרכיב — ומפיל את מסך התפיסה האחרונה.
+  const onHomeScreen = g.state === S.BROKEN_WORLD && intro !== true
   const built = (g.progress.quests || []).length
   const [musicOff, setMusicOff] = useState(false)
   useEffect(() => { setMusicOff(musicMuted()) }, [])
   useEffect(() => {
-    if (!atHome || musicOff) { stopMusic(); return }
+    if (!onHomeScreen || musicOff) { stopMusic(); return }
     const ws = worldState(g.progress)
     startMusic(ws.built >= ws.total ? 'magic' : 'broken')
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [atHome, built, musicOff])
+  }, [onHomeScreen, built, musicOff])
   const toggleMusic = () => { const v = !musicOff; setMusicMuted(v); setMusicOff(v) }
   useEffect(() => {
     const on = () => retryMusic()
