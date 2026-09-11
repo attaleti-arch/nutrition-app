@@ -5,7 +5,7 @@
 // באמצע פיילוט של ארבעה־עשר יום בלי ללכת שוב ושוב.
 
 import { haversine, bearing, advanceWalk, progressAlong } from './geo.js'
-import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, STILL_MS, STILL_RADIUS } from './beacon.js'
+import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, SHORTCUT_COPY, STILL_MS, STILL_RADIUS } from './beacon.js'
 import { placeTarget, revalidate, PLACE_AFTER, freshEnd } from './placement.js'
 import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS, CATCH_BONUS } from './coins.js'
 import { mergeProgress } from './profile.js'
@@ -16,7 +16,7 @@ import { evolvedBetween } from './stages.js'
 import { routeKm, poisFor, creatureCount, placePois, setRouteKm, withCreatures, POI } from './plan.js'
 import { modsFor, consume, buyGear, withKeys, withExtra } from './gear.js'
 import { buySkin, buyStone } from './skins.js'
-import { withExtraGold, AVAILABLE } from './coins.js'
+import { withExtraGold, AVAILABLE, heatDistance } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest, produce } from './world.js'
@@ -117,14 +117,25 @@ export function beaconView(g) {
   // מאז שהאור כבה". בזמן יציאה הוא לפחות REACTIVE.
   const power = done === 0 ? POWER[1] : powerOf(done)
 
-  const dist = r.target && r.pos ? haversine(r.pos, r.target) : null
+  // ── המרחק הוא לאורך המסלול, לא קו אווירי ──
+  // "המפה לא מכוונת אותי למסלול שנבנה — אני יכולה לדלג את הכל לסימן
+  // שאלה." יצור שנמצא עשרים מטר מכאן באוויר, אבל שלוש מאות מטר בדרך
+  // שנבנתה, עוד לא "כאן". המרחק הגדול מבין השניים הוא המרחק האמיתי,
+  // והמסלול חוזר להיות המשחק.
+  const straight = r.target && r.pos ? haversine(r.pos, r.target) : null
+  const alongLeft = r.target?.along != null && r.along != null ? Math.max(0, r.target.along - r.along) : null
+  const dist = heatDistance(straight, alongLeft)
   const phase = phaseOf({
     dist, acc: r.acc, walked: r.walked, stillMs: r.stillMs, resolved: r.resolved, active: true,
   })
+  // עומדים ממש עליו באוויר, אבל המסלול עוד ארוך: קיצרו דרך. אומרים את זה
+  // במילים של העולם, ולא משאירים ילד מול "הוא בכיוון הזה" כשהוא עליו.
+  const shortcut = !r.resolved && straight != null && straight <= 60 && alongLeft != null && alongLeft > 120
   return {
     power,
     phase,
-    ...PHASE_COPY[phase],
+    ...(shortcut ? SHORTCUT_COPY : PHASE_COPY[phase]),
+    shortcut,
     arrow: showsArrow(phase, r.acc) && !!r.target && !!r.pos,
     bearing: r.target && r.pos ? bearing(r.pos, r.target) : null,
     canSearch: phase === PHASE.SAFE_STOP,
@@ -255,7 +266,14 @@ export function reduce(g, ev) {
       let target = r.target
       // עם המיקום הקודם לאורך: במסלול שחוזר באותו רחוב, זה מה שמבדיל
       // בין הדרך החוצה לדרך חזרה.
-      const along = r.path ? progressAlong(r.path, pos, r.along ?? 0).along : 0
+      // ── ההתקדמות לא יכולה לקפוץ ──
+      // ההטלה על המסלול לבדה נותנת את כל הדרך במתנה למי שחתך דרך מגרש
+      // ונחת על התחנה. הסימן על המסלול זז קדימה לכל היותר כמו שבאמת
+      // הלכנו בין שתי דגימות (ועוד שלושה מטרים לרעש GPS). אחורה — חופשי.
+      const cand = r.path ? progressAlong(r.path, pos, r.along ?? 0).along : 0
+      const prevAlong = r.along ?? 0
+      const maxStep = r.lastFix ? haversine(r.lastFix, pos) + 3 : Infinity
+      const along = cand > prevAlong ? Math.min(cand, prevAlong + maxStep) : cand
 
       // מסע ישן בלי תחנות: היעד נוצר אחרי שהילד יצא לדרך, קדימה על המסלול.
       if (!target && !r.stops && r.path && walked >= PLACE_AFTER) {

@@ -45,8 +45,10 @@ const L = {
   beam: { position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1, '--lx': '50%', '--ly': '52%',
     background: 'radial-gradient(ellipse 44% 40% at var(--lx) var(--ly), rgba(255,226,160,.12) 0, rgba(255,210,130,.04) 38%, rgba(5,8,5,0) 52%, rgba(5,8,5,.72) 78%, rgba(5,8,5,.94) 100%)' },
   // בלי פנס: עיגול צר ועמום. רואים שיש משהו, לא רואים מה.
+  // (היה .92/.98 בקצוות — בפיילוט של 22:35 המסך היה כמעט שחור לגמרי.
+  // עדיין חשוך מספיק כדי שהפנס יהיה שווה משהו, אבל רואים רחוב.)
   dim: { position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
-    background: 'radial-gradient(circle at 50% 52%, rgba(5,8,5,.15) 0, rgba(5,8,5,.6) 22%, rgba(5,8,5,.92) 55%, rgba(5,8,5,.98) 100%)' },
+    background: 'radial-gradient(circle at 50% 52%, rgba(5,8,5,.12) 0, rgba(5,8,5,.48) 22%, rgba(5,8,5,.78) 55%, rgba(5,8,5,.88) 100%)' },
   // ההבהוב: שכבת אור דקה שמשנה רק שקיפות — זול, ומרגיש כמו להבה.
   flame: { position: 'absolute', inset: 0, animation: 'wildenFlame 2.7s steps(1) infinite',
     background: 'radial-gradient(ellipse 30% 26% at var(--lx) var(--ly), rgba(255,200,110,.5) 0, rgba(255,200,110,0) 100%)' },

@@ -931,7 +931,11 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
         {homeward && (atHome(r)
           ? <button onClick={onPortal} style={s.searchOverlay}>{tr('🏠 הגענו. לפתוח את הפורטל')}</button>
           : <p style={s.stopOverlay}>{tr('🏠 עוד {d} הביתה. הוא איתכם.', { d: fmtM(Math.max(0, total - along)) })}</p>)}
-        {!view.canSearch && view.phase === PHASE.VERY_CLOSE && (
+        {/* קיצרו דרך: עומדים על הסימן, אבל את המסלול לא הלכו. */}
+        {view.shortcut && !homeward && (
+          <p style={s.stopOverlay}>{tr(view.line)} {tr(view.sub)}</p>
+        )}
+        {!view.canSearch && !view.shortcut && view.phase === PHASE.VERY_CLOSE && (
           <p style={s.stopOverlay}>{tr('הסימן כאן. עצרו במקום בטוח.')}</p>
         )}
       </div>

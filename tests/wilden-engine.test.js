@@ -159,6 +159,46 @@ test('תחנות: היצור בערך באמצע — לא ליד הבית, וא�
 
 // ══════════════════════════════════════════════
 // קפיצה: מד התאוצה רואה דחיפה, ריחוף, נחיתה. נענוע יד — לא.
+test('מסלול: קיצור דרך אל היצור לא פותח אותו — המרחק הוא לאורך המסלול', () => {
+  // מסלול בצורת ר: 400 מ' צפונה, ואז 400 מ' מזרחה. היצור בקצה (800 לאורך).
+  const corner = destination(HOME, 0, 400)
+  const path = [
+    ...Array.from({ length: 21 }, (_, i) => destination(HOME, 0, i * 20)),
+    ...Array.from({ length: 20 }, (_, i) => destination(corner, 90, (i + 1) * 20)),
+  ]
+  const end = path[path.length - 1]
+  const base = {
+    ...initial(),
+    state: S.SEARCH,
+    run: { path, home: HOME, pos: HOME, lastFix: HOME, walkRef: HOME, stillRef: HOME, lastT: 0,
+      along: 0, walked: 0, acc: 8, stillMs: 0, coins: [], coinsTaken: 0, stops: null, resolved: false,
+      target: { ...end, along: 800 } },
+  }
+  const feed = (g, pts, t0 = 1000) => {
+    let t = t0
+    for (const p of pts) { g = reduce(g, { type: 'FIX', lat: p.lat, lng: p.lng, acc: 8, t }); t += 5000 }
+    return g
+  }
+  // קיצור באלכסון: 566 מ' באוויר במקום 800 על המסלול.
+  const diag = Array.from({ length: 29 }, (_, i) => {
+    const f = (i + 1) / 29
+    return { lat: HOME.lat + (end.lat - HOME.lat) * f, lng: HOME.lng + (end.lng - HOME.lng) * f }
+  })
+  const cut = feed(base, diag)
+  assert.ok(cut.run.along < 640, `ההתקדמות לא קפצה ל-800: ${Math.round(cut.run.along)}`)
+  const vCut = beaconView(cut)
+  assert.equal(vCut.canSearch, false, 'עומדים עליו באוויר — אבל את המסלול לא הלכו')
+  assert.equal(vCut.shortcut, true)
+  assert.match(vCut.line, /קיצר/, 'ואומרים לו את זה: ' + vCut.line)
+  // אותו יצור, דרך המסלול: נפתח.
+  let full = feed(base, path.slice(1))
+  assert.ok(full.run.along > 780, `על המסלול ההתקדמות מלאה: ${Math.round(full.run.along)}`)
+  full = feed(full, [end, end, end], 400000)   // עומדים במקום ארבע שניות
+  const vFull = beaconView(full)
+  assert.equal(vFull.shortcut, false)
+  assert.equal(vFull.canSearch, true, 'הלכו את המסלול — אפשר לחפש')
+})
+
 function feedSeq(det, seq, dt = 20) {
   let t = 1000, out = null
   for (const gval of seq) { const r = det.feed({ t, a: gval * G }); if (r) out = r; t += dt }
@@ -1474,6 +1514,20 @@ test('הוראות: בדרך הביתה היעד הוא סוף המסלול, ו�
   // ואחרי הפנייה האחרונה — כמה נשאר עד הדלת, לא "הבית כאן".
   const last = nextCue(turns, 250, 400)
   assert.equal(cueText(last, 'הבית'), 'ישר 150 מ׳ עד הבית.')
+})
+
+test('הוראות: סיבוב חזרה באותו רחוב — בלי שם, ונקודה כפולה לא יוצרת פנייה', () => {
+  // הלוך ושוב על רחוב אחד: בקצה מסתובבים וחוזרים — באותו רחוב.
+  const p = d => ({ ...destination(HOME, 0, d), street: 'הרב איפרגן שלום' })
+  const back = [p(0), p(100), p(200), p(100), p(0)]
+  const t = turnsFor2(back)
+  assert.equal(t.length, 1); assert.equal(t[0].dir, 'uturn')
+  assert.equal(t[0].street, null, 'לא "הסתובבו לרחוב שאתם כבר עליו"')
+  assert.equal(cueText(nextCue(t, 130, 400)), 'עוד 70 מ׳ הסתובבו.')
+  // נקודה שנרשמה פעמיים באמצע רחוב ישר: כיוון 0 מדומה, וממנו "הסתובבו"
+  // באמצע רחוב. אין פניות ברחוב ישר.
+  const straight = [p(0), p(100), p(100), p(200), p(300)]
+  assert.deepEqual(turnsFor2(straight), [])
 })
 
 test('הוראות: הגרף שומר את שם הרחוב על הקשת, והלולאה מחזירה אותו', () => {

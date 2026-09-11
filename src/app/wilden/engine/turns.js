@@ -14,20 +14,41 @@ function delta(a, b) {
   return ((b - a + 540) % 360) - 180
 }
 
+// ── נקודות כפולות ──
+// "במרכז הרחוב הוא אומר עוד 70 מטר הסתובבו להרב איפרגן שלום, כשאני
+// פיזית עליו." שתי נקודות זהות ברצף (צומת שנרשם פעמיים בגרף) נותנות
+// כיוון 0 מדומה, ומשם "פנייה" של 180 מעלות באמצע רחוב ישר. מנקים אותן
+// לפני חישוב הפניות, ושומרים את המרחק לאורך המסלול כמו שהוא.
+const MIN_SEG_M = 2
+function distinct(path) {
+  const pts = [{ p: path[0], at: 0 }]
+  let acc = 0
+  for (let i = 1; i < path.length; i++) {
+    acc += haversine(path[i - 1], path[i])
+    if (haversine(path[i - 1], path[i]) < MIN_SEG_M) continue
+    pts.push({ p: path[i], at: acc })
+  }
+  return pts
+}
+
 // מחזירה [{ along, dir: 'left'|'right'|'uturn', deg }] בסדר עולה.
 export function turnsFor(path) {
   if (!path || path.length < 3) return []
+  const pts = distinct(path)
+  if (pts.length < 3) return []
   const out = []
-  let acc = 0
-  for (let i = 1; i < path.length - 1; i++) {
-    acc += haversine(path[i - 1], path[i])
-    const din = bearing(path[i - 1], path[i])
-    const dout = bearing(path[i], path[i + 1])
+  for (let i = 1; i < pts.length - 1; i++) {
+    const din = bearing(pts[i - 1].p, pts[i].p)
+    const dout = bearing(pts[i].p, pts[i + 1].p)
     const d = delta(din, dout)
     if (Math.abs(d) < TURN_DEG) continue
     const dir = Math.abs(d) >= SHARP_DEG ? 'uturn' : d > 0 ? 'right' : 'left'
-    // הרחוב שאליו פונים: שם הקטע שיוצא מהפנייה.
-    const street = path[i + 1].street || null
+    // הרחוב שאליו פונים: שם הקטע שיוצא מהפנייה. אם זה אותו רחוב שכבר
+    // הולכים בו (סיבוב חזרה באותו רחוב), השם רק מבלבל — אומרים להסתובב.
+    const from = pts[i].p.street || null
+    const to = pts[i + 1].p.street || null
+    const street = to && to !== from ? to : null
+    const acc = pts[i].at
     const last = out[out.length - 1]
     if (last && acc - last.along < MERGE_M) { last.deg += d; last.dir = dirOf(last.deg); last.street = street || last.street; continue }
     out.push({ along: acc, dir, deg: d, street })

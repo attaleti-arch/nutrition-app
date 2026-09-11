@@ -379,18 +379,27 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
                   faceLeft={ctFaceLeft} streakSide={ctStreakSide}
                   hideSprite={hideSprite && !t.peeking} />}
             {locked && <LockRing pct={hold / HOLD_MS} />}
+            {/* טבעת "עכשיו": כשאפשר לתפוס, הוא מסומן. ילד רואה סימן, לא קורא. */}
+            {t.kind === 'creature' && canCatch && <CatchRing />}
           </div>
         )
       })}
 
       {/* אזור הלחיצה על היצור: גדול, שקוף, במקום שבו הוא נראה. ילד לוחץ
           על הדמות — לא על כפתור. */}
-      {!done && ct && ctVisible && (
+      {!done && ct && ctVisible && !canCatch && (
         <button aria-label={tr('לחצו על היצור')} onClick={doTap} style={{
           ...S.tapArea,
           left: `${50 + (Math.max(-0.6, Math.min(0.6, ct.dx / (FOV / 2)))) * 50}%`,
           top: `${52 - ct.dy * 1.5}%`,
         }} />
+      )}
+      {/* ── רגע התפיסה ──
+          "עמדתי עם המצלמה עליו, עשיתי טפיחות, כלום לא עבד." ברגע שהוא
+          נעצר — כל המסך הוא הכפתור. לא צריך לפגוע בדמות, לא צריך למצוא
+          כפתור: לגעת במסך זה לתפוס. */}
+      {!done && canCatch && (
+        <button aria-label={tr('לתפוס!')} onClick={doCatch} style={S.catchArea} />
       )}
 
       {/* המודל התלת-ממדי, אם יש: שכבה קבועה על כל הבמה. הדמות ממוקמת
@@ -468,6 +477,14 @@ function fire(kind, setFlash, setShake, creatureId = null) {
   if (!m.t) return
   setFlash(m.t ? tr(m.t) : m.t)
   setTimeout(() => setFlash(null), 1400)
+}
+
+function CatchRing() {
+  return (
+    <svg className="wilden-catch-ring" style={S.catchRing} viewBox="0 0 100 100" aria-hidden="true">
+      <circle cx="50" cy="50" r="44" fill="none" stroke="#E5A342" strokeWidth="3.5" opacity=".9" />
+    </svg>
+  )
 }
 
 function LockRing({ pct }) {
@@ -550,6 +567,8 @@ function StoryBackdrop() {
 
 const STAGE_CSS = `
 @keyframes wildenShake { 0%,100% { transform: translate(0,0) } 15% { transform: translate(-7px,4px) } 30% { transform: translate(6px,-5px) } 45% { transform: translate(-5px,-3px) } 60% { transform: translate(4px,4px) } 80% { transform: translate(-2px,1px) } }
+@keyframes wildenCatchRing { 0% { transform: scale(.86); opacity: .35 } 55% { transform: scale(1.04); opacity: .95 } 100% { transform: scale(.86); opacity: .35 } }
+@media (prefers-reduced-motion: reduce) { .wilden-catch-ring { animation: none !important } }
 `
 
 const S = {
@@ -566,14 +585,25 @@ const S = {
     background: 'transparent', border: 'none', padding: 0, zIndex: 4, cursor: 'pointer',
     WebkitTapHighlightColor: 'transparent' },
   lock: { position: 'absolute', inset: 6, width: 'calc(100% - 12px)', height: 'calc(100% - 12px)' },
+  // כל המסך הוא כפתור התפיסה. מתחת לטקסט (5) ולכפתור החזרה (6), מעל החושך (1).
+  catchArea: { position: 'absolute', inset: 0, background: 'transparent', border: 'none', padding: 0,
+    zIndex: 4, cursor: 'pointer', WebkitTapHighlightColor: 'transparent' },
+  catchRing: { position: 'absolute', inset: '6%', width: '88%', height: '88%',
+    filter: 'drop-shadow(0 0 10px rgba(229,163,66,.55))',
+    animation: 'wildenCatchRing 1.15s ease-in-out infinite' },
   doneWrap: { position: 'absolute', inset: 0, display: 'grid', placeItems: 'center',
     alignContent: 'center', gap: 2, zIndex: 3, pointerEvents: 'none' },
-  hint: { position: 'absolute', left: 0, right: 0, bottom: 32, padding: '0 22px', textAlign: 'center' },
+  // ── ההוראה חייבת להיות מעל החושך ──
+  // "עמדתי, טפחתי, כלום לא עבד": ב-22:35 שכבת הרחוב החשוך (zIndex 1) שכבה
+  // על הטקסט ועל כפתור התפיסה, והם היו כמעט שחורים. חושך הוא אפקט של
+  // העולם; ההוראה היא של המשחק, ולעולם לא מתחתיו.
+  hint: { position: 'absolute', left: 0, right: 0, bottom: 32, padding: '0 22px', textAlign: 'center',
+    zIndex: 5, pointerEvents: 'none' },
   hintLine: { color: '#E9E5D8', fontSize: 19, fontWeight: 700, margin: 0,
     textShadow: '0 2px 12px rgba(0,0,0,.85)' },
   hintSub: { color: '#C3C8BA', fontSize: 15, margin: '4px 0 0',
     textShadow: '0 2px 10px rgba(0,0,0,.8)' },
-  scan: { width: '100%', maxWidth: 320, marginTop: 12, accentColor: '#E5A342' },
+  scan: { width: '100%', maxWidth: 320, marginTop: 12, accentColor: '#E5A342', pointerEvents: 'auto' },
   distWrap: { display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', marginTop: 10 },
   distBar: { width: 160, height: 10, borderRadius: 999, background: 'rgba(15,21,15,.6)', overflow: 'hidden', border: '1px solid rgba(233,229,216,.25)' },
   distFill: { height: '100%', background: '#E5A342', borderRadius: 999, transition: 'width .3s' },

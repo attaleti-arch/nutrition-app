@@ -12,12 +12,12 @@ const run = makeChase({ id: 'tracks-true-or-false', target: 'creature', style: '
 const buzz = makeChase({ id: 'buzz', target: 'creature', style: 'fly', copy: {
   FAR: { line: 'משהו מזמזם. מהרו אליו לפני שהוא עף!', sub: 'הרימו את הטלפון ורוצו!' },
   FLEE: { line: 'הוא עף!', sub: 'חפשו אותו באוויר ורוצו שוב!' },
-  NEAR: { line: 'הוא מרחף מולכם.', sub: 'לחצו עליו כדי לתפוס!' },
+  NEAR: { line: 'הוא מרחף מולכם.', sub: 'לחצו במסך כדי לתפוס!' },
 } })
 const gust = makeChase({ id: 'gust', target: 'creature', style: 'fly', copy: {
   FAR: { line: 'משהו מרשרש למעלה. מהרו לפני שהוא עף!', sub: 'הרימו את הטלפון ורוצו!' },
   FLEE: { line: 'משב רוח! הוא עף!', sub: 'חפשו אותו גבוה ורוצו שוב!' },
-  NEAR: { line: 'הוא מרחף מולכם.', sub: 'לחצו עליו כדי לתפוס!' },
+  NEAR: { line: 'הוא מרחף מולכם.', sub: 'לחצו במסך כדי לתפוס!' },
 } })
 const shadow = makeChase({ id: 'shadow', target: 'creature', style: 'shadow' })
 const stomp = makeChase({ id: 'stomp', target: 'creature', style: 'stomp' })
@@ -25,7 +25,7 @@ const stomp = makeChase({ id: 'stomp', target: 'creature', style: 'stomp' })
 const glow = makeChase({ id: 'glow', target: 'creature', style: 'run', copy: {
   FAR: { line: 'משהו זוהר שם. התקרבו בשקט.', sub: 'רוצו אליה!' },
   FLEE: { line: 'היא נמוגה לאור!', sub: 'עקבו אחרי הניצוצות ורוצו שוב!' },
-  NEAR: { line: 'היא נעצרה. האור שלה מולכם.', sub: 'לחצו עליה כדי לתפוס!' },
+  NEAR: { line: 'היא נעצרה. האור שלה מולכם.', sub: 'לחצו במסך כדי לתפוס אותה!' },
 } })
 
 const REGISTRY = { 'tracks-true-or-false': run, buzz, gust, shadow, stomp, glow }
