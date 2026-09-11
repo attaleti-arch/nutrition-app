@@ -88,11 +88,13 @@ export function makeChase({ id, target, style = 'run', copy = null }) {
     let to
     if (style === 'stomp') to = norm(from + rnd(rng, 150, 210))                 // מאחוריכם
     else if (style === 'shadow') to = norm(from + (rng() < 0.5 ? -1 : 1) * rnd(rng, 60, 110))
-    else to = norm(from + (rng() < 0.5 ? -1 : 1) * rnd(rng, 45, 80))
+    else to = norm(from + (rng() < 0.5 ? -1 : 1) * rnd(rng, 32, 62))
     return {
       state: {
         ...s, phase: PHASE.FLEE, hidden: to, streakFrom: from, flees: n,
-        dist: (M(s).startM ?? START_M) - 2 * n, lastMoveT: t, fleeT: t,
+        // כל בריחה קצרה מהקודמת, ולא רק ב"קצת": "היא בורחת יותר מדי".
+        // אחרי הבריחה השנייה הוא כבר כמעט בהישג יד.
+        dist: Math.max(FLEE_AT_M + 1.4, (M(s).startM ?? START_M) - 2.9 * n), lastMoveT: t, fleeT: t,
         hiddenUntil: style === 'stomp' ? t + STOMP_HIDE_MS : 0,
         dustAt: style === 'stomp' ? from : null,
       },
