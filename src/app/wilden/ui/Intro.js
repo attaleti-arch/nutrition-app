@@ -76,7 +76,9 @@ export function Intro({ onDone }) {
   useEffect(() => () => timers.current.forEach(clearTimeout), [])
 
   const begin = () => {
-    try { sfxAppear(); primeMusic(); startMusic('magic') } catch (e) { /* */ }
+    // הלחיצה היא המגע הראשון באייפון, ולכן גם הרגע היחיד שבו מותר להתחיל
+    // קול. דעיכה קצרה, כדי שהמוזיקה תהיה שם מיד ולא אחרי שתי שניות.
+    try { sfxAppear(); primeMusic(); startMusic('magic', undefined, 0.5) } catch (e) { /* */ }
     for (const [t, ph, txt] of SCRIPT) later(t, () => { setPhase(ph); setLine(txt) })
     // הסאונד לפי התסריט שלה: קסם עד הרעם וזהו; ברגע השבר — רעד; היער ההרוס
     // מיד אחריו, חלש, עד "אני בפנים"; נחירות רכות מהרגע שהוא אבן.
@@ -135,14 +137,16 @@ export function Intro({ onDone }) {
             <img key={b.id} src={b.img} alt="" draggable={false}
               style={{ ...I.item, left: `${b.spot.x}%`, top: `${b.spot.y}%`, width: `${b.spot.w}%`, animation: 'wildenPop .6s ease-out both', animationDelay: `${0.4 + (b.id.length % 4) * 0.2}s` }} />
           ))}
-          {/* היצורים: בעולם החי — חיים; בשבר — מתאדים בעדינות, אחד אחרי השני, עולים
-              קצת ומיטשטשים ("לא כאילו גלגלו עליהם כדור באולינג"); בסוף — צלליות */}
+          {/* היצורים: בעולם החי — חיים ממש. "שיזוזו, שתהיה תנועה": הלולאה של כל
+              יצור, בגרסה קטנה לפתיחה (180 פיקסל, פריים מכל שניים) — שתי מגה
+              לכולם יחד במקום עשרים. בסוף — צלליות. */}
           {(phase === 'healed' || phase === 'portal' || at('outside')) && CAST.map((id, i) => {
             const sp = SPOTS[id]; if (!sp) return null
             const silhouette = at('outside')
             const [fx, fy] = FLEE[id]
             return (
-              <img key={id} src={`/creatures/${id}/poster.webp`} alt="" draggable={false}
+              <img key={id} src={`/creatures/${id}/mini.webp`} alt="" draggable={false}
+                onError={e => { e.currentTarget.src = `/creatures/${id}/poster.webp` }}
                 style={{ ...I.item, left: `${sp.x}%`, top: `${sp.y}%`, height: `${sp.h}%`, width: 'auto',
                   '--fx': `${fx}vw`, '--fy': `${fy}vh`,
                   filter: silhouette ? 'brightness(0) blur(1px)' : I.item.filter,

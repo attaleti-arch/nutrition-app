@@ -11,7 +11,7 @@ import { ProfileGate, ProfileBar } from './ui/ProfileGate'
 import { Intro, introSeen as introAlreadySeen } from './ui/Intro'
 import { tr, detectLang, setLang, getLang, dirOf } from './i18n'
 import { worldState } from './engine/world'
-import { startMusic, stopMusic, musicMuted, setMusicMuted, retryMusic } from './engine/music'
+import { startMusic, stopMusic, musicMuted, setMusicMuted, retryMusic, primeMusic } from './engine/music'
 import { Beacon, BeaconLine, BEACON_CSS } from './ui/Beacon'
 import { Stage } from './ar/Stage'
 import { useGeo } from './hooks/useGeo'
@@ -336,7 +336,12 @@ export default function Wilden() {
             onLook={(id, look) => { sfxAppear(); dispatch({ type: 'SET_LOOK', id, look }) }}
             onGear={(id, pay) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_GEAR', id, pay }) }}
             onSkin={(creature, skin) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_SKIN', creature, skin }) }}
-            onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }} P={P} onIntro={() => setIntro(true)} music={{ off: musicOff, toggle: toggleMusic }} firstWord={firstWord} onLang={toggleLang} />
+            onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }} P={P} onIntro={() => {
+              // פותחים את הפתיחה מהכפתור: זו לחיצה, ולכן מותר להתחיל קול —
+              // וכך המוזיקה כבר מנגנת במסך הפתיחה ולא רק אחרי "להתחיל".
+              try { primeMusic(); startMusic('magic', undefined, 0.5) } catch (e) { /* */ }
+              setIntro(true)
+            }} music={{ off: musicOff, toggle: toggleMusic }} firstWord={firstWord} onLang={toggleLang} />
         )}
 
         {g.state === S.PERMISSIONS && (

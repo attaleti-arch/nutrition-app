@@ -46,7 +46,7 @@ export function primeMusic() {
   }
 }
 
-export function startMusic(mode, vol = VOL) {
+export function startMusic(mode, vol = VOL, fadeSec = 1.6) {
   if (musicOff || !mode || !FILES[mode] || typeof Audio === 'undefined') return
   // אותו מצב רוח שכבר מנגן — לא לגעת. אבל אם הוא נדחה קודם (ספארי לפני מגע)
   // הוא רשום כ"נוכחי" ועומד — ואז כן מנסים שוב, בלי דעיכה כפולה.
@@ -64,7 +64,7 @@ export function startMusic(mode, vol = VOL) {
   // NotAllowedError = אין עוד מגע (ספארי): נשארים ומנסים שוב במגע הבא.
   // כל שגיאה אחרת (קובץ חסר) = שקט, ולא מנסים שוב.
   s.vol = target
-  el.play().then(() => fade(el, target, 1.6)).catch(e => { if (cur === s && e?.name !== 'NotAllowedError') cur = null })
+  el.play().then(() => fade(el, target, fadeSec)).catch(e => { if (cur === s && e?.name !== 'NotAllowedError') cur = null })
 }
 
 export function stopMusic(sec = 1.2) {
