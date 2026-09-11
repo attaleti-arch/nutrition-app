@@ -10,6 +10,8 @@ import { useProfile } from './hooks/useProfile'
 import { ProfileGate, ProfileBar } from './ui/ProfileGate'
 import { Intro, introSeen as introAlreadySeen } from './ui/Intro'
 import { tr, detectLang, setLang, getLang, dirOf } from './i18n'
+import { Guard } from './ui/Guard'
+import { installReporter, report } from './engine/report'
 import { worldState } from './engine/world'
 import { startMusic, stopMusic, musicMuted, setMusicMuted, retryMusic, primeMusic } from './engine/music'
 import { Beacon, BeaconLine, BEACON_CSS } from './ui/Beacon'
@@ -105,6 +107,12 @@ export default function Wilden() {
     window.addEventListener('pointerdown', on, { passive: true })
     return () => window.removeEventListener('pointerdown', on)
   }, [])
+
+  // ── שגיאות מהשטח ──
+  // ילד ברחוב, בלי קונסולה: אם משהו נשבר, שיגיע אלינו מה ואיפה.
+  const gRef = useRef(g)
+  gRef.current = g
+  useEffect(() => { installReporter(() => gRef.current) }, [])
 
   // ── חלון הצצה למצב, מאחורי ?debug=1 ──
   // גם לבדיקות אוטומטיות וגם לרגע שבו הורה בפיילוט אומר "זה תקוע" ואני
@@ -295,24 +303,36 @@ export default function Wilden() {
 
       {/* הקליפ של היצור, אחרי "תפסתם אותו!" ולפני ספירת המטבעות */}
       {justCaught?.clip && !clipSeen && (
-        <CaughtClip creature={justCaught} onDone={() => setClipSeen(true)} />
+        <Guard where="clip" fallback={null}><CaughtClip creature={justCaught} onDone={() => setClipSeen(true)} /></Guard>
       )}
 
       {g.state === S.ENCOUNTER && creature?.clip && !introSeen && (
-        <CaughtClip creature={creature} variant="reveal" onDone={() => { sfxAppear(); buzz([40, 30, 80]); setIntroSeen(true) }} />
+        <Guard where="reveal" fallback={null}>
+          <CaughtClip creature={creature} variant="reveal" onDone={() => { sfxAppear(); buzz([40, 30, 80]); setIntroSeen(true) }} />
+        </Guard>
       )}
 
+      {/* הבמה: מצלמה, חיישנים, וידאו ותלת-ממד ביחד — הכי הרבה מה שיכול
+          להישבר על טלפון אחד. אם היא נופלת, היצור נחשב נתפס והמסע ממשיך.
+          לא לוקחים מילד תפיסה בגלל באג שלנו. */}
       {g.state === S.ENCOUNTER && (introSeen || !creature?.clip) && (
-        <Stage
-          creature={creature}
-          wear={g.progress.wear?.[creature?.id] || null}
-          mods={g.run?.mods || null}
-          pos={geo.pos}
-          anchor={g.run?.target || null}
-          onMode={m => dispatch({ type: m === 'CAMERA' ? 'CAMERA_READY' : 'CAMERA_DENIED' })}
-          onFound={() => dispatch({ type: 'ENCOUNTER_RESOLVED', caught: true })}
-          onGiveUp={() => dispatch({ type: 'ENCOUNTER_RESOLVED', caught: false })}
-        />
+        <Guard where="ar" fallback={
+          <div style={s.arFail}>
+            <p style={s.arFailLine}>{tr('משהו נתקע. הוא בכל זאת שלכם.')}</p>
+            <button style={s.cta} onClick={() => dispatch({ type: 'ENCOUNTER_RESOLVED', caught: true })}>{tr('להמשיך')}</button>
+          </div>
+        }>
+          <Stage
+            creature={creature}
+            wear={g.progress.wear?.[creature?.id] || null}
+            mods={g.run?.mods || null}
+            pos={geo.pos}
+            anchor={g.run?.target || null}
+            onMode={m => dispatch({ type: m === 'CAMERA' ? 'CAMERA_READY' : 'CAMERA_DENIED' })}
+            onFound={() => dispatch({ type: 'ENCOUNTER_RESOLVED', caught: true })}
+            onGiveUp={() => dispatch({ type: 'ENCOUNTER_RESOLVED', caught: false })}
+          />
+        </Guard>
       )}
 
       <Shell>
@@ -1021,6 +1041,9 @@ function fmtM(m) {
 }
 
 const s = {
+  arFail: { position: 'fixed', inset: 0, zIndex: 3000, background: '#0F150F', display: 'flex', flexDirection: 'column',
+    alignItems: 'center', justifyContent: 'center', gap: 14, padding: 24, textAlign: 'center' },
+  arFailLine: { color: '#E9E5D8', fontSize: 19, fontWeight: 700, margin: 0 },
   eyebrow: { fontSize: 11.5, fontWeight: 700, letterSpacing: '.16em', color: C.amber, margin: '0 0 10px' },
   // המפה תופסת את המסך; כל השאר שכבות עליה.
   mapWrap: { position: 'relative', height: 'calc(100dvh - 190px)', minHeight: 420, margin: '-6px 0 10px' },

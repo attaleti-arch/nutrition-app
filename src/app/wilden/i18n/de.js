@@ -16,6 +16,12 @@ export const DE = {
   'אבן. מים. ניצוץ. ודבש.': 'Stein. Wasser. Funke. Und Honig.',
   'היצורים לקחו איתם את הדרך אליהם. והם שם בחוץ.': 'Die Wesen haben den Weg dorthin mitgenommen. Und sie sind da draußen.',
   'תמצאו אותם.': 'Findet sie.',
+  // ── כשמשהו נשבר ──
+  'משהו נתקע לרגע.': 'Etwas hat kurz geklemmt.',
+  'כל מה שאספתם שמור. אפשר להמשיך מאיפה שהייתם.': 'Alles Gesammelte ist gespeichert. Du kannst da weitermachen, wo du warst.',
+  'להמשיך': 'Weiter',
+  'לפתוח מחדש': 'Neu öffnen',
+  'משהו נתקע. הוא בכל זאת שלכם.': 'Etwas hat geklemmt. Er gehört trotzdem euch.',
   'להתחיל': 'Los geht’s',
   'לדלג': 'Überspringen',
   'יוצאים לחפש': 'Wir gehen suchen',

@@ -38,7 +38,11 @@ export const dirOf = () => (lang === 'he' ? 'rtl' : 'ltr')
 
 // תרגום: המפתח הוא העברית. vars: {n: 3} מחליף {n} בטקסט.
 export function tr(he, vars) {
-  let s = lang === 'de' ? (DE[he] ?? he) : he
-  if (vars) for (const k of Object.keys(vars)) s = s.split(`{${k}}`).join(String(vars[k]))
-  return s
+  const s = lang === 'de' ? (DE[he] ?? he) : he
+  // שם של יצור שלא נמצא, מפתח חסר, מספר — לא מפילים מסך בגלל זה.
+  if (typeof s !== 'string') return s ?? ''
+  if (!vars) return s
+  let out = s
+  for (const k of Object.keys(vars)) out = out.split(`{${k}}`).join(String(vars[k]))
+  return out
 }
