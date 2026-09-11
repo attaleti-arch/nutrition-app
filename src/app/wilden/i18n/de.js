@@ -178,6 +178,7 @@ export const DE = {
   'נתפס!': 'Gefangen!', 'תפסתם אותו! הוא באוסף שלכם.': 'Ihr habt ihn! Er ist in eurer Sammlung.', 'תפסתם אותו!': 'Ihr habt ihn!',
   'זה היה האחרון בדרך.': 'Das war der letzte auf dem Weg.', 'עוד {n} מחכים בדרך.': 'Noch {n} warten auf dem Weg.',
   'חוזרים הביתה. הוא איתכם — מטבעות כפול': 'Zurück nach Hause. Er ist bei euch — doppelte Münzen',
+  'ממשיכים במסלול. הוא איתכם — מטבעות כפול': 'Weiter auf der Route. Er ist bei euch — doppelte Münzen',
   'להמשיך בדרך': 'Weiter', 'על התפיסה': 'für den Fang',
   'הפורטל': 'Das Portal', 'הביקון נפתח': 'Das Leuchtfeuer öffnet sich',
   'הקשת מתמלאת אור. {name} נכנס פנימה — והפעם לא לבד.': 'Der Bogen füllt sich mit Licht. {name} geht hinein — und diesmal nicht allein.',

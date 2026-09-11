@@ -4,8 +4,10 @@
 //   עד 1.5 ק"מ     — יצור ומטבעות (ריצה או קפיצה, לסירוגין)
 //   2 עד 3 ק"מ     — יצור ושני סבבי מטבעות (ריצה + קפיצה)
 //   3 ק"מ ומעלה    — שני יצורים ושני סבבי מטבעות (~45 דקות)
-// הנקודות מפוזרות שווה על החלק ה"חדש" של המסלול, והיצור האחרון תמיד
-// אחרון: אחריו הדרך הביתה, איתו, עם מטבעות כפול.
+// הנקודות מפוזרות שווה על החלק ה"חדש" של המסלול, והיצור האחרון יושב
+// בערך באמצע: "אורך המסלול. יצור יחסית באמצע ונמשך." אחרי התפיסה נשאר
+// חצי מסלול — עם היצור לצד הילד, עם מטבעות כפול, ועם עוד מה לעשות בדרך.
+// יצור בסוף היה הופך את השאר ל"עכשיו פשוט תלכו הביתה".
 //
 // טהור. בלי הגדרה של ההורה — הלוח הישן (2.2 ק"מ בראשון, 3.2 אחר כך).
 
@@ -28,15 +30,25 @@ export function setRouteKm(progress, km) {
   return { ...progress, routeKm: km }
 }
 
-// מה בדרך, לפי האורך. הסדר קבוע: מטבעות קודם, היצור אחרון.
+// מה בדרך, לפי האורך. הסדר קבוע: היצור האחרון בערך באמצע, ואחריו עוד
+// נקודה או שתיים — שגם לדרך חזרה יש מה להציע.
 // פרחים: "כמו מטבעות, לפחות 20 שניות לאסוף בקפיצה או ריצה, ושיראו אותם."
 // אותה ריצה של 20 שניות, עם פרחים, מ-2 ק"מ ומעלה (בקצר אין מקום לעוד תחנה).
 export function poisFor(km, walks = 0) {
-  if (km <= 1.5) return [walks % 2 ? POI.GOLD : POI.RUN, POI.CREATURE]
-  if (km < 3) return [POI.RUN, POI.FLOWERS, POI.GOLD, POI.CREATURE]
-  return [POI.RUN, POI.CREATURE, POI.FLOWERS, POI.GOLD, POI.CREATURE]
+  if (km <= 1.5) return [POI.CREATURE, walks % 2 ? POI.GOLD : POI.RUN]
+  if (km < 3) return [POI.RUN, POI.CREATURE, POI.FLOWERS, POI.GOLD]
+  return [POI.RUN, POI.CREATURE, POI.FLOWERS, POI.CREATURE, POI.GOLD]
 }
 export const creatureCount = pois => pois.filter(k => k === POI.CREATURE).length
+
+// יצור נוסף שנקנה נכנס אחרי היצור האחרון שבתוכנית — לא בסוף הרשימה.
+// מה שבסוף הוא הדרך הביתה, והיא צריכה להישאר הדרך הביתה.
+export function withCreatures(kinds, n) {
+  if (!kinds?.length || !(n > 0)) return kinds
+  const last = kinds.lastIndexOf(POI.CREATURE)
+  const at = last < 0 ? kinds.length : last + 1
+  return [...kinds.slice(0, at), ...Array(n).fill(POI.CREATURE), ...kinds.slice(at)]
+}
 
 // מניחים את הנקודות על המסלול. creatures: מי בתחנות, לפי הסדר.
 // מחזיר { stops, coinRun, flowerRun, goldAlong } — מה שהמכונה צריכה.

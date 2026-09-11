@@ -142,14 +142,19 @@ test('תחנות: כמה יצורים לאורך המסלול, קבועים מה
   }
 })
 
-test('תחנות: היצור בסוף, לא באמצע — רוב ההליכה לפני התפיסה', () => {
+// "אורך המסלול. יצור יחסית באמצע ונמשך." לא ליד הבית — אבל גם לא בסוף:
+// מה שמבטיח את ההליכה הוא אורך המסלול, והתפיסה היא אמצע הסיפור.
+test('תחנות: היצור בערך באמצע — לא ליד הבית, ואחריו עוד מסלול', () => {
   const one = started()
   const total = 60 * 20
   assert.equal(one.run.stops.length, 1)
-  assert.ok(one.run.stops[0].along / total >= 0.7, `יצור יחיד ב-~80% מהדרך, התקבל ${(one.run.stops[0].along / total).toFixed(2)}`)
+  const at = one.run.stops[0].along / total
+  assert.ok(at >= 0.3 && at <= 0.65, `יצור יחיד בערך באמצע, התקבל ${at.toFixed(2)}`)
+  assert.ok(total - one.run.stops[0].along >= 400, 'נשאר מסלול אחרי התפיסה')
   const two = started(['nimi', 'dabashon'])
-  assert.ok(two.run.stops[1].along / total >= 0.75, 'השני עדיין לקראת הסוף')
-  assert.ok(two.run.stops[0].along / total >= 0.4, 'והראשון לא ליד הבית')
+  assert.ok(two.run.stops[0].along / total >= 0.25, 'הראשון לא ליד הבית')
+  assert.ok(two.run.stops[1].along / total <= 0.8, 'וגם השני לא בסוף')
+  assert.ok(two.run.stops[1].along > two.run.stops[0].along)
 })
 
 // ══════════════════════════════════════════════
@@ -837,26 +842,29 @@ test('הלוך ושוב מקצה לקצה: בדרך החוצה אין מפגש, 
   g = reduce(g, { type: 'PERMISSION_GRANTED', home: HOME })
   g = reduce(g, { type: 'ROUTE_READY', path, home: HOME, creatures: ['dabashon'], t: 0 })
   assert.equal(g.run.stops.length, 1)
-  assert.ok(g.run.target.along >= 800, `היצור ליד המפנה: ${Math.round(g.run.target.along)}`)
-  // 700 מ' החוצה: עדיין לא "כאן"
-  g = walk(g, 700)
+  // הדרך החוצה היא החלק ה"חדש": היצור בערך באמצעה — ואחריו עוד קילומטר וחצי
+  const stopAt = g.run.target.along
+  assert.ok(stopAt >= 450 && stopAt <= 800, `היצור באמצע הדרך החוצה: ${Math.round(stopAt)}`)
+  assert.ok(2000 - stopAt >= 1200, 'ונשאר מסלול ארוך אחרי התפיסה')
+  // 400 מ' החוצה: עדיין לא "כאן"
+  g = walk(g, 400)
   assert.equal(g.state, S.SEARCH)
   assert.ok(haversine(g.run.pos, g.run.target) > 100, 'בדרך החוצה היצור עוד רחוק')
-  assert.ok(Math.abs(g.run.along - 700) < 30, `המונה לאורך: ${Math.round(g.run.along)}`)
+  assert.ok(Math.abs(g.run.along - 400) < 30, `המונה לאורך: ${Math.round(g.run.along)}`)
   const coinsOut = g.run.coinsTaken
-  // 700 מ' ב-10 שניות ל-15 מ' = כמעט 8 דקות רצוף: אחרי 4 דקות יש דחף שמכפיל
-  assert.ok(coinsOut >= 4 && coinsOut <= 14, `מטבעות בדרך החוצה בלבד (עם דחף): ${coinsOut}`)
-  // עד הקצה, ותפיסה
-  let t = 1000 + 47 * 10000
-  for (let d = 715; d <= 1000; d += 15) { const p = destination(HOME, 0, d); g = reduce(g, { type: 'FIX', lat: p.lat, lng: p.lng, acc: 10, t }); t += 10000 }
+  assert.ok(coinsOut >= 2 && coinsOut <= 10, `מטבעות בדרך החוצה בלבד (עם דחף): ${coinsOut}`)
+  // עד היצור, ותפיסה
+  let t = 1000 + 27 * 10000
+  for (let d = 415; d <= stopAt; d += 15) { const p = destination(HOME, 0, d); g = reduce(g, { type: 'FIX', lat: p.lat, lng: p.lng, acc: 10, t }); t += 10000 }
   g = catchHere(g, t + 1000)
   assert.equal(g.state, S.CAUGHT)
-  assert.equal(g.run.resolved, true, 'יצור אחד — המסע נפתר, חוזרים הביתה')
+  assert.equal(g.run.resolved, true, 'יצור אחד — המסע נפתר, וממשיכים איתו')
   g = reduce(g, { type: 'CONTINUE' })
   assert.equal(g.state, S.SEARCH)
-  // הדרך חזרה: המונה ממשיך מעל 1000, והמטבעות של החזרה נאספים כפול
+  // וממשיכים: עד המפנה ובחזרה. המונה ממשיך מעל 1000, והמטבעות נאספים כפול
   t += 200000
   const before = g.run.coinsTaken
+  for (let d = stopAt + 15; d <= 1000; d += 15) { const p = destination(HOME, 0, d); g = reduce(g, { type: 'FIX', lat: p.lat, lng: p.lng, acc: 10, t }); t += 10000 }
   for (let d = 985; d >= 0; d -= 15) { const p = destination(HOME, 0, d); g = reduce(g, { type: 'FIX', lat: p.lat, lng: p.lng, acc: 10, t }); t += 10000 }
   assert.ok(g.run.along > 1900, `המונה בסוף הדרך חזרה: ${Math.round(g.run.along)}`)
   assert.ok(g.run.coinsTaken - before >= 6, `מטבעות בדרך חזרה: ${g.run.coinsTaken - before}`)
@@ -2123,7 +2131,7 @@ test('בן לוויה במכונה: רק בבית, ההליכה נזקפת בפ�
 
 // ══════════════════════════════════════════════
 // ─── תוכנית המסע: ההורה בוחר ק"מ ───
-import { ROUTE_KM, routeKm, targetM, plannedMin, poisFor, creatureCount, placePois, setRouteKm, POI } from '../src/app/wilden/engine/plan.js'
+import { ROUTE_KM, routeKm, targetM, plannedMin, poisFor, creatureCount, placePois, setRouteKm, withCreatures, POI } from '../src/app/wilden/engine/plan.js'
 import { placeCoins as placeCoins2 } from '../src/app/wilden/engine/coins.js'
 
 test('תוכנית: בלי בחירה — הלוח; עם בחירה — הק"מ של ההורה, וממנו הזמן ומה בדרך', () => {
@@ -2133,29 +2141,43 @@ test('תוכנית: בלי בחירה — הלוח; עם בחירה — הק"מ 
   const p = setRouteKm({}, 7); assert.equal(p.routeKm, undefined, 'רק מהרשימה')
   assert.equal(setRouteKm({}, 3).routeKm, 3)
   assert.equal(plannedMin(1), 18); assert.equal(plannedMin(3), 55)
-  assert.deepEqual(poisFor(1, 0), ['run', 'creature']); assert.deepEqual(poisFor(1.5, 1), ['gold', 'creature'], 'לסירוגין')
-  assert.deepEqual(poisFor(2, 0), ['run', 'flowers', 'gold', 'creature'])
-  assert.deepEqual(poisFor(3, 0), ['run', 'creature', 'flowers', 'gold', 'creature']); assert.equal(creatureCount(poisFor(4, 0)), 2)
-  assert.deepEqual(poisFor(2.2, 0), ['run', 'flowers', 'gold', 'creature'], 'הלוח הישן: מסע 1 — יצור אחד'); assert.equal(creatureCount(poisFor(3.2, 1)), 2)
+  assert.deepEqual(poisFor(1, 0), ['creature', 'run']); assert.deepEqual(poisFor(1.5, 1), ['creature', 'gold'], 'לסירוגין')
+  assert.deepEqual(poisFor(2, 0), ['run', 'creature', 'flowers', 'gold'])
+  assert.deepEqual(poisFor(3, 0), ['run', 'creature', 'flowers', 'creature', 'gold']); assert.equal(creatureCount(poisFor(4, 0)), 2)
+  assert.deepEqual(poisFor(2.2, 0), ['run', 'creature', 'flowers', 'gold'], 'הלוח הישן: מסע 1 — יצור אחד'); assert.equal(creatureCount(poisFor(3.2, 1)), 2)
+  // בכל אורך: אחרי היצור האחרון יש עוד נקודה — הדרך חזרה לא ריקה
+  for (const km of [1, 1.5, 2, 3, 4]) {
+    const p = poisFor(km, 0)
+    assert.ok(p.lastIndexOf('creature') < p.length - 1, `${km} ק"מ: היצור לא אחרון`)
+  }
 })
 
-test('תוכנית: הנקודות מפוזרות שווה, היצור אחרון, ובמסלול צפוף מוותרים על מטבעות', () => {
+test('תוכנית: יצור נוסף שנקנה נכנס אחרי היצור האחרון, לא בסוף המסלול', () => {
+  assert.deepEqual(withCreatures(['run', 'creature', 'flowers', 'gold'], 1),
+    ['run', 'creature', 'creature', 'flowers', 'gold'])
+  assert.deepEqual(withCreatures(['run', 'creature', 'gold'], 0), ['run', 'creature', 'gold'], 'בלי תוספת — כמו שהיה')
+  assert.deepEqual(withCreatures(['run', 'gold'], 1), ['run', 'gold', 'creature'], 'בלי יצור בתוכנית — בסוף')
+})
+
+test('תוכנית: הנקודות מפוזרות שווה, היצור בערך באמצע, ובמסלול צפוף מוותרים על מטבעות', () => {
   const total = 60 * 20
-  const a = placePois(PATH, ['run', 'gold', 'creature'], { creatures: ['nimi'] })
+  const a = placePois(PATH, ['run', 'creature', 'gold'], { creatures: ['nimi'] })
   assert.equal(a.stops.length, 1); assert.equal(a.stops[0].creature, 'nimi')
-  assert.ok(a.coinRun.along < a.goldAlong && a.goldAlong < a.stops[0].along, 'מטבעות קודם, היצור אחרון')
-  assert.ok(a.stops[0].along / total >= 0.7, 'היצור לקראת הסוף: ' + (a.stops[0].along / total).toFixed(2))
+  assert.ok(a.coinRun.along < a.stops[0].along && a.stops[0].along < a.goldAlong, 'ריצה, היצור, ואז עוד משהו לדרך חזרה')
+  const at = a.stops[0].along / total
+  assert.ok(at > 0.35 && at < 0.65, 'היצור בערך באמצע: ' + at.toFixed(2))
+  assert.ok(total - a.stops[0].along >= 400, 'נשאר מסלול אחרי התפיסה')
   assert.ok(a.coinRun.along >= 300, 'הריצה לא ליד הבית')
   // ארבע נקודות — על מסלול של 2.4 ק"מ (על 1.2 ק"מ זה צפוף, ואז מוותרים על הזהב)
   const LONG = Array.from({ length: 121 }, (_, i) => destination(HOME, 0, i * 20))
-  assert.equal(placePois(PATH, ['run', 'creature', 'gold', 'creature'], { creatures: ['nimi', 'gali'] }).goldAlong, null, 'צפוף — בלי זהב')
+  assert.equal(placePois(PATH, ['run', 'creature', 'creature', 'gold'], { creatures: ['nimi', 'gali'] }).goldAlong, null, 'צפוף — בלי זהב')
   const b = placePois(LONG, ['run', 'creature', 'gold', 'creature'], { creatures: ['nimi', 'gali'] })
   assert.deepEqual(b.stops.map(s => s.creature), ['nimi', 'gali'])
   assert.ok(b.stops[0].along > b.coinRun.along && b.goldAlong > b.stops[0].along && b.stops[1].along > b.goldAlong)
   assert.ok(b.stops[1].along - b.stops[0].along >= 300, 'רווח בין היצורים')
   // מסלול קצר מאוד: נשאר רק יצור
   const short = PATH.slice(0, 21)   // 400 מ'
-  const c = placePois(short, ['run', 'gold', 'creature'])
+  const c = placePois(short, ['run', 'creature', 'gold'])
   assert.equal(c.stops.length, 1); assert.equal(c.coinRun, null); assert.equal(c.goldAlong, null)
   // הזהב במקום שהתוכנית קבעה; בלי זהב בתוכנית — בלי זהב
   const coins = placeCoins2(PATH, { stops: a.stops, goldAlong: a.goldAlong })
@@ -2168,7 +2190,7 @@ test('תוכנית במכונה: SET_ROUTE_KM בבית בלבד, והמסע נב
   assert.equal(g.progress.routeKm, 1)
   assert.equal(reduce(g, { type: 'SET_ROUTE_KM', km: 9 }), g)
   g = reduce(g, { type: 'START_RUN', kind: RUN.STORY, missionId: 'm01', day: DAY, t: 0 })
-  assert.equal(g.run.km, 1); assert.deepEqual(g.run.pois, ['run', 'creature']); assert.deepEqual(g.run.wantCreatures, ['nimi'])
+  assert.equal(g.run.km, 1); assert.deepEqual(g.run.pois, ['creature', 'run']); assert.deepEqual(g.run.wantCreatures, ['nimi'])
   assert.equal(reduce(g, { type: 'SET_ROUTE_KM', km: 3 }), g, 'לא באמצע')
   g = reduce(g, { type: 'PERMISSION_GRANTED', home: HOME })
   g = reduce(g, { type: 'ROUTE_READY', path: PATH, home: HOME })

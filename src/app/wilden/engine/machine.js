@@ -13,7 +13,7 @@ import { EGG_PRICE, HATCH_M, canBuyEgg, hatch, rollVariant } from './egg.js'
 import { buy as buyItem, equip as equipItem } from './shop.js'
 import { grantWeekly, walkSummary } from './weekly.js'
 import { evolvedBetween } from './stages.js'
-import { routeKm, poisFor, creatureCount, placePois, setRouteKm, POI } from './plan.js'
+import { routeKm, poisFor, creatureCount, placePois, setRouteKm, withCreatures, POI } from './plan.js'
 import { modsFor, consume, buyGear, withKeys, withExtra } from './gear.js'
 import { buySkin, buyStone } from './skins.js'
 import { withExtraGold, AVAILABLE } from './coins.js'
@@ -196,12 +196,13 @@ export function reduce(g, ev) {
     case 'ROUTE_READY': {
       // מי בדרך נקבע ב-START_RUN לפי הלוח: יצור אחד, או שניים אם שולם.
       const who = ev.creatures || g.run.wantCreatures || ['nimi']
-      // נקודות העניין לפי התוכנית: מטבעות קודם, היצור אחרון, מפוזרות שווה.
-      // מסע ישן בלי תוכנית, יצור שלישי בתשלום, או בדיקה שמזינה יצורים ישירות —
-      // התחנות לפי היצורים; מטבעות רק כשיש יצור אחד (אחרת צפוף מדי).
+      // נקודות העניין לפי התוכנית: היצור האחרון בערך באמצע, ואחריו עוד
+      // נקודה לדרך חזרה. מסע ישן בלי תוכנית, יצור שלישי בתשלום, או בדיקה
+      // שמזינה יצורים ישירות — התחנות לפי היצורים; מטבעות רק כשיש יצור
+      // אחד (אחרת צפוף מדי).
       const kinds = g.run.pois && creatureCount(g.run.pois) === who.length ? g.run.pois
-        : who.length === 1 ? [POI.RUN, POI.GOLD, POI.CREATURE]
-        : g.run.pois ? [...g.run.pois, ...Array(who.length - creatureCount(g.run.pois)).fill(POI.CREATURE)]
+        : who.length === 1 ? [POI.RUN, POI.CREATURE, POI.GOLD]
+        : g.run.pois ? withCreatures(g.run.pois, who.length - creatureCount(g.run.pois))
         : who.map(() => POI.CREATURE)
       const plan = placePois(ev.path, kinds, { creatures: who, freshEndM: freshEnd(ev.path) })
       const stops = plan.stops

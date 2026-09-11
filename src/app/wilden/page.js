@@ -427,7 +427,8 @@ export default function Wilden() {
             {g.run.resolved ? (
               <>
                 <button onClick={() => { sfxAppear(); dispatch({ type: 'CONTINUE' }) }} style={s.cta}>
-                  {tr('חוזרים הביתה. הוא איתכם — מטבעות כפול')}
+                  {/* התפיסה היא אמצע המסלול, לא סופו: "ממשיכים", לא "נגמר". */}
+                  {tr('ממשיכים במסלול. הוא איתכם — מטבעות כפול')}
                 </button>
                 {/* "שאחרי התפיסה הסיבוב ממשיך עד הבית": הפורטל נפתח רק ליד הבית. */}
                 {atHome(g.run) && (
