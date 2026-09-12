@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { initial, reduce, beaconView, S, RUN, MODE, nextRunKind, canStartStory } from './engine/machine'
 import { PHASE, PHASE_BUZZ, ACC_GATE, ACC_DIRECTION, ACC_COARSE, WALK_GATE } from './engine/beacon'
 import { PLACE_AFTER, stopInfo, kindName, JUNCTION_M } from './engine/placement'
-import { windNearby } from './engine/wind'
+import { windNearby, WIND_NAME } from './engine/wind'
 import { WindFlee } from './ar/WindFlee'
 import { WindSuck } from './ar/WindSuck'
 import { save, load, dayKey } from './engine/persist'
@@ -732,8 +732,8 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
           הוא צריך לברוח." אז אומרים את זה לפני שיוצאים, ולא בשטח. */}
       <p style={s.windNote}>
         {ownsGear(g.progress, 'vacuum')
-          ? tr('🌀 שואב הרוח איתכם. הרוחות יסומנו על המפה — אפשר לשאוב אותן.')
-          : tr('🌀 יש רוחות בדרך. בלי שואב הן קופצות בהפתעה, וצריך לברוח — ומי שלא מספיק, הרוח חוטפת לו את בן הלוויה.')}
+          ? tr('🌀 שואב הרוח איתכם. {wind} יסומן על המפה — אפשר לשאוב אותו.', { wind: tr(WIND_NAME) })
+          : tr('🌀 {wind} בדרך. בלי שואב הוא קופץ בהפתעה, וצריך לברוח — ומי שלא מספיק, הוא חוטף לו את בן הלוויה.', { wind: tr(WIND_NAME) })}
         {!ownsGear(g.progress, 'vacuum') && (
           <button onClick={() => setPanel('shop')} style={s.windBuy}>{tr('לחנות')}</button>
         )}
@@ -890,13 +890,14 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
     if (!lw || lw.t === lastWindT.current) return
     lastWindT.current = lw.t
     const name = id => tr(creatureById(id)?.name || '')
+    const wind = tr(WIND_NAME)
     setToast(
-      lw.kind === 'suck' ? tr('🌀 שאבתם רוח! +{n} 🪙', { n: lw.coins })
-      : lw.kind === 'fled' ? tr('🌀 ברחתם ממנה! +{n} 🪙', { n: lw.coins })
-      : lw.kind === 'freed' ? tr('🌀 שאבתם את הרוח — ו{name} יצא מתוכה!', { name: name(lw.buddy) })
-      : lw.kind === 'tookBuddy' ? tr('🌀 הרוח חטפה את {name}! הוא יחזור הביתה בסוף הדרך.', { name: name(lw.buddy) })
-      : lw.creature ? tr('🌀 הרוח חטפה את {name} וגררה אותו {n} מ׳ קדימה!', { name: name(lw.creature), n: lw.pushed })
-      : tr('🌀 רוח חלפה כאן.'))
+      lw.kind === 'suck' ? tr('🌀 שאבתם את {wind}! +{n} 🪙', { wind, n: lw.coins })
+      : lw.kind === 'fled' ? tr('🌀 ברחתם מ{wind}! +{n} 🪙', { wind, n: lw.coins })
+      : lw.kind === 'freed' ? tr('🌀 שאבתם את {wind} — ו{name} יצא מתוכו!', { wind, name: name(lw.buddy) })
+      : lw.kind === 'tookBuddy' ? tr('🌀 {wind} חטף את {name}! הוא יחזור הביתה בסוף הדרך.', { wind, name: name(lw.buddy) })
+      : lw.creature ? tr('🌀 {wind} חטף את {name} וגרר אותו {n} מ׳ קדימה!', { wind, name: name(lw.creature), n: lw.pushed })
+      : tr('🌀 {wind} חלף כאן.', { wind }))
     const id = setTimeout(() => setToast(null), 4000)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1017,7 +1018,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
 
         {/* רוח בטווח, ויש שואב: הרגע שבו לוחצים */}
         {wind && canVacuum && !view.canSearch && (
-          <button onClick={onSuck} style={{ ...s.searchOverlay, bottom: 58, background: '#6EA8E6' }}>{tr('🌀 לשאוב את הרוח')}</button>
+          <button onClick={onSuck} style={{ ...s.searchOverlay, bottom: 58, background: '#6EA8E6' }}>{tr('🌀 לשאוב את {wind}', { wind: tr(WIND_NAME) })}</button>
         )}
         {view.canSearch && !homeward && (
           <button onClick={onSearch} style={s.searchOverlay}>{tr('👁 משהו כאן. לחפש')}</button>

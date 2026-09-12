@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from 'react'
 import { tr, dirOf } from '../i18n'
 import { useSteps } from '../hooks/useSteps'
 import { sfxRumble, sfxCheer, sfxRustle, buzz } from '../engine/audio'
-import { FLEE_MS, FLEE_STEPS, escaped } from '../engine/wind'
+import { FLEE_MS, FLEE_STEPS, escaped, WIND_NAME } from '../engine/wind'
 
-// ─── לברוח מהרוח ───
+// ─── לברוח מגובטבו ───
 // "אם אין לו כסף, כשהיא מופיעה בהפתעה הוא צריך לברוח עם בן הלוויה שלו
 // כדי שהיא לא תחטוף אותו. אם לא מצליח לברוח — בן הלוויה יישאב."
 //
@@ -77,16 +77,16 @@ export function WindFlee({ buddyImg = null, buddyName = '', onDone }) {
         <img src="/world/wind/lunge.webp" alt="" draggable={false} aria-hidden="true" style={S.lunge} />
       )}
 
-      {!go && <p style={S.burst}>{tr('🌀 רוח!')}</p>}
+      {!go && <p style={S.burst}>{tr('🌀 {wind}!', { wind: tr(WIND_NAME) })}</p>}
 
       {go && !won && (
         <>
-          <p style={S.line}>{tr('רוצו! היא מנסה לחטוף את {name}', { name: buddyName || tr('בן הלוויה') })}</p>
+          <p style={S.line}>{tr('רוצו! {wind} מנסה לחטוף את {name}', { wind: tr(WIND_NAME), name: buddyName || tr('בן הלוויה') })}</p>
           <p style={S.sub}>{tr('עוד {n} צעדים', { n: Math.max(0, FLEE_STEPS - count) })}</p>
         </>
       )}
-      {won && <p style={S.line}>{tr('ברחתם! הרוח נשארה מאחור.')}</p>}
-      {lost && <p style={{ ...S.line, color: '#F0A08C' }}>{tr('היא תפסה אתכם!')}</p>}
+      {won && <p style={S.line}>{tr('ברחתם! {wind} נשאר מאחור.', { wind: tr(WIND_NAME) })}</p>}
+      {lost && <p style={{ ...S.line, color: '#F0A08C' }}>{tr('{wind} תפס אתכם!', { wind: tr(WIND_NAME) })}</p>}
 
       <div style={S.barWrap}>
         <div style={{ ...S.bar, width: `${Math.round(pct * 100)}%`, background: won ? '#8FB57C' : '#6EA8E6' }} />

@@ -30,7 +30,7 @@ export function WindSuck({ coins = 0, freed = null, onDone }) {
       {/* השואב: יציב, עובד */}
       <img src="/world/gear/vacuum-live.webp" alt="" draggable={false} style={S.vac} />
       <p style={S.coins}>+{coins} 🪙</p>
-      {freed && <p style={S.freed}>{tr('{name} יצא מתוכה!', { name: freed })}</p>}
+      {freed && <p style={S.freed}>{tr('{name} יצא מתוכו!', { name: freed })}</p>}
     </div>
   )
 }
