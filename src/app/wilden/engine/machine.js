@@ -20,7 +20,8 @@ import { withExtraGold, AVAILABLE, heatDistance } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest, produce, creaturesWanted } from './world.js'
-import { placeWinds, suckWind, windSteals, windFled, windTakesBuddy, WIND_COINS } from './wind.js'
+import { placeWinds, suckWind, windSteals, windFled, windTakesBuddy, scareWind, WIND_COINS } from './wind.js'
+import { tameWinds, tamedWind, tamedReady, cageFull, CAGE_NAME, SCARE_COINS } from './cage.js'
 import { newlyEarned } from './badges.js'
 
 // גובה קפיצה ממשך זמן באוויר: h = g·t²/8, בס"מ.
@@ -80,6 +81,8 @@ export function initial() {
       look: {},           // { [creatureId]: 'base' | מזהה צבע } — המראה שנבחר בספר
       gear: [], items: {}, // ציוד למרדף: קבוע, וחד-פעמי עם כמות (ראה engine/gear.js)
       skins: {}, stones: {}, // סקינים שנקנו ליצור, ואבני צמיחה (ראה engine/skins.js)
+      // ── הרוחות ── כמה גובטבו בכלוב, וכמה כבר טובי לב (ראה engine/cage.js)
+      caged: 0, tamed: 0,
 
       // ── הבונוס השבועי ── יום ראשון של השבוע שבו כבר ניתן (ראה engine/weekly.js)
       weeklyBonus: null,
@@ -449,6 +452,23 @@ export function reduce(g, ev) {
       }
     }
 
+    // ── הטוב הבריח אותו ──
+    // מי שריכך חמישה יוצא עם אחד מהם, והוא עומד מול הפרא הראשון. פעם
+    // אחת בכל מסע: השני כבר עליכם.
+    case 'WIND_SCARED': {
+      const r = g.run
+      if (g.state !== S.SEARCH || !r?.winds) return g
+      if (!tamedReady(g.progress, r)) return g
+      const res = scareWind(r, ev.id)
+      if (!res) return g
+      const mult = r.resolved ? HOME_BONUS : 1
+      return {
+        ...g,
+        run: { ...r, winds: res.winds, tamedUsed: true, coinsTaken: (r.coinsTaken || 0) + SCARE_COINS * mult,
+          lastWind: { t: ev.t ?? 0, kind: 'scared', coins: SCARE_COINS * mult } },
+      }
+    }
+
     case 'WIND_HIT': {
       const r = g.run
       if (g.state !== S.SEARCH || !r?.winds) return g
@@ -541,6 +561,10 @@ export function reduce(g, ev) {
       // ומה שנשאב לשואב: רוח. השומר מבקש אותה, ובלי השואב היא מגיעה
       // רק מרוחי — זו התשובה ל"למה לקנות אותו".
       if (r.windRes) res.wind = (res.wind || 0) + r.windRes
+      // וטובי הלב שכבר בבית מביאים רוח בכל מסע, כמו מבנה — חמישה, רוח
+      // אחת. זה מה שהופך את הכלוב ממוצג למשק.
+      const fromCage = tamedWind(g.progress)
+      if (fromCage) { res.wind = (res.wind || 0) + fromCage; made.push({ id: 'cage', name: CAGE_NAME, product: 'wind', n: fromCage }) }
       const goldTaken = (r.coins || []).some(c => c.gold && c.taken) ? 1 : 0
       const runDone = r.coinRun?.done ? 1 : 0
       const walkDays = [...(g.progress.walkDays || [])]
@@ -554,6 +578,8 @@ export function reduce(g, ev) {
           ...withBond,
           creatures,
           res,
+          // כל גובטבו שנשאב נכנס לכלוב שבבית. חמישה — וביצת הלב מופיעה.
+          caged: (g.progress.caged || 0) + (r.windRes || 0),
           egg: hatched ? null : g.progress.egg,
           variants,
           coins: (g.progress.coins || 0) + (r.coinsTaken || 0),
@@ -623,6 +649,11 @@ export function reduce(g, ev) {
       // אבן שמגדילה עכשיו — מסך ההתפתחות, כמו בפורטל
       const evolved = evolvedBetween(g.progress, progress)
       return { ...g, progress, evolved: evolved.length ? evolved : g.evolved || null }
+    }
+    // ── ביצת הלב ── הכלוב מלא: חמישה יוצאים ממנו טובי לב. בבית בלבד.
+    case 'TAME_WINDS': {
+      if (g.state !== S.BROKEN_WORLD || !cageFull(g.progress)) return g
+      return { ...g, progress: tameWinds(g.progress) }
     }
     // ── ציוד ── כלים למרדף. בבית בלבד; מטבעות יורדים מיד.
     case 'BUY_GEAR': {

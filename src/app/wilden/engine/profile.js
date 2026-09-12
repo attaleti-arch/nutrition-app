@@ -98,6 +98,8 @@ export function mergeProgress(local, remote) {
     ...mergeGear(base, other),
     ...mergeSkins(base, other),
     bond: mergeMax(base.bond, other.bond),
+    caged: Math.max(base.caged || 0, other.caged || 0),
+    tamed: Math.max(base.tamed || 0, other.tamed || 0),
     minutesTotal: Math.max(base.minutesTotal || 0, other.minutesTotal || 0),
     lastWalk: base.lastWalk || other.lastWalk || null,
     story: { ...(other.story || {}), ...(base.story || {}) },

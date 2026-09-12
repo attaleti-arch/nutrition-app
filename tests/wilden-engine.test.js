@@ -487,6 +487,82 @@ test('רוחות במכונה: עם שואב נשאבות, בלי שואב חו�
   assert.equal(hit.run.lastWind.creature, 'nimi')
 })
 
+// ── כלוב הרוחות ──
+// "ולדעתי צריך כלוב של 5 גוסטבו בעולם, ואז ביצה או חפץ שהופך אותם טובי
+// לב." הלולאה כולה: שואבים בחוץ → נכנס לכלוב בבית → חמישה → ביצת הלב →
+// חמישה טובי לב, ואז אחד מהם יוצא איתך ומבריח את הפרא הראשון.
+import { CAGE_MAX, TAME_COINS, SCARE_COINS, cagedTotal, cagedShown, cageFull, tamedCount, tamedWind, tamedReady, tameWinds } from '../src/app/wilden/engine/cage.js'
+import { CAGE, cageBox } from '../src/app/wilden/content/spots.js'
+
+test('כלוב: חמישה גובטבו נכנסים אליו, ביצת הלב מרככת אותם', () => {
+  const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
+  const winds = placeWinds(PATH, { stops, n: 3, rng: () => 0.5 })
+  // שואבים שלושה במסע אחד — שלושה נכנסים לכלוב, ועדיין לא מלא
+  let g = { ...initial(), state: S.SEARCH,
+    run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: { vacuum: true },
+      resolved: false, walked: 2000, walkStartedAt: 0, day: 'd1' } }
+  for (const w of winds) g = reduce(g, { type: 'WIND_SUCK', id: w.id, t: 1 })
+  g = reduce({ ...g, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 2, rng: () => 0.5 })
+  assert.equal(cagedTotal(g.progress), winds.length)
+  assert.equal(cageFull(g.progress), false)
+  // ביצה לפני שהכלוב מלא — לא קורה כלום
+  const early = reduce({ ...g, state: S.BROKEN_WORLD }, { type: 'TAME_WINDS', t: 3 })
+  assert.equal(tamedCount(early.progress), 0, 'אין ביצה לכלוב חלקי')
+
+  // מלא (ואפילו יותר): הביצה בוקעת, חמישה יוצאים, והשישי נשאר בתור
+  const full = { ...g, state: S.BROKEN_WORLD, progress: { ...g.progress, caged: CAGE_MAX + 1, coins: 0 } }
+  assert.equal(cagedShown(full.progress), CAGE_MAX, 'המונה על המסך לא עובר חמישה')
+  const tamed = reduce(full, { type: 'TAME_WINDS', t: 4 })
+  assert.equal(tamedCount(tamed.progress), CAGE_MAX)
+  assert.equal(cagedTotal(tamed.progress), 1, 'מי שנשאב מעבר לחמישה מחכה לביצה הבאה')
+  assert.equal(tamed.progress.coins, TAME_COINS)
+  // וזה גם משק: חמישה טובי לב = רוח אחת בכל מסע
+  assert.equal(tamedWind(tamed.progress), 1)
+  assert.equal(tamedWind({ tamed: CAGE_MAX * 4 }), 3, 'יש תקרה')
+})
+
+test('כלוב: הטוב שלכם מבריח את הפרא — פעם אחת בכל מסע', () => {
+  const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
+  const winds = placeWinds(PATH, { stops, n: 2, rng: () => 0.5 })
+  const progress = { ...initial().progress, tamed: CAGE_MAX, buddy: 'nimi', creatures: ['nimi'] }
+  const base = { ...initial(), state: S.SEARCH, progress,
+    run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: {},
+      resolved: false, walked: 2000, walkStartedAt: 0, day: 'd1' } }
+  assert.equal(tamedReady(progress, base.run), true)
+  const scared = reduce(base, { type: 'WIND_SCARED', id: winds[0].id, t: 1 })
+  assert.equal(scared.run.coinsTaken, SCARE_COINS)
+  assert.equal(scared.run.lastWind.kind, 'scared')
+  assert.equal(windNearby(scared.run, { lat: winds[0].lat, lng: winds[0].lng }), null, 'הפרא הלך')
+  assert.equal(scared.run.buddyTaken, undefined, 'ובן הלוויה נשאר')
+  // השני כבר עליכם: הטוב עמד מול אחד, וזהו
+  assert.equal(tamedReady(scared.progress, scared.run), false)
+  assert.equal(reduce(scared, { type: 'WIND_SCARED', id: winds[1].id, t: 2 }), scared)
+  // ומי שעוד לא ריכך אף אחד — אין לו מי שיעמוד במקומו
+  const none = { ...base, progress: { ...progress, tamed: 0 } }
+  assert.equal(reduce(none, { type: 'WIND_SCARED', id: winds[0].id, t: 3 }), none)
+
+  // בבית: הכלוב מייצר רוח בכל מסע, כמו מבנה
+  const home = reduce({ ...scared, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 4, rng: () => 0.5 })
+  assert.equal(home.progress.res.wind, 1)
+  assert.ok(home.made.some(m => m.id === 'cage' && m.product === 'wind'), 'ורואים את זה במסך הסיום')
+})
+
+test('כלוב: עומד בשטח פנוי, לא על דמות ולא על מבנה', () => {
+  const box = cageBox()
+  for (const [id, sp] of Object.entries(SPOTS)) {
+    const f = figureBox(id, sp)
+    if (!f) continue
+    // הכלוב עומד בשורה הקדמית, ומותר לו להיכנס מעט מתחת לקנבס של מי
+    // שעומד מאחוריו — אבל אף דמות לא יושבת עליו, ואף אחת לא מכסה אותו.
+    assert.ok(gapBetween(box, f) > -6, `${id} יושב על הכלוב`)
+    const inside = CAGE.x > f.left && CAGE.x < f.right && CAGE.y > f.top && CAGE.y < f.bottom
+    assert.equal(inside, false, `מרכז הכלוב בתוך ${id}`)
+  }
+  for (const b of BUILDINGS) {
+    assert.ok(Math.hypot(b.spot.x - CAGE.x, b.spot.y - CAGE.y) > 15, `רחוק מ${b.id}`)
+  }
+})
+
 function feedSeq(det, seq, dt = 20) {
   let t = 1000, out = null
   for (const gval of seq) { const r = det.feed({ t, a: gval * G }); if (r) out = r; t += dt }

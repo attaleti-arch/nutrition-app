@@ -123,6 +123,17 @@ export function windFled(run, id) {
   return { winds: list.map((w, k) => (k === i ? { ...w, taken: true, fled: true } : w)), coins: FLEE_COINS }
 }
 
+// ── הטוב מבריח את הפרא ──
+// מי שכבר ריכך חמישה (ראה engine/cage.js) יוצא עם אחד מהם, והוא עומד
+// מול הראשון שקופץ. אותה פעולה כמו שאיבה מבחינת הרוח — היא נגמרת —
+// אבל בלי שואב ובלי בריחה, ופעם אחת בלבד בכל מסע.
+export function scareWind(run, id) {
+  const list = run?.winds || []
+  const i = list.findIndex(w => w.id === id)
+  if (i < 0 || list[i].taken || list[i].hit) return null
+  return { winds: list.map((w, k) => (k === i ? { ...w, taken: true, scared: true } : w)) }
+}
+
 // ── לא ברחו ──
 // היא לוקחת את בן הלוויה. לא לתמיד: הוא לא איתך עד סוף הטיול, וחוזר
 // הביתה בפורטל. ומי שקונה שואב ושואב רוח — משחרר אותו באמצע הדרך.
