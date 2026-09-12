@@ -12,7 +12,7 @@
 // טהור. בלי הגדרה של ההורה — הלוח הישן (2.2 ק"מ בראשון, 3.2 אחר כך).
 
 import { pointAlong, pathLength } from './geo.js'
-import { freshEnd, STOP_BUFFER } from './placement.js'
+import { freshEnd, STOP_BUFFER, safeAlong } from './placement.js'
 
 export const ROUTE_KM = [1, 1.5, 2, 3, 4]
 export const KID_KMH = 3.3                  // קצב הליכה של ילד, לטיימר
@@ -73,7 +73,10 @@ export function placePois(path, kinds, { creatures = ['nimi'], buffer = STOP_BUF
   const who = Array.isArray(creatures) && creatures.length ? creatures : ['nimi']
   let ci = 0
   list.forEach((kind, i) => {
-    const at = buffer + usable * (0.85 * (i + 1)) / n
+    const want = buffer + usable * (0.85 * (i + 1)) / n
+    // "היצורים באמצע כבישים או מעברים חדים": הנקודה זזה בתוך חלון קטן
+    // למקום הבטוח ביותר — לא בצומת, ועל מדרכה או שביל אם יש כזה בדרך.
+    const at = safeAlong(path, want, { total })
     const p = pointAlong(path, at)
     if (!p) return
     const pt = { lat: p.point.lat, lng: p.point.lng, along: at }

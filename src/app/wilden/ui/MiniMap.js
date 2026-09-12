@@ -182,8 +182,12 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
     }
   }, [ready, path, home])
 
-  // ── הלכנו / נשאר ──
-  // אפור למה שמאחורינו, כחול למה שלפנינו. מצויר מחדש כל ~15 מ'.
+  // ── המסלול כולו כחול ──
+  // "אני רוצה לראות מסלול כחול מלא. הוא התחיל מחתיכה קטנה כחולה ואז
+  // נעשה אפור, קשה לנווט ככה." האפור היה "מה שכבר הלכנו", והוא בלע את
+  // רוב המפה: בלולאה שחוזרת לידה עצמה ההטלה על המסלול קופצת קדימה,
+  // וחצי מסלול שעוד לא הלכנו בו נצבע כאילו הוא מאחור. עכשיו הקו כולו
+  // כחול — מה שמאחורינו פשוט חיוור יותר, ומה שלפנינו מלא.
   const alongStep = Math.floor((along || 0) / 15)
   useEffect(() => {
     const m = map.current
@@ -191,7 +195,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
     const L = Lmod
     lay.current.done?.remove(); lay.current.todo?.remove()
     const { done, todo } = splitAt(path, along)
-    if (done.length > 1) lay.current.done = L.polyline(done.map(p => [p.lat, p.lng]), { color: WALKED, weight: 7, opacity: 1, lineJoin: 'round', lineCap: 'round', interactive: false }).addTo(m)
+    if (done.length > 1) lay.current.done = L.polyline(done.map(p => [p.lat, p.lng]), { color: BLUE, weight: 7, opacity: 0.45, lineJoin: 'round', lineCap: 'round', interactive: false }).addTo(m)
     if (todo.length > 1) lay.current.todo = L.polyline(todo.map(p => [p.lat, p.lng]), { color: BLUE, weight: 7, opacity: 1, lineJoin: 'round', lineCap: 'round', interactive: false }).addTo(m)
   }, [ready, path, alongStep])
 
@@ -338,10 +342,10 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
           <path d="M15 26 L19 15 L15 17 L11 15 Z" fill="#9AA39E" />
         </svg>
       </button>
-      {/* מקרא קטן: כחול = לאן, אפור = מאיפה. פעם אחת ולתמיד, בלי מילים רבות. */}
+      {/* מקרא קטן: הכול כחול — מלא לפנינו, חיוור מאחורינו. */}
       <div style={legend} aria-hidden="true">
         <span style={{ ...swatch, background: BLUE }} /> {tr('הדרך')}
-        <span style={{ ...swatch, background: WALKED, marginInlineStart: 8 }} /> {tr('הלכנו')}
+        <span style={{ ...swatch, background: BLUE, opacity: 0.45, marginInlineStart: 8 }} /> {tr('כבר עברתם')}
       </div>
       <span style={attrib}>© OpenStreetMap contributors</span>
     </div>

@@ -103,7 +103,7 @@ export const PHASE_COPY = {
   [PHASE.DIRECTION]: { line: 'משהו נמצא בכיוון הזה.', sub: '' },
   [PHASE.TRACE]: { line: 'עקבות טריים.', sub: 'הוא עבר כאן לא מזמן.' },
   [PHASE.VERY_CLOSE]: { line: 'הוא כאן.', sub: '' },
-  [PHASE.SAFE_STOP]: { line: 'הוא כאן.', sub: 'עצרו במקום בטוח כדי לחפש.' },
+  [PHASE.SAFE_STOP]: { line: 'הוא כאן.', sub: 'עצרו על המדרכה, לא על הכביש.' },
 }
 
 // ── מי שקיצר את הדרך ──

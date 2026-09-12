@@ -25,11 +25,64 @@ export function placeTarget(path, walkedAlong, { ahead, endBufferM = 120 } = {})
   // משאירים מרווח לפני סוף הלולאה: יצור שנוחת עשרה מטר מהבית גורם
   // למסע להיגמר לפני שהתחיל.
   const maxAlong = Math.max(walkedAlong + 60, total - endBufferM)
-  const at = Math.min(walkedAlong + dist, maxAlong)
+  const want = Math.min(walkedAlong + dist, maxAlong)
+  // גם היעד שנולד תוך כדי הליכה מתרחק מצומת ומעדיף שביל (ראה safeAlong)
+  const at = Math.min(safeAlong(path, want, { total }), maxAlong)
 
   const p = pointAlong(path, at)
   if (!p) return null
   return { lat: p.point.lat, lng: p.point.lng, along: at }
+}
+
+// ── איפה בטוח לעמוד ──
+// "הבעיה הקשה של המשחק: היצורים באמצע כבישים או מעברים חדים ולא על
+// המדרכות." המסלול עובר על קו המרכז של הרחוב, ונקודה שמונחת עליו לפי
+// מרחק בלבד נוחתת לפעמים בדיוק בצומת — המקום היחיד שבו מכוניות פונות.
+//
+// אי אפשר לדעת מ-OSM איפה בדיוק המדרכה (ברוב הערים היא לא ממופה בכלל),
+// אבל אפשר לדעת שני דברים שחשובים יותר:
+//   1. איפה יש צומת — ומשם מתרחקים.
+//   2. אילו קטעים הם הליכה בלבד (מדרכה, שביל, רחוב להולכי רגל, מדרגות),
+//      ואותם מעדיפים על פני רחוב שמכוניות נוסעות בו.
+// לכן: מזיזים את הנקודה קדימה או אחורה בתוך חלון קטן, לנקודה הכי בטוחה
+// שנמצאת בו. אם אין טובה יותר — נשארים במקום.
+export const JUNCTION_M = 28        // עד כאן זה "בצומת"
+export const SAFE_WINDOW_M = 70     // כמה מותר להזיז את התחנה
+const FOOT_KINDS = ['footway', 'path', 'pedestrian', 'steps', 'living_street', 'track']
+export const isFootKind = k => FOOT_KINDS.includes(k)
+
+// כמה "לא בטוחה" נקודה על המסלול: 0 הכי טוב.
+export function riskAt(path, at) {
+  if (!path || path.length < 2) return 0
+  let acc = 0, risk = 0, kind = null
+  for (let i = 1; i < path.length; i++) {
+    const seg = haversine(path[i - 1], path[i])
+    // הצומת נמדד מהנקודות עצמן — הן הצמתים בגרף
+    for (const [pt, d] of [[path[i - 1], Math.abs(at - acc)], [path[i], Math.abs(at - (acc + seg))]]) {
+      if (pt.junction && d < JUNCTION_M) risk = Math.max(risk, 2 * (1 - d / JUNCTION_M))
+    }
+    if (at >= acc && at <= acc + seg) kind = path[i].kind || null
+    acc += seg
+  }
+  // רחוב שנוסעים בו — פחות טוב ממדרכה או שביל. לא פסול: לפעמים אין אחר.
+  if (kind && !isFootKind(kind)) risk += 0.55
+  if (!kind) risk += 0.2
+  return risk
+}
+
+// הנקודה הבטוחה ביותר בתוך חלון סביב at. שוויון — הקרובה למקור.
+export function safeAlong(path, at, { window: win = SAFE_WINDOW_M, step = 10, total = null } = {}) {
+  if (!path || path.length < 2) return at
+  const len = total ?? pathLength(path)
+  let best = at, bestScore = Infinity
+  for (let d = 0; d <= win; d += step) {
+    for (const cand of (d === 0 ? [at] : [at - d, at + d])) {
+      if (cand < 40 || cand > len - 40) continue
+      const score = riskAt(path, cand) + (d / win) * 0.25
+      if (score < bestScore - 1e-6) { bestScore = score; best = cand }
+    }
+  }
+  return best
 }
 
 // ── תחנות: כמה יצורים לאורך המסלול, קבועים מראש ──

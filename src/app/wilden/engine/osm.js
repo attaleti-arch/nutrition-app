@@ -97,7 +97,9 @@ export function parseOverpass(json) {
       if (!geom || geom.length < 2) continue
       const tier = TIER[tags.highway] ?? 2
       // שם הרחוב הולך עם הקטע: בלי זה "פנו ימינה" ולא "פנו ימינה להרצל".
-      ways.push({ tier, name: tags.name || null, nodes: geom.map(g => ({ lat: g.lat, lng: g.lon })) })
+      // kind (סוג הדרך עצמו) הולך איתו גם הוא: tier מאחד מדרכה עם רחוב
+      // מגורים, ובשביל "איפה בטוח לעמוד" ההבדל בין השניים הוא הכול.
+      ways.push({ tier, kind: tags.highway, name: tags.name || null, nodes: geom.map(g => ({ lat: g.lat, lng: g.lon })) })
       for (const g of geom) points.push({ lat: g.lat, lng: g.lon, tier })
     } else if (el.type === 'relation' && Array.isArray(el.members)) {
       // שטח גדול — שדה, יער, אזור תעשייה — מגיע לרוב כרלציה של כמה קווים

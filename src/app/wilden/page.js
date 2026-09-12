@@ -936,7 +936,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
           <p style={s.stopOverlay}>{tr(view.line)} {tr(view.sub)}</p>
         )}
         {!view.canSearch && !view.shortcut && view.phase === PHASE.VERY_CLOSE && (
-          <p style={s.stopOverlay}>{tr('הסימן כאן. עצרו במקום בטוח.')}</p>
+          <p style={s.stopOverlay}>{tr('הסימן כאן. עצרו בצד, לא על הכביש.')}</p>
         )}
       </div>
 

@@ -285,6 +285,29 @@ test('שלבים: לאגדי אין עדיין חומר — הוא לובש את
   assert.equal(c2.aura, false, 'לבוגר יש חומר משלו')
 })
 
+import { safeAlong, riskAt, JUNCTION_M, isFootKind } from '../src/app/wilden/engine/placement.js'
+
+// "הבעיה הקשה של המשחק: היצורים באמצע כבישים או מעברים חדים ולא על המדרכות."
+test('בטיחות: התחנה מתרחקת מצומת, ומעדיפה שביל על כביש', () => {
+  const at = (d, extra) => ({ ...destination(HOME, 0, d), ...extra })
+  // רחוב ישר: צומת ב-300, ומ-400 והלאה זה שביל להולכי רגל
+  const path = [at(0, {}), at(100, { kind: 'residential' }), at(300, { kind: 'residential', junction: true }),
+    at(400, { kind: 'residential' }), at(600, { kind: 'footway' })]
+  assert.ok(isFootKind('footway') && isFootKind('pedestrian') && !isFootKind('residential'))
+  // בדיוק על הצומת — הכי גרוע
+  assert.ok(riskAt(path, 300) > riskAt(path, 200), 'צומת מסוכן יותר מאמצע רחוב')
+  assert.ok(riskAt(path, 500) < riskAt(path, 200), 'שביל בטוח יותר מרחוב')
+  // תחנה שנפלה על הצומת — זזה ממנו
+  const moved = safeAlong(path, 300)
+  assert.ok(Math.abs(moved - 300) >= JUNCTION_M, `זזה מהצומת: ${Math.round(moved)}`)
+  // תחנה ליד השביל — עולה עליו
+  const onFoot = safeAlong(path, 380)
+  assert.ok(onFoot >= 400, `עברה לשביל: ${Math.round(onFoot)}`)
+  // רחוב אחיד בלי צמתים — לא זזה סתם
+  const plain = [at(0, {}), at(300, { kind: 'residential' }), at(600, { kind: 'residential' })]
+  assert.equal(safeAlong(plain, 300), 300)
+})
+
 function feedSeq(det, seq, dt = 20) {
   let t = 1000, out = null
   for (const gval of seq) { const r = det.feed({ t, a: gval * G }); if (r) out = r; t += dt }
