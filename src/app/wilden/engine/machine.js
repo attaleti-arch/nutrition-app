@@ -5,8 +5,8 @@
 // באמצע פיילוט של ארבעה־עשר יום בלי ללכת שוב ושוב.
 
 import { haversine, bearing, advanceWalk, progressAlong } from './geo.js'
-import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, SHORTCUT_COPY, STILL_MS, STILL_RADIUS } from './beacon.js'
-import { placeTarget, revalidate, PLACE_AFTER, freshEnd } from './placement.js'
+import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, SHORTCUT_COPY, UNSAFE_COPY, CLOSE_M, CLOSE_UNSAFE_M, STILL_MS, STILL_RADIUS } from './beacon.js'
+import { placeTarget, revalidate, PLACE_AFTER, freshEnd, stopInfo, JUNCTION_M, isFootKind } from './placement.js'
 import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS, CATCH_BONUS } from './coins.js'
 import { mergeProgress } from './profile.js'
 import { EGG_PRICE, HATCH_M, canBuyEgg, hatch, rollVariant } from './egg.js'
@@ -125,8 +125,14 @@ export function beaconView(g) {
   const straight = r.target && r.pos ? haversine(r.pos, r.target) : null
   const alongLeft = r.target?.along != null && r.along != null ? Math.max(0, r.target.along - r.along) : null
   const dist = heatDistance(straight, alongLeft)
+  // ── איפה הוא נחת באמת ──
+  // אם התחנה יושבת ליד צומת או על כביש, "הוא כאן" נדלק מוקדם יותר —
+  // כדי שהילד יעצור לפני הצומת ולא בתוכו.
+  const spot = r.path && r.target?.along != null ? stopInfo(r.path, r.target.along) : null
+  const unsafe = !!spot && ((spot.junctionM != null && spot.junctionM < JUNCTION_M) || (spot.kind != null && !isFootKind(spot.kind)))
   const phase = phaseOf({
     dist, acc: r.acc, walked: r.walked, stillMs: r.stillMs, resolved: r.resolved, active: true,
+    closeM: unsafe ? CLOSE_UNSAFE_M : CLOSE_M,
   })
   // עומדים ממש עליו באוויר, אבל המסלול עוד ארוך: קיצרו דרך. אומרים את זה
   // במילים של העולם, ולא משאירים ילד מול "הוא בכיוון הזה" כשהוא עליו.
@@ -134,8 +140,11 @@ export function beaconView(g) {
   return {
     power,
     phase,
-    ...(shortcut ? SHORTCUT_COPY : PHASE_COPY[phase]),
+    ...(shortcut ? SHORTCUT_COPY
+      : unsafe && (phase === PHASE.VERY_CLOSE || phase === PHASE.SAFE_STOP) ? UNSAFE_COPY
+      : PHASE_COPY[phase]),
     shortcut,
+    unsafeSpot: unsafe,
     arrow: showsArrow(phase, r.acc) && !!r.target && !!r.pos,
     bearing: r.target && r.pos ? bearing(r.pos, r.target) : null,
     canSearch: phase === PHASE.SAFE_STOP,

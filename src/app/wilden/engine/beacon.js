@@ -41,6 +41,14 @@ const RING = [
   { phase: PHASE.TRACE, within: 120 },
   { phase: PHASE.VERY_CLOSE, within: 45 },
 ]
+// ── תחנה שיושבת על כביש או ליד צומת ──
+// "הלכתי אינסוף במדרכות ואז על כביש בצומת היא הייתה." גם כשמזיזים את
+// הנקודה, לפעמים אין מקום טוב יותר בסביבה. אז במקום לשלוח ילד להשלים
+// את המטרים האחרונים אל תוך הצומת — "הוא כאן" נדלק מוקדם יותר, והוא
+// עוצר לפניה. המפגש ממילא קורה איפה שהילד עומד.
+export const CLOSE_M = 45
+export const CLOSE_UNSAFE_M = 80
+export const UNSAFE_COPY = { line: 'הוא ממש כאן.', sub: 'עצרו כאן, לא בצומת — הוא יבוא אליכם.' }
 
 // שני השערים שנשמרו מהמשחק הקודם, ושניהם נכתבו בעקבות באג אמיתי:
 // דיוק גרוע *הקשיח* פעם את התפיסה במקום להרפות, וילד תפס שני יצורים
@@ -72,7 +80,7 @@ export const ACC_COARSE = 200
 export const STILL_MS = 4000
 export const STILL_RADIUS = 4
 
-export function phaseOf({ dist, acc, walked, stillMs, resolved, active = true }) {
+export function phaseOf({ dist, acc, walked, stillMs, resolved, active = true, closeM = CLOSE_M }) {
   if (resolved) return PHASE.IDLE
   // ── לפני שהיעד קיים ──
   // בתחילת מסע היעד עדיין לא הונח, ולכן אין מרחק. בגרסה הקודמת זה החזיר
@@ -84,7 +92,7 @@ export function phaseOf({ dist, acc, walked, stillMs, resolved, active = true })
   if (acc != null && acc > ACC_DIRECTION) return PHASE.SIGNAL_WEAK
 
   let p = PHASE.SIGNAL_WEAK
-  for (const r of RING) if (dist <= r.within) p = r.phase
+  for (const r of RING) if (dist <= (r.phase === PHASE.VERY_CLOSE ? Math.max(r.within, closeM) : r.within)) p = r.phase
 
   // "הוא כאן" דורש דיוק אמיתי. עם 60 מ' שגיאה זה שולח ילד לחפש בפינה
   // הלא נכונה, ולכן שם נעצרים על "עקבות טריים" עד שהקליטה משתפרת.

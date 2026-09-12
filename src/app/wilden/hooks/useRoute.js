@@ -32,7 +32,8 @@ async function fetchEngineLoop(home, targetM, signal) {
   signal?.addEventListener('abort', onAbort)
   const timer = setTimeout(() => ctl.abort(), ENGINE_TIMEOUT)
   try {
-    const q = new URLSearchParams({ lat: home.lat.toFixed(6), lng: home.lng.toFixed(6), m: String(Math.round(targetM)), seed: String(daySeed()) })
+    // v=2: מסלול עם סוג דרך וצמתים (extras: waytype). מבטל מטמון ישן.
+    const q = new URLSearchParams({ lat: home.lat.toFixed(6), lng: home.lng.toFixed(6), m: String(Math.round(targetM)), seed: String(daySeed()), v: '2' })
     const res = await fetch(`/wilden/api/loop?${q}`, { signal: ctl.signal })
     if (!res.ok) return null
     const json = await res.json()

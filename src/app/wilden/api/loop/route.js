@@ -47,7 +47,10 @@ export async function GET(req) {
     return Response.json({ error: 'bad params' }, { status: 400 })
   }
 
-  const k = `${lat.toFixed(4)},${lng.toFixed(4)},${Math.round(m / 100)},${seed | 0}`
+  // v בגרסה: התשובה נשמרת שבוע בקצה, ובלי זה תשובה ישנה — בלי סוג דרך
+  // ובלי צמתים — הייתה ממשיכה לחזור גם אחרי שהוספנו אותם.
+  const v = (u.searchParams.get('v') || '1').slice(0, 4)
+  const k = `${lat.toFixed(4)},${lng.toFixed(4)},${Math.round(m / 100)},${seed | 0},${v}`
   const hit = cache.get(k)
   if (hit) return Response.json(hit, { headers: { 'x-cache': 'hit', 'cache-control': EDGE } })
 

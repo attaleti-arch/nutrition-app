@@ -17,8 +17,22 @@ export function orsBody(home, meters, seed = 0) {
     language: 'en',
     geometry_simplify: false,
     elevation: false,
+    // ── סוג הדרך לכל קטע ──
+    // "הלכתי אינסוף במדרכות ואז על כביש בצומת היא הייתה." זה מה שחסר היה:
+    // המסלול של ORS הגיע בלי שום מידע על *מה* הוא עובר, ולכן שכבת הבטיחות
+    // שבודקת "מדרכה או כביש" רצה על נתונים ריקים ולא הזיזה כלום.
+    // waytype נותן בדיוק את זה: 7 מדרכה, 8 מדרגות, 4 שביל, 3 רחוב, 1 דרך ראשית.
+    extras: ['waytype'],
   }
 }
+
+// waytype של ORS → הסוג שאנחנו מדברים בו (ראה engine/placement.js)
+const WAYTYPE = {
+  1: 'primary', 2: 'unclassified', 3: 'residential', 4: 'path', 5: 'track',
+  6: 'path', 7: 'footway', 8: 'steps',
+}
+// סוגי פנייה שמסמנים צומת אמיתי — לא "המשיכו ישר" ולא יציאה/הגעה.
+const TURN_TYPES = new Set([0, 1, 2, 3, 4, 5, 7, 8, 9, 12, 13])
 
 const round6 = x => Math.round(x * 1e6) / 1e6
 
@@ -30,15 +44,25 @@ export function parseOrs(json) {
   const coords = f?.geometry?.coordinates
   if (!Array.isArray(coords) || coords.length < 4) return { ok: false, reason: 'empty' }
   const names = new Array(coords.length).fill('')
+  // צומת: הנקודה שבה ההוראה משתנה לפנייה. שם נפגשים רחובות, ושם אסור
+  // להעמיד ילד — גם אם זו הנקודה ה"יפה" לפי מרחק.
+  const junctions = new Array(coords.length).fill(false)
   for (const seg of f.properties?.segments || []) {
     for (const st of seg.steps || []) {
       const [a, b] = st.way_points || []
       if (!Number.isFinite(a) || !Number.isFinite(b)) continue
       const nm = cleanName(st.name)
       for (let i = a; i <= b && i < names.length; i++) if (!names[i]) names[i] = nm
+      if (TURN_TYPES.has(st.type) && a >= 0 && a < junctions.length) junctions[a] = true
     }
   }
-  const path = coords.map(([lng, lat], i) => ({ lat, lng, street: names[i] || '' }))
+  // סוג הדרך לכל נקודה, מטווחי ה-extras
+  const kinds = new Array(coords.length).fill(null)
+  for (const [a, b, v] of f.properties?.extras?.waytype?.values || []) {
+    const kind = WAYTYPE[v] || null
+    for (let i = a; i <= b && i < kinds.length; i++) kinds[i] = kind
+  }
+  const path = coords.map(([lng, lat], i) => ({ lat, lng, street: names[i] || '', kind: kinds[i], junction: junctions[i] }))
   const meters = Math.round(f.properties?.summary?.distance || 0)
   return { ok: true, path, meters }
 }

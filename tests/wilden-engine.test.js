@@ -287,6 +287,29 @@ test('שלבים: לאגדי אין עדיין חומר — הוא לובש את
 
 import { safeAlong, riskAt, JUNCTION_M, isFootKind, stopInfo, kindName } from '../src/app/wilden/engine/placement.js'
 
+// "הלכתי אינסוף במדרכות ואז על כביש בצומת היא הייתה": גם כשאין מקום
+// טוב יותר, הילד לא נשלח להשלים את המטרים האחרונים אל תוך הצומת.
+test('בטיחות: תחנה ליד צומת — "הוא כאן" נדלק מוקדם, ואומרים לעצור לפני', () => {
+  const at = (d, extra) => ({ ...destination(HOME, 0, d), ...extra })
+  const mk = (junction, kind) => {
+    const path = []
+    for (let d = 0; d <= 600; d += 20) path.push(at(d, { kind, junction: junction && d === 400 }))
+    return path
+  }
+  const run = path => ({ path, home: HOME, target: { ...at(400, {}), along: 400 }, pos: at(330, {}),
+    along: 330, walked: 500, acc: 8, stillMs: 0, resolved: false })
+  const view = path => beaconView({ state: S.SEARCH, progress: initial().progress, run: run(path) })
+  // רחוב עם צומת בתחנה: 70 מ' לפניה — כבר "הוא כאן", והטקסט אומר למה
+  const risky = view(mk(true, 'residential'))
+  assert.equal(risky.unsafeSpot, true)
+  assert.equal(risky.phase, PHASE.VERY_CLOSE)
+  assert.match(risky.sub, /לא בצומת/)
+  // שביל בלי צומת: אותו מרחק — עדיין רק "עקבות טריים"
+  const safe = view(mk(false, 'footway'))
+  assert.equal(safe.unsafeSpot, false)
+  assert.equal(safe.phase, PHASE.TRACE)
+})
+
 // "איך נוודא שהיצור על השביל? הוא אמור להיות כמו המטבעות על המסלול."
 // אותו מנגנון בדיוק: pointAlong על המסלול. הבדיקה מוודאת את זה על
 // מסלול מפותל — כל תחנה, כל מטבע, על הקו.
@@ -2649,16 +2672,26 @@ test('מנוע ניווט: בונים בקשת לולאה ומפענחים תש�
   assert.deepEqual(body.coordinates, [[34.7818, 32.0853]])
   assert.equal(body.options.round_trip.length, 2200)
   assert.equal(body.options.round_trip.seed, 12)
+  // "הלכתי אינסוף במדרכות ואז על כביש בצומת היא הייתה": בלי waytype
+  // המסלול הגיע בלי שום מידע על מה הוא עובר, ושכבת הבטיחות רצה על ריק.
+  assert.deepEqual(body.extras, ['waytype'])
   const json = { features: [{ geometry: { coordinates: [[34.78, 32.08], [34.781, 32.081], [34.782, 32.081], [34.782, 32.08], [34.78, 32.08]] },
-    properties: { summary: { distance: 1234.6 }, segments: [{ steps: [
-      { name: 'הרצל', way_points: [0, 1] }, { name: '-', way_points: [1, 3] }, { name: 'ביאליק', way_points: [3, 4] } ] }] } }] }
+    properties: { summary: { distance: 1234.6 },
+      extras: { waytype: { values: [[0, 1, 7], [1, 3, 3], [3, 4, 1]] } },
+      segments: [{ steps: [
+      { name: 'הרצל', type: 11, way_points: [0, 1] }, { name: '-', type: 1, way_points: [1, 3] }, { name: 'ביאליק', type: 6, way_points: [3, 4] } ] }] } }] }
   const r = parseOrs(json)
   assert.equal(r.ok, true)
   assert.equal(r.meters, 1235)
   assert.equal(r.path.length, 5)
-  assert.deepEqual(r.path[0], { lat: 32.08, lng: 34.78, street: 'הרצל' })
+  assert.deepEqual(r.path[0], { lat: 32.08, lng: 34.78, street: 'הרצל', kind: 'footway', junction: false })
   assert.equal(r.path[2].street, '')          // "-" = בלי שם
   assert.equal(r.path[4].street, 'ביאליק')
+  // סוג הדרך יורד מה-extras: מדרכה, רחוב, ודרך ראשית
+  assert.equal(r.path[1].kind, 'residential'); assert.equal(r.path[4].kind, 'primary')
+  // והפנייה מסומנת כצומת
+  assert.equal(r.path[1].junction, true)
+  assert.equal(r.path[3].junction, false, 'המשיכו ישר אינו צומת')
   assert.equal(parseOrs({ features: [] }).ok, false)
   assert.equal(parseOrs(null).ok, false)
   assert.equal(daySeed(new Date(2026, 0, 1)), 0)

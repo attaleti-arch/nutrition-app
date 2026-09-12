@@ -74,6 +74,7 @@ export const DE = {
   '{n} כבר חיים כאן. עוד מחכים בחוץ.': '{n} leben schon hier. Weitere warten draußen.',
   'עצרו על המדרכה, לא על הכביש.': 'Bleibt auf dem Gehweg stehen, nicht auf der Straße.',
   'התחנה על': 'Station auf', 'מצומת': 'Von Kreuzung',
+  'הוא ממש כאן.': 'Er ist ganz nah.', 'עצרו כאן, לא בצומת — הוא יבוא אליכם.': 'Bleibt hier stehen, nicht an der Kreuzung — er kommt zu euch.',
   'מדרכה': 'Gehweg', 'שביל': 'Weg', 'רחוב להולכי רגל': 'Fußgängerstraße', 'מדרגות': 'Treppe',
   'דרך עפר': 'Feldweg', 'רחוב משותף': 'Spielstraße', 'רחוב מגורים': 'Wohnstraße', 'דרך שירות': 'Zufahrt',
   'רחוב': 'Straße', 'לא ידוע': 'Unbekannt',
