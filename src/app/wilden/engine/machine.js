@@ -20,7 +20,7 @@ import { withExtraGold, AVAILABLE, heatDistance } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest, produce, creaturesWanted } from './world.js'
-import { placeWinds, suckWind, windSteals, WIND_COINS } from './wind.js'
+import { placeWinds, suckWind, windSteals, windFled, windTakesBuddy, WIND_COINS } from './wind.js'
 import { newlyEarned } from './badges.js'
 
 // גובה קפיצה ממשך זמן באוויר: h = g·t²/8, בס"מ.
@@ -410,10 +410,39 @@ export function reduce(g, ev) {
       const res = suckWind(r, ev.id)
       if (!res) return g
       const mult = r.resolved ? HOME_BONUS : 1
+      // רוח שנשאבה משחררת את בן הלוויה שרוח אחרת לקחה
+      const freed = !!r.buddyTaken
+      return {
+        ...g,
+        run: { ...r, winds: res.winds, buddyTaken: false, coinsTaken: (r.coinsTaken || 0) + res.coins * mult,
+          lastWind: { t: ev.t ?? 0, kind: freed ? 'freed' : 'suck', coins: res.coins * mult, buddy: freed ? g.progress.buddy : null } },
+      }
+    }
+
+    // ברחו ממנה: היא מתפוגגת, והריצה שווה מטבעות.
+    case 'WIND_FLED': {
+      const r = g.run
+      if (g.state !== S.SEARCH || !r?.winds) return g
+      const res = windFled(r, ev.id)
+      if (!res) return g
+      const mult = r.resolved ? HOME_BONUS : 1
       return {
         ...g,
         run: { ...r, winds: res.winds, coinsTaken: (r.coinsTaken || 0) + res.coins * mult,
-          lastWind: { t: ev.t ?? 0, kind: 'suck', coins: res.coins * mult } },
+          lastWind: { t: ev.t ?? 0, kind: 'fled', coins: res.coins * mult } },
+      }
+    }
+
+    // לא ברחו: היא לוקחת את בן הלוויה עד סוף הטיול.
+    case 'WIND_TOOK_BUDDY': {
+      const r = g.run
+      if (g.state !== S.SEARCH || !r?.winds) return g
+      const res = windTakesBuddy(r, ev.id)
+      if (!res) return g
+      return {
+        ...g,
+        run: { ...r, winds: res.winds, buddyTaken: true,
+          lastWind: { t: ev.t ?? 0, kind: 'tookBuddy', buddy: g.progress.buddy || null } },
       }
     }
 
@@ -513,7 +542,8 @@ export function reduce(g, ev) {
       // ── להורה ── מרחק, דקות, צעדים משוערים של ההליכה הזאת
       const lastWalk = { ...walkSummary({ walked: r.walked, startedAt: r.walkStartedAt, t: ev.t }), day: r.day || null }
       // בן הלוויה: המטרים של היום נזקפים לו (כל 2 ק"מ = תפיסה להתפתחות).
-      const withBond = addBond(g.progress, r.walked)
+      // בן לוויה שרוח חטפה לא הלך איתנו — אין לו מטרים מהטיול הזה.
+      const withBond = r.buddyTaken ? g.progress : addBond(g.progress, r.walked)
       const progress0 = {
           ...withBond,
           creatures,
@@ -637,7 +667,7 @@ export function reduce(g, ev) {
         ...g,
         state: S.ABORTED,
         progress: {
-          ...addBond(g.progress, g.run?.walked),
+          ...(g.run?.buddyTaken ? g.progress : addBond(g.progress, g.run?.walked)),
           coins: (g.progress.coins || 0) + (g.run?.coinsTaken || 0),
           ...(aborted ? { lastWalk: aborted, minutesTotal: (g.progress.minutesTotal || 0) + aborted.minutes, metersTotal: (g.progress.metersTotal || 0) + aborted.meters } : {}),
         },

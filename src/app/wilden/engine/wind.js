@@ -14,6 +14,22 @@
 
 import { pointAlong, pathLength, haversine } from './geo.js'
 
+// ── הבחירה ──
+// "אני רוצה שתהיה לו בחירה: לרכוש שואב מראש כי יש רוח במסלול. ואם אין לו
+// כסף, כשהיא מופיעה בהפתעה הוא צריך לברוח עם בן הלוויה שלו כדי שהיא לא
+// תחטוף אותו. אם לא מצליח לברוח — בן הלוויה יישאב."
+//
+// ומכאן שתי דרכים שונות לגמרי לאותו מסלול:
+//   קנית שואב — הרוחות מסומנות על המפה מראש. רואים, מתקרבים, שואבים.
+//   לא קנית   — הן לא על המפה בכלל. אחת מהן קופצת עליך באמצע הדרך, ואז
+//               רצים. הצלחת — היא מתפוגגת. לא הצלחת — היא לוקחת את בן
+//               הלוויה, והוא לא איתך עד סוף הטיול.
+// הבריחה היא ריצה אמיתית: צעדים בזמן קצוב. זה גם מה שהמשחק הזה רוצה.
+export const FLEE_MS = 15000         // כמה זמן יש לברוח
+export const FLEE_STEPS = 22         // וכמה צעדים צריך
+export const FLEE_COINS = 6          // מי שברח — הרוויח
+export const escaped = (steps, ms) => (steps || 0) >= FLEE_STEPS && (ms || 0) <= FLEE_MS
+
 export const WIND_NEAR_M = 32        // מכאן היא מגיבה
 export const WIND_COINS = 4          // כמה שווה שאיבה
 export const WIND_PUSH_M = 130       // כמה היא גוררת את היצור קדימה
@@ -71,6 +87,25 @@ export function suckWind(run, id) {
   if (i < 0 || list[i].taken || list[i].hit) return null
   const winds = list.map((w, k) => (k === i ? { ...w, taken: true } : w))
   return { winds, coins: WIND_COINS }
+}
+
+// ── ברחו ──
+// הרוח מתפוגגת, והריצה שווה מטבעות. אין עונש על מי שרץ.
+export function windFled(run, id) {
+  const list = run?.winds || []
+  const i = list.findIndex(w => w.id === id)
+  if (i < 0 || list[i].taken || list[i].hit) return null
+  return { winds: list.map((w, k) => (k === i ? { ...w, taken: true, fled: true } : w)), coins: FLEE_COINS }
+}
+
+// ── לא ברחו ──
+// היא לוקחת את בן הלוויה. לא לתמיד: הוא לא איתך עד סוף הטיול, וחוזר
+// הביתה בפורטל. ומי שקונה שואב ושואב רוח — משחרר אותו באמצע הדרך.
+export function windTakesBuddy(run, id) {
+  const list = run?.winds || []
+  const i = list.findIndex(w => w.id === id)
+  if (i < 0 || list[i].taken || list[i].hit) return null
+  return { winds: list.map((w, k) => (k === i ? { ...w, hit: true, tookBuddy: true } : w)) }
 }
 
 // ── לא שואבים ──

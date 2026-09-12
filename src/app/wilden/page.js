@@ -4,6 +4,7 @@ import { initial, reduce, beaconView, S, RUN, MODE, nextRunKind, canStartStory }
 import { PHASE, PHASE_BUZZ, ACC_GATE, ACC_DIRECTION, ACC_COARSE, WALK_GATE } from './engine/beacon'
 import { PLACE_AFTER, stopInfo, kindName, JUNCTION_M } from './engine/placement'
 import { windNearby } from './engine/wind'
+import { WindFlee } from './ar/WindFlee'
 import { save, load, dayKey } from './engine/persist'
 import { creatureById } from './content/creatures'
 import { briefFor, homeFor, todaysCreature } from './content/briefs'
@@ -36,7 +37,7 @@ import { Shop } from './ui/Shop'
 import { weeklyStatus, WEEKLY_COINS, km } from './engine/weekly'
 import { bondOf, buddyLine, BOND_M } from './engine/buddy'
 import { ROUTE_KM, routeKm, poisFor, creatureCount, plannedMsKm, plannedMin } from './engine/plan'
-import { armed, gearById, withKeys, lockLine } from './engine/gear'
+import { armed, gearById, withKeys, lockLine, ownsGear } from './engine/gear'
 import { BUILDINGS, RES_ICON as RES_ICONS } from './engine/world'
 import { boosting, streakFill, boostLeftMs, BOOST_REVEAL } from './engine/streak'
 import { usePulse } from './hooks/usePulse'
@@ -234,14 +235,17 @@ export default function Wilden() {
   // ואין מה ללחוץ — הילד רואה מה קרה ומה זה עלה לו.
   const nearWind = g.state === S.SEARCH ? windNearby(g.run, g.run?.pos) : null
   const hasVacuum = !!g.run?.mods?.vacuum
+  // בלי שואב הרוח קופצת בהפתעה, ואז רצים. עם שואב — היא על המפה, ולוחצים.
+  const [fleeFrom, setFleeFrom] = useState(null)
   const windRef = useRef(null)
   useEffect(() => {
-    if (!nearWind || hasVacuum) return
+    if (!nearWind || hasVacuum || fleeFrom) return
     if (windRef.current === nearWind.id) return
     windRef.current = nearWind.id
-    dispatch({ type: 'WIND_HIT', id: nearWind.id, t: Date.now() })
+    unlockAudio()
+    setFleeFrom(nearWind.id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nearWind?.id, hasVacuum])
+  }, [nearWind?.id, hasVacuum, fleeFrom])
   // מה שקרה עם הרוח: צליל ורטט. המשפט עצמו במסך ההליכה.
   const lastWindT = useRef(null)
   useEffect(() => {
@@ -250,7 +254,7 @@ export default function Wilden() {
     lastWindT.current = lw.t
     try {
       resumeAudio()
-      if (lw.kind === 'suck') { sfxFinish(); buzz([30, 40, 60]) }
+      if (lw.kind === 'suck' || lw.kind === 'freed' || lw.kind === 'fled') { sfxFinish(); buzz([30, 40, 60]) }
       else { sfxRumble(1.2, 0.5); buzz([80, 60, 80]) }
     } catch (e) { /* לא קריטי */ }
   }, [g.run?.lastWind])
@@ -334,6 +338,19 @@ export default function Wilden() {
       {/* הקליפ של היצור, אחרי "תפסתם אותו!" ולפני ספירת המטבעות */}
       {justCaught?.clip && !clipSeen && (
         <Guard where="clip" fallback={null}><CaughtClip creature={justCaught} onDone={() => setClipSeen(true)} /></Guard>
+      )}
+
+      {/* ── הרוח קפצה עליכם ── בלי שואב אין מה ללחוץ: רצים. */}
+      {fleeFrom && (
+        <Guard where="windFlee" fallback={null}>
+          <WindFlee
+            buddyImg={creatureById(g.progress.buddy)?.live || null}
+            buddyName={tr(creatureById(g.progress.buddy)?.name || '')}
+            onDone={ok => {
+              dispatch({ type: ok ? 'WIND_FLED' : 'WIND_TOOK_BUDDY', id: fleeFrom, t: Date.now() })
+              setFleeFrom(null)
+            }} />
+        </Guard>
       )}
 
       {g.state === S.ENCOUNTER && creature?.clip && !introSeen && (
@@ -698,6 +715,17 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
       {panel === 'badges' && <Badges progress={g.progress} onClose={() => setPanel(null)} />}
       {panel === 'shop' && <Shop progress={g.progress} onBuy={onBuy} onEquip={onEquip} onGear={onGear} onSkin={onSkin} onStone={onStone} onLook={onLook} onClose={() => setPanel(null)} />}
 
+      {/* ── הבחירה ── "לרכוש שואב מראש כי יש רוח במסלול, ואם אין לו כסף
+          הוא צריך לברוח." אז אומרים את זה לפני שיוצאים, ולא בשטח. */}
+      <p style={s.windNote}>
+        {ownsGear(g.progress, 'vacuum')
+          ? tr('🌀 שואב הרוח איתכם. הרוחות יסומנו על המפה — אפשר לשאוב אותן.')
+          : tr('🌀 יש רוחות בדרך. בלי שואב הן קופצות בהפתעה, וצריך לברוח — ומי שלא מספיק, הרוח חוטפת לו את בן הלוויה.')}
+        {!ownsGear(g.progress, 'vacuum') && (
+          <button onClick={() => setPanel('shop')} style={s.windBuy}>{tr('לחנות')}</button>
+        )}
+      </p>
+
       {/* מה מחכה למסע הבא מהחנות */}
       {armed(g.progress).length > 0 && (
         <p style={s.armed}>🎒 {tr('למסע הבא:')} {armed(g.progress).map(it => `${tr(it.name)}${it.n > 1 ? ` ×${it.n}` : ''}`).join(' · ')}</p>
@@ -848,11 +876,14 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
     const lw = r.lastWind
     if (!lw || lw.t === lastWindT.current) return
     lastWindT.current = lw.t
-    setToast(lw.kind === 'suck'
-      ? tr('🌀 שאבתם רוח! +{n} 🪙', { n: lw.coins })
-      : lw.creature
-        ? tr('🌀 הרוח חטפה את {name} וגררה אותו {n} מ׳ קדימה!', { name: tr(creatureById(lw.creature)?.name || ''), n: lw.pushed })
-        : tr('🌀 רוח חלפה כאן.'))
+    const name = id => tr(creatureById(id)?.name || '')
+    setToast(
+      lw.kind === 'suck' ? tr('🌀 שאבתם רוח! +{n} 🪙', { n: lw.coins })
+      : lw.kind === 'fled' ? tr('🌀 ברחתם ממנה! +{n} 🪙', { n: lw.coins })
+      : lw.kind === 'freed' ? tr('🌀 שאבתם את הרוח — ו{name} יצא מתוכה!', { name: name(lw.buddy) })
+      : lw.kind === 'tookBuddy' ? tr('🌀 הרוח חטפה את {name}! הוא יחזור הביתה בסוף הדרך.', { name: name(lw.buddy) })
+      : lw.creature ? tr('🌀 הרוח חטפה את {name} וגררה אותו {n} מ׳ קדימה!', { name: name(lw.creature), n: lw.pushed })
+      : tr('🌀 רוח חלפה כאן.'))
     const id = setTimeout(() => setToast(null), 4000)
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -887,7 +918,8 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
   // משקפת (חנות): הסימן נדלק מרחוק כפול. דחף — אותו דבר לדקתיים.
   const reveal = (r.walked || 0) >= PLACE_AFTER && !!heat && heat.t >= (boost ? BOOST_REVEAL : (r.mods?.reveal ?? 0.65))
   // בן הלוויה: על המפה לידך, ומדבר באבני הדרך (יציאה, חצי, הביתה, תחנה).
-  const buddy = creatureById(g.progress.buddy)
+  // רוח שחטפה אותו — הוא לא איתנו עד שמשחררים אותו או עד הבית.
+  const buddy = r.buddyTaken ? null : creatureById(g.progress.buddy)
   const buddyKey = !buddy ? null : homeward ? 'home' : reveal ? 'stop' : total && along / total >= 0.5 ? 'half' : 'start'
   const saidRef = useRef(null)
   useEffect(() => {
@@ -910,7 +942,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
         <MiniMap home={r.home} path={r.path} pos={geo.pos} along={r.along || 0} heading={orient.heading} coinRun={r.coinRun} flowerRun={r.flowerRun}
           stops={r.stops || (r.target ? [r.target] : [])} nextStop={r.stops ? r.stop : 0}
           reveal={reveal} known={g.progress.creatures} creatureImg={creature?.sprites?.hero}
-          coins={r.coins} winds={r.winds} height="100%" kid={g.progress.wear?.kid || null} buddyImg={buddy?.live || null} />
+          coins={r.coins} winds={r.mods?.vacuum ? r.winds : []} height="100%" kid={g.progress.wear?.kid || null} buddyImg={buddy?.live || null} />
 
         {/* מונה המטבעות: קופץ בכל גלינג. בדרך הביתה או בדחף — כפול. */}
         <div key={r.coinsTaken || 0} style={{ ...s.coinHud, ...(boost ? s.coinHudBoost : {}) }}>🪙 {r.coinsTaken || 0}{(homeward || boost) && <span style={{ fontSize: 12 }}> ×2</span>}</div>
@@ -1196,6 +1228,8 @@ const s = {
   weekly: { display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: C.muted, margin: '0 0 14px', padding: '8px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
   buddyRow: { margin: '0 0 12px', padding: '10px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
   kmRow: { margin: '0 0 12px', padding: '10px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
+  windNote: { margin: '10px 0 0', padding: '9px 12px', borderRadius: 12, background: 'rgba(110,168,230,.12)', border: '1px solid rgba(110,168,230,.35)', color: '#C3D8EE', fontSize: 13.5, lineHeight: 1.5 },
+  windBuy: { marginInlineStart: 8, padding: '4px 12px', borderRadius: 999, border: '1px solid #6EA8E6', background: 'transparent', color: '#8ED0F0', fontFamily: 'inherit', fontSize: 13, fontWeight: 800, cursor: 'pointer' },
   armed: { margin: '-6px 0 12px', fontSize: 14, color: '#F0C069', fontWeight: 700 },
   locked: { margin: '-6px 0 12px', fontSize: 13.5, color: C.muted },
   made: { margin: '6px 0 0', fontSize: 15, color: '#F0C069', fontWeight: 700 },

@@ -366,7 +366,7 @@ test('בטיחות: התחנה מתרחקת מצומת, ומעדיפה שביל 
   assert.equal(safeAlong(plain, 300), 300)
 })
 
-import { placeWinds, windNearby, suckWind, windSteals, WIND_NEAR_M, WIND_COINS, WIND_PUSH_M } from '../src/app/wilden/engine/wind.js'
+import { placeWinds, windNearby, suckWind, windSteals, windFled, windTakesBuddy, escaped, WIND_NEAR_M, WIND_COINS, WIND_PUSH_M, FLEE_MS, FLEE_STEPS, FLEE_COINS } from '../src/app/wilden/engine/wind.js'
 
 // הרעיון של הבן שלה: "רוחות שהרסו את העולם. אפשר לשאוב אותן מהמסלול אם
 // קונים שואב. ואם לא — היא מנסה לחטוף את הדמות שנמצאת במסלול."
@@ -403,6 +403,39 @@ test('רוחות: בלי שואב היא חוטפת את היצור וגוררת
   assert.ok(progressAlong(path, res.stops[0]).offPath < 1, 'ועדיין על המסלול')
   assert.equal(res.winds[0].hit, true)
   assert.equal(windSteals({ winds: res.winds, stops: res.stops, path }, winds[0].id, path), null, 'פעם אחת')
+})
+
+// "אני רוצה שתהיה לו בחירה: לרכוש שואב מראש. ואם אין לו כסף — לברוח עם
+// בן הלוויה, ואם לא מצליח, בן הלוויה יישאב."
+test('רוחות: הבריחה — מספיק צעדים בזמן, אחרת הרוח לוקחת את בן הלוויה', () => {
+  assert.equal(escaped(FLEE_STEPS, FLEE_MS - 1), true)
+  assert.equal(escaped(FLEE_STEPS - 1, 1000), false, 'לא מספיק צעדים')
+  assert.equal(escaped(FLEE_STEPS + 5, FLEE_MS + 1), false, 'מאוחר מדי')
+  const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
+  const winds = placeWinds(PATH, { stops, n: 1, rng: () => 0.5 })
+  const base = { ...initial(), state: S.SEARCH,
+    progress: { ...initial().progress, buddy: 'nimi', creatures: ['nimi'], bond: {} },
+    run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: {}, resolved: false, walked: 2000, walkStartedAt: 0 } }
+  // ברחו: מטבעות, והרוח נגמרה
+  const fled = reduce(base, { type: 'WIND_FLED', id: winds[0].id, t: 1 })
+  assert.equal(fled.run.coinsTaken, FLEE_COINS)
+  assert.equal(fled.run.buddyTaken, undefined)
+  assert.equal(windNearby(fled.run, { lat: winds[0].lat, lng: winds[0].lng }), null)
+  // לא ברחו: בן הלוויה נלקח
+  const took = reduce(base, { type: 'WIND_TOOK_BUDDY', id: winds[0].id, t: 2 })
+  assert.equal(took.run.buddyTaken, true)
+  assert.equal(took.run.lastWind.buddy, 'nimi')
+  // ואז אין לו מטרים מהטיול הזה
+  const closed = reduce({ ...took, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 3, rng: () => 0.5 })
+  assert.equal(closed.progress.bond?.nimi || 0, 0, 'לא הלך איתנו — אין קשר')
+  const okBond = reduce({ ...fled, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 3, rng: () => 0.5 })
+  assert.ok((okBond.progress.bond?.nimi || 0) > 0, 'מי שברח — בן הלוויה איתו וצובר')
+  // שואב משחרר אותו באמצע הדרך
+  const winds2 = placeWinds(PATH, { stops, n: 2, rng: () => 0.5 })
+  const stuck = { ...took, run: { ...took.run, winds: winds2, buddyTaken: true, mods: { vacuum: true } } }
+  const freed = reduce(stuck, { type: 'WIND_SUCK', id: winds2[1].id, t: 4 })
+  assert.equal(freed.run.buddyTaken, false)
+  assert.equal(freed.run.lastWind.kind, 'freed')
 })
 
 test('רוחות במכונה: עם שואב נשאבות, בלי שואב חוטפות', () => {
