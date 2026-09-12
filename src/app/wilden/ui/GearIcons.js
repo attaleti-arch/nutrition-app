@@ -89,4 +89,20 @@ const ICONS = {
       <circle cx="26" cy="64" r="5" fill="#FFD84A" stroke="#8A6A3A" strokeWidth="2" />
     </g>
   ),
+  // שואב הרוח: משפך נחושת, מכל זכוכית שבתוכו רוח מסתחררת, ורצועת עור.
+  // ציור עד שהאיור האמיתי יגיע (כמו כל השאר כאן).
+  vacuum: (
+    <g>
+      <path d="M10 30 L34 44 V62 L10 76 Z" fill="#C98A3A" />
+      <path d="M12 34 L32 46 V60 L12 72 Z" fill="#F0C069" opacity=".85" />
+      <rect x="32" y="38" width="40" height="30" rx="10" fill="#2E3A2E" />
+      <rect x="37" y="43" width="30" height="20" rx="7" fill="#8ED0F0" opacity=".9" />
+      <path d="M52 46 q9 3 0 7 q-9 4 0 7" stroke="#2F7BE5" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <rect x="70" y="44" width="18" height="18" rx="5" fill="#C98A3A" />
+      <path d="M74 62 q10 10 2 20" stroke="#8A6A3A" strokeWidth="5" fill="none" strokeLinecap="round" />
+      <circle cx="24" cy="36" r="3.5" fill="#8ED0F0" opacity=".9" />
+      <circle cx="20" cy="70" r="3" fill="#8ED0F0" opacity=".7" />
+      <path d="M6 24 q8 4 0 8 M4 80 q10 -4 2 -9" stroke="#8ED0F0" strokeWidth="2.5" fill="none" strokeLinecap="round" />
+    </g>
+  ),
 }
