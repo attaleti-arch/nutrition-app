@@ -5,6 +5,7 @@ import { PHASE, PHASE_BUZZ, ACC_GATE, ACC_DIRECTION, ACC_COARSE, WALK_GATE } fro
 import { PLACE_AFTER, stopInfo, kindName, JUNCTION_M } from './engine/placement'
 import { windNearby } from './engine/wind'
 import { WindFlee } from './ar/WindFlee'
+import { WindSuck } from './ar/WindSuck'
 import { save, load, dayKey } from './engine/persist'
 import { creatureById } from './content/creatures'
 import { briefFor, homeFor, todaysCreature } from './content/briefs'
@@ -247,11 +248,16 @@ export default function Wilden() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nearWind?.id, hasVacuum, fleeFrom])
   // מה שקרה עם הרוח: צליל ורטט. המשפט עצמו במסך ההליכה.
+  const [suckShow, setSuckShow] = useState(null)
   const lastWindT = useRef(null)
   useEffect(() => {
     const lw = g.run?.lastWind
     if (!lw || lw.t === lastWindT.current) return
     lastWindT.current = lw.t
+    // שאיבה: רואים את הכלי עובד, לא רק טוסט.
+    if (lw.kind === 'suck' || lw.kind === 'freed') {
+      setSuckShow({ coins: lw.coins, freed: lw.kind === 'freed' ? tr(creatureById(lw.buddy)?.name || '') : null })
+    }
     try {
       resumeAudio()
       if (lw.kind === 'suck' || lw.kind === 'freed' || lw.kind === 'fled') { sfxFinish(); buzz([30, 40, 60]) }
@@ -338,6 +344,13 @@ export default function Wilden() {
       {/* הקליפ של היצור, אחרי "תפסתם אותו!" ולפני ספירת המטבעות */}
       {justCaught?.clip && !clipSeen && (
         <Guard where="clip" fallback={null}><CaughtClip creature={justCaught} onDone={() => setClipSeen(true)} /></Guard>
+      )}
+
+      {/* ── השואב עובד ── שנייה וחצי שבה רואים את מה שקנו */}
+      {suckShow && (
+        <Guard where="windSuck" fallback={null}>
+          <WindSuck coins={suckShow.coins} freed={suckShow.freed} onDone={() => setSuckShow(null)} />
+        </Guard>
       )}
 
       {/* ── הרוח קפצה עליכם ── בלי שואב אין מה ללחוץ: רצים. */}
