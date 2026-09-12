@@ -12,6 +12,9 @@
 // sprites — גזירות דו-ממדיות מגיליון הדמויות. מה שמוצג היום.
 // clip    — סרטון קצר (MP4, 9:16, ~5 שניות) שמתנגן אחרי התפיסה. null = אין
 //          עדיין, ואז אין מסך קליפ בכלל. אף פעם לא סרטון של יצור אחר.
+// poster  — פריים אחד מתוך live, חתוך לדמות. זו התמונה של הספר: 27 צורות
+//           על מסך אחד הן 30 מגה של קליפים מונפשים, וחצי מגה של פוסטרים.
+//           הקליפ החי נשאר לעמוד של היצור, אחד בכל פעם.
 // live    — אותו קליפ בלי הרקע, כ-WebP מונפש שקוף. זו הדמות החיה ב-AR:
 //          כשיש live, הבמה מציגה אותו במקום המודל התלת-ממדי הקפוא.
 //          "עם כל התלת-ממד זה לא מרגיש דמות" — זה התיקון, באפס כסף.
@@ -47,17 +50,19 @@ export const CREATURES = {
     ios: null,
     clip: '/creatures/nimi/caught.mp4',
     live: '/creatures/nimi/live.webp',
+    poster: '/creatures/nimi/poster.webp',
     sprites: { hero: '/creatures/nimi/hero.png', peek: '/creatures/nimi/peek.png' },
     // ── שלבים ── הדמות של כל שלב (ראה engine/stages.js). anchors: איפה
     // הכובע יושב על הדמות הזאת. אין שלב 3 עדיין — הילה וגודל עד שיגיע.
     stages: {
-      2: { live: '/creatures/nimi/s2/live.webp', clip: '/creatures/nimi/s2/caught.mp4',
+      2: { live: '/creatures/nimi/s2/live.webp', clip: '/creatures/nimi/s2/caught.mp4', poster: '/creatures/nimi/s2/poster.webp',
         anchors: { head: { x: 62, y: 17, h: 9 }, face: { x: 63, y: 24, h: 6 } } },
     },
     // ── צבעים מהביצה עם דמות משלהם ── (ראה engine/egg.js, stages.lookOf)
     // "זוהר": הקליפ הראשון של נימי המפותח — זנב פלאף, סימנים בטורקיז.
     variants: {
       glow: { live: '/creatures/nimi/glow/live.webp', clip: '/creatures/nimi/glow/caught.mp4',
+        poster: '/creatures/nimi/glow/poster.webp',
         anchors: { head: { x: 61, y: 23, h: 9 }, face: { x: 62, y: 32, h: 5 } } },
     },
     heightM: 0.45,
@@ -77,9 +82,10 @@ export const CREATURES = {
     ios: null,
     clip: '/creatures/dabashon/caught.mp4',
     live: '/creatures/dabashon/live.webp',
+    poster: '/creatures/dabashon/poster.webp',
     sprites: null,                        // אין עדיין גזירה דו-ממדית
     stages: {
-      2: { live: '/creatures/dabashon/s2/live.webp', clip: '/creatures/dabashon/s2/caught.mp4',
+      2: { live: '/creatures/dabashon/s2/live.webp', clip: '/creatures/dabashon/s2/caught.mp4', poster: '/creatures/dabashon/s2/poster.webp',
         anchors: { head: { x: 54, y: 24, h: 7 }, face: { x: 55, y: 30, h: 5 } } },
     },
     heightM: 0.40,
@@ -100,12 +106,13 @@ export const CREATURES = {
     // הקליפ שלה מ-Runway: מרים רגל כבדה ורוקע, הקווים הזהובים מהבהבים, מהנהן.
     clip: '/creatures/bolder/caught.mp4',
     live: '/creatures/bolder/live.webp',
+    poster: '/creatures/bolder/poster.webp',
     // הקליפ השני שלה: הוא רוקע ומתפוצץ באור, ברקים, אבנים עפות, עשן. זה
     // רגע הבריחה שלו במרדף — מוצג פעם אחת במקום שבו עמד, ואז הוא מאחוריכם.
     burst: '/creatures/bolder/burst.webp',
     sprites: null,
     stages: {
-      2: { live: '/creatures/bolder/s2/live.webp', clip: '/creatures/bolder/s2/caught.mp4',
+      2: { live: '/creatures/bolder/s2/live.webp', clip: '/creatures/bolder/s2/caught.mp4', poster: '/creatures/bolder/s2/poster.webp',
         anchors: { head: { x: 57, y: 24, h: 7 }, face: { x: 58, y: 30, h: 5 } } },
     },
     heightM: 0.80,
@@ -119,7 +126,7 @@ export const CREATURES = {
   ruchi: {
     id: 'ruchi', name: 'רוחי',
     stages: {
-      2: { live: '/creatures/ruchi/s2/live.webp', clip: '/creatures/ruchi/s2/caught.mp4',
+      2: { live: '/creatures/ruchi/s2/live.webp', clip: '/creatures/ruchi/s2/caught.mp4', poster: '/creatures/ruchi/s2/poster.webp',
         anchors: { head: { x: 56, y: 29, h: 6 }, face: { x: 56, y: 35, h: 3 } } },
     },
     // ציפור רוח, כחול-זהב. המודל שלה מ-Meshy (19.5MB → 1.9MB, 60K משולשים,
@@ -129,6 +136,7 @@ export const CREATURES = {
     // הקליפ שלה מ-Runway: פורש כנפיים, מנפנף, עולה קצת וצף חזרה.
     clip: '/creatures/ruchi/caught.mp4',
     live: '/creatures/ruchi/live.webp',
+    poster: '/creatures/ruchi/poster.webp',
     sprites: null,
     heightM: 0.45,
     arMode: AR_MODE.SKY,
@@ -141,7 +149,7 @@ export const CREATURES = {
   lumi: {
     id: 'lumi', name: 'לומי',
     stages: {
-      2: { live: '/creatures/lumi/s2/live.webp', clip: '/creatures/lumi/s2/caught.mp4',
+      2: { live: '/creatures/lumi/s2/live.webp', clip: '/creatures/lumi/s2/caught.mp4', poster: '/creatures/lumi/s2/poster.webp',
         anchors: { head: { x: 65, y: 27, h: 7 }, face: { x: 66, y: 33, h: 4 } } },
     },
     // שועל-אור עם זנב נוצות. המודל שלה מ-Meshy (18.4MB → 2.2MB). על הרצפה,
@@ -152,6 +160,7 @@ export const CREATURES = {
     // ההשתקפות על הרצפה נחתכת בגזירה (מתחת לכפות).
     clip: '/creatures/lumi/caught.mp4',
     live: '/creatures/lumi/live.webp',
+    poster: '/creatures/lumi/poster.webp',
     sprites: null,
     heightM: 0.55,
     arMode: AR_MODE.GROUND,
@@ -164,7 +173,7 @@ export const CREATURES = {
   gali: {
     id: 'gali', name: 'גלי', gender: 'f',
     stages: {
-      2: { live: '/creatures/gali/s2/live.webp', clip: '/creatures/gali/s2/caught.mp4',
+      2: { live: '/creatures/gali/s2/live.webp', clip: '/creatures/gali/s2/caught.mp4', poster: '/creatures/gali/s2/poster.webp',
         anchors: { head: { x: 51, y: 22, h: 8 }, face: { x: 51, y: 29, h: 5 } } },
     },
     // יצור מים, כולו גל. המודל שלה מ-Meshy (16.9MB → 1.6MB). על הרצפה,
@@ -174,6 +183,7 @@ export const CREATURES = {
     // הקליפ שלה מ-Runway: מתפרק לטבעת מים מסתחררת, ומתגבש חזרה. 12 שניות.
     clip: '/creatures/gali/caught.mp4',
     live: '/creatures/gali/live.webp',
+    poster: '/creatures/gali/poster.webp',
     sprites: null,
     heightM: 0.50,
     arMode: AR_MODE.GROUND,
@@ -188,7 +198,7 @@ export const CREATURES = {
     // שלב 2: שועל שחור על רקע כמעט שחור — נחתך לפי גוון (הרקע ירקרק, הוא
     // אפור-סגול) ובהירות, לא לפי צבע. לפעם הבאה: רקע בהיר יותר לצל.
     stages: {
-      2: { live: '/creatures/tzel/s2/live.webp', clip: '/creatures/tzel/s2/caught.mp4',
+      2: { live: '/creatures/tzel/s2/live.webp', clip: '/creatures/tzel/s2/caught.mp4', poster: '/creatures/tzel/s2/poster.webp',
         anchors: { head: { x: 62, y: 29, h: 8 }, face: { x: 63, y: 37, h: 4 } } },
     },
     // שועל צללים סגול, הזנב זוהר. המודל שלה מ-Meshy (16.3MB → 1.8MB). על
@@ -199,6 +209,7 @@ export const CREATURES = {
     // (#3D4C3D) כי הוא כהה מדי לרקע הכהה — נגזר לשקוף כאן.
     clip: '/creatures/tzel/caught.mp4',
     live: '/creatures/tzel/live.webp',
+    poster: '/creatures/tzel/poster.webp',
     sprites: null,
     heightM: 0.50,
     arMode: AR_MODE.GROUND,
@@ -211,7 +222,7 @@ export const CREATURES = {
   kraag: {
     id: 'kraag', name: 'קראג',
     stages: {
-      2: { live: '/creatures/kraag/s2/live.webp', clip: '/creatures/kraag/s2/caught.mp4',
+      2: { live: '/creatures/kraag/s2/live.webp', clip: '/creatures/kraag/s2/caught.mp4', poster: '/creatures/kraag/s2/poster.webp',
         anchors: { head: { x: 64, y: 26, h: 6 }, face: { x: 65, y: 32, h: 3 } } },
     },
     // המודל שלה מ-Meshy (19.6MB → 1.8MB). בקאנון המקורי קראג הוא "חורבה
@@ -222,6 +233,7 @@ export const CREATURES = {
     ios: null,
     clip: '/creatures/kraag/caught.mp4',
     live: '/creatures/kraag/live.webp',
+    poster: '/creatures/kraag/poster.webp',
     sprites: null,
     heightM: 0.70,
     arMode: AR_MODE.GROUND,
@@ -234,7 +246,7 @@ export const CREATURES = {
   noga: {
     id: 'noga', name: 'נוגה', gender: 'f',
     stages: {
-      2: { live: '/creatures/noga/s2/live.webp', clip: '/creatures/noga/s2/caught.mp4',
+      2: { live: '/creatures/noga/s2/live.webp', clip: '/creatures/noga/s2/caught.mp4', poster: '/creatures/noga/s2/poster.webp',
         anchors: { head: { x: 61, y: 31, h: 9 }, face: { x: 62, y: 38, h: 5 } } },
     },
     // "כל הילדים אמרו לי ש-8 יצורים זה לא מספיק." התשיעית: איילת אור —
@@ -245,6 +257,7 @@ export const CREATURES = {
     ios: null,
     clip: '/creatures/noga/caught.mp4',
     live: '/creatures/noga/live.webp',
+    poster: '/creatures/noga/poster.webp',
     sprites: null,
     heightM: 0.55,
     arMode: AR_MODE.GROUND,

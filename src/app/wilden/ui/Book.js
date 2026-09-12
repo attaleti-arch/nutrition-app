@@ -10,48 +10,57 @@ import { badgeList } from '../engine/badges'
 import { itemById } from '../engine/shop'
 import { Wear } from './Wear'
 import { CreatureAura, StageTag } from './Aura'
-import { STAGES, stageProgress, stagedFor, stagedName, hasLook, looksFor, lookName } from '../engine/stages'
+import { STAGES, stageProgress, staged, stagedFor, stagedName, hasLook, looksFor, lookName, formsOf, formTally } from '../engine/stages'
 
 // ─── ספר היצורים, והישגים ───
-// עמוד לכל יצור: מי הוא, מה הוא מביא, כמה פעמים נתפס, באילו צבעים. מי
-// שלא נתפס — צללית וסימן שאלה, כדי שיהיה מה לרצות. לחיצה על יצור שנתפס
-// פותחת אותו בתלת-ממד, לסובב עם האצבע — זה המקום של המודלים.
+// "ספר היצורים צריך לכלול יותר מ-9, שיראו המון דמויות."
+//
+// והן שם: לכל יצור שלוש צורות — גור, בוגר, אגדי — ולכל אחת דמות משלה.
+// תשעה יצורים הם עשרים ושבע צורות, ועוד אחת לכל צבע שבקע או נקנה. אז
+// הספר הוא לא רשימה של תשעה כרטיסים אלא שורה לכל יצור: קו ההתפתחות
+// שלו משמאל לימין, והצבעים שלו אחריו. מה שעוד לא נפתח — צללית שחורה:
+// רואים שיש שם משהו, ורואים כמה חסר.
+//
+// בגריד יש פוסטרים (פריים אחד, חתוך), לא קליפים: עשרים ושבע אנימציות
+// על מסך אחד הן שלושים מגה. הקליפ החי נפתח בעמוד של היצור, אחד בכל פעם.
 
 export function Book({ progress, onClose, onLook = null }) {
   const [open, setOpen] = useState(null)
   const have = progress?.creatures || []
   const caught = progress?.caught || {}
-  const variants = progress?.variants || []
+  const tally = formTally(progress, AVAILABLE.map(id => CREATURES[id]))
   return (
     <div style={B.wrap} dir={dirOf()}>
       <div style={B.top}>
         <h2 style={B.h2}>{tr('ספר היצורים')}</h2>
-        <span style={B.count}>{have.length} / {AVAILABLE.length}</span>
+        <span style={B.count}>{tally.open} / {tally.total}{tally.colours ? ` · ${tally.colours} 🎨` : ''}</span>
         <button onClick={onClose} style={B.close}>{tr('סגור')}</button>
       </div>
-      <div style={B.grid}>
+      <p style={B.lead}>{tr('{n} יצורים, ולכל אחד שלוש צורות — וצבעים.', { n: AVAILABLE.length })}</p>
+      <div style={B.rows}>
         {AVAILABLE.map(id => {
+          const base = CREATURES[id]
           const sp = stageProgress(progress, id)
-          const c = stagedFor(progress, CREATURES[id])
           const known = have.includes(id)
           const n = caught[id] || 0
-          const vs = variants.filter(v => v.creature === id)
-          const female = c.gender === 'f'
+          const female = base.gender === 'f'
+          const forms = formsOf(progress, base)
           return (
-            <button key={id} onClick={() => known && setOpen(id)} style={{ ...B.card, opacity: known ? 1 : 0.7, cursor: known ? 'pointer' : 'default' }} aria-label={known ? stagedName(c, sp.stage) : tr('יצור לא ידוע')}>
-              <div style={B.pic}>
-                {known
-                  ? <div style={{ position: 'relative', height: 100 + (sp.stage - 1) * 8, width: 'fit-content' }}>
-                      <CreatureAura c={c} />
-                      <img src={c.live || c.sprites?.hero} alt="" style={{ ...B.img, position: 'relative', zIndex: 1, maxHeight: '100%', filter: c.tint || 'none' }} draggable={false} />
-                      <Wear id={id} wear={progress?.wear?.[id]} anchors={c.anchors} />
-                    </div>
-                  : <span style={B.unknown}>?</span>}
-                {known && <StageTag stage={sp.stage} style={{ position: 'absolute', top: 6, insetInlineStart: 6 }} />}
+            <section key={id} style={B.row}>
+              <div style={B.rowHead}>
+                <span style={B.rowName}>{known ? tr(base.name) : '???'}</span>
+                <span style={B.rowSub}>
+                  {known
+                    ? `${female ? tr('מביאה') : tr('מביא')} ${RES_ICON[RES_OF[id]] || ''} ${tr(RES_NAME[RES_OF[id]] || '')} · ${n === 1 ? tr('נתפס פעם אחת') : tr('נתפס {n} פעמים', { n })}`
+                    : base.arMode === 'sky' ? tr('משהו באוויר') : tr('משהו על הרצפה')}
+                </span>
               </div>
-              <p style={B.name}>{known ? stagedName(c, sp.stage) : '???'}</p>
-              <p style={B.sub}>{known ? `${female ? tr('מביאה') : tr('מביא')} ${RES_ICON[RES_OF[id]] || ''} ${tr(RES_NAME[RES_OF[id]] || '')}` : c.arMode === 'sky' ? tr('משהו באוויר') : tr('משהו על הרצפה')}</p>
-              {known && <p style={B.meta}>{n === 1 ? tr('נתפס פעם אחת') : tr('נתפס {n} פעמים', { n })}{vs.length ? ' · ' + vs.map(v => tr(variantName(v.variant, c))).join(', ') : ''}</p>}
+              <div style={B.forms}>
+                {forms.map((f, i) => (
+                  <Form key={`${id}-${f.kind}-${f.stage || ''}-${f.look || ''}-${i}`}
+                    base={base} form={f} known={known} progress={progress} onOpen={() => setOpen(id)} />
+                ))}
+              </div>
               {/* "עוד 2 תפיסות ונימי גדל" — הסיבה לצאת שוב אליו */}
               {known && sp.next && (
                 <div style={B.growWrap}>
@@ -59,12 +68,39 @@ export function Book({ progress, onClose, onLook = null }) {
                   <span style={B.growText}>{tr('עוד')} {sp.left === 1 ? tr('תפיסה אחת') : tr('{n} תפיסות', { n: sp.left })} {sp.next === 3 ? (female ? tr('והיא אגדית') : tr('והוא אגדי')) : (female ? tr('והיא גדלה') : tr('והוא גדל'))}</span>
                 </div>
               )}
-            </button>
+            </section>
           )
         })}
       </div>
       {open && <CreaturePage id={open} progress={progress} onClose={() => setOpen(null)} onLook={onLook} />}
     </div>
+  )
+}
+
+// ── צורה אחת ──
+// פתוחה: הדמות של השלב (או של הצבע), עם ההילה שלה. נעולה: אותה דמות
+// בדיוק, שחורה — צללית. ילד רואה מה מחכה לו, בלי לקבל את זה.
+function Form({ base, form, known, progress, onOpen }) {
+  const c = staged(base, form.stage || 1, form.kind === 'look' ? form.look : null)
+  const src = c?.poster || c?.live || c?.sprites?.hero
+  const locked = !form.open
+  const need = !known ? tr('למצוא אותו')
+    : form.left > 0 ? (form.left === 1 ? tr('עוד תפיסה') : tr('עוד {n}', { n: form.left }))
+    : ''
+  return (
+    <button onClick={() => !locked && onOpen()} disabled={locked}
+      aria-label={locked ? tr('צורה נעולה') : `${tr(base.name)} ${tr(form.name)}`}
+      style={{ ...B.cell, ...(locked ? B.cellLocked : {}), cursor: locked ? 'default' : 'pointer' }}>
+      <div style={B.cellPic}>
+        {!locked && <CreatureAura c={c} size="104%" />}
+        {src && <img src={src} alt="" loading="lazy" draggable={false}
+          style={{ ...B.cellImg, filter: locked ? 'brightness(0) opacity(.32)' : (c.tint || 'none') }} />}
+      </div>
+      <span style={{ ...B.cellName, color: locked ? '#5C6A5C' : form.kind === 'look' ? '#F0C069' : '#E9E5D8' }}>
+        {form.kind === 'look' ? '✨ ' : ''}{tr(form.name)}
+      </span>
+      {locked && need && <span style={B.cellNeed}>{need}</span>}
+    </button>
   )
 }
 
@@ -161,7 +197,21 @@ const B = {
   h2: { margin: 0, fontSize: 24, fontWeight: 900, flex: 1 },
   count: { color: '#E5A342', fontWeight: 800, fontSize: 15 },
   close: { padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(233,229,216,.3)', background: 'transparent', color: '#E9E5D8', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 },
+  lead: { margin: '0 0 12px', fontSize: 13.5, color: '#767F71' },
+  rows: { display: 'grid', gap: 12 },
+  row: { background: '#161E17', border: '1px solid #2B382B', borderRadius: 14, padding: '10px 10px 12px' },
+  rowHead: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 6 },
+  rowName: { fontSize: 17, fontWeight: 900 },
+  rowSub: { fontSize: 12.5, color: '#9BA495' },
+  // גלילה אופקית בשורה: יצור עם ארבעה צבעים לא ישבור את הרוחב של הטלפון.
+  forms: { display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2, scrollbarWidth: 'none' },
+  cell: { flex: '0 0 auto', width: 88, background: '#101710', border: '1px solid #2B382B', borderRadius: 12,
+    padding: '6px 4px 7px', color: '#E9E5D8', fontFamily: 'inherit', display: 'grid', justifyItems: 'center', gap: 2 },
+  cellLocked: { background: '#0D120D', borderStyle: 'dashed', borderColor: '#263126' },
+  cellPic: { position: 'relative', height: 72, width: '100%', display: 'grid', placeItems: 'center' },
+  cellImg: { position: 'relative', zIndex: 1, maxHeight: 72, maxWidth: '100%', objectFit: 'contain', display: 'block' },
+  cellName: { fontSize: 12.5, fontWeight: 800, lineHeight: 1.2 },
+  cellNeed: { fontSize: 11, color: '#767F71' },
   card: { background: '#161E17', border: '1px solid #2B382B', borderRadius: 14, padding: 10, textAlign: 'center', color: '#E9E5D8', fontFamily: 'inherit' },
   // רקע בהיר מעט מאחורי הדמות — צל, השחור, נעלם אחרת על כרטיס כהה.
   pic: { position: 'relative', height: 120, display: 'grid', placeItems: 'center', background: 'radial-gradient(ellipse at 50% 60%, #33423A, rgba(51,66,58,0) 72%)', borderRadius: 12 },

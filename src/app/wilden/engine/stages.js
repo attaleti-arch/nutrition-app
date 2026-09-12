@@ -68,7 +68,9 @@ export const grewVerb = creature => (creature?.gender === 'f' ? tr('גדלה') :
 // זו דמות שלמה — והיא המראה שלו מעכשיו, אלא אם בחרו אחרת בספר
 // (progress.look[id] = 'base' | מזהה צבע).
 // צבע "נראה" אם יש לו דמות (creature.variants[id]) או גוון (egg.TINT).
-const wearable = (creature, id) => !!(creature?.variants?.[id] || tintOf(id))
+// צבע "נראה" אם יש לו דמות משלו, גוון מהביצה, או גוון מהחנות — אותו
+// צבע יכול להגיע משני המקורות (יער בוקע מביצה וגם נמכר בחנות).
+const wearable = (creature, id) => !!(creature?.variants?.[id] || tintOf(id) || skinTint(id))
 // מה היצור הזה יכול ללבוש: מהביצה (מה שבקע), ומהחנות (סקינים שנקנו).
 export function looksFor(progress, creature) {
   if (!creature) return []
@@ -79,7 +81,10 @@ export function looksFor(progress, creature) {
   for (const s of progress?.skins?.[creature.id] || []) if (!out.includes(s)) out.push(s)
   return out
 }
-const canWear = (progress, creature, id) => wearable(creature, id) ? (progress?.variants || []).some(v => v.creature === creature.id && v.variant === id) : ownsSkin(progress, creature.id, id)
+// בקע אצלי, או נקנה בחנות — שניהם "יש לי". קודם זה היה או-או, ומי
+// שקנה צבע שגם בוקע מביצה לא יכול היה ללבוש אותו.
+const canWear = (progress, creature, id) =>
+  (progress?.variants || []).some(v => v.creature === creature.id && v.variant === id) || ownsSkin(progress, creature.id, id)
 export function lookOf(progress, creature) {
   if (!creature) return null
   const pick = progress?.look?.[creature.id]
@@ -103,7 +108,10 @@ export function staged(creature, stage = 1, look = null) {
   const n = Math.max(1, Math.min(MAX_STAGE, stage || 1))
   const lookArt = look && creature.variants?.[look] ? creature.variants[look] : null
   const tint = !lookArt && look ? (tintOf(look) || skinTint(look)) : null
-  const art = lookArt || (n > 1 ? creature.stages?.[n] || null : null)
+  // אין דמות לשלב הזה? יורדים לשלב הגבוה ביותר שכן יש לו — האגדי נראה
+  // כמו הבוגר, גדול וזוהר, ולא כמו הגור. (קודם הוא נפל עד הגור.)
+  const stageArt = n > 1 ? creature.stages?.[n] || creature.stages?.[n - 1] || null : null
+  const art = lookArt || stageArt
   const out = {
     ...creature,
     // יש דמות: הקליפ שלה. מודל תלת-ממד וגזירות של הבסיס לא "מבינים" — אחרת
@@ -114,7 +122,8 @@ export function staged(creature, stage = 1, look = null) {
     // גוון: פילטר על הקליפ (של השלב), והילה בצבע. המודל יורד — הוא לא צבוע.
     tint: tint ? tint.filter : null,
     auraColor: tint ? tint.aura : null,
-    aura: n > 1 && !art,
+    // הילה = "זה לא באמת החומר של השלב הזה": האגדי לובש את דמות הבוגר.
+    aura: n > 1 && !creature.stages?.[n] && !lookArt,
   }
   if (tint) out.model = null
   if (n > 1) out.heightM = (creature.heightM || 0.5) * stageScale(n)
@@ -125,3 +134,40 @@ export const stagedFor = (progress, creature) => (creature ? staged(creature, st
 
 // כמה יצורים הגיעו לשלב — להישגים.
 export const countAtStage = (progress, n) => [...idsOf(progress)].filter(id => stageOf(progress, id) >= n).length
+
+// ── כל הצורות ──
+// "ספר היצורים צריך לכלול יותר מ-9, שיראו המון דמויות." והן באמת שם: כל
+// יצור הוא שלוש צורות — גור, בוגר, אגדי — ולכל אחת דמות משלה (לבוגר יש
+// קליפ נפרד, לאגדי אותו קליפ עם הילה). תשעה יצורים הם עשרים ושבע צורות,
+// ועוד אחת לכל צבע שבקע או נקנה. מה שעוד לא נפתח מופיע כצללית: רואים
+// שיש שם משהו, ויודעים מה חסר כדי להגיע אליו.
+//
+// טהור, ומחזיר נתונים בלבד — הספר רק מצייר.
+export function formsOf(progress, creature) {
+  if (!creature) return []
+  const have = (progress?.creatures || []).includes(creature.id)
+  const sp = stageProgress(progress, creature.id)
+  const out = STAGES.map(st => ({
+    kind: 'stage', stage: st.n, name: st.name,
+    open: have && sp.stage >= st.n,
+    // מה חסר כדי לפתוח: תפיסות. בשלב 1 — פשוט לתפוס אותו פעם אחת.
+    left: have ? Math.max(0, st.need - sp.have) : null,
+  }))
+  for (const l of looksFor(progress, creature)) {
+    out.push({ kind: 'look', look: l, name: lookName(l, creature), open: true, stage: sp.stage })
+  }
+  return out
+}
+
+// כמה צורות נפתחו מכמה אפשריות (בלי צבעים — הם בונוס, ואין להם תקרה).
+// מקבל את היצורים עצמם, כדי ש-stages לא יצטרך להכיר את המרשם.
+export function formTally(progress, creatures = []) {
+  let open = 0, total = 0, colours = 0
+  for (const c of creatures) {
+    if (!c) continue
+    total += MAX_STAGE
+    if ((progress?.creatures || []).includes(c.id)) open += Math.min(MAX_STAGE, stageOf(progress, c.id))
+    colours += looksFor(progress, c).length
+  }
+  return { open, total, colours }
+}

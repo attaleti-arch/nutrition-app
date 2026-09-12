@@ -240,6 +240,51 @@ test('עולם הבית: לכל דמות מקום משלה, עם מרווח — 
   }
 })
 
+import { formsOf, formTally, staged as staged2 } from '../src/app/wilden/engine/stages.js'
+import { CREATURES as CRE2 } from '../src/app/wilden/content/creatures.js'
+
+// "ספר היצורים צריך לכלול יותר מ-9, שיראו המון דמויות."
+test('ספר: כל יצור הוא שלוש צורות — 27 בסך הכול, ועוד צבעים', () => {
+  const ids = Object.keys(CRE2)
+  assert.equal(ids.length, 9)
+  const empty = { creatures: [], caught: {} }
+  const t0 = formTally(empty, ids.map(id => CRE2[id]))
+  assert.equal(t0.total, 27, 'תשעה יצורים, שלוש צורות לכל אחד')
+  assert.equal(t0.open, 0)
+  // לכל צורה יש דמות להראות — גם לנעולה (צללית של אותה דמות)
+  for (const id of ids) {
+    const forms = formsOf(empty, CRE2[id])
+    assert.equal(forms.length, 3)
+    assert.deepEqual(forms.map(f => f.open), [false, false, false])
+    for (const f of forms) {
+      const c = staged2(CRE2[id], f.stage)
+      assert.ok(c.poster, `אין פוסטר ל-${id} שלב ${f.stage}`)
+    }
+  }
+  // תפסו את נימי שלוש פעמים: גור ובוגר פתוחים, אגדי עוד לא
+  const p3 = { creatures: ['nimi'], caught: { nimi: 3 } }
+  const f3 = formsOf(p3, CRE2.nimi)
+  assert.deepEqual(f3.map(f => f.open), [true, true, false])
+  assert.equal(f3[2].left, 4, 'עוד ארבע תפיסות והוא אגדי')
+  assert.equal(formTally(p3, ids.map(id => CRE2[id])).open, 2)
+  // צבע שבקע הוא צורה נוספת בשורה
+  const pc = { ...p3, variants: [{ creature: 'nimi', variant: 'forest' }] }
+  const fc = formsOf(pc, CRE2.nimi)
+  assert.equal(fc.length, 4)
+  assert.equal(fc[3].kind, 'look')
+  assert.equal(fc[3].name, 'יער')
+  assert.equal(formTally(pc, ids.map(id => CRE2[id])).colours, 1)
+})
+
+test('שלבים: לאגדי אין עדיין חומר — הוא לובש את דמות הבוגר, לא את הגור', () => {
+  const c3 = staged2(CRE2.nimi, 3)
+  assert.equal(c3.live, CRE2.nimi.stages[2].live, 'דמות הבוגר, לא של הגור')
+  assert.equal(c3.aura, true, 'ועם הילה, כי זה לא באמת החומר של אגדי')
+  assert.ok(c3.heightM > CRE2.nimi.heightM)
+  const c2 = staged2(CRE2.nimi, 2)
+  assert.equal(c2.aura, false, 'לבוגר יש חומר משלו')
+})
+
 function feedSeq(det, seq, dt = 20) {
   let t = 1000, out = null
   for (const gval of seq) { const r = det.feed({ t, a: gval * G }); if (r) out = r; t += dt }
@@ -1383,19 +1428,26 @@ test('תשעה יצורים: לכולם מודל אמיתי, controller רשום
 // ═══════════════════════════════════════════════════════════════
 // הביצה
 // ═══════════════════════════════════════════════════════════════
-import { EGG_PRICE, HATCH_M, VARIANTS, rollVariant, canBuyEgg, eggWarmth, warmthWord, hatch, hasVariant } from '../src/app/wilden/engine/egg.js'
+import { EGG_PRICE, HATCH_M, VARIANTS, rollVariant, canBuyEgg, eggWarmth, warmthWord, hatch, hasVariant, tintOf } from '../src/app/wilden/engine/egg.js'
+import { skinTint as skinTint2 } from '../src/app/wilden/engine/skins.js'
 
-test('ביצה: ההגרלה לפי ההסתברויות, ולכל צבע יש שם וצבע', () => {
+test('ביצה: שבעה צבעים, ההגרלה לפי ההסתברויות, ולכל צבע יש שם וגוון', () => {
+  assert.equal(VARIANTS.length, 7, 'זהב, יער, לילה, שקיעה, כסף, זוהר, קרח')
   assert.equal(VARIANTS.reduce((s, v) => s + v.p, 0).toFixed(2), '1.00')
   assert.equal(rollVariant(() => 0.1).id, 'gold')
-  assert.equal(rollVariant(() => 0.7).id, 'night')
-  assert.equal(rollVariant(() => 0.85).id, 'glow')
+  assert.equal(rollVariant(() => 0.3).id, 'forest')
+  assert.equal(rollVariant(() => 0.5).id, 'night')
+  assert.equal(rollVariant(() => 0.65).id, 'sunset')
+  assert.equal(rollVariant(() => 0.78).id, 'silver')
+  assert.equal(rollVariant(() => 0.88).id, 'glow')
   assert.equal(rollVariant(() => 0.97).id, 'ice')
   for (const v of VARIANTS) { assert.ok(v.name); assert.equal(v.tint.length, 3); assert.equal(v.glow.length, 3) }
-  // בהגרלה אמיתית קרח הוא נדיר
+  // צבע שבוקע חייב להיות כזה שאפשר גם ללבוש: גוון מהביצה או מהחנות
+  for (const v of VARIANTS) assert.ok(tintOf(v.id) || skinTint2(v.id), `אין גוון ל-${v.id}`)
+  // בהגרלה אמיתית קרח הוא הנדיר
   let ice = 0
   for (let i = 0; i < 4000; i++) if (rollVariant().id === 'ice') ice++
-  assert.ok(ice > 80 && ice < 340, 'קרח ~5%: ' + ice)
+  assert.ok(ice > 170 && ice < 400, 'קרח ~7%: ' + ice)
 })
 
 test('ביצה: קונים רק עם מטבעות, רק עם יצור אחד לפחות, ורק אחת', () => {

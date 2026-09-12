@@ -73,6 +73,8 @@ export const DE = {
   'אחד כבר חי כאן. השאר עדיין בחוץ.': 'Eines lebt schon hier. Die anderen sind noch draußen.',
   '{n} כבר חיים כאן. עוד מחכים בחוץ.': '{n} leben schon hier. Weitere warten draußen.',
   'ספר היצורים': 'Wesenbuch', 'הישגים': 'Erfolge', 'חנות': 'Laden', 'החנות': 'Der Laden',
+  '{n} יצורים, ולכל אחד שלוש צורות — וצבעים.': '{n} Wesen, jedes in drei Gestalten — und in Farben.',
+  'למצוא אותו': 'Erst finden', 'עוד תפיסה': 'Noch 1 Fang', 'עוד {n}': 'Noch {n}', 'צורה נעולה': 'Gestalt noch verschlossen',
   'למסע הבא:': 'Für die nächste Tour:',
   'בן לוויה': 'Begleiter', 'יוצא איתך:': 'Geht mit dir:', 'מי יוצא איתך היום?': 'Wer geht heute mit dir?',
   'הוא ילך לידך על המפה, וכל 2 ק״מ יחד נספרים לו כתפיסה.': 'Er läuft neben dir auf der Karte, und alle 2 km zusammen zählen für ihn wie ein Fang.',
