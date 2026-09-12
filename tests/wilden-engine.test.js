@@ -225,7 +225,15 @@ test('עולם הבית: לכל דמות מקום משלה, עם מרווח — 
     }
   }
   check(1, 2.5, 'שלב 1')
-  check(1.3, 0, 'שלב 3')
+  // בשלב 3 כולם גדולים ב-30% ובולדר לבדו תופס רבע מהרוחב במרכז. מותרת
+  // נגיעה קלה בין שכנים — לא דמות שיושבת על דמות.
+  check(1.3, -1.5, 'שלב 3')
+  const big = figureBox('bolder', SPOTS.bolder)
+  assert.ok(big.right - big.left >= 20, 'בולדר הוא גוש: רחב מכולם')
+  for (const id of Object.keys(SPOTS)) {
+    if (id === 'bolder') continue
+    assert.ok(SPOTS[id].h < SPOTS.bolder.h - 6, `בולדר צריך להיות גדול מ-${id} בבירור`)
+  }
   // הרגליים: foot הוא מה שיש בקובץ, ובלעדיו הדמות מרחפת מעל הצל שלה
   for (const [id, sp] of Object.entries(SPOTS)) {
     assert.ok(Math.abs((sp.foot ?? 0) - (1 - FIGURE[id].bot)) < 0.02, `foot של ${id} לא תואם לקובץ`)
