@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { usePinch } from './usePinch'
 import { tr } from '../i18n'
 import { creatureById } from '../content/creatures'
-import { activeQuest, questProgress, canComplete, worldState, creatureLine, RES_NAME, RES_ICON, swarmOf, buildings } from '../engine/world'
+import { activeQuest, questProgress, canComplete, worldState, creatureLine, RES_NAME, RES_ICON, swarmOf, buildings, openChapter, CHAPTERS, nextGoals } from '../engine/world'
 import { sfxAppear, sfxCheer, sfxFinish, buzz } from '../engine/audio'
 import { Wear } from './Wear'
 import { CreatureAura } from './Aura'
@@ -37,6 +37,7 @@ function BuildingGlow({ id }) {
 export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWord = false }) {
   const world = worldState(progress)
   const quest = activeQuest(progress)
+  const chapter = openChapter(progress)
   const ready = canComplete(progress, quest)
   const [bubble, setBubble] = useState(null)      // { id, text }
   const [giving, setGiving] = useState(false)
@@ -175,7 +176,10 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
       {/* הבקשה של השומר */}
       {quest && guardOpen && (
         <div style={W.questCard} onClick={e => e.stopPropagation()}>
-          <p style={W.questTitle}>{world.guardianAwake ? tr('השומר') : tr('פסל אבן, כבוי')} · {tr(quest.title)}</p>
+          <p style={W.questTitle}>
+            {world.guardianAwake ? tr('השומר') : tr('פסל אבן, כבוי')} · {tr(quest.title)}
+            <span style={W.chapter}>{tr('פרק {n}: {name}', { n: chapter, name: tr(CHAPTERS.find(c => c.n === chapter)?.name || '') })}</span>
+          </p>
           <p style={W.questAsk}>{tr(quest.ask)}</p>
           <div style={W.needs}>
             {questProgress(progress, quest).map(n => (
@@ -189,8 +193,19 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
             : <p style={W.hint}>{tr(quest.hint)}</p>}
         </div>
       )}
+      {/* ── לא "נגמר" ── כל הבקשות נסגרו, ועדיין יש בדיוק מה לעשות מחר:
+          צורות בספר, יצור שעומד לגדול, מבנים, צבעים. במספרים אמיתיים. */}
       {!quest && (
-        <div style={W.builtAll}>{tr('העולם נבנה מחדש. הבוקר חזר. כל הכבוד — השער פתוח, ההמשך בקרוב.')}</div>
+        <div style={W.builtAll}>
+          <p style={W.builtLine}>{tr('העולם נבנה מחדש. הבוקר חזר, והשער פתוח.')}</p>
+          <div style={W.goals}>
+            {nextGoals(progress).map((g, i) => (
+              <span key={i} style={W.goal}>
+                {g.icon} {g.name ? `${tr(g.name)} · ${g.left === 1 ? tr('עוד תפיסה') : tr('עוד {n}', { n: g.left })}` : `${tr(g.text)} ${g.have}/${g.need}`}
+              </span>
+            ))}
+          </div>
+        </div>
       )}
 
       {/* כמה נבנה */}
@@ -234,7 +249,13 @@ const W = {
   need: { padding: '4px 9px', borderRadius: 999, border: '1.5px solid', fontSize: 13.5, background: 'rgba(233,229,216,.06)' },
   give: { display: 'block', width: '100%', padding: '11px 14px', borderRadius: 11, border: 'none', background: '#8FB57C', color: '#14200F', fontFamily: 'inherit', fontSize: 16, fontWeight: 900, cursor: 'pointer' },
   hint: { margin: 0, fontSize: 13.5, color: '#9BA495' },
-  builtAll: { position: 'absolute', left: 10, right: 10, bottom: 10, padding: '10px 14px', borderRadius: 12, background: 'rgba(15,21,15,.85)', color: '#E9E5D8', fontSize: 14, textAlign: 'center' },
+  // למעלה, על השמיים: למטה הוא היה מכסה בדיוק את השורה הקדמית של
+  // היצורים — ואת המקום שלהם בעולם בניתי אתמול.
+  builtAll: { position: 'absolute', left: 10, right: 10, top: 30, padding: '9px 12px', borderRadius: 12, background: 'rgba(15,21,15,.82)', color: '#E9E5D8', fontSize: 14, textAlign: 'center', zIndex: 3 },
+  builtLine: { margin: '0 0 8px', fontSize: 14, fontWeight: 700 },
+  goals: { display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center' },
+  goal: { padding: '4px 9px', borderRadius: 999, border: '1px solid #2B382B', background: 'rgba(233,229,216,.06)', fontSize: 12.5, fontWeight: 700 },
+  chapter: { display: 'block', marginTop: 2, color: '#767F71', fontSize: 11, fontWeight: 700, letterSpacing: '.03em' },
   progress: { position: 'absolute', top: 10, insetInlineStart: 12, display: 'flex', gap: 5, zIndex: 4 },
   dot: { width: 9, height: 9, borderRadius: '50%', boxShadow: '0 1px 3px rgba(0,0,0,.5)' },
 }

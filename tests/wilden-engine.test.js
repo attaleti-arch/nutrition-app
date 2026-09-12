@@ -1326,8 +1326,24 @@ test('המסע השלם: אחרי נימי, המסע הבא מציע דבשון 
   const b = briefFor(g.progress)
   assert.equal(b.creature, 'dabashon')
   g = reduce(g, { type: 'START_RUN', kind: RUN.STORY, day: '2026-09-07', t: 1 })
-  assert.deepEqual(g.run.wantCreatures, ['dabashon', 'nimi'], 'מהמסע השני — שניים: האני באוויר, וצל נעול (אין פנס) — נימי במקומו')
-  assert.deepEqual(g.run.locked, ['tzel'])
+  // מהמסע השני — שניים. הראשון לפי הלוח (האני), והשני הוא מי שהשומר
+  // מחכה לו: הבקשה הפתוחה היא "אבן", ואבן מביא בולדר.
+  assert.equal(g.run.wantCreatures[0], 'dabashon')
+  assert.equal(g.run.wantCreatures.length, 2)
+  assert.ok(['bolder', 'kraag'].includes(g.run.wantCreatures[1]), 'השני מביא את מה שחסר: ' + g.run.wantCreatures[1])
+})
+
+// "אני לא רוצה שהמשחק ייגמר מהר מדי" — והחלק השני של אותו תיקון:
+// הבקשה לא נתקעת מסעות שלמים כי היצור הנכון לא הוגרל.
+test('הלוח: מי שהשומר מחכה לו יוצא איתך — והבקשה מתקדמת בכל מסע', () => {
+  const base = { ...initial(), progress: { ...initial().progress, walks: 3 } }
+  // הבקשה הפתוחה: אבן. אז אחד מנושאי האבן בדרך.
+  let g = reduce(base, { type: 'START_RUN', kind: RUN.FREE, day: 'd2', t: 1 })
+  assert.ok(g.run.wantCreatures.some(c => ['bolder', 'kraag'].includes(c)), 'חסר אבן — ובדרך מי שמביא אבן')
+  // אחרי שיש אבן, הוא כבר לא נדרש; מי שמביא את הבקשה הבאה (מים) מצטרף
+  const after = { ...base, progress: { ...base.progress, quests: ['wake'] } }
+  const h = reduce(after, { type: 'START_RUN', kind: RUN.FREE, day: 'd3', t: 2 })
+  assert.ok(h.run.wantCreatures.includes('gali'), 'עכשיו חסרים מים: ' + h.run.wantCreatures.join(','))
 })
 
 test('המצלמה: כל שגיאה הופכת לסיבה אחת עם פעולה אחת', () => {
@@ -1917,7 +1933,8 @@ test('ריצה: ROUTE_READY מניח את הנקודה, ו-COIN_RUN_DONE מכנ�
 // ═══════════════════════════════════════════════════════════════
 // עולם הבית: משאבים, השומר, הבקשות
 // ═══════════════════════════════════════════════════════════════
-import { QUESTS, RES_OF, bringsFor, activeQuest, questProgress, canComplete, completeQuest, worldState, creatureLine } from '../src/app/wilden/engine/world.js'
+import { QUESTS, CHAPTERS, RES_OF, bringsFor, activeQuest, openChapter, creaturesWanted, nextGoals, questProgress, canComplete, completeQuest, worldState, creatureLine } from '../src/app/wilden/engine/world.js'
+const ALL_QUESTS = QUESTS.map(q => q.id)
 
 import { mergeProgress as mergeProgress2 } from '../src/app/wilden/engine/profile.js'
 
@@ -1932,7 +1949,7 @@ test('עולם: כל יצור מביא משאב, והפורטל מכניס או�
 })
 
 test('עולם: הבקשות לפי הסדר — נותנים רק כשיש, המשאבים יורדים, המטבעות נכנסים, העולם נבנה', () => {
-  assert.equal(QUESTS.length, 5)
+  assert.equal(QUESTS.length, 9, 'חמש להעיר את העולם, ארבע לבנות בו')
   let p = { ...initial().progress, res: { stone: 1 }, coins: 10 }
   assert.equal(activeQuest(p).id, 'wake')
   assert.equal(canComplete(p, activeQuest(p)), false)
@@ -1953,12 +1970,47 @@ test('עולם: הבקשות לפי הסדר — נותנים רק כשיש, ה�
   const q2 = completeQuest(q1, 'basin')
   assert.equal(worldState(q2).basinFull, true)
   assert.equal(q2.res.water, 0)
-  // כולן
+  // כל פרק 1
   let all = { ...q2, res: { spark: 2, honey: 2, leaf: 1, wind: 2, shadow: 1 } }
   for (const q of QUESTS) all = completeQuest(all, q.id)
-  assert.equal(activeQuest(all), null)
   assert.equal(worldState(all).gateOpen, true)
   assert.equal(worldState(all).built, 5)
+  // ופרק 2 נפתח — המשחק לא נגמר עם השער
+  assert.equal(openChapter(all), 2)
+  assert.equal(activeQuest(all).id, 'hive')
+  let done2 = { ...all, res: { honey: 3, leaf: 2, water: 3, stone: 6, shadow: 1, wind: 3, spark: 2 } }
+  for (const q of QUESTS) done2 = completeQuest(done2, q.id)
+  assert.equal(activeQuest(done2), null)
+  assert.equal(worldState(done2).built, 9)
+  assert.equal(worldState(done2).hiveBuilt, true)
+})
+
+// "אני לא רוצה שהמשחק ייגמר מהר מדי": שתי בקשות שאפשר להשלים — השומר
+// מבקש את מי שאפשר להביא עכשיו, ולא נתקע על הראשונה בשרשרת.
+test('עולם: פרקים, ובתוך פרק — הבקשה שאפשר להשלים היום', () => {
+  assert.equal(CHAPTERS.length, 2)
+  const p = { ...initial().progress, res: { water: 2 } }   // אין אבן, יש מים
+  assert.equal(activeQuest(p).id, 'basin', 'אפשר למלא את הכד עכשיו — אז זו הבקשה')
+  const none = { ...initial().progress, res: {} }
+  assert.equal(activeQuest(none).id, 'wake', 'אין כלום — הראשונה, כדי שהרמז יגיד מה להביא')
+  // פרק 2 לא נפתח לפני שפרק 1 נסגר, גם אם יש חומרים לכוורת
+  const rich = { ...initial().progress, res: { honey: 5, leaf: 5 } }
+  assert.equal(openChapter(rich), 1)
+  assert.equal(activeQuest(rich).chapter, 1)
+  // מי חסר: מי שמביא את מה שאין
+  assert.deepEqual(creaturesWanted({ res: {}, quests: [] }), ['bolder', 'kraag'], 'חסר אבן')
+  assert.ok(creaturesWanted({ res: { stone: 2 }, quests: ['wake'] }).includes('gali'), 'חסרים מים')
+  assert.deepEqual(creaturesWanted({ quests: ALL_QUESTS }), [], 'הכול נבנה — אין למי לחכות')
+})
+
+test('עולם: כשהכול נבנה, המסך אומר מה נשאר — ולא "נגמר"', () => {
+  const p = { ...initial().progress, quests: ALL_QUESTS, creatures: ['nimi'], caught: { nimi: 2 } }
+  const goals = nextGoals(p)
+  assert.equal(goals[0].need, 27, 'הספר: 27 צורות')
+  assert.equal(goals[0].have, 1)
+  assert.equal(goals[1].name, 'נימי'); assert.equal(goals[1].left, 1, 'עוד תפיסה והוא בוגר')
+  assert.ok(goals.some(g => g.need === 4), 'ארבעה מבנים')
+  assert.ok(goals.some(g => g.need === 63), 'תשעה יצורים כפול שבעה צבעים')
 })
 
 test('עולם: COMPLETE_QUEST רק בבית, ונשמר ומתמזג', () => {
@@ -2432,7 +2484,9 @@ test('מפתחות בלוח: יצור נעול מוחלף בפנוי הבא, ו�
 })
 
 test('ציוד במכונה: משרוקית = עוד יצור; משרוקית זהב = צבע בפורטל; מגנט ומפה; נעול מוחלף', () => {
-  let g = { ...initial(), progress: { ...initial().progress, coins: 300, walks: 1 } }
+  // כל הבקשות סגורות: הלוח נקי מהטיית "מי שהשומר מחכה לו", והבדיקה
+  // בודקת ציוד בלבד.
+  let g = { ...initial(), progress: { ...initial().progress, coins: 300, walks: 1, quests: ALL_QUESTS } }
   g = reduce(g, { type: 'BUY_GEAR', id: 'whistle' }); g = reduce(g, { type: 'BUY_GEAR', id: 'goldWhistle' }); g = reduce(g, { type: 'BUY_GEAR', id: 'magnet' }); g = reduce(g, { type: 'BUY_GEAR', id: 'map' })
   assert.equal(g.progress.coins, 300 - 30 - 60 - 20 - 25)
   g = reduce(g, { type: 'START_RUN', kind: RUN.FREE, day: DAY, t: 0 })

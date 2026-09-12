@@ -14,12 +14,12 @@ import { buy as buyItem, equip as equipItem } from './shop.js'
 import { grantWeekly, walkSummary } from './weekly.js'
 import { evolvedBetween } from './stages.js'
 import { routeKm, poisFor, creatureCount, placePois, setRouteKm, withCreatures, POI } from './plan.js'
-import { modsFor, consume, buyGear, withKeys, withExtra } from './gear.js'
+import { modsFor, consume, buyGear, withKeys, withExtra, unlocked } from './gear.js'
 import { buySkin, buyStone } from './skins.js'
 import { withExtraGold, AVAILABLE, heatDistance } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
-import { bringsFor, completeQuest, produce } from './world.js'
+import { bringsFor, completeQuest, produce, creaturesWanted } from './world.js'
 import { newlyEarned } from './badges.js'
 
 // גובה קפיצה ממשך זמן באוויר: h = g·t²/8, בס"מ.
@@ -169,6 +169,17 @@ export function reduce(g, ev) {
       const avail = ev.available || AVAILABLE
       const planned = creaturesForWalk(walks, extra, avail, creatureCount(pois))
       const keyed = withKeys(planned, g.progress, avail)
+      // ── מי שהשומר מחכה לו יוצא איתך ──
+      // הראשון נשאר לפי הסבב (הלוח לא קופץ), והאחרון מוחלף במי שמביא את
+      // מה שחסר לבקשה. בלי זה הבקשה נתקעת מסעות שלמים כי היצור הנכון
+      // פשוט לא הוגרל — וזה מה שגרם ל"שישה מסעות כלום ואז הכול".
+      // אחרי withKeys, כדי שלא נשלח את הילד אחרי יצור שנעול בלי מפתח.
+      const wanted = creaturesWanted(g.progress)
+        .filter(c => avail.includes(c) && unlocked(g.progress, c))
+      const list = keyed.creatures
+      const swap = list.length > 1 && wanted.length && !list.some(c => wanted.includes(c))
+        ? wanted.find(c => !list.includes(c)) : null
+      if (swap) keyed.creatures = [...list.slice(0, -1), swap]
       const want = mods.extraStop ? withExtra(keyed.creatures, g.progress, avail, walks) : keyed.creatures
       return {
         ...g,
