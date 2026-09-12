@@ -25,10 +25,29 @@ import { pointAlong, pathLength, haversine } from './geo.js'
 //               רצים. הצלחת — היא מתפוגגת. לא הצלחת — היא לוקחת את בן
 //               הלוויה, והוא לא איתך עד סוף הטיול.
 // הבריחה היא ריצה אמיתית: צעדים בזמן קצוב. זה גם מה שהמשחק הזה רוצה.
-export const FLEE_MS = 15000         // כמה זמן יש לברוח
+export const FLEE_MS = 15000         // כמה זמן יש לברוח, בפעם הראשונה
 export const FLEE_STEPS = 22         // וכמה צעדים צריך
 export const FLEE_COINS = 6          // מי שברח — הרוויח
-export const escaped = (steps, ms) => (steps || 0) >= FLEE_STEPS && (ms || 0) <= FLEE_MS
+export const WIND_RES = 'wind'       // ומי ששאב — קיבל משאב, לא רק מטבעות
+
+// ── "אם האיום לא מתממש, למה לרכוש שואב?" ──
+// שאלה נכונה, ובלעדיה השואב הוא קישוט. שלוש תשובות, וכולן כאן:
+//   1. גובטבו מתחזק. כל פעם שהוא קופץ באותו טיול הוא מהיר יותר: עוד
+//      ארבעה צעדים, שנייה פחות. בפעם השלישית הוא באמת תופס לפעמים.
+//   2. הבריחה היא ריצה, לא לחיצות. כשיש מד צעדים חי — נגיעה במסך לא
+//      נספרת. (זה היה החור: אפשר היה לברוח בלי לזוז.)
+//   3. שאיבה מביאה משאב "רוח" הביתה — וזה משאב שהשומר מבקש, ובלי
+//      השואב הוא מגיע רק מרוחי.
+export const fleeGoal = (round = 1) => ({
+  steps: FLEE_STEPS + 4 * Math.max(0, round - 1),
+  ms: Math.max(9000, FLEE_MS - 1000 * Math.max(0, round - 1)),
+})
+export const escaped = (steps, ms, round = 1) => {
+  const g = fleeGoal(round)
+  return (steps || 0) >= g.steps && (ms || 0) <= g.ms
+}
+// כמה פעמים הוא כבר קפץ בטיול הזה (כדי לדעת כמה הוא מהיר עכשיו)
+export const windRound = run => (run?.winds || []).filter(w => w.fled || w.tookBuddy).length + 1
 
 // ── השם ──
 // "גובטבו." הבן שלה נתן לו שם, ומרגע שיש שם יש דמות ולא מכשול. הוא
@@ -92,7 +111,7 @@ export function suckWind(run, id) {
   const i = list.findIndex(w => w.id === id)
   if (i < 0 || list[i].taken || list[i].hit) return null
   const winds = list.map((w, k) => (k === i ? { ...w, taken: true } : w))
-  return { winds, coins: WIND_COINS }
+  return { winds, coins: WIND_COINS, res: WIND_RES }
 }
 
 // ── ברחו ──

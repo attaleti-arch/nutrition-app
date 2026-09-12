@@ -412,10 +412,13 @@ export function reduce(g, ev) {
       const mult = r.resolved ? HOME_BONUS : 1
       // רוח שנשאבה משחררת את בן הלוויה שרוח אחרת לקחה
       const freed = !!r.buddyTaken
+      // ומה שנשאב נשאר בשואב עד הבית: משאב "רוח", שהשומר מבקש. זו
+      // הסיבה הכלכלית לקנות אותו — בלעדיו רוח מגיעה רק מרוחי.
+      const windRes = (r.windRes || 0) + 1
       return {
         ...g,
-        run: { ...r, winds: res.winds, buddyTaken: false, coinsTaken: (r.coinsTaken || 0) + res.coins * mult,
-          lastWind: { t: ev.t ?? 0, kind: freed ? 'freed' : 'suck', coins: res.coins * mult, buddy: freed ? g.progress.buddy : null } },
+        run: { ...r, winds: res.winds, buddyTaken: false, windRes, coinsTaken: (r.coinsTaken || 0) + res.coins * mult,
+          lastWind: { t: ev.t ?? 0, kind: freed ? 'freed' : 'suck', coins: res.coins * mult, res: res.res, buddy: freed ? g.progress.buddy : null } },
       }
     }
 
@@ -535,6 +538,9 @@ export function reduce(g, ev) {
       for (const m of made) res[m.product] = (res[m.product] || 0) + 1
       // פרחים מהריצה: הביתה, כמשאב.
       if (r.flowerRun?.done && r.flowerRun.got) res.flowers = (res.flowers || 0) + r.flowerRun.got
+      // ומה שנשאב לשואב: רוח. השומר מבקש אותה, ובלי השואב היא מגיעה
+      // רק מרוחי — זו התשובה ל"למה לקנות אותו".
+      if (r.windRes) res.wind = (res.wind || 0) + r.windRes
       const goldTaken = (r.coins || []).some(c => c.gold && c.taken) ? 1 : 0
       const runDone = r.coinRun?.done ? 1 : 0
       const walkDays = [...(g.progress.walkDays || [])]

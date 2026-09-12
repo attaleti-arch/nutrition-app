@@ -366,7 +366,7 @@ test('בטיחות: התחנה מתרחקת מצומת, ומעדיפה שביל 
   assert.equal(safeAlong(plain, 300), 300)
 })
 
-import { placeWinds, windNearby, suckWind, windSteals, windFled, windTakesBuddy, escaped, WIND_NEAR_M, WIND_COINS, WIND_PUSH_M, FLEE_MS, FLEE_STEPS, FLEE_COINS } from '../src/app/wilden/engine/wind.js'
+import { placeWinds, windNearby, suckWind, windSteals, windFled, windTakesBuddy, escaped, fleeGoal, windRound, WIND_NAME, WIND_NEAR_M, WIND_COINS, WIND_PUSH_M, FLEE_MS, FLEE_STEPS, FLEE_COINS } from '../src/app/wilden/engine/wind.js'
 
 // הרעיון של הבן שלה: "רוחות שהרסו את העולם. אפשר לשאוב אותן מהמסלול אם
 // קונים שואב. ואם לא — היא מנסה לחטוף את הדמות שנמצאת במסלול."
@@ -436,6 +436,36 @@ test('רוחות: הבריחה — מספיק צעדים בזמן, אחרת הר
   const freed = reduce(stuck, { type: 'WIND_SUCK', id: winds2[1].id, t: 4 })
   assert.equal(freed.run.buddyTaken, false)
   assert.equal(freed.run.lastWind.kind, 'freed')
+})
+
+// "אם האיום לא מתממש מדי פעם — למה לרכוש שואב?" שלוש תשובות, וכולן
+// נבדקות כאן: הוא מתחזק, השאיבה מביאה משאב, והבריחה היא ריצה.
+test('רוחות: גובטבו מתחזק בכל קפיצה, והשאיבה מביאה רוח הביתה', () => {
+  assert.equal(WIND_NAME, 'גובטבו')
+  // ראשונה: 22 צעדים ב-15 שניות. שלישית: 30 ב-13.
+  assert.deepEqual(fleeGoal(1), { steps: 22, ms: 15000 })
+  assert.deepEqual(fleeGoal(2), { steps: 26, ms: 14000 })
+  assert.deepEqual(fleeGoal(3), { steps: 30, ms: 13000 })
+  assert.ok(fleeGoal(9).ms >= 9000, 'יש רצפה — הוא לא נעשה בלתי אפשרי')
+  assert.equal(escaped(22, 14000, 1), true)
+  assert.equal(escaped(22, 14000, 2), false, 'בפעם השנייה 22 כבר לא מספיק')
+  assert.equal(escaped(26, 13500, 2), true)
+  // הסבב נגזר ממה שכבר קרה בטיול
+  assert.equal(windRound({ winds: [] }), 1)
+  assert.equal(windRound({ winds: [{ fled: true }, { tookBuddy: true }] }), 3)
+  assert.equal(windRound({ winds: [{ taken: true }] }), 1, 'שאיבה אינה מרדף')
+
+  // שאיבה: מטבעות עכשיו, ורוח הביתה
+  const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
+  const winds = placeWinds(PATH, { stops, n: 2, rng: () => 0.5 })
+  let g = { ...initial(), state: S.SEARCH,
+    run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: { vacuum: true },
+      resolved: false, walked: 2000, walkStartedAt: 0, day: 'd1' } }
+  g = reduce(g, { type: 'WIND_SUCK', id: winds[0].id, t: 1 })
+  g = reduce(g, { type: 'WIND_SUCK', id: winds[1].id, t: 2 })
+  assert.equal(g.run.windRes, 2)
+  const home = reduce({ ...g, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 3, rng: () => 0.5 })
+  assert.equal(home.progress.res.wind, 2, 'שתי רוחות נכנסו למחסן')
 })
 
 test('רוחות במכונה: עם שואב נשאבות, בלי שואב חוטפות', () => {

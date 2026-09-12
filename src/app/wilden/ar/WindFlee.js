@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { tr, dirOf } from '../i18n'
 import { useSteps } from '../hooks/useSteps'
 import { sfxRumble, sfxCheer, sfxRustle, buzz } from '../engine/audio'
-import { FLEE_MS, FLEE_STEPS, escaped, WIND_NAME } from '../engine/wind'
+import { fleeGoal, WIND_NAME } from '../engine/wind'
 
 // ─── לברוח מגובטבו ───
 // "אם אין לו כסף, כשהיא מופיעה בהפתעה הוא צריך לברוח עם בן הלוויה שלו
@@ -16,20 +16,23 @@ import { FLEE_MS, FLEE_STEPS, escaped, WIND_NAME } from '../engine/wind'
 // בלי מד צעדים (מחשב, או הרשאה שנדחתה): נגיעה במסך = צעד. אף ילד לא
 // נשאר בלי דרך לברוח.
 
-export function WindFlee({ buddyImg = null, buddyName = '', onDone }) {
+export function WindFlee({ buddyImg = null, buddyName = '', round = 1, onDone }) {
+  // כמה קשה הפעם: בכל קפיצה נוספת באותו טיול הוא מהיר יותר.
+  const goal = fleeGoal(round)
   const steps = useSteps({ active: true })
   const [count, setCount] = useState(0)
-  const [left, setLeft] = useState(FLEE_MS)
+  const [left, setLeft] = useState(goal.ms)
   const [go, setGo] = useState(false)
   const [lost, setLost] = useState(false)
   const startAt = useRef(0)
   const doneRef = useRef(false)
   const tapSteps = useRef(0)
+  const lastStepAt = useRef(0)
 
   // רגע ההפתעה: קול, רטט, ואז רצים.
   useEffect(() => {
     try { sfxRumble(1.6, 0.6); buzz([90, 60, 90, 60, 140]) } catch (e) { /* */ }
-    const id = setTimeout(() => { setGo(true); startAt.current = Date.now() }, 1200)
+    const id = setTimeout(() => { setGo(true); startAt.current = Date.now(); lastStepAt.current = Date.now() }, 1200)
     return () => clearTimeout(id)
   }, [])
 
@@ -37,17 +40,17 @@ export function WindFlee({ buddyImg = null, buddyName = '', onDone }) {
     if (!go) return
     const id = setInterval(() => {
       const n = steps.take()
-      if (n > 0) { tapSteps.current += n; try { sfxRustle() } catch (e) { /* */ } }
+      if (n > 0) { tapSteps.current += n; lastStepAt.current = Date.now(); try { sfxRustle() } catch (e) { /* */ } }
       const c = tapSteps.current
       setCount(c)
       const ms = Date.now() - startAt.current
-      setLeft(Math.max(0, FLEE_MS - ms))
+      setLeft(Math.max(0, goal.ms - ms))
       if (doneRef.current) return
-      if (c >= FLEE_STEPS) {
+      if (c >= goal.steps) {
         doneRef.current = true
         try { sfxCheer(); buzz([40, 40, 40]) } catch (e) { /* */ }
         setTimeout(() => onDone?.(true), 900)
-      } else if (ms >= FLEE_MS) {
+      } else if (ms >= goal.ms) {
         doneRef.current = true
         setLost(true)
         try { sfxRumble(2.2, 0.7); buzz([140, 80, 140]) } catch (e) { /* */ }
@@ -58,10 +61,20 @@ export function WindFlee({ buddyImg = null, buddyName = '', onDone }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [go, steps.take])
 
-  const tap = () => { if (go && !doneRef.current) { tapSteps.current += 1; setCount(tapSteps.current) } }
-  const pct = Math.min(1, count / FLEE_STEPS)
-  const urgency = 1 - left / FLEE_MS
-  const won = count >= FLEE_STEPS
+  // ── לחיצה אינה ריצה ──
+  // זה היה החור: אפשר היה לברוח מגובטבו בלי לזוז, עשרים ושתיים נגיעות
+  // על המסך. עכשיו כשמד הצעדים חי — הנגיעה לא נספרת. אם הוא שתק חמש
+  // שניות (טלפון מורם, חיישן שלא סופר) היא חוזרת לעבוד, כדי שאף ילד
+  // לא ייתקע בגלל חיישן.
+  const counting = () => steps.live && Date.now() - lastStepAt.current < 5000
+  const tap = () => {
+    if (!go || doneRef.current || counting()) return
+    tapSteps.current += 1
+    setCount(tapSteps.current)
+  }
+  const pct = Math.min(1, count / goal.steps)
+  const urgency = 1 - left / goal.ms
+  const won = count >= goal.steps
 
   return (
     <div dir={dirOf()} style={S.wrap} onClick={tap}>
@@ -82,7 +95,8 @@ export function WindFlee({ buddyImg = null, buddyName = '', onDone }) {
       {go && !won && (
         <>
           <p style={S.line}>{tr('רוצו! {wind} מנסה לחטוף את {name}', { wind: tr(WIND_NAME), name: buddyName || tr('בן הלוויה') })}</p>
-          <p style={S.sub}>{tr('עוד {n} צעדים', { n: Math.max(0, FLEE_STEPS - count) })}</p>
+          <p style={S.sub}>{tr('עוד {n} צעדים', { n: Math.max(0, goal.steps - count) })}</p>
+          {round > 1 && <p style={S.faster}>{tr('הפעם הוא מהיר יותר!')}</p>}
         </>
       )}
       {won && <p style={S.line}>{tr('ברחתם! {wind} נשאר מאחור.', { wind: tr(WIND_NAME) })}</p>}
@@ -92,7 +106,7 @@ export function WindFlee({ buddyImg = null, buddyName = '', onDone }) {
         <div style={{ ...S.bar, width: `${Math.round(pct * 100)}%`, background: won ? '#8FB57C' : '#6EA8E6' }} />
       </div>
       <div style={S.clock}>
-        <div style={{ ...S.clockFill, width: `${Math.round((left / FLEE_MS) * 100)}%` }} />
+        <div style={{ ...S.clockFill, width: `${Math.round((left / goal.ms) * 100)}%` }} />
       </div>
 
       {/* בן הלוויה רץ איתך — הוא זה שעל הכף */}
@@ -100,7 +114,7 @@ export function WindFlee({ buddyImg = null, buddyName = '', onDone }) {
         <img src={buddyImg} alt="" draggable={false}
           style={{ ...S.buddy, animation: go && !won ? 'wildenFleeRun .5s ease-in-out infinite' : 'none' }} />
       )}
-      {!steps.live && go && <p style={S.hint}>{tr('אין מד צעדים — נגעו במסך בכל צעד.')}</p>}
+      {go && !counting() && <p style={S.hint}>{tr('אין מד צעדים — נגעו במסך בכל צעד.')}</p>}
     </div>
   )
 }
@@ -131,4 +145,5 @@ const S = {
   buddy: { position: 'absolute', bottom: '9%', left: '50%', transform: 'translateX(-50%)', height: '22vh', width: 'auto',
     filter: 'drop-shadow(0 6px 10px rgba(0,0,0,.5))', pointerEvents: 'none' },
   hint: { position: 'relative', fontSize: 13.5, color: '#9BA495', margin: 0 },
+  faster: { position: 'relative', fontSize: 15, fontWeight: 800, color: '#F0A08C', margin: 0 },
 }

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { initial, reduce, beaconView, S, RUN, MODE, nextRunKind, canStartStory } from './engine/machine'
 import { PHASE, PHASE_BUZZ, ACC_GATE, ACC_DIRECTION, ACC_COARSE, WALK_GATE } from './engine/beacon'
 import { PLACE_AFTER, stopInfo, kindName, JUNCTION_M } from './engine/placement'
-import { windNearby, WIND_NAME } from './engine/wind'
+import { windNearby, windRound, WIND_NAME } from './engine/wind'
 import { WindFlee } from './ar/WindFlee'
 import { WindSuck } from './ar/WindSuck'
 import { save, load, dayKey } from './engine/persist'
@@ -357,6 +357,7 @@ export default function Wilden() {
       {fleeFrom && (
         <Guard where="windFlee" fallback={null}>
           <WindFlee
+            round={windRound(g.run)}
             buddyImg={creatureById(g.progress.buddy)?.live || null}
             buddyName={tr(creatureById(g.progress.buddy)?.name || '')}
             onDone={ok => {
@@ -892,7 +893,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
     const name = id => tr(creatureById(id)?.name || '')
     const wind = tr(WIND_NAME)
     setToast(
-      lw.kind === 'suck' ? tr('🌀 שאבתם את {wind}! +{n} 🪙', { wind, n: lw.coins })
+      lw.kind === 'suck' ? tr('🌀 שאבתם את {wind}! +{n} 🪙 · 🌬️ רוח הביתה', { wind, n: lw.coins })
       : lw.kind === 'fled' ? tr('🌀 ברחתם מ{wind}! +{n} 🪙', { wind, n: lw.coins })
       : lw.kind === 'freed' ? tr('🌀 שאבתם את {wind} — ו{name} יצא מתוכו!', { wind, name: name(lw.buddy) })
       : lw.kind === 'tookBuddy' ? tr('🌀 {wind} חטף את {name}! הוא יחזור הביתה בסוף הדרך.', { wind, name: name(lw.buddy) })
