@@ -18,6 +18,9 @@ export const ROUTE_KM = [1, 1.5, 2, 3, 4]
 export const KID_KMH = 3.3                  // קצב הליכה של ילד, לטיימר
 export const POI = { CREATURE: 'creature', RUN: 'run', GOLD: 'gold', FLOWERS: 'flowers' }
 export const MIN_GAP_M = 200                // פחות מזה בין נקודות — מוותרים על אחת
+// כמה מותר להזיז תחנת יצור כדי להגיע למדרכה או לשביל. רחב מהרגיל (70)
+// כי בתחנה של יצור באמת עוצרים.
+export const CREATURE_WINDOW_M = 110
 
 export const defaultKm = walks => (walks === 0 ? 2.2 : 3.2)
 export const routeKm = (progress, walks = progress?.walks || 0) => progress?.routeKm || defaultKm(walks)
@@ -72,11 +75,16 @@ export function placePois(path, kinds, { creatures = ['nimi'], buffer = STOP_BUF
   const n = list.length
   const who = Array.isArray(creatures) && creatures.length ? creatures : ['nimi']
   let ci = 0
+  let lastAt = 0
   list.forEach((kind, i) => {
     const want = buffer + usable * (0.85 * (i + 1)) / n
-    // "היצורים באמצע כבישים או מעברים חדים": הנקודה זזה בתוך חלון קטן
+    // "היצורים באמצע כבישים או מעברים חדים": הנקודה זזה בתוך חלון
     // למקום הבטוח ביותר — לא בצומת, ועל מדרכה או שביל אם יש כזה בדרך.
-    const at = safeAlong(path, want, { total })
+    // ליצור החלון רחב יותר: שם עוצרים, ושם זה באמת משנה. מטבע עוברים
+    // תוך כדי הליכה, ולכן הוא לא צריך לנדוד בשביל מדרכה.
+    const win = kind === POI.CREATURE ? CREATURE_WINDOW_M : undefined
+    const at = safeAlong(path, want, { total, window: win, min: lastAt + MIN_GAP_M * 0.6 })
+    lastAt = at
     const p = pointAlong(path, at)
     if (!p) return
     const pt = { lat: p.point.lat, lng: p.point.lng, along: at }

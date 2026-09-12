@@ -8,7 +8,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { destination, haversine, stepBetween, progressAlong } from '../src/app/wilden/engine/geo.js'
+import { destination, haversine, stepBetween, progressAlong, bearing as bearing2 } from '../src/app/wilden/engine/geo.js'
 import { phaseOf, powerOf, PHASE, ACC_GATE, ACC_DIRECTION, WALK_GATE, STILL_MS, STILL_RADIUS } from '../src/app/wilden/engine/beacon.js'
 import { initial, reduce, run, beaconView, S, RUN, MODE, canStartStory } from '../src/app/wilden/engine/machine.js'
 
@@ -285,7 +285,42 @@ test('שלבים: לאגדי אין עדיין חומר — הוא לובש את
   assert.equal(c2.aura, false, 'לבוגר יש חומר משלו')
 })
 
-import { safeAlong, riskAt, JUNCTION_M, isFootKind } from '../src/app/wilden/engine/placement.js'
+import { safeAlong, riskAt, JUNCTION_M, isFootKind, stopInfo, kindName } from '../src/app/wilden/engine/placement.js'
+
+// "איך נוודא שהיצור על השביל? הוא אמור להיות כמו המטבעות על המסלול."
+// אותו מנגנון בדיוק: pointAlong על המסלול. הבדיקה מוודאת את זה על
+// מסלול מפותל — כל תחנה, כל מטבע, על הקו.
+test('בטיחות: היצור יושב על המסלול עצמו, כמו מטבע', async () => {
+  const { placeCoins } = await import('../src/app/wilden/engine/coins.js')
+  const { placePois, poisFor } = await import('../src/app/wilden/engine/plan.js')
+  // מסלול מפותל: שמונה קטעים בכיוונים מתחלפים
+  const pts = [{ ...HOME, kind: 'residential' }]
+  let cur = HOME
+  for (const [b, d] of [[0, 300], [90, 220], [0, 260], [270, 240], [180, 300], [90, 280], [180, 260], [270, 260]]) {
+    cur = destination(cur, b, d)
+    pts.push({ ...cur, kind: 'residential' })
+  }
+  // מצפיפים נקודות על כל קטע, כמו מסלול אמיתי מהגרף
+  const path = []
+  for (let i = 1; i < pts.length; i++) {
+    const seg = haversine(pts[i - 1], pts[i])
+    const b = bearing2(pts[i - 1], pts[i])
+    for (let d = 0; d < seg; d += 20) path.push({ ...destination(pts[i - 1], b, d), kind: pts[i].kind, junction: false })
+  }
+  path.push({ ...pts[pts.length - 1], kind: 'residential', junction: false })
+  const plan = placePois(path, poisFor(3, 1), { creatures: ['nimi', 'gali'] })
+  const coins = placeCoins(path, { stops: plan.stops, goldAlong: plan.goldAlong })
+  // המרחק מהנקודה אל קו המסלול — בדיוק מה ש-progressAlong מודדת
+  const onPath = p => progressAlong(path, p).offPath
+  for (const s of plan.stops) assert.ok(onPath(s) < 1, `יצור על המסלול: ${onPath(s).toFixed(2)} מ׳`)
+  for (const c of [plan.coinRun, plan.flowerRun].filter(Boolean)) assert.ok(onPath(c) < 1)
+  for (const c of coins) assert.ok(onPath(c) < 1, 'מטבע על המסלול')
+  // ומה שמוצג בשטח: על מה היא יושבת
+  const info = stopInfo(path, plan.stops[0].along)
+  assert.equal(info.kind, 'residential')
+  assert.equal(kindName(info.kind), 'רחוב מגורים')
+  assert.equal(info.foot, false)
+})
 
 // "הבעיה הקשה של המשחק: היצורים באמצע כבישים או מעברים חדים ולא על המדרכות."
 test('בטיחות: התחנה מתרחקת מצומת, ומעדיפה שביל על כביש', () => {

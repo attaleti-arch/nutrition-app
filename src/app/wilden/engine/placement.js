@@ -71,19 +71,45 @@ export function riskAt(path, at) {
 }
 
 // הנקודה הבטוחה ביותר בתוך חלון סביב at. שוויון — הקרובה למקור.
-export function safeAlong(path, at, { window: win = SAFE_WINDOW_M, step = 10, total = null } = {}) {
+// min/max: גבולות קשיחים (למשל "לא לפני התחנה הקודמת").
+export function safeAlong(path, at, { window: win = SAFE_WINDOW_M, step = 10, total = null, min = null, max = null } = {}) {
   if (!path || path.length < 2) return at
   const len = total ?? pathLength(path)
+  const lo = Math.max(40, min ?? 0)
+  const hi = Math.min(len - 40, max ?? len)
   let best = at, bestScore = Infinity
   for (let d = 0; d <= win; d += step) {
     for (const cand of (d === 0 ? [at] : [at - d, at + d])) {
-      if (cand < 40 || cand > len - 40) continue
+      if (cand < lo || cand > hi) continue
       const score = riskAt(path, cand) + (d / win) * 0.25
       if (score < bestScore - 1e-6) { bestScore = score; best = cand }
     }
   }
   return best
 }
+
+// ── מה יש בנקודה הזאת ──
+// "איך נוודא שהיצור על השביל?" ככה: אפשר לראות. מחזירה את סוג הדרך
+// שהתחנה יושבת עליה ואת המרחק לצומת הקרוב — מה שמוצג בחלון הבדיקה
+// בשטח, ומה שהבדיקה האוטומטית מוודאת.
+export function stopInfo(path, at) {
+  if (!path || path.length < 2) return { kind: null, foot: false, junctionM: null }
+  let acc = 0, kind = null, junctionM = Infinity
+  for (let i = 1; i < path.length; i++) {
+    const seg = haversine(path[i - 1], path[i])
+    if (path[i - 1].junction) junctionM = Math.min(junctionM, Math.abs(at - acc))
+    if (path[i].junction) junctionM = Math.min(junctionM, Math.abs(at - (acc + seg)))
+    if (at >= acc && at <= acc + seg) kind = path[i].kind || null
+    acc += seg
+  }
+  return { kind, foot: isFootKind(kind), junctionM: Number.isFinite(junctionM) ? Math.round(junctionM) : null }
+}
+// שם קריא לסוג הדרך, למסך.
+export const KIND_NAME = {
+  footway: 'מדרכה', path: 'שביל', pedestrian: 'רחוב להולכי רגל', steps: 'מדרגות', track: 'דרך עפר',
+  living_street: 'רחוב משותף', residential: 'רחוב מגורים', service: 'דרך שירות', unclassified: 'רחוב',
+}
+export const kindName = k => KIND_NAME[k] || (k ? 'רחוב' : 'לא ידוע')
 
 // ── תחנות: כמה יצורים לאורך המסלול, קבועים מראש ──
 // "רציתי מסלול כמו גוגל, של שעה, עם יעד ברור וכמה דמויות שפוגשים בדרך."

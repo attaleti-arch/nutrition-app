@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { initial, reduce, beaconView, S, RUN, MODE, nextRunKind, canStartStory } from './engine/machine'
 import { PHASE, PHASE_BUZZ, ACC_GATE, ACC_DIRECTION, ACC_COARSE, WALK_GATE } from './engine/beacon'
-import { PLACE_AFTER } from './engine/placement'
+import { PLACE_AFTER, stopInfo, kindName, JUNCTION_M } from './engine/placement'
 import { save, load, dayKey } from './engine/persist'
 import { creatureById } from './content/creatures'
 import { briefFor, homeFor, todaysCreature } from './content/briefs'
@@ -973,6 +973,8 @@ function GpsPanel({ geo, run }) {
   const acc = geo.pos?.acc
   const since = geo.lastAt ? Math.round((now - geo.lastAt) / 1000) : null
   const walked = Math.round(run?.walked || 0)
+  // על מה התחנה הבאה יושבת באמת — מדרכה, שביל או רחוב — וכמה מצומת
+  const spot = run?.path && run?.target?.along != null ? stopInfo(run.path, run.target.along) : null
 
   let issue = null
   if (geo.err === 'denied') {
@@ -1002,6 +1004,15 @@ function GpsPanel({ geo, run }) {
         {since != null && <span>{tr('לפני')} <b>{since}{tr('ש׳')}</b></span>}
         <span style={{ color: C.faint }}>{tr('גרסה')} <b style={{ color: C.faint }}>{process.env.NEXT_PUBLIC_BUILD}</b></span>
       </div>
+      {/* ── "איך נוודא שהיצור על השביל?" ──
+          ככה: רואים. על מה התחנה הבאה יושבת, וכמה היא רחוקה מהצומת. */}
+      {spot && (
+        <div style={s.gpsRow}>
+          <span>{tr('התחנה על')} <b style={{ color: spot.foot ? C.green : C.amber }}>{tr(kindName(spot.kind))}</b></span>
+          <span>{tr('מצומת')} <b style={{ color: spot.junctionM == null ? C.faint : spot.junctionM >= JUNCTION_M ? C.green : C.amber }}>
+            {spot.junctionM == null ? '—' : spot.junctionM + ' ' + tr('מ׳')}</b></span>
+        </div>
+      )}
       {issue && (
         <div style={s.gpsIssue}>
           <p style={{ margin: 0, fontWeight: 700, color: C.red }}>{issue.t}</p>
