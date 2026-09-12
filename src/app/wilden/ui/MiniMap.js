@@ -105,7 +105,7 @@ const fitPad = m => { const sz = m.getSize(); return [sz.x / 6 + 28, sz.y / 6 + 
 
 const coinKey = c => `${c.lat.toFixed(6)},${c.lng.toFixed(6)}`
 
-export function MiniMap({ home, path, pos, along = 0, heading = null, stops = [], nextStop = 0, reveal = true, known = [], creatureImg, coins = [], coinRun = null, flowerRun = null, height = '46vh', kid = null, buddyImg = null }) {
+export function MiniMap({ home, path, pos, along = 0, heading = null, stops = [], nextStop = 0, reveal = true, known = [], creatureImg, coins = [], winds = [], coinRun = null, flowerRun = null, height = '46vh', kid = null, buddyImg = null }) {
   // מה הילד לובש (חנות) — נקרא כשמציירים את הדמות. לא משתנה באמצע הליכה.
   const kidRef = useRef(kid); kidRef.current = kid
   const buddyRef = useRef(buddyImg); buddyRef.current = buddyImg
@@ -113,7 +113,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
   const el = useRef(null)
   const wrap = useRef(null)
   const map = useRef(null)
-  const lay = useRef({ stops: [], arrows: [], coinMarks: new Map() })
+  const lay = useRef({ stops: [], arrows: [], coinMarks: new Map(), windMarks: new Map() })
   const follow = useRef(true)
   const fitted = useRef(false)
   const intro = useRef(0)           // עד מתי מראים את כל הלולאה לפני שעוקבים
@@ -148,7 +148,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
     })
     m.on('dragstart', () => { follow.current = false; setFollowing(false) })
     map.current = m
-    return () => { m.remove(); map.current = null; lay.current = { stops: [], arrows: [], coinMarks: new Map() }; fitted.current = false }
+    return () => { m.remove(); map.current = null; lay.current = { stops: [], arrows: [], coinMarks: new Map(), windMarks: new Map() }; fitted.current = false }
   }, [ready])
 
   // המסלול והבית. בפעם הראשונה — כל הלולאה על המסך, שיראו לאן הולכים.
@@ -236,6 +236,25 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
     lay.current.flowerRun = L.marker([flowerRun.lat, flowerRun.lng], { interactive: false, zIndexOffset: 600, icon: L.divIcon({ className: '', iconSize: [54, 40], iconAnchor: [27, 20],
       html: upright(`<div style="width:54px;height:40px;display:grid;place-items:center;border-radius:12px;background:rgba(255,182,213,.28);border:2px solid #E68AB8;box-shadow:0 2px 6px rgba(0,0,0,.35);animation:wildenPin 1.6s ease-in-out infinite"><img src="/world/flower.png" alt="" style="height:30px;width:auto;display:block"/><span style="position:absolute;bottom:-9px;font-size:9px;font-weight:900;background:#E68AB8;color:#14200F;border-radius:999px;padding:0 5px">${tr('20 שנ׳')}</span></div>`) }) }).addTo(m)
   }, [ready, flowerRun?.lat, flowerRun?.lng, flowerRun?.done])
+
+  // ── הרוחות ──
+  // "רוחות שהרסו את העולם." סחרור כחלחל על המסלול, שמסתובב. רוח שנשאבה
+  // או שחטפה — יורדת מהמפה.
+  useEffect(() => {
+    const m = map.current
+    if (!m) return
+    const L = Lmod
+    const marks = lay.current.windMarks
+    const seen = new Set()
+    ;(winds || []).forEach(w => {
+      if (w.taken || w.hit) return
+      seen.add(w.id)
+      if (marks.has(w.id)) return
+      marks.set(w.id, L.marker([w.lat, w.lng], { interactive: false, zIndexOffset: 550, icon: L.divIcon({ className: '', iconSize: [34, 34], iconAnchor: [17, 17],
+        html: upright('<div style="width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:rgba(110,168,230,.3);border:2px solid #6EA8E6;box-shadow:0 2px 6px rgba(0,0,0,.35);font-size:19px;animation:wildenSpin 2.6s linear infinite">🌀</div>') }) }).addTo(m))
+    })
+    for (const [k, mk] of marks) if (!seen.has(k)) { mk.remove(); marks.delete(k) }
+  }, [ready, winds])
 
   // ── המטבעות ──
   // סמן לכל מטבע, לפי מקום. מטבע שנאסף לא נמחק מיד: הוא קופץ, גדל
@@ -354,6 +373,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
 
 const CSS = `
 @keyframes wildenPin{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes wildenSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes wildenCoinPop{0%{transform:scale(1.35)}100%{transform:scale(1)}}
 @keyframes wildenCoinFloat{0%,100%{transform:translateY(0) scaleX(1)}30%{transform:translateY(-3px) scaleX(.72)}50%{transform:translateY(-4px) scaleX(1)}80%{transform:translateY(-1px) scaleX(.86)}}
 @keyframes wildenCoinGone{0%{transform:scale(1) translateY(0);opacity:1}45%{transform:scale(1.7) translateY(-14px);opacity:1}100%{transform:scale(.2) translateY(-34px);opacity:0}}

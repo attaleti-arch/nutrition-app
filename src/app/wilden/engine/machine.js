@@ -20,6 +20,7 @@ import { withExtraGold, AVAILABLE, heatDistance } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest, produce, creaturesWanted } from './world.js'
+import { placeWinds, suckWind, windSteals, WIND_COINS } from './wind.js'
 import { newlyEarned } from './badges.js'
 
 // גובה קפיצה ממשך זמן באוויר: h = g·t²/8, בס"מ.
@@ -242,11 +243,15 @@ export function reduce(g, ev) {
       if (g.run.mods?.extraGold) coins = withExtraGold(coins, ev.path)
       const coinRun = plan.coinRun
       const flowerRun = plan.flowerRun
+      // ── הרוחות ──
+      // "רוחות שהרסו את העולם, ואפשר לשאוב אותן מהמסלול." שתיים בדרך,
+      // שלוש במסלול ארוך. עם שואב — משאב ומטבעות. בלי — הן חוטפות.
+      const winds = placeWinds(ev.path, { stops, coinRun, flowerRun, n: (g.run.km || 2) >= 3 ? 3 : 2 })
       return {
         ...g,
         state: S.SEARCH,
         run: { ...g.run, path: ev.path, home: ev.home ?? g.run.home, stops, stop: 0,
-          target: stops[0] || null, resolved: false, coins, coinRun, flowerRun, coinsTaken: g.run.coinsTaken || 0,
+          target: stops[0] || null, resolved: false, coins, coinRun, flowerRun, winds, coinsTaken: g.run.coinsTaken || 0,
           walkStartedAt: ev.t ?? g.run.walkStartedAt ?? null },
       }
     }
@@ -391,6 +396,38 @@ export function reduce(g, ev) {
           lastCoin: { t: ev.t ?? Date.now(), gold: true, n: 1, jump: ev.jump || null },
           goldJumpMs: Math.max(r.goldJumpMs || 0, ev.jump?.airMs || 0),
         },
+      }
+    }
+
+    // ── רוח על המסלול ──
+    // "אפשר לשאוב אותה אם קונים שואב. ואם לא — היא מנסה לחטוף את הדמות."
+    // שני האירועים האלה הם בדיוק שתי האפשרויות, ואין שלישית: הרוח לא
+    // נשארת תלויה באוויר מאחורי הילד.
+    case 'WIND_SUCK': {
+      const r = g.run
+      if (g.state !== S.SEARCH || !r?.winds) return g
+      if (!r.mods?.vacuum) return g            // בלי שואב אין שאיבה
+      const res = suckWind(r, ev.id)
+      if (!res) return g
+      const mult = r.resolved ? HOME_BONUS : 1
+      return {
+        ...g,
+        run: { ...r, winds: res.winds, coinsTaken: (r.coinsTaken || 0) + res.coins * mult,
+          lastWind: { t: ev.t ?? 0, kind: 'suck', coins: res.coins * mult } },
+      }
+    }
+
+    case 'WIND_HIT': {
+      const r = g.run
+      if (g.state !== S.SEARCH || !r?.winds) return g
+      const res = windSteals(r, ev.id, r.path)
+      if (!res) return g
+      const stops = res.stops || r.stops
+      const target = stops && r.stop != null ? stops[r.stop] || r.target : r.target
+      return {
+        ...g,
+        run: { ...r, winds: res.winds, stops, target,
+          lastWind: { t: ev.t ?? 0, kind: 'steal', creature: res.creature, pushed: res.pushed || 0 } },
       }
     }
 

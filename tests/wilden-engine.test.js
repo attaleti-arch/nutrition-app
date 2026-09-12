@@ -366,6 +366,64 @@ test('בטיחות: התחנה מתרחקת מצומת, ומעדיפה שביל 
   assert.equal(safeAlong(plain, 300), 300)
 })
 
+import { placeWinds, windNearby, suckWind, windSteals, WIND_NEAR_M, WIND_COINS, WIND_PUSH_M } from '../src/app/wilden/engine/wind.js'
+
+// הרעיון של הבן שלה: "רוחות שהרסו את העולם. אפשר לשאוב אותן מהמסלול אם
+// קונים שואב. ואם לא — היא מנסה לחטוף את הדמות שנמצאת במסלול."
+test('רוחות: על המסלול, לא על תחנה, ונשאבות עם שואב', () => {
+  const path = PATH                       // 1200 מ' ישר
+  const stops = [{ along: 600, lat: PATH[30].lat, lng: PATH[30].lng, creature: 'nimi', done: false }]
+  const winds = placeWinds(path, { stops, n: 2, rng: () => 0.5 })
+  assert.equal(winds.length, 2)
+  for (const w of winds) {
+    assert.ok(w.along > 200 && w.along < 1200 - 140, `בתוך המסלול: ${Math.round(w.along)}`)
+    assert.ok(Math.abs(w.along - 600) >= 100, `לא על התחנה: ${Math.round(w.along)}`)
+    assert.ok(progressAlong(path, w).offPath < 1, 'על המסלול עצמו, כמו מטבע')
+  }
+  // בטווח — רואים אותה; רחוק — לא
+  const at = w => ({ lat: w.lat, lng: w.lng })
+  assert.equal(windNearby({ winds }, at(winds[0]))?.id, winds[0].id)
+  assert.equal(windNearby({ winds }, destination(at(winds[0]), 0, WIND_NEAR_M + 30)), null)
+  // שאיבה: מסמנת ומחזירה מטבעות; פעמיים — לא
+  const r1 = suckWind({ winds }, winds[0].id)
+  assert.equal(r1.coins, WIND_COINS)
+  assert.equal(r1.winds[0].taken, true)
+  assert.equal(suckWind({ winds: r1.winds }, winds[0].id), null)
+  assert.equal(windNearby({ winds: r1.winds }, at(winds[0])), null, 'רוח שנשאבה כבר לא שם')
+})
+
+test('רוחות: בלי שואב היא חוטפת את היצור וגוררת אותו קדימה — ולא מאבדים אותו', () => {
+  const path = PATH
+  const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
+  const winds = placeWinds(path, { stops, n: 1, rng: () => 0.5 })
+  const res = windSteals({ winds, stops, path }, winds[0].id, path)
+  assert.equal(res.creature, 'nimi')
+  assert.equal(res.stops[0].along, 500 + WIND_PUSH_M, 'נגררה קדימה')
+  assert.ok(res.stops[0].done === false, 'עדיין אפשר לתפוס אותו — רק רחוק יותר')
+  assert.ok(progressAlong(path, res.stops[0]).offPath < 1, 'ועדיין על המסלול')
+  assert.equal(res.winds[0].hit, true)
+  assert.equal(windSteals({ winds: res.winds, stops: res.stops, path }, winds[0].id, path), null, 'פעם אחת')
+})
+
+test('רוחות במכונה: עם שואב נשאבות, בלי שואב חוטפות', () => {
+  const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
+  const winds = placeWinds(PATH, { stops, n: 1, rng: () => 0.5 })
+  const base = { ...initial(), state: S.SEARCH,
+    run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: {}, resolved: false } }
+  // בלי שואב: שאיבה לא עושה כלום
+  assert.equal(reduce(base, { type: 'WIND_SUCK', id: winds[0].id, t: 1 }), base)
+  // עם שואב: מטבעות נכנסים
+  const withVac = { ...base, run: { ...base.run, mods: { vacuum: true } } }
+  const sucked = reduce(withVac, { type: 'WIND_SUCK', id: winds[0].id, t: 2 })
+  assert.equal(sucked.run.coinsTaken, WIND_COINS)
+  assert.equal(sucked.run.lastWind.kind, 'suck')
+  // בלי שואב: החטיפה מזיזה את התחנה, והיעד זז איתה
+  const hit = reduce(base, { type: 'WIND_HIT', id: winds[0].id, t: 3 })
+  assert.equal(hit.run.stops[0].along, 500 + WIND_PUSH_M)
+  assert.equal(hit.run.target.along, 500 + WIND_PUSH_M, 'היעד על המפה זז איתו')
+  assert.equal(hit.run.lastWind.creature, 'nimi')
+})
+
 function feedSeq(det, seq, dt = 20) {
   let t = 1000, out = null
   for (const gval of seq) { const r = det.feed({ t, a: gval * G }); if (r) out = r; t += dt }
@@ -2532,8 +2590,8 @@ import { withExtraGold } from '../src/app/wilden/engine/coins.js'
 import { BUILDINGS, swarmOf, buildings, produce } from '../src/app/wilden/engine/world.js'
 
 test('ציוד: מפתח נקנה פעם אחת, חד-פעמי נערם עד 3 ואפשר לקנות בדבש, ומה שפעיל נגזר מהם', () => {
-  assert.equal(GEAR.length, 7)
-  assert.deepEqual(KEYS, { tzel: 'lantern', ruchi: 'binoculars', kraag: 'pickaxe' })
+  assert.equal(GEAR.length, 8)
+  assert.deepEqual(KEYS, { tzel: 'lantern', ruchi: 'binoculars', kraag: 'pickaxe' }, 'השואב אינו מפתח — הוא לא פותח יצור')
   const p0 = { ...initial().progress, coins: 100, res: { honey: 4 } }
   assert.ok(canBuyGear(p0, 'lantern')); assert.ok(!canBuyGear({ ...p0, coins: 10 }, 'lantern'))
   const p1 = buyGear(p0, 'lantern'); assert.equal(p1.coins, 60); assert.ok(ownsGear(p1, 'lantern')); assert.ok(unlocked(p1, 'tzel')); assert.ok(!unlocked(p1, 'kraag'))

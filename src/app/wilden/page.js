@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { initial, reduce, beaconView, S, RUN, MODE, nextRunKind, canStartStory } from './engine/machine'
 import { PHASE, PHASE_BUZZ, ACC_GATE, ACC_DIRECTION, ACC_COARSE, WALK_GATE } from './engine/beacon'
 import { PLACE_AFTER, stopInfo, kindName, JUNCTION_M } from './engine/placement'
+import { windNearby } from './engine/wind'
 import { save, load, dayKey } from './engine/persist'
 import { creatureById } from './content/creatures'
 import { briefFor, homeFor, todaysCreature } from './content/briefs'
@@ -46,7 +47,7 @@ import { EGG_PRICE, canBuyEgg, eggWarmth, warmthWord, variantName } from './engi
 import { haversine } from './engine/geo'
 import { sfxCoin, sfxTally, sfxCheer, resumeAudio } from './engine/audio'
 import 'leaflet/dist/leaflet.css'
-import { unlockAudio, sfxAppear, sfxRustle, sfxCatch, sfxFinish, buzz } from './engine/audio'
+import { unlockAudio, sfxAppear, sfxRustle, sfxCatch, sfxFinish, sfxRumble, buzz } from './engine/audio'
 
 // ─── WILDEN · מסע 1 ───
 // הקליפה בלבד: היא בוחרת מסך לפי מצב המכונה ומזינה לתוכה אירועים.
@@ -227,6 +228,33 @@ export default function Wilden() {
     if (!nearFlowers && flowersSkipped) setFlowersSkipped(false)
   }, [nearFlowers, flowersSkipped, flowersOpen])
 
+  // ── רוח על המסלול ──
+  // "רוחות שהרסו את העולם. אפשר לשאוב אותן אם קונים שואב, ואם לא — היא
+  // מנסה לחטוף את הדמות." עם שואב מופיע כפתור; בלי שואב היא פועלת מיד,
+  // ואין מה ללחוץ — הילד רואה מה קרה ומה זה עלה לו.
+  const nearWind = g.state === S.SEARCH ? windNearby(g.run, g.run?.pos) : null
+  const hasVacuum = !!g.run?.mods?.vacuum
+  const windRef = useRef(null)
+  useEffect(() => {
+    if (!nearWind || hasVacuum) return
+    if (windRef.current === nearWind.id) return
+    windRef.current = nearWind.id
+    dispatch({ type: 'WIND_HIT', id: nearWind.id, t: Date.now() })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nearWind?.id, hasVacuum])
+  // מה שקרה עם הרוח: צליל ורטט. המשפט עצמו במסך ההליכה.
+  const lastWindT = useRef(null)
+  useEffect(() => {
+    const lw = g.run?.lastWind
+    if (!lw || lw.t === lastWindT.current) return
+    lastWindT.current = lw.t
+    try {
+      resumeAudio()
+      if (lw.kind === 'suck') { sfxFinish(); buzz([30, 40, 60]) }
+      else { sfxRumble(1.2, 0.5); buzz([80, 60, 80]) }
+    } catch (e) { /* לא קריטי */ }
+  }, [g.run?.lastWind])
+
   // ── גלינג ──
   // המנוע אוסף, הדף מצלצל. lastCoin משתנה בכל איסוף; זהב מצלצל יותר.
   const lastCoinT = useRef(null)
@@ -402,6 +430,8 @@ export default function Wilden() {
 
         {g.state === S.SEARCH && (
           <SearchScreen g={g} view={view} geo={geo} degraded={route.degraded} reason={route.reason} note={route.note} creature={creature} burst={burst}
+            wind={nearWind} canVacuum={hasVacuum}
+            onSuck={() => { unlockAudio(); dispatch({ type: 'WIND_SUCK', id: nearWind?.id, t: Date.now() }) }}
             onSearch={() => dispatch({ type: 'SEARCH_PRESSED' })}
             onPortal={() => { sfxAppear(); dispatch({ type: 'PORTAL_OPEN' }) }}
             onAbort={() => dispatch({ type: 'ABORT' })} />
@@ -788,7 +818,7 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
 // המסלול על רחובות אמיתיים, ההתקדמות עליו. הביקון הוא שכבה קטנה בפינה
 // שמתעוררת רק כשקרובים. היצורים לא מצוירים מראש — רק סימנים: עקבות,
 // סימן שאלה, ניצוץ. מגלים מי זה רק כשמגיעים.
-function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort, onPortal, creature, burst }) {
+function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort, onPortal, creature, burst, wind = null, canVacuum = false, onSuck = null }) {
   const r = g.run
   // המצפן, מדולל: המפה מסתובבת איתו כדי שלמעלה = קדימה.
   const orient = useOrient({ active: true, everyMs: 120, minDeg: 2 })
@@ -812,6 +842,22 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
     return () => clearTimeout(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [r.coinsTaken, r.along])
+  // ── הרוח: מה קרה, במילים ──
+  const lastWindT = useRef(null)
+  useEffect(() => {
+    const lw = r.lastWind
+    if (!lw || lw.t === lastWindT.current) return
+    lastWindT.current = lw.t
+    setToast(lw.kind === 'suck'
+      ? tr('🌀 שאבתם רוח! +{n} 🪙', { n: lw.coins })
+      : lw.creature
+        ? tr('🌀 הרוח חטפה את {name} וגררה אותו {n} מ׳ קדימה!', { name: tr(creatureById(lw.creature)?.name || ''), n: lw.pushed })
+        : tr('🌀 רוח חלפה כאן.'))
+    const id = setTimeout(() => setToast(null), 4000)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [r.lastWind])
+
   const hot = view.phase === PHASE.VERY_CLOSE || view.phase === PHASE.SAFE_STOP
   const near = hot || view.phase === PHASE.TRACE
   const turns = useMemo(() => turnsFor(r.path), [r.path])
@@ -864,7 +910,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
         <MiniMap home={r.home} path={r.path} pos={geo.pos} along={r.along || 0} heading={orient.heading} coinRun={r.coinRun} flowerRun={r.flowerRun}
           stops={r.stops || (r.target ? [r.target] : [])} nextStop={r.stops ? r.stop : 0}
           reveal={reveal} known={g.progress.creatures} creatureImg={creature?.sprites?.hero}
-          coins={r.coins} height="100%" kid={g.progress.wear?.kid || null} buddyImg={buddy?.live || null} />
+          coins={r.coins} winds={r.winds} height="100%" kid={g.progress.wear?.kid || null} buddyImg={buddy?.live || null} />
 
         {/* מונה המטבעות: קופץ בכל גלינג. בדרך הביתה או בדחף — כפול. */}
         <div key={r.coinsTaken || 0} style={{ ...s.coinHud, ...(boost ? s.coinHudBoost : {}) }}>🪙 {r.coinsTaken || 0}{(homeward || boost) && <span style={{ fontSize: 12 }}> ×2</span>}</div>
@@ -924,6 +970,10 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
           </div>
         )}
 
+        {/* רוח בטווח, ויש שואב: הרגע שבו לוחצים */}
+        {wind && canVacuum && !view.canSearch && (
+          <button onClick={onSuck} style={{ ...s.searchOverlay, bottom: 58, background: '#6EA8E6' }}>{tr('🌀 לשאוב את הרוח')}</button>
+        )}
         {view.canSearch && !homeward && (
           <button onClick={onSearch} style={s.searchOverlay}>{tr('👁 משהו כאן. לחפש')}</button>
         )}
