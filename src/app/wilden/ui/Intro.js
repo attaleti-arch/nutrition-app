@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { SPOTS, GUARDIAN } from './HomeWorld'
+import { SPOTS, GUARDIAN } from '../content/spots'
 import { BUILDINGS } from '../engine/world'
 import { sfxBreak, sfxAppear, sfxThud, sfxSleep, sfxRumble, sfxSnore, buzz } from '../engine/audio'
 import { startMusic, stopMusic, primeMusic, preloadMusic } from '../engine/music'

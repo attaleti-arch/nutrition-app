@@ -8,6 +8,7 @@ import { sfxAppear, sfxCheer, sfxFinish, buzz } from '../engine/audio'
 import { Wear } from './Wear'
 import { CreatureAura } from './Aura'
 import { stageOf, stagedFor } from '../engine/stages'
+import { SPOTS, GUARDIAN } from '../content/spots'
 
 // ─── עולם הבית ───
 // "לא מבינה מה ילד רואה במעמד הבית." עכשיו: הרקע שלה (החורבה בשקיעה,
@@ -18,33 +19,12 @@ import { stageOf, stagedFor } from '../engine/stages'
 //
 // הכול על מלבן 3:4 של הרקע, במיקומים באחוזים, כדי שיישב על כל טלפון.
 
-// איפה כל יצור עומד בעולם (אחוזים מהתפאורה), ובאיזה גודל (גובה ב-%).
-export const SPOTS = {
-  nimi: { x: 36, y: 63, h: 15, flip: true },
-  gali: { x: 62, y: 79, h: 12 },
-  lumi: { x: 24, y: 74, h: 18, flip: true },
-  bolder: { x: 77, y: 80, h: 22 },
-  kraag: { x: 66, y: 71, h: 17, flip: true },
-  tzel: { x: 91, y: 86, h: 15 },
-  dabashon: { x: 20, y: 30, h: 11, air: true },
-  ruchi: { x: 90, y: 22, h: 12, air: true, flip: true },
-  noga: { x: 40, y: 87, h: 19 },
-}
-// השומר עומד על אבני הריצפה, לא על שפת הכד (שם הוא נראה מרחף). אותה נקודה
-// בדיוק כמו בפתיחה, כדי שהוא לא יקפוץ בין הסיפור לבית.
-// גדול: בקליפ שלה הוא ענק מול השער, ובבמה הוא נראה קטן ממנו. עכשיו הוא
-// באותו סדר גודל — גבוה מהכד, ראשו בגובה קשת השער.
-// h הוא גובה הדמות עצמה. קודם הוא היה גובה הקנבס, ולקנבס היה שוליים ריקים
-// של 23% מתחת לרגליים — ולכן הרגליים נחתו גבוה מהמקום שביקשנו, והוא ריחף.
-// הקבצים נחתכו לדמות, ולכן המספר קטן אבל הגודל על המסך זהה.
-// במרכז, מול הבריכה: מימין לכוורת הוא כיסה אותה בצורה מוזרה, וכאן הוא
-// עומד על השביל מול הכד — המקום של שומר.
-// הגודל הוא לפי המקום: ככל שהוא קרוב יותר למצלמה (נמוך יותר בתמונה) כך הוא
-// צריך להיות מצויר גדול יותר כדי להישאר אותו ענק. כשהוא ירד מהשפה של הכד
-// אל השביל שלפניו, הגובה הקודם הקטין אותו.
-export const GUARDIAN = { x: 50, y: 63, h: 30 }
-// הנחיל: היסטים באחוזי עולם מהמקום של הגדול, ומכפיל גודל (הרחוקים קטנים יותר — עומק).
-const SWARM_OFFS = [[-9, -3, 0.45], [9, -2, 0.45], [-14, 4, 0.4], [14, 5, 0.4], [-5, 7, 0.5], [6, 8, 0.5]]
+// איפה כל אחד עומד — ומה באמת יש בקבצים — יושב ב-content/spots.js, בלי
+// React, כדי שהבדיקה תוכל לוודא שאף שתי דמויות לא נוגעות זו בזו.
+export { SPOTS, GUARDIAN }
+// הנחיל: היסטים ביחס לגובה של הגדול (ולא אחוזי עולם קבועים, שגלשו לשכן),
+// ומכפיל גודל — הרחוקים קטנים יותר, בשביל עומק.
+const SWARM_OFFS = [[-0.45, -0.12, 0.45], [0.45, -0.08, 0.45], [-0.75, 0.18, 0.4], [0.75, 0.22, 0.4], [-0.25, 0.34, 0.5], [0.3, 0.38, 0.5]]
 const SWARM_BUDGET = 12
 
 // עד שתמונת המבנה תגיע: רק הילה חמה במקום שלו (הנחיל מסביב עושה את העבודה)
@@ -146,13 +126,14 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
         return (
           <button key={id} onClick={() => { say(id, creatureLine(id, seed + walks)); onCreatureTap?.(id); try { sfxAppear() } catch (e) { /* */ } }}
             aria-label={c.name}
-            style={{ ...W.spot, left: `${sp.x}%`, top: `${sp.y}%`, height: `${h}%`, animation: sp.air ? 'wildenHover 3.2s ease-in-out infinite' : 'none' }}>
+            style={{ ...W.spot, left: `${sp.x}%`, top: `${sp.y + h * (sp.foot || 0)}%`, height: `${h}%`, animation: sp.air ? 'wildenHover 3.2s ease-in-out infinite' : 'none' }}>
             <div style={{ ...W.figure, width: 'fit-content', position: 'relative', transform: sp.flip ? 'scaleX(-1)' : 'none' }}>
               <CreatureAura c={c} />
               <img src={c.live} alt="" draggable={false} style={{ ...W.figure, position: 'relative', zIndex: 1, filter: c.tint || 'none' }} />
               <Wear id={id} wear={progress?.wear?.[id]} anchors={c.anchors} />
             </div>
-            {!sp.air && <span style={W.groundShadow} />}
+            {/* הצל מתחת לרגליים, לא מתחת לקנבס */}
+            {!sp.air && <span style={{ ...W.groundShadow, bottom: `calc(${(sp.foot || 0) * 100}% - 4px)` }} />}
             {bubble?.id === id && <span style={W.bubble}>{bubble.text}</span>}
           </button>
         )
@@ -168,7 +149,7 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
           budget -= n
           return SWARM_OFFS.slice(0, n).map(([dx, dy, k], i) => (
             <img key={`${id}-m${i}`} src={c.live} alt="" draggable={false} aria-hidden="true"
-              style={{ ...W.mini, left: `${sp.x + dx}%`, top: `${sp.y + dy}%`, height: `${sp.h * k}%`,
+              style={{ ...W.mini, left: `${sp.x + dx * sp.h}%`, top: `${sp.y + dy * sp.h + sp.h * k * (sp.foot || 0)}%`, height: `${sp.h * k}%`,
                 transform: `translate(-50%,-100%) ${i % 2 ? 'scaleX(-1)' : ''}`,
                 animation: sp.air ? `wildenHover ${2.6 + i * 0.35}s ease-in-out infinite` : 'none', animationDelay: `${i * 0.2}s`,
                 filter: c.tint || 'none' }} />

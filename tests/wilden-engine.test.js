@@ -199,6 +199,39 @@ test('מסלול: קיצור דרך אל היצור לא פותח אותו — �
   assert.equal(vFull.canSearch, true, 'הלכו את המסלול — אפשר לחפש')
 })
 
+import { SPOTS, GUARDIAN, FIGURE, figureBox, gapBetween } from '../src/app/wilden/content/spots.js'
+
+// "אפשר שהמיקום של כל חיה שנתפסת יהיה במרחב, קצת במרחק מהדמויות האחרות?"
+// נימי נצמד לרגל של השומר אחרי שהוא עבר למרכז. הבדיקה הזאת לא תיתן
+// לזה לקרות שוב — גם לא כשכל היצורים אגדיים וגדולים ב-30%.
+test('עולם הבית: לכל דמות מקום משלה, עם מרווח — וגם כשכולן אגדיות', () => {
+  const all = { ...SPOTS, guardian: GUARDIAN }
+  for (const id of Object.keys(all)) assert.ok(FIGURE[id], `אין מידות לקובץ של ${id}`)
+  const boxes = (grow = 1) => Object.fromEntries(Object.entries(all).map(([id, sp]) =>
+    [id, figureBox(id, { ...sp, h: sp.h * (id === 'guardian' ? 1 : grow) })]))
+  const check = (grow, min, what) => {
+    const b = boxes(grow)
+    const ids = Object.keys(b)
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const g = gapBetween(b[ids[i]], b[ids[j]])
+        assert.ok(g >= min, `${what}: ${ids[i]} ו-${ids[j]} במרחק ${g.toFixed(1)}% (צריך ${min}%)`)
+      }
+    }
+    // ובתוך התמונה
+    for (const [id, x] of Object.entries(b)) {
+      assert.ok(x.left >= 0 && x.right <= 100, `${id} גולש בצדדים: ${x.left.toFixed(1)}–${x.right.toFixed(1)}`)
+      assert.ok(x.top >= 0 && x.bottom <= 100, `${id} גולש למעלה/למטה: ${x.top.toFixed(1)}–${x.bottom.toFixed(1)}`)
+    }
+  }
+  check(1, 2.5, 'שלב 1')
+  check(1.3, 0, 'שלב 3')
+  // הרגליים: foot הוא מה שיש בקובץ, ובלעדיו הדמות מרחפת מעל הצל שלה
+  for (const [id, sp] of Object.entries(SPOTS)) {
+    assert.ok(Math.abs((sp.foot ?? 0) - (1 - FIGURE[id].bot)) < 0.02, `foot של ${id} לא תואם לקובץ`)
+  }
+})
+
 function feedSeq(det, seq, dt = 20) {
   let t = 1000, out = null
   for (const gval of seq) { const r = det.feed({ t, a: gval * G }); if (r) out = r; t += dt }
