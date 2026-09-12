@@ -251,7 +251,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
       seen.add(w.id)
       if (marks.has(w.id)) return
       marks.set(w.id, L.marker([w.lat, w.lng], { interactive: false, zIndexOffset: 550, icon: L.divIcon({ className: '', iconSize: [34, 34], iconAnchor: [17, 17],
-        html: upright('<div style="width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:rgba(110,168,230,.3);border:2px solid #6EA8E6;box-shadow:0 2px 6px rgba(0,0,0,.35);font-size:19px;animation:wildenSpin 2.6s linear infinite">🌀</div>') }) }).addTo(m))
+        html: upright('<div style="width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:rgba(110,168,230,.28);border:2px solid #6EA8E6;box-shadow:0 2px 6px rgba(0,0,0,.35);animation:wildenPin 1.8s ease-in-out infinite"><img src="/world/wind/poster.webp" alt="" style="height:34px;width:auto;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))"></div>') }) }).addTo(m))
     })
     for (const [k, mk] of marks) if (!seen.has(k)) { mk.remove(); marks.delete(k) }
   }, [ready, winds])

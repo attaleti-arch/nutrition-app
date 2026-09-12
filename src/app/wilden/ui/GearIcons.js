@@ -2,7 +2,16 @@
 
 // ─── אייקונים לציוד ───
 // מצוירים ב-SVG, צבעוניים, גדולים. viewBox 0 0 100 100.
+// יש איור אמיתי לפריט? הוא מנצח את הציור. (השואב הגיע מ-GPT, על רקע
+// ירוק, ונחתך כאן לשקוף — כמו כל שאר החומרים שלה.)
+const IMAGES = { vacuum: '/world/gear/vacuum.webp' }
+
 export function GearIcon({ id, size = 64, style }) {
+  const img = IMAGES[id]
+  if (img) {
+    return <img src={img} alt="" draggable={false} aria-hidden="true"
+      style={{ width: size, height: size, objectFit: 'contain', display: 'block', ...style }} />
+  }
   const g = ICONS[id]
   if (!g) return null
   return (

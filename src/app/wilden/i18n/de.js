@@ -75,6 +75,7 @@ export const DE = {
   'עצרו על המדרכה, לא על הכביש.': 'Bleibt auf dem Gehweg stehen, nicht auf der Straße.',
   'התחנה על': 'Station auf', 'מצומת': 'Von Kreuzung',
   '🌀 רוח!': '🌀 Wind!',
+  'היא תפסה אתכם!': 'Er hat euch erwischt!',
   'רוצו! היא מנסה לחטוף את {name}': 'Lauft! Er will {name} schnappen',
   'עוד {n} צעדים': 'Noch {n} Schritte', 'ברחתם! הרוח נשארה מאחור.': 'Entkommen! Der Wind bleibt zurück.',
   'אין מד צעדים — נגעו במסך בכל צעד.': 'Kein Schrittzähler — tippt bei jedem Schritt auf den Bildschirm.',

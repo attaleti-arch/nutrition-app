@@ -21,6 +21,7 @@ export function WindFlee({ buddyImg = null, buddyName = '', onDone }) {
   const [count, setCount] = useState(0)
   const [left, setLeft] = useState(FLEE_MS)
   const [go, setGo] = useState(false)
+  const [lost, setLost] = useState(false)
   const startAt = useRef(0)
   const doneRef = useRef(false)
   const tapSteps = useRef(0)
@@ -48,8 +49,9 @@ export function WindFlee({ buddyImg = null, buddyName = '', onDone }) {
         setTimeout(() => onDone?.(true), 900)
       } else if (ms >= FLEE_MS) {
         doneRef.current = true
+        setLost(true)
         try { sfxRumble(2.2, 0.7); buzz([140, 80, 140]) } catch (e) { /* */ }
-        setTimeout(() => onDone?.(false), 1200)
+        setTimeout(() => onDone?.(false), 1600)
       }
     }, 200)
     return () => clearInterval(id)
@@ -64,8 +66,16 @@ export function WindFlee({ buddyImg = null, buddyName = '', onDone }) {
   return (
     <div dir={dirOf()} style={S.wrap} onClick={tap}>
       <style>{CSS}</style>
-      {/* הרוח מאחור: גדלה ככל שהזמן אוזל */}
-      <div aria-hidden="true" style={{ ...S.storm, opacity: 0.25 + urgency * 0.6, transform: `scale(${1 + urgency * 1.6})` }}>🌀</div>
+      {/* ── היא עצמה ── מסתחררת מאחור וגדלה ככל שהזמן אוזל. וכשהזמן
+          נגמר היא זונקת על המצלמה — הקליפ השני, במסך מלא. */}
+      {!lost && (
+        <img src="/world/wind/live.webp" alt="" draggable={false} aria-hidden="true"
+          style={{ ...S.storm, opacity: won ? 0.3 : 0.5 + urgency * 0.45,
+            transform: `translate(-50%,-50%) scale(${(won ? 0.7 : 1) * (0.8 + urgency * 0.8)})` }} />
+      )}
+      {lost && (
+        <img src="/world/wind/lunge.webp" alt="" draggable={false} aria-hidden="true" style={S.lunge} />
+      )}
 
       {!go && <p style={S.burst}>{tr('🌀 רוח!')}</p>}
 
@@ -76,6 +86,7 @@ export function WindFlee({ buddyImg = null, buddyName = '', onDone }) {
         </>
       )}
       {won && <p style={S.line}>{tr('ברחתם! הרוח נשארה מאחור.')}</p>}
+      {lost && <p style={{ ...S.line, color: '#F0A08C' }}>{tr('היא תפסה אתכם!')}</p>}
 
       <div style={S.barWrap}>
         <div style={{ ...S.bar, width: `${Math.round(pct * 100)}%`, background: won ? '#8FB57C' : '#6EA8E6' }} />
@@ -104,8 +115,12 @@ const S = {
   wrap: { position: 'fixed', inset: 0, zIndex: 3200, background: 'radial-gradient(circle at 50% 40%, #1E2A38, #0C1218 70%)',
     color: '#E9E5D8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
     gap: 10, padding: 24, textAlign: 'center', fontFamily: 'inherit', overflow: 'hidden', userSelect: 'none' },
-  storm: { position: 'absolute', top: '28%', left: '50%', translate: '-50% -50%', fontSize: 180, lineHeight: 1,
-    filter: 'blur(1px) drop-shadow(0 0 30px rgba(110,168,230,.6))', pointerEvents: 'none', transition: 'opacity .3s, transform .3s' },
+  storm: { position: 'absolute', top: '27%', left: '50%', height: '34vh', width: 'auto',
+    filter: 'drop-shadow(0 0 34px rgba(110,168,230,.55))', pointerEvents: 'none',
+    transition: 'opacity .3s ease, transform .4s ease' },
+  // הזינוק: היא ממלאת את המסך. זה הרגע שבו היא לוקחת את בן הלוויה.
+  lunge: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+    pointerEvents: 'none', animation: 'wildenFleeIn .35s ease-out both' },
   burst: { position: 'relative', fontSize: 46, fontWeight: 900, color: '#8ED0F0', margin: 0, animation: 'wildenFleeIn .5s ease-out both' },
   line: { position: 'relative', fontSize: 25, fontWeight: 900, margin: 0, textShadow: '0 2px 14px rgba(0,0,0,.8)' },
   sub: { position: 'relative', fontSize: 19, fontWeight: 800, color: '#8ED0F0', margin: 0 },
