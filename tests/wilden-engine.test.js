@@ -247,12 +247,12 @@ import { formsOf, formTally, staged as staged2 } from '../src/app/wilden/engine/
 import { CREATURES as CRE2 } from '../src/app/wilden/content/creatures.js'
 
 // "ספר היצורים צריך לכלול יותר מ-9, שיראו המון דמויות."
-test('ספר: כל יצור הוא שלוש צורות — 27 בסך הכול, ועוד צבעים', () => {
+test('ספר: כל יצור הוא שלוש צורות, ועוד צבעים', () => {
   const ids = Object.keys(CRE2)
-  assert.equal(ids.length, 9)
+  assert.ok(ids.length >= 9)
   const empty = { creatures: [], caught: {} }
   const t0 = formTally(empty, ids.map(id => CRE2[id]))
-  assert.equal(t0.total, 27, 'תשעה יצורים, שלוש צורות לכל אחד')
+  assert.equal(t0.total, ids.length * 3, 'שלוש צורות לכל יצור')
   assert.equal(t0.open, 0)
   // לכל צורה יש דמות להראות — גם לנעולה (צללית של אותה דמות)
   for (const id of ids) {
@@ -417,7 +417,7 @@ test('רוחות: הבריחה — מספיק צעדים בזמן, אחרת הר
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
   const winds = placeWinds(PATH, { stops, n: 1, rng: () => 0.5 })
   const base = { ...initial(), state: S.SEARCH,
-    progress: { ...initial().progress, buddy: 'nimi', creatures: ['nimi'], bond: {} },
+    progress: { ...initial().progress, buddy: 'nimi', creatures: ['nimi'], bond: {}, whisperOut: true },
     run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: {}, resolved: false, walked: 2000, walkStartedAt: 0 } }
   // ברחו: מטבעות, והרוח נגמרה
   const fled = reduce(base, { type: 'WIND_FLED', id: winds[0].id, t: 1 })
@@ -461,7 +461,7 @@ test('רוחות: גובטבו מתחזק בכל קפיצה, והשאיבה מב
   // שאיבה: מטבעות עכשיו, ורוח הביתה
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
   const winds = placeWinds(PATH, { stops, n: 2, rng: () => 0.5 })
-  let g = { ...initial(), state: S.SEARCH,
+  let g = { ...initial(), state: S.SEARCH, progress: { ...initial().progress, whisperOut: true },
     run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: { vacuum: true },
       resolved: false, walked: 2000, walkStartedAt: 0, day: 'd1' } }
   g = reduce(g, { type: 'WIND_SUCK', id: winds[0].id, t: 1 })
@@ -474,7 +474,7 @@ test('רוחות: גובטבו מתחזק בכל קפיצה, והשאיבה מב
 test('רוחות במכונה: עם שואב נשאבות, בלי שואב חוטפות', () => {
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
   const winds = placeWinds(PATH, { stops, n: 1, rng: () => 0.5 })
-  const base = { ...initial(), state: S.SEARCH,
+  const base = { ...initial(), state: S.SEARCH, progress: { ...initial().progress, whisperOut: true },
     run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: {}, resolved: false } }
   // בלי שואב: שאיבה לא עושה כלום
   assert.equal(reduce(base, { type: 'WIND_SUCK', id: winds[0].id, t: 1 }), base)
@@ -527,7 +527,7 @@ test('גובטבו: הרוח שמחזיקה אותו יושבת על המסלו�
   assert.equal(winds.filter(w => w.holds).length, 1, 'אחת בלבד')
 
   const progress = { ...initial().progress, creatures: ['nimi', 'gali'], buddy: 'gali',
-    taken: { creature: 'nimi', at: 1 }, gear: ['vacuum'] }
+    taken: { creature: 'nimi', at: 1 }, gear: ['vacuum'], whisperOut: true }
   let g = { ...initial(), state: S.SEARCH, progress,
     run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: { vacuum: true },
       resolved: false, walked: 2000, walkStartedAt: 0, day: 'd2' } }
@@ -581,7 +581,8 @@ const windRun = (winds, stops, extra = {}) => ({ path: PATH, stops, stop: 0, tar
 test('שואב: חמישה נכנסים למיכל, וביצת הלב נוצרת רק כשהוא מלא', () => {
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
   const winds = placeWinds(PATH, { stops, n: 3, rng: () => 0.5 })
-  let g = { ...initial(), state: S.SEARCH, run: windRun(winds, stops, { mods: { vacuum: true } }) }
+  let g = { ...initial(), state: S.SEARCH, progress: { ...initial().progress, whisperOut: true },
+    run: windRun(winds, stops, { mods: { vacuum: true } }) }
   for (const w of winds) g = reduce(g, { type: 'WIND_SUCK', id: w.id, t: 1 })
   g = reduce({ ...g, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 2, rng: () => 0.5 })
   assert.equal(inTank(g.progress), winds.length)
@@ -730,7 +731,7 @@ test('ויספר: שקט מקרב אותו, תזוזה מרחיקה — ואין
   const before = m.dist
   const back = c.onStep(m, 2100)
   assert.ok(Math.abs(back.state.dist - (before + ST_BACK_M)) < 1e-9, 'צעד אחורה, לא להתחלה')
-  assert.equal(back.feedback, 'back')
+  assert.equal(back.feedback, 'moved')
   // מעידה אחת אינה עשר נסיגות
   assert.equal(c.onStep(back.state, 2200).state.dist, back.state.dist, 'נסיגה אחת לחלון')
   assert.ok(c.onStep(back.state, 3000).state.dist > back.state.dist)
@@ -2481,11 +2482,12 @@ test('עולם: פרקים, ובתוך פרק — הבקשה שאפשר להשל
 test('עולם: כשהכול נבנה, המסך אומר מה נשאר — ולא "נגמר"', () => {
   const p = { ...initial().progress, quests: ALL_QUESTS, creatures: ['nimi'], caught: { nimi: 2 } }
   const goals = nextGoals(p)
-  assert.equal(goals[0].need, 27, 'הספר: 27 צורות')
+  const n = Object.keys(CRE2).length
+  assert.equal(goals[0].need, n * 3, 'הספר: שלוש צורות לכל יצור')
   assert.equal(goals[0].have, 1)
   assert.equal(goals[1].name, 'נימי'); assert.equal(goals[1].left, 1, 'עוד תפיסה והוא בוגר')
   assert.ok(goals.some(g => g.need === 4), 'ארבעה מבנים')
-  assert.ok(goals.some(g => g.need === 63), 'תשעה יצורים כפול שבעה צבעים')
+  assert.ok(goals.some(g => g.need === n * 7), 'כל יצור כפול שבעה צבעים')
 })
 
 test('עולם: COMPLETE_QUEST רק בבית, ונשמר ומתמזג', () => {

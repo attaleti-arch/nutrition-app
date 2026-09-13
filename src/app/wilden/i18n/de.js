@@ -97,6 +97,21 @@ export const DE = {
   'שואב את גובטבו מהמסלול, ומביא ממנו רוח הביתה. בלעדיו הוא קופץ בהפתעה, וצריך לברוח ממנו ברגליים.': 'Saugt Guvtavo von der Route ein und bringt Wind mit nach Hause. Ohne ihn taucht er plötzlich auf, und ihr müsst zu Fuß weglaufen.',
   'כלי. פעם אחת, לתמיד. רוח היא משאב שהשומר מבקש.': 'Werkzeug. Einmal, für immer. Wind ist ein Rohstoff, den der Wächter braucht.',
   'כלי. פעם אחת, לתמיד.': 'Werkzeug. Einmal, für immer.',
+  // ── מה שיצא מהרוח ──
+  'ויספר': 'Whisper', 'הד': 'Echo',
+  'משהו יצא מ{wind}…': 'Etwas kam aus {wind} heraus …',
+  'הוא מסתכל עליכם.': 'Er schaut euch an.',
+  'הוא מתנער — והאבק של כל השנים עף ממנו!': 'Er schüttelt sich — und der Staub all der Jahre fliegt von ihm ab!',
+  '{name} ברח לרחוב. הוא שם בחוץ עכשיו.': '{name} ist auf die Straße gelaufen. Jetzt ist er da draußen.',
+  '🌀 משהו יצא מ{wind} וברח לרחוב! עכשיו אפשר למצוא אותו בדרך.': '🌀 Etwas kam aus {wind} heraus und lief auf die Straße! Jetzt könnt ihr ihn unterwegs finden.',
+  'עמדו כמו פסל.': 'Steht still wie eine Statue.',
+  'הוא מתקרב רק כשלא זזים.': 'Er kommt nur näher, wenn ihr euch nicht bewegt.',
+  'זזתם — והוא נסוג.': 'Ihr habt euch bewegt — er weicht zurück.',
+  'שוב. פסל.': 'Nochmal. Statue.',
+  'הוא מולכם.': 'Er steht vor euch.',
+  'עוד רגע אחד בלי לזוז…': 'Noch einen Moment stillhalten …',
+  'הוא נשאר איתכם.': 'Er bleibt bei euch.',
+
   // ── מי שנחטף, ומי ששוחרר ──
   'מקום ריק': 'Leerer Platz',
   '{wind} מחזיק אותו. שאבו את הרוח שלו בדרך.': '{wind} hält ihn fest. Saugt unterwegs seinen Wind ein.',

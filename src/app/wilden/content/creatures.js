@@ -267,6 +267,38 @@ export const CREATURES = {
     verb: 'SHINE',
     brings: 'אור',
   },
+
+  // ── ויספר ──
+  // "חושבת שוויספר יהיה הדמות הראשונה שהרוח פלטה החוצה, והוא פשוט
+  // יסתכל במבט כזה מרופט, יתנער ויצאו ממנו ניצוצות, ואז יברח ברחוב
+  // (הזדמנות לתפוס בסיבובים הבאים)."
+  //
+  // ולכן יש לו שני מצבים, ושניהם ציורים שלה: מאובק — הרגע שבו הוא יוצא
+  // מגובטבו, אחרי שנים בפנים; ונקי — מי שהוא כשהוא בבית. הראשון מופיע
+  // פעם אחת בחיי המשחק (ui/WhisperFreed), השני הוא הדמות.
+  //
+  // אין לו GLB ואין קליפ מ-Runway עדיין: live הוא הציור עצמו, והוא נושם
+  // בתנועה עדינה של הבמה (still: true) במקום בקליפ. כשיגיע קליפ — אותו
+  // נתיב, שורה אחת.
+  whisper: {
+    id: 'whisper', name: 'ויספר',
+    model: null,
+    ios: null,
+    clip: null,
+    live: '/creatures/whisper/live.webp',
+    poster: '/creatures/whisper/poster.webp',
+    dusty: '/world/whisper/dusty.webp',     // הרגע שבו הרוח פלטה אותו
+    still: true,                            // ציור, לא קליפ — הבמה מנשימה אותו
+    sprites: null,
+    heightM: 0.40,
+    arMode: AR_MODE.GROUND,
+    // הוא לא נתפס: עומדים כמו פסל, והוא בא (ar/controllers/statue.js)
+    controller: 'statue',
+    decal: null,
+    clips: { ...CLIPS, special: 'LISTEN' },
+    verb: 'LISTEN',
+    brings: 'הד',
+  },
 }
 
 export const creatureById = id => CREATURES[id] || null

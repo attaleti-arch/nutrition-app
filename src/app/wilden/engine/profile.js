@@ -99,6 +99,7 @@ export function mergeProgress(local, remote) {
     ...mergeSkins(base, other),
     bond: mergeMax(base.bond, other.bond),
     taken: base.taken || other.taken || null,
+    whisperOut: !!(base.whisperOut || other.whisperOut),
     inTank: Math.max(base.inTank || 0, other.inTank || 0),
     heartEgg: base.heartEgg || other.heartEgg || null,
     tamed: Math.max(base.tamed || 0, other.tamed || 0),
@@ -120,7 +121,7 @@ export function remoteAdds(local, remote) {
 // השוואה בלי תלות בסדר המפתחות — המיזוג בונה אובייקט חדש. שדה ריק
 // (null, []) ושדה שלא קיים הם אותו דבר: סכימה חדשה לא נחשבת "שינוי".
 // גם 0 ו-{}: מונים חדשים להישגים שעוד לא זזו אינם "שינוי מהשרת".
-const empty = v => v == null || v === 0 || (Array.isArray(v) && v.length === 0) || (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0)
+const empty = v => v == null || v === 0 || v === false || (Array.isArray(v) && v.length === 0) || (typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0)
 function stable(o) {
   if (Array.isArray(o)) return '[' + o.map(stable).join(',') + ']'
   if (o && typeof o === 'object') {

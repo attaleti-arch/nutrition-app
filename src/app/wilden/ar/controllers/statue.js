@@ -113,7 +113,7 @@ export function makeStatue({ id = 'statue', target = 'creature', copy = null } =
       if (s.backT && t - s.backT < BACK_GAP_MS) return { state: s }
       return {
         state: { ...s, dist: Math.min(MAX_M, s.dist + BACK_M), moved: true, stillMs: 0, backT: t, backs: (s.backs || 0) + 1 },
-        feedback: 'back',
+        feedback: 'moved',
       }
     },
 

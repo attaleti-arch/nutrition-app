@@ -7,6 +7,7 @@ import { windNearby, windRound, takenId, WIND_NAME } from './engine/wind'
 import { tamedReady, hasHeartEgg, tankShown, tamedCount, TANK_MAX, HATCH_M as HEART_M } from './engine/tank'
 import { WindFlee } from './ar/WindFlee'
 import { WindSuck } from './ar/WindSuck'
+import { WhisperFreed } from './ar/WhisperFreed'
 import { save, load, dayKey } from './engine/persist'
 import { creatureById } from './content/creatures'
 import { briefFor, homeFor, todaysCreature } from './content/briefs'
@@ -58,6 +59,11 @@ import { unlockAudio, sfxAppear, sfxRustle, sfxCatch, sfxFinish, sfxRumble, buzz
 // במנוע הטהור ונבדקות בלעדיו.
 
 const PAGE_CSS = `
+/* ── המסך לא זז הצידה ──
+   מסך משחק על טלפון אסור שייגרר לצדדים. שכבה מלאה שמניעה משהו החוצה
+   (הרוח שנשאבת, ויספר שבורח ברחוב) מגדילה את שטח הגלילה של המסמך, ואז
+   כל הדף מוזז ונראה כאילו נחתך. הגבול הזה סוגר את זה פעם אחת, לכולם. */
+html, body { overflow-x: clip; max-width: 100%; }
 @keyframes wildenCoinFly { 0% { transform: translate(-50%,-50%) scale(.6); opacity: 0 } 15% { transform: translate(-50%,-50%) scale(1.25); opacity: 1 }
   100% { transform: translate(calc(-50% + 34vw), calc(-50% - 36vh)) scale(.4); opacity: 0 } }
 @keyframes wildenToast { 0% { opacity: 0; transform: translateX(-50%) translateY(10px) scale(.9) } 12% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1) }
@@ -254,6 +260,7 @@ export default function Wilden() {
   }, [nearWind?.id, hasVacuum, fleeFrom, tamedGuard])
   // מה שקרה עם הרוח: צליל ורטט. המשפט עצמו במסך ההליכה.
   const [suckShow, setSuckShow] = useState(null)
+  const [freedShow, setFreedShow] = useState(null)   // מי שהרוח פלטה, פעם אחת בחיי המשחק
   const lastWindT = useRef(null)
   useEffect(() => {
     const lw = g.run?.lastWind
@@ -266,6 +273,9 @@ export default function Wilden() {
     // הטוב שלכם הבריח אותו — גם את זה רואים, ובאותו מסך: לא השואב עומד
     // שם אלא גובטבו הזהוב שרוככתם.
     if (lw.kind === 'scared') setSuckShow({ coins: lw.coins, mode: 'scare' })
+    // ── מה שיצא מהרוח ── אחרי השאיבה, ולא במקומה: קודם רואים את הכלי
+    // עובד, ואז את מי שהיה בפנים.
+    if (lw.kind === 'spat') { setSuckShow({ coins: lw.coins }); setFreedShow(lw.spat) }
     try {
       resumeAudio()
       if (lw.kind === 'suck' || lw.kind === 'freed' || lw.kind === 'fled' || lw.kind === 'scared') { sfxFinish(); buzz([30, 40, 60]) }
@@ -358,6 +368,13 @@ export default function Wilden() {
       {suckShow && (
         <Guard where="windSuck" fallback={null}>
           <WindSuck coins={suckShow.coins} freed={suckShow.freed} mode={suckShow.mode || 'suck'} onDone={() => setSuckShow(null)} />
+        </Guard>
+      )}
+
+      {/* ── ויספר יוצא מגובטבו ── פעם אחת בחיי המשחק, אחרי השאיבה */}
+      {freedShow && !suckShow && (
+        <Guard where="whisperFreed" fallback={null}>
+          <WhisperFreed id={freedShow} onDone={() => setFreedShow(null)} />
         </Guard>
       )}
 
@@ -932,6 +949,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
     setToast(
       lw.kind === 'suck' ? tr('🌀 שאבתם את {wind}! +{n} 🪙 · 🌬️ רוח הביתה', { wind, n: lw.coins })
       : lw.kind === 'fled' ? tr('🌀 ברחתם מ{wind}! +{n} 🪙', { wind, n: lw.coins })
+      : lw.kind === 'spat' ? tr('🌀 משהו יצא מ{wind} וברח לרחוב! עכשיו אפשר למצוא אותו בדרך.', { wind })
       : lw.kind === 'rescue' ? tr('🌀 שאבתם את הרוח ש{name} היה בתוכה — הוא חוזר הביתה!', { name: name(lw.buddy) })
       : lw.kind === 'scared' ? tr('❤️ {wind} הטוב שלכם הבריח אותו! +{n} 🪙', { wind, n: lw.coins })
       : lw.kind === 'freed' ? tr('🌀 שאבתם את {wind} — ו{name} יצא מתוכו!', { wind, name: name(lw.buddy) })

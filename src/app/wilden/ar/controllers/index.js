@@ -7,6 +7,7 @@
 // nimi.js (קריאת שביל העקבות) ו-flyer.js נשארים כבקרים חלופיים.
 
 import { makeChase } from './chase.js'
+import { makeStatue } from './statue.js'
 
 const run = makeChase({ id: 'tracks-true-or-false', target: 'creature', style: 'run' })
 const buzz = makeChase({ id: 'buzz', target: 'creature', style: 'fly', copy: {
@@ -28,7 +29,10 @@ const glow = makeChase({ id: 'glow', target: 'creature', style: 'run', copy: {
   NEAR: { line: 'היא נעצרה. האור שלה מולכם.', sub: 'לחצו במסך כדי לתפוס אותה!' },
 } })
 
-const REGISTRY = { 'tracks-true-or-false': run, buzz, gust, shadow, stomp, glow }
+// ויספר: הפועל ההפוך. לא רצים אליו — עומדים, והוא בא.
+const statue = makeStatue({ id: 'statue' })
+
+const REGISTRY = { 'tracks-true-or-false': run, buzz, gust, shadow, stomp, glow, statue }
 
 export function controllerFor(creature) {
   return REGISTRY[creature?.controller] || null

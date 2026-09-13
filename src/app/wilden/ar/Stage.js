@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useOrient, angleDelta } from '../hooks/useOrient'
 import { useSteps } from '../hooks/useSteps'
 import { controllerFor } from './controllers'
+import { useMotion } from '../hooks/useMotion'
+import { createStillness } from '../engine/still'
 import { CreatureFigure, ModelLayer, Dust, Burst } from './Figure'
 import { useModelSrc, usePreloadModel } from '../hooks/useModelViewer'
 import { useBurst } from '../hooks/useBurst'
@@ -55,9 +57,21 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   // ── צעדים ──
   // המרדף רץ על צעדים, לא על GPS (ראה hooks/useSteps).
   const steps = useSteps({ active: true })
+  // ── ולוויספר: ההפך ──
+  // הוא מתקרב כשעומדים. מה שנמדד הוא הרעד סביב הממוצע, לא הערך עצמו
+  // (ראה engine/still.js), וזה חייב להיות סלחני: ילד שנושם אינו זז.
+  const ctrl0 = controllerFor(creature)
+  const wantsStill = !!ctrl0?.needsStill
+  const stillDet = useRef(null)
+  if (wantsStill && !stillDet.current) stillDet.current = createStillness()
+  const stillRef = useRef(false)
+  const motion = useMotion({ active: wantsStill, onSample: s => {
+    const r = stillDet.current?.feed(s)
+    if (r) stillRef.current = r.still
+  } })
   // ההרשאות באייפון (כיוון + תנועה) יוצאות מאותה לחיצה.
   const askNeeded = (needsAsk && perm === 'unknown') || (steps.needsAsk && steps.perm === 'unknown')
-  const askAll = () => { request(); steps.request() }
+  const askAll = () => { request(); steps.request(); if (wantsStill) motion.request() }
   // יש מד צעדים חי? אז לחיצה ומבט לא מחליפים ריצה.
   const stepsLiveRef = useRef(false); stepsLiveRef.current = steps.live
   // מתי נספר צעד אחרון. ילד שמחזיק את הטלפון מורם מול הפנים כמעט לא
@@ -65,7 +79,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   const lastStepAt = useRef(0)
   const STALE_STEPS_MS = 8000
 
-  const ctrl = controllerFor(creature)
+  const ctrl = ctrl0
   const modelSrc = useModelSrc(creature)
   usePreloadModel(modelSrc)                 // המודל מתחיל לרדת כבר על שביל העקבות
   const [modelShown, setModelShown] = useState(false)
@@ -123,7 +137,9 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
           const r = ctrl.onStep(next, t)
           if (r.state !== next) { next = r.state; if (r.feedback) fire(r.feedback, setFlash, setShake, creatureIdRef.current) }
         }
-        if (ctrl.onTick) next = ctrl.onTick(next, t)
+        // בלי חיישן תנועה אי אפשר לדעת אם עומדים — ואז מניחים שכן.
+        // ילד בלי חיישן לא מרמה, הוא רק מחכה, וזה בדיוק אותו משחק.
+        if (ctrl.onTick) next = ctrl.onTick(next, t, wantsStill ? { still: !motion.live || stillRef.current } : undefined)
         return next
       })
     }, TICK_CHASE)
@@ -466,6 +482,9 @@ function fire(kind, setFlash, setShake, creatureId = null) {
     back: { t: 'כאן הוא הסתובב וחזר.', buzz: [50], sfx: sfxRustle },
     fade: { t: 'כאן העקבות נגמרות. הוא קפץ.', buzz: [50], sfx: sfxRustle },
     run: { t: 'רוצו אליו!', buzz: [40], sfx: null },
+    // ויספר: הפועל ההפוך — תזוזה היא מה שמרחיק, ועמידה היא מה שמקרב.
+    moved: { t: 'זזתם! הוא נסוג.', buzz: [70, 40], sfx: sfxRustle },
+    still: { t: 'לא לוחצים. עומדים.', buzz: [30], sfx: null },
     flee: { t: 'הוא ברח!', buzz: [70, 50, 70], sfx: creatureId ? null : sfxRustle },
     near: { t: 'הוא נעצר.', buzz: [40], sfx: creatureId ? null : sfxAppear },
     ready: { t: 'עכשיו!', buzz: [60, 40, 60], sfx: sfxAppear },
