@@ -277,9 +277,9 @@ export const CREATURES = {
   // מגובטבו, אחרי שנים בפנים; ונקי — מי שהוא כשהוא בבית. הראשון מופיע
   // פעם אחת בחיי המשחק (ui/WhisperFreed), השני הוא הדמות.
   //
-  // אין לו GLB ואין קליפ מ-Runway עדיין: live הוא הציור עצמו, והוא נושם
-  // בתנועה עדינה של הבמה (still: true) במקום בקליפ. כשיגיע קליפ — אותו
-  // נתיב, שורה אחת.
+  // הקליפים שלה: live הוא שלוש וחצי השניות הראשונות של הקליפ שבהן הוא
+  // עומד ומזיז אוזניים (ההמשך — שבו הוא הולך אל המצלמה — שמור לבמה),
+  // ו-/world/whisper/freed.mp4 הוא הרגע שבו הרוח פולטת אותו.
   whisper: {
     id: 'whisper', name: 'ויספר',
     model: null,
@@ -287,8 +287,6 @@ export const CREATURES = {
     clip: null,
     live: '/creatures/whisper/live.webp',
     poster: '/creatures/whisper/poster.webp',
-    dusty: '/world/whisper/dusty.webp',     // הרגע שבו הרוח פלטה אותו
-    still: true,                            // ציור, לא קליפ — הבמה מנשימה אותו
     sprites: null,
     heightM: 0.40,
     arMode: AR_MODE.GROUND,

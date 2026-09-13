@@ -16,7 +16,7 @@ import { evolvedBetween } from './stages.js'
 import { routeKm, poisFor, creatureCount, placePois, setRouteKm, withCreatures, POI } from './plan.js'
 import { modsFor, consume, buyGear, withKeys, withExtra, unlocked } from './gear.js'
 import { buySkin, buyStone } from './skins.js'
-import { withExtraGold, AVAILABLE, availableFor, heatDistance } from './coins.js'
+import { withExtraGold, AVAILABLE, availableFor, spatBy, SUCK_COINS, heatDistance } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest, produce, creaturesWanted } from './world.js'
@@ -78,7 +78,7 @@ export function initial() {
       // ── בן לוויה ── מי יוצא איתך, וכמה מטרים הלכתם יחד (ראה engine/buddy.js)
       buddy: null, bond: {},
       taken: null,        // { creature, at } — מי שגובטבו מחזיק (ראה engine/wind.js)
-      whisperOut: false,  // האם הרוח כבר פלטה את ויספר (ראה engine/coins.js)
+      sucks: 0, freed: [],  // כמה רוחות נשאבו, ומי כבר נפלט מהן (ראה engine/coins.js)
       routeKm: null,      // אורך המסלול שההורה בחר (ק"מ); null — הלוח
       look: {},           // { [creatureId]: 'base' | מזהה צבע } — המראה שנבחר בספר
       gear: [], items: {}, // ציוד למרדף: קבוע, וחד-פעמי עם כמות (ראה engine/gear.js)
@@ -426,17 +426,20 @@ export function reduce(g, ev) {
       const windRes = (r.windRes || 0) + 1
       // ומי שנחטף במסע קודם: זו הרוח שמחזיקה אותו, והוא יוצא ממנה עכשיו.
       const rescued = res.rescued || null
-      // ── והפעם הראשונה בכלל ──
-      // "ויספר יהיה הדמות הראשונה שהרוח פלטה החוצה." לא מטבעות ולא משאב:
-      // מתוך גובטבו הראשון שנשאב אי־פעם יוצא יצור, מתנער, ובורח ברחוב.
-      // מכאן הוא על המסלול — וזה מה שמצדיק את השואב יותר מהכול.
-      const spat = !g.progress.whisperOut && !r.spat ? 'whisper' : null
+      // ── ומה יוצא מהרוח הזאת ──
+      // "לא מכל רוח תישלף דמות, רק 2 מתוך 5. ה-3 האחרות יביאו 10 מטבעות."
+      // הסבב נספר על פני כל המשחק (progress.sucks), לא בתוך מסע — אחרת
+      // כל יציאה מתחילה מחדש והשתיים הראשונות היו תמיד דמות.
+      const nSuck = (g.progress.sucks || 0) + (r.sucks || 0)
+      const spat = spatBy(g.progress, nSuck)
+      const extraCoins = spat ? 0 : SUCK_COINS
       return {
         ...g,
         run: { ...r, winds: res.winds, buddyTaken: false, windRes, rescued: rescued || r.rescued || null,
-          spat: r.spat || spat, coinsTaken: (r.coinsTaken || 0) + res.coins * mult,
+          sucks: (r.sucks || 0) + 1, spat: r.spat || spat,
+          coinsTaken: (r.coinsTaken || 0) + (res.coins + extraCoins) * mult,
           lastWind: { t: ev.t ?? 0, kind: spat ? 'spat' : rescued ? 'rescue' : freed ? 'freed' : 'suck',
-            coins: res.coins * mult, res: res.res, spat,
+            coins: (res.coins + extraCoins) * mult, res: res.res, spat,
             buddy: rescued || (freed ? g.progress.buddy : null) } },
       }
     }
@@ -610,7 +613,9 @@ export function reduce(g, ev) {
           creatures,
           res,
           ...tank,
-          whisperOut: g.progress.whisperOut || !!r.spat,
+          sucks: (g.progress.sucks || 0) + (r.sucks || 0),
+          freed: r.spat && !(g.progress.freed || []).includes(r.spat)
+            ? [...(g.progress.freed || []), r.spat] : (g.progress.freed || []),
           egg: hatched ? null : g.progress.egg,
           variants,
           coins: (g.progress.coins || 0) + (r.coinsTaken || 0),

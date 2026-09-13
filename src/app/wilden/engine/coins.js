@@ -177,9 +177,24 @@ export const AVAILABLE = ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'tzel', '
 // "ויספר יהיה הדמות הראשונה שהרוח פלטה החוצה… ואז יברח ברחוב (הזדמנות
 // לתפוס בסיבובים הבאים)." אז הוא לא ברשימה מלכתחילה: הוא נכנס אליה
 // ברגע שגובטבו הראשון נשאב, ומשם והלאה הוא על המסלול ככל השאר.
+//
+// ── "לא מכל רוח תישלף דמות" ──
+// "רק 2 דמויות מתוך 5. ה-3 האחרות יביאו מטבעות, לא דמות — 10 מטבעות."
+// אז זה לא הגרלה אלא הבטחה: בכל חמש שאיבות, שתיים בדיוק נושאות מישהו
+// (הראשונה והרביעית), ושלוש נותנות עשרה מטבעות. ילד לא נתקע ברצף ביש
+// מזל, וגם לא מקבל דמות בכל פעם — ושתי התכונות האלה חשובות באותה מידה.
+// כשמי שיש לנו כבר יצא, גם המשבצות של הדמות משלמות מטבעות.
 export const FREED = ['whisper']
+export const SUCK_CYCLE = 5
+export const CREATURE_SLOTS = [0, 3]
+export const SUCK_COINS = 10
 export const availableFor = (progress, base = AVAILABLE) =>
-  progress?.whisperOut ? [...base, ...FREED] : base
+  (progress?.freed || []).length ? [...base, ...(progress.freed || [])] : base
+// מי יוצא מהשאיבה הבאה: מזהה יצור, או null אם זו שאיבה של מטבעות.
+export function spatBy(progress, sucks = progress?.sucks || 0) {
+  if (!CREATURE_SLOTS.includes(sucks % SUCK_CYCLE)) return null
+  return FREED.find(id => !(progress?.freed || []).includes(id)) || null
+}
 // "אולי צריך 2 דמויות מינימום." מסע 1 הוא הסיפור של נימי, לבד. מהמסע
 // השני — שניים בדרך תמיד: הראשון לפי הסבב, השני מהצד השני של הרשימה
 // (כך שכמעט תמיד אחד על הרצפה ואחד באוויר). המטבעות פותחים שלישי.

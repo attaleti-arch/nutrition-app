@@ -2,94 +2,74 @@
 import { useEffect, useRef, useState } from 'react'
 import { tr, dirOf } from '../i18n'
 import { creatureById } from '../content/creatures'
+import { WIND_NAME } from '../engine/wind'
 
 // ─── מה שיצא מהרוח ───
 // "חושבת שוויספר יהיה הדמות הראשונה שהרוח פלטה החוצה, והוא פשוט יסתכל
-// במבט כזה מרופט, יתנער ויצאו ממנו ניצוצות, ואז יברח ברחוב (הזדמנות
-// לתפוס בסיבובים הבאים)."
+// במבט כזה מרופט, יתנער ויצאו ממנו ניצוצות, ואז יברח ברחוב."
 //
-// ארבעה רגעים, בדיוק בסדר הזה, ובלי מילה מיותרת:
-//   נפלט   — נזרק החוצה עם האבק, ונוחת.
-//   מביט   — שנייה וחצי של מבט. כאן לא קורה כלום, וזה הרגע החשוב ביותר.
-//   מתנער  — האבק עף ממנו והניצוצות יוצאים.
-//   בורח   — הצידה, אל מחוץ למסך. הוא לא נתפס היום.
+// והקליפ שלה עושה את כל זה בעצמו: הוא תלוי מהשואב מכוסה אבק, האבק נושר
+// ממנו, מתחתיו מתגלה מישהו אחר לגמרי — ירוק, עם כנפיים — הוא מביט רגע,
+// מסתובב, ורץ אל האופק עד שהוא נקודה.
 //
-// הציור המאובק הוא שלה, וזה בדיוק אותו יצור שאפשר לתפוס אחר כך — רק
-// אחרי שנים בתוך רוח.
+// ולכן אין כאן שום אנימציה משלי: יש את הקליפ שלה, על רקע בהיר. הרקע
+// הבהיר הוא החלטה ולא פשרה — הסרטון צולם על לבן, וניסיון לגזור ממנו את
+// הרצפה השאיר שלולית אפורה. בתוך משחק שכולו חורבה בשקיעה, שנייה לבנה
+// היא בדיוק מה שרגע כזה צריך: כמו הבזק של זיכרון.
+//
+// ואחרי שלוש שניות אפשר לדלג. ילד שראה את זה פעם אחת לא חייב לשבת שוב.
 
+const MS = 10000
+const SKIP_AFTER = 3000
 const BEATS = [
-  { id: 'out', ms: 900 },
-  { id: 'look', ms: 1700 },
-  { id: 'shake', ms: 1100 },
-  { id: 'flee', ms: 1100 },
+  { at: 0, line: 'משהו יצא מ{wind}…' },
+  { at: 3400, line: 'הוא מתנער — והאבק של כל השנים עף ממנו!' },
+  { at: 5600, line: 'הוא מסתכל עליכם.' },
+  { at: 7600, line: '{name} ברח לרחוב. הוא שם בחוץ עכשיו.' },
 ]
-const TOTAL = BEATS.reduce((n, b) => n + b.ms, 0)
 
 export function WhisperFreed({ id = 'whisper', onDone }) {
-  const [i, setI] = useState(0)
+  const [ms, setMs] = useState(0)
   const c = creatureById(id)
-  const timers = useRef([])
+  const done = useRef(false)
+  const finish = () => { if (!done.current) { done.current = true; onDone?.() } }
   useEffect(() => {
-    let t = 0
-    BEATS.forEach((b, k) => {
-      t += b.ms
-      if (k < BEATS.length - 1) timers.current.push(setTimeout(() => setI(k + 1), t))
-    })
-    timers.current.push(setTimeout(() => onDone?.(), TOTAL))
-    return () => timers.current.forEach(clearTimeout)
+    const t0 = Date.now()
+    const iv = setInterval(() => setMs(Date.now() - t0), 120)
+    const end = setTimeout(finish, MS)
+    return () => { clearInterval(iv); clearTimeout(end) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
-  const beat = BEATS[i].id
-  const img = beat === 'flee' ? (c?.live || c?.poster) : (c?.dusty || c?.live)
+
+  const beat = [...BEATS].reverse().find(b => ms >= b.at) || BEATS[0]
+  const canSkip = ms >= SKIP_AFTER
 
   return (
-    <div dir={dirOf()} style={S.wrap} aria-hidden="true">
-      <style>{CSS}</style>
-      <div style={{ ...S.stage, ...(ANIM[beat] || null) }}>
-        <img src={img} alt="" draggable={false} style={S.fig} />
-        {/* הניצוצות: יוצאים ממנו כשהוא מתנער, ולא לפני */}
-        {beat === 'shake' && SPARKS.map((s, k) => (
-          <span key={k} style={{ ...S.spark, left: `${s[0]}%`, top: `${s[1]}%`,
-            animationDelay: `${k * 60}ms`, fontSize: s[2] }}>✨</span>
-        ))}
-      </div>
-      <p style={S.line}>
-        {beat === 'out' ? tr('משהו יצא מ{wind}…', { wind: tr('גובטבו') })
-          : beat === 'look' ? tr('הוא מסתכל עליכם.')
-          : beat === 'shake' ? tr('הוא מתנער — והאבק של כל השנים עף ממנו!')
-          : tr('{name} ברח לרחוב. הוא שם בחוץ עכשיו.', { name: tr(c?.name || '') })}
+    <div dir={dirOf()} style={S.wrap} onClick={() => canSkip && finish()}>
+      {/* שני קידודים: אייפון מנגן H.264, ודפדפן בלי הקודק הזה (וגם
+          הדפדפן שבו אני בודק) נופל ל-VP9. בלי זה הרגע הזה פשוט לבן. */}
+      <video autoPlay muted playsInline style={S.vid}>
+        <source src="/world/whisper/freed.mp4" type="video/mp4" />
+        <source src="/world/whisper/freed.webm" type="video/webm" />
+      </video>
+      <div style={S.vignette} aria-hidden="true" />
+      <p key={beat.at} style={S.line}>
+        {tr(beat.line, { wind: tr(WIND_NAME), name: tr(c?.name || '') })}
       </p>
+      {canSkip && <span style={S.skip}>{tr('להמשיך')}</span>}
     </div>
   )
 }
 
-const SPARKS = [[12, 24, 26], [78, 18, 22], [30, 8, 30], [62, 40, 20], [8, 56, 24], [88, 52, 26], [46, 4, 22]]
-
-const ANIM = {
-  out: { animation: 'wildenSpitOut .9s cubic-bezier(.2,1.4,.4,1) both' },
-  look: { animation: 'wildenLook 1.7s ease-in-out both' },
-  shake: { animation: 'wildenShake 1.1s ease-in-out both' },
-  flee: { animation: 'wildenRunOff 1.1s cubic-bezier(.5,0,.9,.4) both' },
-}
-
-const CSS = `
-@keyframes wildenSpitOut { 0% { opacity: 0; transform: translate(38vw,-12vh) scale(.35) rotate(160deg) } 70% { opacity: 1; transform: translate(0,4vh) scale(1.06) rotate(-8deg) } 100% { opacity: 1; transform: translate(0,0) scale(1) rotate(0) } }
-@keyframes wildenLook { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-4px) } }
-@keyframes wildenShake { 0%,100% { transform: rotate(0) } 12% { transform: rotate(-7deg) scale(1.03) } 28% { transform: rotate(7deg) scale(1.03) } 44% { transform: rotate(-6deg) } 60% { transform: rotate(6deg) } 76% { transform: rotate(-3deg) } }
-@keyframes wildenRunOff { 0% { opacity: 1; transform: translateX(0) scale(1) } 25% { transform: translateX(-6vw) scale(1.02) } 100% { opacity: 0; transform: translateX(-115vw) scale(.72) } }
-@keyframes wildenSparkOut { 0% { opacity: 0; transform: translate(0,0) scale(.3) } 30% { opacity: 1 } 100% { opacity: 0; transform: translate(var(--dx,0), -60px) scale(1.25) } }
-@keyframes wildenFreedIn { from { opacity: 0 } to { opacity: 1 } }
-`
-
 const S = {
-  wrap: { position: 'fixed', inset: 0, zIndex: 3200, background: 'radial-gradient(circle at 50% 45%, rgba(24,31,41,.96), rgba(6,9,14,.995))',
-    display: 'grid', placeItems: 'center', animation: 'wildenFreedIn .25s ease-out both', pointerEvents: 'none', overflow: 'hidden' },
-  // גובה *וגם* רוחב: הדמות רחבה כמעט כמו שהיא גבוהה (אוזניים), ובלי
-  // תקרת רוחב היא גלשה מהמסך בטלפון צר.
-  stage: { position: 'relative', width: '100%', height: '54vh', display: 'grid', placeItems: 'center' },
-  fig: { width: 'min(74vw, 380px)', height: 'auto', maxHeight: '54vh', objectFit: 'contain', display: 'block',
-    filter: 'drop-shadow(0 10px 26px rgba(0,0,0,.6))' },
-  spark: { position: 'absolute', animation: 'wildenSparkOut .9s ease-out both', pointerEvents: 'none' },
-  line: { position: 'absolute', bottom: '13%', insetInline: 0, margin: 0, padding: '0 22px', textAlign: 'center',
-    color: '#E9E5D8', fontSize: 19, fontWeight: 800, lineHeight: 1.5, textShadow: '0 3px 14px rgba(0,0,0,.85)' },
+  // לבן שמתאים ללבן של הסרטון, כדי שלא ייראה מלבן בתוך מלבן
+  wrap: { position: 'fixed', inset: 0, zIndex: 3200, background: '#FAFAF8', overflow: 'hidden',
+    display: 'grid', placeItems: 'center', animation: 'wildenFadeIn .3s ease-out both', cursor: 'pointer' },
+  vid: { width: '100%', maxWidth: 560, maxHeight: '74vh', objectFit: 'contain', display: 'block' },
+  vignette: { position: 'absolute', inset: 0, pointerEvents: 'none',
+    background: 'radial-gradient(ellipse at 50% 45%, rgba(15,21,15,0) 52%, rgba(15,21,15,.14) 100%)' },
+  line: { position: 'absolute', bottom: '9%', insetInline: 0, margin: 0, padding: '0 24px', textAlign: 'center',
+    color: '#14200F', fontSize: 20, fontWeight: 900, lineHeight: 1.5, animation: 'wildenFadeIn .4s ease-out both' },
+  skip: { position: 'absolute', top: 14, insetInlineEnd: 14, padding: '5px 13px', borderRadius: 999,
+    background: 'rgba(20,32,15,.72)', color: '#E9E5D8', fontSize: 13, fontWeight: 800 },
 }

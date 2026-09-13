@@ -64,6 +64,7 @@ const PAGE_CSS = `
    (הרוח שנשאבת, ויספר שבורח ברחוב) מגדילה את שטח הגלילה של המסמך, ואז
    כל הדף מוזז ונראה כאילו נחתך. הגבול הזה סוגר את זה פעם אחת, לכולם. */
 html, body { overflow-x: clip; max-width: 100%; }
+@keyframes wildenFadeIn { from { opacity: 0 } to { opacity: 1 } }
 @keyframes wildenCoinFly { 0% { transform: translate(-50%,-50%) scale(.6); opacity: 0 } 15% { transform: translate(-50%,-50%) scale(1.25); opacity: 1 }
   100% { transform: translate(calc(-50% + 34vw), calc(-50% - 36vh)) scale(.4); opacity: 0 } }
 @keyframes wildenToast { 0% { opacity: 0; transform: translateX(-50%) translateY(10px) scale(.9) } 12% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1) }
