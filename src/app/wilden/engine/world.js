@@ -240,7 +240,7 @@ export const BUILDINGS = [
     line: 'שבע גלי — והשלולית מלאה. מים בכל מסע.' },
   { id: 'quarry', name: 'ערמת אבנים', creature: 'bolder', need: 7, product: 'stone', spot: { x: 88, y: 72, w: 30 }, img: '/world/buildings/quarry.webp', live: '/world/buildings/quarry-live.webp',
     line: 'שבעה בולדר — וערמת האבנים גדלה. אבן בכל מסע.' },
-  { id: 'nest', name: 'קן', creature: 'ruchi', need: 7, product: 'wind', spot: { x: 89, y: 35, w: 15 }, img: '/world/buildings/nest.webp', live: '/world/buildings/nest-live.webp',
+  { id: 'nest', name: 'קן', creature: 'ruchi', need: 7, product: 'wind', spot: { x: 88, y: 40, w: 15, area: 'court' }, img: '/world/buildings/nest.webp', live: '/world/buildings/nest-live.webp',
     line: 'שבעה רוחי — והקן שלם. רוח בכל מסע.' },
 ]
 export const SWARM_MAX = 6      // כמה קטנים מסביב לגדול, לכל היותר
