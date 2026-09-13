@@ -311,7 +311,10 @@ export const CREATURES = {
     id: 'drake', name: 'שושו',
     model: null,
     ios: null,
-    clip: null,
+    // קליפ התפיסה שלה: מכשכש בזנב, ניצוצות, והולך אל המצלמה עד קרוב.
+    // צולם על לבן — וכל שאר קליפי התפיסה על כהה, אז הרקע נגזר והורכב
+    // על אותו ירוק־כהה (9,17,10). אחרת הוא היה מהבהב לבן באמצע הרצף.
+    clip: '/creatures/drake/caught.mp4',
     live: '/creatures/drake/live.webp',
     poster: '/creatures/drake/poster.webp',
     freed: '/world/drake/freed',
