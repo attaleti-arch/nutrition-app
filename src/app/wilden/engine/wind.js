@@ -66,7 +66,7 @@ export const MAX_WINDS = 3
 // ── איפה הן ──
 // פרוסות על המסלול, לא על תחנה, ולא בהתחלה ובסוף. אותה שיטה כמו
 // המטבעות: pointAlong על הקו, כלומר תמיד על המסלול עצמו.
-export function placeWinds(path, { stops = [], coinRun = null, flowerRun = null, n = 2, rng = Math.random } = {}) {
+export function placeWinds(path, { stops = [], coinRun = null, flowerRun = null, n = 2, rng = Math.random, holds = null } = {}) {
   if (!path || path.length < 2) return []
   const total = pathLength(path)
   const from = WIND_START_M, to = total - WIND_END_M
@@ -88,6 +88,11 @@ export function placeWinds(path, { stops = [], coinRun = null, flowerRun = null,
     if (!p) continue
     out.push({ id: 'w' + i, lat: p.point.lat, lng: p.point.lng, along: at, taken: false, hit: false })
   }
+  // ── הרוח שמחזיקה מישהו ──
+  // "בסיבוב הבא הזדמנות להחזיר את הדמות בקניית שואב אבק ושאיבה של הרוח
+  // שחטפה אותה." אז היא כאן, על המסלול, ואפשר לזהות אותה: אחת מהן —
+  // האמצעית, כדי שתמיד יהיה מרחק ללכת אליה — נושאת את מי שנחטף.
+  if (holds && out.length) out[Math.floor(out.length / 2)].holds = holds
   return out
 }
 
@@ -105,13 +110,38 @@ export function windNearby(run, pos) {
 export const windsLeft = run => (run?.winds || []).filter(w => !w.taken && !w.hit).length
 
 // ── שואבים ──
-// הרוח נכנסת לשואב: משאב "רוח" למי שבבית, ומטבעות עכשיו.
+// הרוח נכנסת לשואב: משאב "רוח" למי שבבית, ומטבעות עכשיו. ואם היא הייתה
+// זו שמחזיקה מישהו — הוא יוצא ממנה, וזה כל מה שקרה כאן.
 export function suckWind(run, id) {
   const list = run?.winds || []
   const i = list.findIndex(w => w.id === id)
   if (i < 0 || list[i].taken || list[i].hit) return null
   const winds = list.map((w, k) => (k === i ? { ...w, taken: true } : w))
-  return { winds, coins: WIND_COINS, res: WIND_RES }
+  return { winds, coins: WIND_COINS, res: WIND_RES, rescued: list[i].holds || null }
+}
+
+// ── מי שנחטף, ונשאר חטוף ──
+// שלוש התוצאות של מפגש עם גובטבו, ושלושתן שונות:
+//   שואבים            — יוצאת ממנו דמות, וזה מה שמצדיק את השואב.
+//   בורחים ורצים      — מצליחים, והוא מתפוגג.
+//   נשארים בלי לזוז   — הוא חוטף את בן הלוויה, **וזה נשאר**: היצור לא
+//                       בבית, לא יוצא איתך, ורואים את החור שהוא השאיר.
+// ההחזרה היא משימה: לקנות שואב, למצוא את הרוח שמחזיקה אותו, ולשאוב.
+// ושתי רשתות ביטחון: לא חוטפים את היצור האחרון שיש לילד, ולא חוטפים
+// שניים — יש מקסימום חטוף אחד בכל רגע, כדי שהעולם לא יתרוקן.
+export const takenId = progress => progress?.taken?.creature || null
+export const isTaken = (progress, id) => !!id && takenId(progress) === id
+export const canTake = progress => !takenId(progress) && (progress?.creatures || []).length >= 2
+
+export function takeCreature(progress, id, t = null) {
+  if (!id || !canTake(progress) || !(progress.creatures || []).includes(id)) return progress
+  return { ...progress, taken: { creature: id, at: t }, buddy: progress.buddy === id ? null : progress.buddy }
+}
+
+export function freeCreature(progress, id = null) {
+  if (!takenId(progress)) return progress
+  if (id && takenId(progress) !== id) return progress
+  return { ...progress, taken: null }
 }
 
 // ── ברחו ──

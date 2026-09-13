@@ -97,6 +97,15 @@ export const DE = {
   'שואב את גובטבו מהמסלול, ומביא ממנו רוח הביתה. בלעדיו הוא קופץ בהפתעה, וצריך לברוח ממנו ברגליים.': 'Saugt Guvtavo von der Route ein und bringt Wind mit nach Hause. Ohne ihn taucht er plötzlich auf, und ihr müsst zu Fuß weglaufen.',
   'כלי. פעם אחת, לתמיד. רוח היא משאב שהשומר מבקש.': 'Werkzeug. Einmal, für immer. Wind ist ein Rohstoff, den der Wächter braucht.',
   'כלי. פעם אחת, לתמיד.': 'Werkzeug. Einmal, für immer.',
+  // ── מי שנחטף, ומי ששוחרר ──
+  'מקום ריק': 'Leerer Platz',
+  '{wind} מחזיק אותו. שאבו את הרוח שלו בדרך.': '{wind} hält ihn fest. Saugt unterwegs seinen Wind ein.',
+  '🌀 {wind} מחזיק את {name}. הרוח שלו מסומנת על המפה — שאבו אותה והוא חוזר.': '🌀 {wind} hält {name} fest. Sein Wind ist auf der Karte markiert — saugt ihn ein, und {name} kommt zurück.',
+  '🌀 {wind} מחזיק את {name}. רק שואב הרוח יכול להוציא אותו.': '🌀 {wind} hält {name} fest. Nur der Windsauger kann ihn herausholen.',
+  '🌀 {wind} לקח את {name}. הוא מחזיק אותו עד שתשאבו את הרוח שלו — לזה צריך שואב.': '🌀 {wind} hat {name} mitgenommen. Er behält ihn, bis ihr seinen Wind einsaugt — dafür braucht ihr den Sauger.',
+  '🌀 {name} יצא מהרוח וחזר הביתה.': '🌀 {name} kam aus dem Wind und ist wieder zu Hause.',
+  '🌀 שאבתם את הרוח ש{name} היה בתוכה — הוא חוזר הביתה!': '🌀 Ihr habt den Wind eingesaugt, in dem {name} war — er kommt nach Hause!',
+
   // ── מה שבשואב, וביצת הלב ──
   'בשואב': 'Im Sauger', 'ביצת הלב': 'Herz-Ei', 'גובטבו טוב לב': 'Gutherziger Guvtavo',
   '🥚 מסע שלם והיא בוקעת': '🥚 Eine ganze Tour, dann schlüpft es',

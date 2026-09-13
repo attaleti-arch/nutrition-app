@@ -487,6 +487,83 @@ test('רוחות במכונה: עם שואב נשאבות, בלי שואב חו�
   assert.equal(hit.run.lastWind.creature, 'nimi')
 })
 
+// ── שלוש התוצאות של גובטבו ──
+// "אם שואבים יוצאת דמות — שווה לרכוש שואב. אם בורחים ורצים, מצליחים.
+// ואם נשארים אדישים בחוסר תנועה, דמות נחטפת — ובסיבוב הבא הזדמנות
+// להחזיר אותה בקניית שואב ושאיבה של הרוח שחטפה אותה."
+import { takenId, isTaken, canTake, takeCreature, freeCreature } from '../src/app/wilden/engine/wind.js'
+
+test('גובטבו: מי שנחטף נשאר חטוף — לא בבית, לא בן לוויה, ולא על המסלול', () => {
+  const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
+  const winds = placeWinds(PATH, { stops, n: 1, rng: () => 0.5 })
+  const progress = { ...initial().progress, creatures: ['nimi', 'gali'], buddy: 'nimi', walks: 3 }
+  let g = { ...initial(), state: S.SEARCH, progress,
+    run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: {},
+      resolved: false, walked: 2000, walkStartedAt: 0, day: 'd1' } }
+  // נשארו אדישים: הוא חוטף
+  g = reduce(g, { type: 'WIND_TOOK_BUDDY', id: winds[0].id, t: 1 })
+  const home = reduce({ ...g, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 2, rng: () => 0.5 })
+  assert.equal(takenId(home.progress), 'nimi', 'הוא נשאר אצלה, לא חוזר בסוף הדרך')
+  assert.equal(home.takenNow, 'nimi', 'ואומרים את זה במסך הסיום')
+  assert.equal(home.progress.buddy, null, 'ולא יוצא איתך מחר')
+  assert.equal(canBuddy(home.progress, 'nimi'), false)
+  assert.ok(home.progress.creatures.includes('nimi'), 'אבל הוא לא נמחק מהספר')
+  // ולא שולחים אותך לתפוס מישהו שרוח מחזיקה
+  const out = reduce({ ...home, state: S.BROKEN_WORLD }, { type: 'START_RUN', kind: RUN.FREE, day: 'd2', t: 3, available: ['nimi', 'gali', 'bolder'] })
+  assert.ok(!out.run.wantCreatures.includes("nimi"), "נימי לא על המסלול — הוא לא שם")
+})
+
+test('גובטבו: הרוח שמחזיקה אותו יושבת על המסלול, והשאיבה מחזירה אותו', () => {
+  const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'gali', done: false }]
+  // הרוח שמחזיקה מסומנת רק כשיש מי שמוחזק
+  const plain = placeWinds(PATH, { stops, n: 3, rng: () => 0.5 })
+  assert.ok(!plain.some(w => w.holds), 'בלי חטוף — אף רוח לא מחזיקה')
+  const winds = placeWinds(PATH, { stops, n: 3, rng: () => 0.5, holds: 'nimi' })
+  const holder = winds.find(w => w.holds === 'nimi')
+  assert.ok(holder, 'יש רוח שמחזיקה אותו')
+  assert.equal(winds.filter(w => w.holds).length, 1, 'אחת בלבד')
+
+  const progress = { ...initial().progress, creatures: ['nimi', 'gali'], buddy: 'gali',
+    taken: { creature: 'nimi', at: 1 }, gear: ['vacuum'] }
+  let g = { ...initial(), state: S.SEARCH, progress,
+    run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: { vacuum: true },
+      resolved: false, walked: 2000, walkStartedAt: 0, day: 'd2' } }
+  // שואבים רוח אחרת — הוא עדיין שם
+  const other = winds.find(w => !w.holds)
+  g = reduce(g, { type: 'WIND_SUCK', id: other.id, t: 2 })
+  assert.equal(g.run.rescued, null, 'לא כל רוח מחזיקה אותו')
+  // שואבים את שלו — הוא יוצא
+  g = reduce(g, { type: 'WIND_SUCK', id: holder.id, t: 3 })
+  assert.equal(g.run.rescued, 'nimi')
+  assert.equal(g.run.lastWind.kind, 'rescue')
+  const home = reduce({ ...g, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 4, rng: () => 0.5 })
+  assert.equal(takenId(home.progress), null, 'חזר הביתה')
+  assert.equal(home.rescuedNow, 'nimi')
+  assert.equal(canBuddy(home.progress, 'nimi'), true, 'ואפשר לצאת איתו שוב')
+})
+
+test('גובטבו: לא חוטף את היצור האחרון, ולא שניים בבת אחת', () => {
+  const one = { ...initial().progress, creatures: ['nimi'], buddy: 'nimi' }
+  assert.equal(canTake(one), false, 'לילד עם יצור אחד לא מרוקנים את העולם')
+  assert.equal(takeCreature(one, 'nimi'), one)
+  const two = { ...initial().progress, creatures: ['nimi', 'gali'], buddy: 'nimi' }
+  const held = takeCreature(two, 'nimi', 5)
+  assert.equal(takenId(held), 'nimi')
+  assert.equal(canTake(held), false, 'אחד בכל רגע')
+  assert.equal(takeCreature(held, 'gali'), held)
+  assert.equal(isTaken(held, 'nimi'), true)
+  assert.equal(takenId(freeCreature(held)), null)
+  // ובריחה מוצלחת לא חוטפת כלום
+  const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'gali', done: false }]
+  const winds = placeWinds(PATH, { stops, n: 1, rng: () => 0.5 })
+  let g = { ...initial(), state: S.SEARCH, progress: two,
+    run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: {},
+      resolved: false, walked: 2000, walkStartedAt: 0, day: 'd1' } }
+  g = reduce(g, { type: 'WIND_FLED', id: winds[0].id, t: 1 })
+  const home = reduce({ ...g, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 2, rng: () => 0.5 })
+  assert.equal(takenId(home.progress), null, 'מי שרץ — לא מאבד אף אחד')
+})
+
 // ── מה שבשואב, וביצת הלב ──
 // "מה הופך אותם לטובי לב?" — ההליכה, ולא הלחיצה. וגם: "אני לא אוהבת את
 // הכלוב הזה" — אז אין כלוב; הם נשארים בתוך הכלי שקנו.

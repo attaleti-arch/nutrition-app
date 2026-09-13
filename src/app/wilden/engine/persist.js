@@ -78,6 +78,7 @@ export function forServer(g) {
       skins: g.progress?.skins ?? {},
       stones: g.progress?.stones ?? {},
       bond: g.progress?.bond ?? {},
+      taken: g.progress?.taken ?? null,
       inTank: g.progress?.inTank ?? 0,
       heartEgg: g.progress?.heartEgg ?? null,
       tamed: g.progress?.tamed ?? 0,

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { initial, reduce, beaconView, S, RUN, MODE, nextRunKind, canStartStory } from './engine/machine'
 import { PHASE, PHASE_BUZZ, ACC_GATE, ACC_DIRECTION, ACC_COARSE, WALK_GATE } from './engine/beacon'
 import { PLACE_AFTER, stopInfo, kindName, JUNCTION_M } from './engine/placement'
-import { windNearby, windRound, WIND_NAME } from './engine/wind'
+import { windNearby, windRound, takenId, WIND_NAME } from './engine/wind'
 import { tamedReady, hasHeartEgg, tankShown, tamedCount, TANK_MAX, HATCH_M as HEART_M } from './engine/tank'
 import { WindFlee } from './ar/WindFlee'
 import { WindSuck } from './ar/WindSuck'
@@ -548,6 +548,12 @@ export default function Wilden() {
             <NewBadges ids={g.newBadges} />
             {/* ── ביצת הלב בקעה ── הרגע שההליכה של היום קנתה: חמישה
                 גובטבו יצאו מהשואב, וכבר לא פראיים. */}
+            {g.rescuedNow && (
+              <p style={s.tamed}>{tr('🌀 {name} יצא מהרוח וחזר הביתה.', { name: tr(creatureById(g.rescuedNow)?.name || '') })}</p>
+            )}
+            {g.takenNow && (
+              <p style={s.taken}>{tr('🌀 {wind} לקח את {name}. הוא מחזיק אותו עד שתשאבו את הרוח שלו — לזה צריך שואב.', { wind: tr(WIND_NAME), name: tr(creatureById(g.takenNow)?.name || '') })}</p>
+            )}
             {g.tamedNow > 0 && (
               <p style={s.tamed}>{tr('❤️ ביצת הלב בקעה! {n} {wind} יצאו טובי לב — אחד מהם יוצא איתכם מהמסע הבא.', { n: g.tamedNow, wind: tr(WIND_NAME) })}</p>
             )}
@@ -752,6 +758,15 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
         {!ownsGear(g.progress, 'vacuum') && (
           <button onClick={() => setPanel('shop')} style={s.windBuy}>{tr('לחנות')}</button>
         )}
+        {/* ── מי שנחטף ── "בסיבוב הבא הזדמנות להחזיר את הדמות בקניית
+            שואב ושאיבה של הרוח שחטפה אותה." אז אומרים את זה כאן, מפורש. */}
+        {takenId(g.progress) && (
+          <span style={s.takenNote}>
+            {ownsGear(g.progress, 'vacuum')
+              ? tr('🌀 {wind} מחזיק את {name}. הרוח שלו מסומנת על המפה — שאבו אותה והוא חוזר.', { wind: tr(WIND_NAME), name: tr(creatureById(takenId(g.progress))?.name || '') })
+              : tr('🌀 {wind} מחזיק את {name}. רק שואב הרוח יכול להוציא אותו.', { wind: tr(WIND_NAME), name: tr(creatureById(takenId(g.progress))?.name || '') })}
+          </span>
+        )}
         {/* ── מה שבשואב ── ומה שמרכך אותם: ההליכה של היום, לא לחיצה. */}
         {hasHeartEgg(g.progress)
           ? <span style={s.tankNote}>{tr('🥚 ביצת הלב על השואב. מסע של {km} ק״מ והיא בוקעת — וחמישה יצאו טובי לב.', { km: (HEART_M / 1000).toFixed(1).replace(/\.0$/, '') })}</span>
@@ -772,7 +787,7 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
         <div style={s.buddyRow} aria-label={tr('בן לוויה')}>
           <p style={s.buddyTitle}>{buddy ? <>{tr('יוצא איתך:')} <b>{tr(stagedName(buddy, stageOf(g.progress, buddy.id)))}</b> · {km(bondOf(g.progress, buddy.id))} {tr('יחד')}</> : tr('מי יוצא איתך היום?')}</p>
           <div style={s.buddyPick}>
-            {g.progress.creatures.map(id => {
+            {g.progress.creatures.filter(id => id !== takenId(g.progress)).map(id => {
               const c = creatureById(id); if (!c) return null
               const on = g.progress.buddy === id
               return (
@@ -917,6 +932,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
     setToast(
       lw.kind === 'suck' ? tr('🌀 שאבתם את {wind}! +{n} 🪙 · 🌬️ רוח הביתה', { wind, n: lw.coins })
       : lw.kind === 'fled' ? tr('🌀 ברחתם מ{wind}! +{n} 🪙', { wind, n: lw.coins })
+      : lw.kind === 'rescue' ? tr('🌀 שאבתם את הרוח ש{name} היה בתוכה — הוא חוזר הביתה!', { name: name(lw.buddy) })
       : lw.kind === 'scared' ? tr('❤️ {wind} הטוב שלכם הבריח אותו! +{n} 🪙', { wind, n: lw.coins })
       : lw.kind === 'freed' ? tr('🌀 שאבתם את {wind} — ו{name} יצא מתוכו!', { wind, name: name(lw.buddy) })
       : lw.kind === 'tookBuddy' ? tr('🌀 {wind} חטף את {name}! הוא יחזור הביתה בסוף הדרך.', { wind, name: name(lw.buddy) })
@@ -1272,6 +1288,8 @@ const s = {
   armed: { margin: '-6px 0 12px', fontSize: 14, color: '#F0C069', fontWeight: 700 },
   locked: { margin: '-6px 0 12px', fontSize: 13.5, color: C.muted },
   made: { margin: '6px 0 0', fontSize: 15, color: '#F0C069', fontWeight: 700 },
+  taken: { margin: '10px 0 0', padding: '9px 12px', borderRadius: 12, background: 'rgba(110,168,230,.12)', border: '1px solid rgba(110,168,230,.4)', color: '#C3D8EE', fontSize: 15, fontWeight: 800, lineHeight: 1.5 },
+  takenNote: { display: 'block', marginTop: 6, color: '#8ED0F0', fontWeight: 800 },
   tamed: { margin: '10px 0 0', padding: '9px 12px', borderRadius: 12, background: 'rgba(255,120,150,.12)', border: '1px solid rgba(255,150,170,.4)', color: '#FFD3DC', fontSize: 15, fontWeight: 800, lineHeight: 1.5 },
   kmTitle: { margin: '0 0 8px', fontSize: 12.5, fontWeight: 800, letterSpacing: '.08em', color: C.faint },
   kmPick: { display: 'flex', gap: 6 },

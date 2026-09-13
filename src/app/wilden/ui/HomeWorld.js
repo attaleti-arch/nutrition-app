@@ -10,6 +10,7 @@ import { CreatureAura } from './Aura'
 import { stageOf, stagedFor } from '../engine/stages'
 import { SPOTS, GUARDIAN, TANK } from '../content/spots'
 import { WindTank, TankCard } from './WindTank'
+import { takenId, WIND_NAME } from '../engine/wind'
 
 // ─── עולם הבית ───
 // "לא מבינה מה ילד רואה במעמד הבית." עכשיו: הרקע שלה (החורבה בשקיעה,
@@ -27,6 +28,11 @@ export { SPOTS, GUARDIAN, TANK }
 // ומכפיל גודל — הרחוקים קטנים יותר, בשביל עומק.
 const SWARM_OFFS = [[-0.45, -0.12, 0.45], [0.45, -0.08, 0.45], [-0.75, 0.18, 0.4], [0.75, 0.22, 0.4], [-0.25, 0.34, 0.5], [0.3, 0.38, 0.5]]
 const SWARM_BUDGET = 12
+// ── הבועה לא נחתכת בקצה ──
+// נימי עומד ב-15% ונוגה ב-85%: בועה שממורכזת עליהם גולשת מחוץ לתמונה
+// והמשפט נקטע באמצע. בקצוות היא נצמדת פנימה במקום להתמרכז.
+const bubbleAt = x => (x < 28 ? { left: 0, transform: 'none' }
+  : x > 72 ? { left: 'auto', right: 0, transform: 'none' } : null)
 
 // עד שתמונת המבנה תגיע: רק הילה חמה במקום שלו (הנחיל מסביב עושה את העבודה)
 const GLOW = { hive: 'rgba(240,192,105,.55)', pond: 'rgba(120,200,240,.5)', quarry: 'rgba(200,170,140,.5)', nest: 'rgba(180,230,255,.5)' }
@@ -52,7 +58,9 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
   }
   useEffect(() => () => clearTimeout(timer.current), [])
 
-  const have = progress?.creatures || []
+  // מי שגובטבו מחזיק לא נמצא בעולם — ורואים את החור שהוא השאיר.
+  const held = takenId(progress)
+  const have = (progress?.creatures || []).filter(id => id !== held)
   const seed = useMemo(() => Math.floor(Math.random() * 100), [])
   // כמה מהעולם נרפא: 0 — החורבה שלה; 1 — התמונה המתוקנת שלה, לגמרי.
   const heal = world.total ? Math.min(1, world.built / world.total) : 0
@@ -137,7 +145,7 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
             </div>
             {/* הצל מתחת לרגליים, לא מתחת לקנבס */}
             {!sp.air && <span style={{ ...W.groundShadow, bottom: `calc(${(sp.foot || 0) * 100}% - 4px)` }} />}
-            {bubble?.id === id && <span style={W.bubble}>{bubble.text}</span>}
+            {bubble?.id === id && <span style={{ ...W.bubble, ...bubbleAt(sp.x) }}>{bubble.text}</span>}
           </button>
         )
       })}
@@ -168,6 +176,25 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
           <span style={W.buildingTag}>{RES_ICON[b.product]} {tr('+1 בכל מסע')}</span>
         </div>
       ))}
+
+      {/* ── החור ── "אם נשארים אדישים בחוסר תנועה, דמות נחטפת." אז היא
+          לא כאן — ורואים בדיוק *מי* לא כאן: הצללית שלו במקום שלו, ומערבולת
+          עליה. ילד לא צריך לקרוא שום שורה כדי להבין מה קרה. */}
+      {held && SPOTS[held] && creatureById(held) && (() => {
+        const sp = SPOTS[held]
+        const c = creatureById(held)
+        return (
+          <button onClick={() => say(held, tr('{wind} מחזיק אותו. שאבו את הרוח שלו בדרך.', { wind: tr(WIND_NAME) }))}
+            aria-label={tr('מקום ריק')}
+            style={{ ...W.spot, left: `${sp.x}%`, top: `${sp.y + sp.h * (sp.foot || 0)}%`, height: `${sp.h}%` }}>
+            <img src={c.poster || c.live} alt="" draggable={false}
+              style={{ ...W.figure, transform: sp.flip ? 'scaleX(-1)' : 'none', filter: 'brightness(.3) saturate(.1) contrast(1.2)', opacity: 0.72 }} />
+            <span style={W.hole} aria-hidden="true" />
+            <span style={W.heldMark} aria-hidden="true">🌀</span>
+            {bubble?.id === held && <span style={{ ...W.bubble, ...bubbleAt(sp.x) }}>{bubble.text}</span>}
+          </button>
+        )
+      })()}
 
       {/* ── השואב ── מי שנשאב בחוץ מסתחרר בזכוכית שלו, עד שמסע שלם
           מרכך אותו. בלי כלוב, ובלי לכלוא. */}
@@ -231,6 +258,7 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
 const CSS = `
 @keyframes wildenHover { 0%,100% { transform: translate(-50%,-100%) translateY(0) } 50% { transform: translate(-50%,-100%) translateY(-6px) } }
 @keyframes wildenBubble { 0% { opacity: 0; transform: translate(-50%, 6px) } 12% { opacity: 1; transform: translate(-50%, 0) } 85% { opacity: 1 } 100% { opacity: 0 } }
+@keyframes wildenHole { 0%,100% { opacity: .75; transform: scale(1) rotate(0) } 50% { opacity: 1; transform: scale(1.08) rotate(180deg) } }
 @keyframes wildenWater { 0%,100% { opacity: .55 } 50% { opacity: .8 } }
 @keyframes wildenBeacon { 0%,100% { opacity: .6; transform: translate(-50%,-50%) scale(1) } 50% { opacity: .95; transform: translate(-50%,-50%) scale(1.12) } }
 `
@@ -248,6 +276,10 @@ const W = {
   mini: { position: 'absolute', pointerEvents: 'none', zIndex: 1, opacity: 0.96 },
   building: { position: 'absolute', transform: 'translate(-50%,-100%)', zIndex: 0, pointerEvents: 'none' },
   tank: { position: 'absolute', transform: 'translate(-50%,-100%)', zIndex: 2 },
+  heldMark: { position: 'absolute', top: -6, insetInlineEnd: -6, fontSize: 17, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.7))' },
+  hole: { position: 'absolute', inset: '-18% -30%', pointerEvents: 'none', borderRadius: '50%',
+    background: 'radial-gradient(circle, rgba(110,168,230,.45), rgba(20,34,50,.35) 48%, rgba(20,34,50,0) 72%)',
+    animation: 'wildenHole 3.4s ease-in-out infinite' },
   buildingTag: { position: 'absolute', left: '50%', top: '-10px', transform: 'translate(-50%,-100%)', whiteSpace: 'nowrap', background: 'rgba(15,21,15,.85)', border: '1px solid #F0C069', color: '#F0C069', borderRadius: 999, padding: '2px 8px', fontSize: 11.5, fontWeight: 800 },
   mark: { position: 'absolute', top: -8, insetInlineStart: -8, width: 24, height: 24, borderRadius: '50%', color: '#14200F', fontWeight: 900, fontSize: 15, display: 'grid', placeItems: 'center', boxShadow: '0 2px 6px rgba(0,0,0,.4)' },
   bubble: { position: 'absolute', display: 'block', bottom: '104%', left: '50%', transform: 'translateX(-50%)', minWidth: 150, maxWidth: 230, padding: '8px 12px', borderRadius: 12, background: 'rgba(233,229,216,.96)', color: '#14200F', fontSize: 13.5, fontWeight: 700, lineHeight: 1.4, textAlign: 'center', boxShadow: '0 4px 14px rgba(0,0,0,.35)', animation: 'wildenBubble 3.6s ease-out forwards', pointerEvents: 'none', zIndex: 5, whiteSpace: 'normal' },

@@ -20,7 +20,7 @@ import { withExtraGold, AVAILABLE, heatDistance } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest, produce, creaturesWanted } from './world.js'
-import { placeWinds, suckWind, windSteals, windFled, windTakesBuddy, scareWind, WIND_COINS } from './wind.js'
+import { placeWinds, suckWind, windSteals, windFled, windTakesBuddy, scareWind, takeCreature, freeCreature, takenId, canTake, WIND_COINS } from './wind.js'
 import { toTank, hatchHeart, heartReady, tamedWind, tamedReady, TANK_MAX, SCARE_COINS } from './tank.js'
 import { newlyEarned } from './badges.js'
 
@@ -77,6 +77,7 @@ export function initial() {
       owned: [], wear: {},
       // ── בן לוויה ── מי יוצא איתך, וכמה מטרים הלכתם יחד (ראה engine/buddy.js)
       buddy: null, bond: {},
+      taken: null,        // { creature, at } — מי שגובטבו מחזיק (ראה engine/wind.js)
       routeKm: null,      // אורך המסלול שההורה בחר (ק"מ); null — הלוח
       look: {},           // { [creatureId]: 'base' | מזהה צבע } — המראה שנבחר בספר
       gear: [], items: {}, // ציוד למרדף: קבוע, וחד-פעמי עם כמות (ראה engine/gear.js)
@@ -180,7 +181,10 @@ export function reduce(g, ev) {
       const paid = extra ? { ...g.progress, coins: wallet - WALK_PLAN.extraCost } : g.progress
       const { progress: afterGear, used } = consume(paid)
       // מי בדרך: לפי הלוח; נעולים (בלי מפתח) מוחלפים; משרוקית מוסיפה אחד.
-      const avail = ev.available || AVAILABLE
+      // ומי שגובטבו מחזיק — לא בדרך היום. אי אפשר לתפוס מישהו שרוח
+      // מחזיקה; הדרך היחידה אליו היא לשאוב את הרוח הזאת.
+      const held = takenId(g.progress)
+      const avail = (ev.available || AVAILABLE).filter(c => c !== held)
       const planned = creaturesForWalk(walks, extra, avail, creatureCount(pois))
       const keyed = withKeys(planned, g.progress, avail)
       // ── מי שהשומר מחכה לו יוצא איתך ──
@@ -250,7 +254,7 @@ export function reduce(g, ev) {
       // ── הרוחות ──
       // "רוחות שהרסו את העולם, ואפשר לשאוב אותן מהמסלול." שתיים בדרך,
       // שלוש במסלול ארוך. עם שואב — משאב ומטבעות. בלי — הן חוטפות.
-      const winds = placeWinds(ev.path, { stops, coinRun, flowerRun, n: (g.run.km || 2) >= 3 ? 3 : 2 })
+      const winds = placeWinds(ev.path, { stops, coinRun, flowerRun, n: (g.run.km || 2) >= 3 ? 3 : 2, holds: takenId(g.progress) })
       return {
         ...g,
         state: S.SEARCH,
@@ -419,10 +423,14 @@ export function reduce(g, ev) {
       // ומה שנשאב נשאר בשואב עד הבית: משאב "רוח", שהשומר מבקש. זו
       // הסיבה הכלכלית לקנות אותו — בלעדיו רוח מגיעה רק מרוחי.
       const windRes = (r.windRes || 0) + 1
+      // ומי שנחטף במסע קודם: זו הרוח שמחזיקה אותו, והוא יוצא ממנה עכשיו.
+      const rescued = res.rescued || null
       return {
         ...g,
-        run: { ...r, winds: res.winds, buddyTaken: false, windRes, coinsTaken: (r.coinsTaken || 0) + res.coins * mult,
-          lastWind: { t: ev.t ?? 0, kind: freed ? 'freed' : 'suck', coins: res.coins * mult, res: res.res, buddy: freed ? g.progress.buddy : null } },
+        run: { ...r, winds: res.winds, buddyTaken: false, windRes, rescued: rescued || r.rescued || null,
+          coinsTaken: (r.coinsTaken || 0) + res.coins * mult,
+          lastWind: { t: ev.t ?? 0, kind: rescued ? 'rescue' : freed ? 'freed' : 'suck', coins: res.coins * mult, res: res.res,
+            buddy: rescued || (freed ? g.progress.buddy : null) } },
       }
     }
 
@@ -583,8 +591,15 @@ export function reduce(g, ev) {
       // בן הלוויה: המטרים של היום נזקפים לו (כל 2 ק"מ = תפיסה להתפתחות).
       // בן לוויה שרוח חטפה לא הלך איתנו — אין לו מטרים מהטיול הזה.
       const withBond = r.buddyTaken ? g.progress : addBond(g.progress, r.walked)
+      // ── שלוש התוצאות של גובטבו, כשחוזרים הביתה ──
+      // שאבתם את הרוח שהחזיקה מישהו — הוא חוזר לעולם.
+      // נשארתם בלי לזוז והוא חטף — הוא נשאר אצלו, ורואים את החור.
+      const rescuedNow = r.rescued && takenId(g.progress) === r.rescued ? r.rescued : null
+      const takenNow = !rescuedNow && r.buddyTaken && canTake(g.progress) ? g.progress.buddy : null
+      const withTaken = rescuedNow ? freeCreature(withBond, rescuedNow)
+        : takenNow ? takeCreature(withBond, takenNow, ev.t ?? null) : withBond
       const progress0 = {
-          ...withBond,
+          ...withTaken,
           creatures,
           res,
           ...tank,
@@ -619,6 +634,8 @@ export function reduce(g, ev) {
         ...g,
         state: isStory ? S.CLUE : S.RUN_COMPLETE,
         tamedNow,     // כמה רוככו עכשיו — למסך הסיום. נמחק ב-RUN_CLOSED.
+        rescuedNow,   // מי שוחרר מהרוח היום
+        takenNow,     // ומי נחטף, ונשאר אצלה עד שישאבו אותה
         hatched,
         // מה נפתח במסע הזה — למסך הסיום. נמחק ב-RUN_CLOSED, כמו hatched.
         newBadges: newlyEarned(g.progress, progress),
@@ -634,7 +651,7 @@ export function reduce(g, ev) {
       return { ...g, state: S.RUN_COMPLETE }
 
     case 'RUN_CLOSED':
-      return { ...g, state: S.BROKEN_WORLD, run: null, hatched: null, newBadges: null, weeklyGift: null, evolved: null, made: null, tamedNow: 0 }
+      return { ...g, state: S.BROKEN_WORLD, run: null, hatched: null, newBadges: null, weeklyGift: null, evolved: null, made: null, tamedNow: 0, rescuedNow: null, takenNow: null }
 
     // ── החנות ──
     // במסך הבית בלבד. קנייה מורידה מטבעות; לבישה חופשית על מה שנקנה.

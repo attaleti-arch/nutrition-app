@@ -98,6 +98,7 @@ export function mergeProgress(local, remote) {
     ...mergeGear(base, other),
     ...mergeSkins(base, other),
     bond: mergeMax(base.bond, other.bond),
+    taken: base.taken || other.taken || null,
     inTank: Math.max(base.inTank || 0, other.inTank || 0),
     heartEgg: base.heartEgg || other.heartEgg || null,
     tamed: Math.max(base.tamed || 0, other.tamed || 0),
