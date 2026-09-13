@@ -200,6 +200,7 @@ test('מסלול: קיצור דרך אל היצור לא פותח אותו — �
 })
 
 import { SPOTS, GUARDIAN, FIGURE, figureBox, gapBetween } from '../src/app/wilden/content/spots.js'
+import { AREAS, DEFAULT_AREA, areaById, areaOfSpot, areaOpen, openAreas } from '../src/app/wilden/content/areas.js'
 
 // "אפשר שהמיקום של כל חיה שנתפסת יהיה במרחב, קצת במרחק מהדמויות האחרות?"
 // נימי נצמד לרגל של השומר אחרי שהוא עבר למרכז. הבדיקה הזאת לא תיתן
@@ -214,6 +215,8 @@ test('עולם הבית: לכל דמות מקום משלה, עם מרווח — 
     const ids = Object.keys(b)
     for (let i = 0; i < ids.length; i++) {
       for (let j = i + 1; j < ids.length; j++) {
+        // שתי דמויות בשני מקומות שונים ברצועה לא נוגעות זו בזו לעולם
+        if (areaOfSpot(all[ids[i]]) !== areaOfSpot(all[ids[j]])) continue
         const g = gapBetween(b[ids[i]], b[ids[j]])
         assert.ok(g >= min, `${what}: ${ids[i]} ו-${ids[j]} במרחק ${g.toFixed(1)}% (צריך ${min}%)`)
       }
@@ -646,6 +649,27 @@ test('שואב: הטוב שלכם מבריח את הפרא — פעם אחת ב�
   assert.ok(home.made.some(m => m.id === 'tamed' && m.product === 'wind'), 'ורואים את זה במסך הסיום')
 })
 
+// ── "אין אפשרות שהעולם יהיה פנורמי ואפשר להזיז ממקום למקום?" ──
+test('העולם: רצועה של מקומות, וכל דמות שייכת למקום שקיים', () => {
+  assert.ok(AREAS.length >= 1)
+  for (const a of AREAS) {
+    assert.ok(a.id && a.name, 'לכל מקום מזהה ושם')
+    assert.ok(a.bg, `ל${a.id} אין תפאורה — מקום בלי תפאורה לא קיים`)
+  }
+  // דמות בלי area לא נעלמת מהעולם: היא בחורבה
+  assert.equal(areaOfSpot({ x: 1, y: 1 }), DEFAULT_AREA)
+  assert.equal(areaOfSpot({ x: 1, y: 1, area: 'לא-קיים' }), DEFAULT_AREA, 'מקום שלא קיים אינו חור שחור')
+  for (const [id, sp] of Object.entries(SPOTS)) {
+    assert.ok(areaById(areaOfSpot(sp)), `${id} במקום שלא קיים`)
+  }
+  // מקום שמחכה לדגל נפתח רק כשהדגל דלוק
+  const gated = { id: 'x', name: 'x', bg: '/x.jpg', needs: 'gateOpen' }
+  assert.equal(areaOpen(gated, {}), false)
+  assert.equal(areaOpen(gated, { gateOpen: true }), true)
+  assert.equal(areaOpen({ id: 'y', name: 'y' }, {}), false, 'בלי תפאורה — לא פתוח')
+  assert.ok(openAreas({}).length >= 1, 'תמיד יש לאן להיכנס')
+})
+
 test('שואב: עומד בשטח פנוי, לא על דמות ולא על מבנה', () => {
   const box = tankBox()
   for (const [id, sp] of Object.entries(SPOTS)) {
@@ -653,6 +677,7 @@ test('שואב: עומד בשטח פנוי, לא על דמות ולא על מב�
     if (!f) continue
     // הוא עומד בשורה הקדמית, ומותר לו להיכנס מעט מתחת לקנבס של מי
     // שעומד מאחוריו — אבל אף דמות לא יושבת עליו, ואף אחת לא מכסה אותו.
+    if (areaOfSpot(sp) !== areaOfSpot(TANK)) continue        // מקום אחר — לא צפוף
     assert.ok(gapBetween(box, f) > -6, `${id} יושב על השואב`)
     const inside = TANK.x > f.left && TANK.x < f.right && TANK.y > f.top && TANK.y < f.bottom
     assert.equal(inside, false, `מרכז השואב בתוך ${id}`)
