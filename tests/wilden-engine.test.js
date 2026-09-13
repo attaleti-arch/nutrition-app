@@ -585,6 +585,79 @@ test('שואב: עומד בשטח פנוי, לא על דמות ולא על מב�
   }
 })
 
+// ─── ויספר ומשחק הפסל ───
+// "אני אוהבת את הפסל והדמות ניגשת אליו. ויספר נקרא לו."
+// הפועל ההפוך של כל המשחק: לא רצים אליו — עומדים, והוא בא.
+import { createStillness, STILL } from '../src/app/wilden/engine/still.js'
+import { makeStatue, START_M as ST_START_M, NEAR_M as ST_NEAR_M, BACK_M as ST_BACK_M, MAX_M as ST_MAX_M, HOLD_MS as ST_HOLD_MS, PATIENT_MS as ST_PATIENT_MS, PHASE as SP } from '../src/app/wilden/ar/controllers/statue.js'
+
+// יד של ילד: רעש קטן סביב 1g. הליכה: רעש גדול.
+const stillHand = (t, i) => ({ t, a: G + (i % 2 ? 0.12 : -0.1) })
+const shaking = (t, i) => ({ t, a: G + (i % 2 ? 2.6 : -2.2) })
+function feedStill(det, make, ms, from = 0, dt = 20) {
+  let out = null
+  for (let i = 0, t = from; t <= from + ms; i++, t += dt) out = det.feed(make(t, i))
+  return out
+}
+
+test('פסל: יד של ילד היא שקט, הליכה היא לא', () => {
+  const det = createStillness()
+  assert.equal(feedStill(det, stillHand, 200).still, false, 'הדגימות הראשונות רק מכיילות')
+  assert.equal(feedStill(det, stillHand, 1500, 220).still, true, 'נשימה ורעד יד — עדיין פסל')
+  const loud = feedStill(det, shaking, 600, 1800)
+  assert.equal(loud.still, false, 'הליכה שוברת את השקט')
+  assert.ok(loud.jitter > STILL.tol)
+  // וחוזרים לשקט אחרי רגע, בלי לאפס כלום
+  assert.equal(feedStill(det, stillHand, 1500, 2500).still, true)
+})
+
+test('ויספר: שקט מקרב אותו, תזוזה מרחיקה — ואין לחיצה שתופסת', () => {
+  const c = makeStatue({ id: 'whisper' })
+  let s = c.start(0, () => 0.5, 0)
+  assert.equal(s.dist, ST_START_M)
+  // עשר שניות של פסל: מ-6 מ' עד שהוא מולכם
+  for (let t = 100; t <= 10000 && s.phase === SP.FAR; t += 100) s = c.onTick(s, t, { still: true })
+  assert.equal(s.phase, SP.NEAR, 'הוא הגיע')
+  // ורגע אחרון בלי לזוז — והוא נשאר. בלי לחיצה, בלי תפיסה.
+  for (let t = 10100; t <= 10100 + ST_HOLD_MS + 300 && s.phase === SP.NEAR; t += 100) s = c.onTick(s, t, { still: true })
+  assert.equal(s.phase, SP.DONE)
+
+  // תזוזה: נסיגה אחת, לא איפוס
+  let m = c.start(0, () => 0.5, 0)
+  m = c.onTick(m, 2000, { still: true })
+  const before = m.dist
+  const back = c.onStep(m, 2100)
+  assert.ok(Math.abs(back.state.dist - (before + ST_BACK_M)) < 1e-9, 'צעד אחורה, לא להתחלה')
+  assert.equal(back.feedback, 'back')
+  // מעידה אחת אינה עשר נסיגות
+  assert.equal(c.onStep(back.state, 2200).state.dist, back.state.dist, 'נסיגה אחת לחלון')
+  assert.ok(c.onStep(back.state, 3000).state.dist > back.state.dist)
+  // ולא נסוג מעבר לגבול
+  let far = back.state
+  for (let t = 4000; t < 30000; t += 700) far = c.onStep(far, t).state
+  assert.equal(far.dist, ST_MAX_M)
+
+  // לחיצה לא תופסת — זה היצור היחיד שלא נתפס
+  assert.equal(c.onTap(m, () => 0.5, 500).state.phase, SP.FAR)
+  assert.equal(c.onTap(m, () => 0.5, 500).feedback, 'still')
+  assert.equal(c.onCatch(m).state.phase, SP.FAR, 'רחוק — אין מה לתפוס')
+})
+
+test('ויספר: אחרי דקה הוא בא בעצמו — אין ילד תקוע מול פסל', () => {
+  const c = makeStatue({ id: 'whisper' })
+  let s = c.start(0, () => 0.5, 0)
+  // ילד שלא מצליח לעמוד: כל הזמן רועש
+  for (let t = 500; t <= ST_PATIENT_MS + 1000 && s.phase === SP.FAR; t += 500) s = c.onTick(s, t, { still: false })
+  assert.equal(s.phase, SP.NEAR, 'הסבלנות שלו נגמרת לפני שלו')
+  assert.equal(s.dist, ST_NEAR_M)
+  // וגם אז, תזוזה בשנייה האחרונה לא מבטלת — רק מאריכה
+  let t = ST_PATIENT_MS + 1500
+  s = c.onTick(s, t, { still: false })
+  assert.equal(s.phase, SP.NEAR)
+  for (; t <= ST_PATIENT_MS + 1500 + ST_HOLD_MS + 500 && s.phase === SP.NEAR; t += 100) s = c.onTick(s, t, { still: true })
+  assert.equal(s.phase, SP.DONE)
+})
+
 function feedSeq(det, seq, dt = 20) {
   let t = 1000, out = null
   for (const gval of seq) { const r = det.feed({ t, a: gval * G }); if (r) out = r; t += dt }
