@@ -28,7 +28,7 @@ const BEATS = [
   { at: 7600, line: '{name} ברח לרחוב. הוא שם בחוץ עכשיו.' },
 ]
 
-export function WhisperFreed({ id = 'whisper', onDone }) {
+export function FreedClip({ id = 'whisper', onDone }) {
   const [ms, setMs] = useState(0)
   const c = creatureById(id)
   const done = useRef(false)
@@ -41,16 +41,18 @@ export function WhisperFreed({ id = 'whisper', onDone }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const base = c?.freed || '/world/whisper/freed'
   const beat = [...BEATS].reverse().find(b => ms >= b.at) || BEATS[0]
   const canSkip = ms >= SKIP_AFTER
 
   return (
     <div dir={dirOf()} style={S.wrap} onClick={() => canSkip && finish()}>
       {/* שני קידודים: אייפון מנגן H.264, ודפדפן בלי הקודק הזה (וגם
-          הדפדפן שבו אני בודק) נופל ל-VP9. בלי זה הרגע הזה פשוט לבן. */}
-      <video autoPlay muted playsInline style={S.vid}>
-        <source src="/world/whisper/freed.mp4" type="video/mp4" />
-        <source src="/world/whisper/freed.webm" type="video/webm" />
+          הדפדפן שבו אני בודק) נופל ל-VP9. בלי זה הרגע הזה פשוט לבן.
+          והנתיב מגיע מהמרשם — לכל מי שנפלט הקליפ שלו. */}
+      <video key={base} autoPlay muted playsInline style={S.vid}>
+        <source src={`${base}.mp4`} type="video/mp4" />
+        <source src={`${base}.webm`} type="video/webm" />
       </video>
       <div style={S.vignette} aria-hidden="true" />
       <p key={beat.at} style={S.line}>

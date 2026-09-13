@@ -98,7 +98,7 @@ export const DE = {
   'כלי. פעם אחת, לתמיד. רוח היא משאב שהשומר מבקש.': 'Werkzeug. Einmal, für immer. Wind ist ein Rohstoff, den der Wächter braucht.',
   'כלי. פעם אחת, לתמיד.': 'Werkzeug. Einmal, für immer.',
   // ── מה שיצא מהרוח ──
-  'ויספר': 'Whisper', 'הד': 'Echo',
+  'ויספר': 'Whisper', 'הד': 'Echo', 'דרייק': 'Drake', 'גחלת': 'Glut',
   'משהו יצא מ{wind}…': 'Etwas kam aus {wind} heraus …',
   'הוא מסתכל עליכם.': 'Er schaut euch an.',
   'הוא מתנער — והאבק של כל השנים עף ממנו!': 'Er schüttelt sich — und der Staub all der Jahre fliegt von ihm ab!',

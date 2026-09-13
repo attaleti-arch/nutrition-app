@@ -296,6 +296,33 @@ export const CREATURES = {
     clips: { ...CLIPS, special: 'LISTEN' },
     verb: 'LISTEN',
     brings: 'הד',
+    freed: '/world/whisper/freed',           // הרגע שבו הרוח פלטה אותו (mp4+webm)
+  },
+
+  // ── השני שיצא מהרוח ──
+  // דרקון קטן, מכוסה טחב ועלים, עם כנפי פרפר. הוא נפלט מהשואב מכוסה
+  // אבק, שוכב רגע בלי לזוז, ואז האבק מתפוצץ ממנו והוא מתגלה. ורק אז
+  // מסתובב ורץ אל האופק.
+  //
+  // ה-live שלו הוא השנייה שבה הוא עומד מול המצלמה לפני שהוא מסתובב,
+  // בלוך הלוך־ושוב — ולכן הוא נושם בלי שיהיה לו קליפ נפרד.
+  // השם כאן הוא שם עבודה עד שייתנו לו שם.
+  drake: {
+    id: 'drake', name: 'דרייק',
+    model: null,
+    ios: null,
+    clip: null,
+    live: '/creatures/drake/live.webp',
+    poster: '/creatures/drake/poster.webp',
+    freed: '/world/drake/freed',
+    sprites: null,
+    heightM: 0.45,
+    arMode: AR_MODE.GROUND,
+    controller: 'tracks-true-or-false',
+    decal: null,
+    clips: { ...CLIPS, special: 'EMBER' },
+    verb: 'EMBER',
+    brings: 'גחלת',
   },
 }
 

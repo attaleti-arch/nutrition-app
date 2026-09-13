@@ -17,13 +17,13 @@ import { inTank, tankShown, tamedCount, TANK_MAX } from './tank.js'
 export const RES_OF = {
   nimi: 'leaf', dabashon: 'honey', bolder: 'stone', ruchi: 'wind',
   lumi: 'spark', gali: 'water', tzel: 'shadow', kraag: 'stone', noga: 'light',
-  whisper: 'echo',
+  whisper: 'echo', drake: 'ember',
 }
 export const RES_NAME = {
   wood: 'קרשים', stone: 'אבן', flowers: 'פרחים', spark: 'ניצוץ', honey: 'דבש',
-  water: 'מים', wind: 'רוח', shadow: 'צללים', leaf: 'עלים', light: 'אור', echo: 'הד',
+  water: 'מים', wind: 'רוח', shadow: 'צללים', leaf: 'עלים', light: 'אור', echo: 'הד', ember: 'גחלת',
 }
-export const RES_ICON = { stone: '🪨', honey: '🍯', water: '💧', wind: '🌬️', spark: '✨', shadow: '🌑', leaf: '🍃', wood: '🪵', flowers: '🌸', light: '🌟', echo: '🔔' }
+export const RES_ICON = { stone: '🪨', honey: '🍯', water: '💧', wind: '🌬️', spark: '✨', shadow: '🌑', leaf: '🍃', wood: '🪵', flowers: '🌸', light: '🌟', echo: '🔔', ember: '🔥' }
 
 // מה נכנס לעולם כשחוזרים דרך הפורטל עם היצורים האלה.
 export function bringsFor(creatureIds) {
@@ -223,6 +223,7 @@ const LINES = {
   kraag: ['אבן… זוכרת… הכול.', 'פעם הייתי גדול. אהיה שוב.', 'השער. אני זוכר מה מאחוריו.'],
   noga: ['כשחשוך, תסתכלו עליי.', 'העלים שלי זוהרים כשמישהו שמח. עכשיו, למשל.', 'הבוקר? אני מביאה אותו.'],
   whisper: ['הייתי בפנים הרבה זמן. שמעתי הכול.', 'ששש… תעמדו רגע. תשמעו?', 'האוזניים שלי זוכרות את כל מה שהרוח לקחה.'],
+  drake: ['ישנתי בתוך הרוח. חלמתי על אש.', 'הטחב עליי? הוא מהשנים בפנים.', 'הכנפיים עוד לא עפות. עוד מעט.'],
 }
 export function creatureLine(id, seed = 0) {
   const arr = LINES[id] || ['…']

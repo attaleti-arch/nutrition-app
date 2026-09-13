@@ -7,7 +7,7 @@ import { windNearby, windRound, takenId, WIND_NAME } from './engine/wind'
 import { tamedReady, hasHeartEgg, tankShown, tamedCount, TANK_MAX, HATCH_M as HEART_M } from './engine/tank'
 import { WindFlee } from './ar/WindFlee'
 import { WindSuck } from './ar/WindSuck'
-import { WhisperFreed } from './ar/WhisperFreed'
+import { FreedClip } from './ar/FreedClip'
 import { save, load, dayKey } from './engine/persist'
 import { creatureById } from './content/creatures'
 import { briefFor, homeFor, todaysCreature } from './content/briefs'
@@ -372,10 +372,10 @@ export default function Wilden() {
         </Guard>
       )}
 
-      {/* ── ויספר יוצא מגובטבו ── פעם אחת בחיי המשחק, אחרי השאיבה */}
+      {/* ── מי שיוצא מגובטבו ── אחרי השאיבה, ורק בשאיבה שנושאת מישהו */}
       {freedShow && !suckShow && (
-        <Guard where="whisperFreed" fallback={null}>
-          <WhisperFreed id={freedShow} onDone={() => setFreedShow(null)} />
+        <Guard where="freedClip" fallback={null}>
+          <FreedClip id={freedShow} onDone={() => setFreedShow(null)} />
         </Guard>
       )}
 

@@ -32,8 +32,8 @@ const SWARM_BUDGET = 12
 // ── הבועה לא נחתכת בקצה ──
 // נימי עומד ב-15% ונוגה ב-85%: בועה שממורכזת עליהם גולשת מחוץ לתמונה
 // והמשפט נקטע באמצע. בקצוות היא נצמדת פנימה במקום להתמרכז.
-const bubbleAt = x => (x < 28 ? { left: 0, transform: 'none' }
-  : x > 72 ? { left: 'auto', right: 0, transform: 'none' } : null)
+const bubbleAt = x => (x < 28 ? { left: 0, transform: 'none', maxWidth: '56vw' }
+  : x > 72 ? { left: 'auto', right: 0, transform: 'none', maxWidth: '56vw' } : null)
 
 // עד שתמונת המבנה תגיע: רק הילה חמה במקום שלו (הנחיל מסביב עושה את העבודה)
 const GLOW = { hive: 'rgba(240,192,105,.55)', pond: 'rgba(120,200,240,.5)', quarry: 'rgba(200,170,140,.5)', nest: 'rgba(180,230,255,.5)' }

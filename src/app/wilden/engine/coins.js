@@ -184,7 +184,7 @@ export const AVAILABLE = ['nimi', 'dabashon', 'lumi', 'ruchi', 'gali', 'tzel', '
 // (הראשונה והרביעית), ושלוש נותנות עשרה מטבעות. ילד לא נתקע ברצף ביש
 // מזל, וגם לא מקבל דמות בכל פעם — ושתי התכונות האלה חשובות באותה מידה.
 // כשמי שיש לנו כבר יצא, גם המשבצות של הדמות משלמות מטבעות.
-export const FREED = ['whisper']
+export const FREED = ['whisper', 'drake']
 export const SUCK_CYCLE = 5
 export const CREATURE_SLOTS = [0, 3]
 export const SUCK_COINS = 10

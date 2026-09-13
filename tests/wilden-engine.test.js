@@ -417,7 +417,7 @@ test('רוחות: הבריחה — מספיק צעדים בזמן, אחרת הר
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
   const winds = placeWinds(PATH, { stops, n: 1, rng: () => 0.5 })
   const base = { ...initial(), state: S.SEARCH,
-    progress: { ...initial().progress, buddy: 'nimi', creatures: ['nimi'], bond: {}, freed: ['whisper'] },
+    progress: { ...initial().progress, buddy: 'nimi', creatures: ['nimi'], bond: {}, freed: [...FREED] },
     run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: {}, resolved: false, walked: 2000, walkStartedAt: 0 } }
   // ברחו: מטבעות, והרוח נגמרה
   const fled = reduce(base, { type: 'WIND_FLED', id: winds[0].id, t: 1 })
@@ -461,7 +461,7 @@ test('רוחות: גובטבו מתחזק בכל קפיצה, והשאיבה מב
   // שאיבה: מטבעות עכשיו, ורוח הביתה
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
   const winds = placeWinds(PATH, { stops, n: 2, rng: () => 0.5 })
-  let g = { ...initial(), state: S.SEARCH, progress: { ...initial().progress, freed: ['whisper'] },
+  let g = { ...initial(), state: S.SEARCH, progress: { ...initial().progress, freed: [...FREED] },
     run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: { vacuum: true },
       resolved: false, walked: 2000, walkStartedAt: 0, day: 'd1' } }
   g = reduce(g, { type: 'WIND_SUCK', id: winds[0].id, t: 1 })
@@ -474,7 +474,7 @@ test('רוחות: גובטבו מתחזק בכל קפיצה, והשאיבה מב
 test('רוחות במכונה: עם שואב נשאבות, בלי שואב חוטפות', () => {
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
   const winds = placeWinds(PATH, { stops, n: 1, rng: () => 0.5 })
-  const base = { ...initial(), state: S.SEARCH, progress: { ...initial().progress, freed: ['whisper'] },
+  const base = { ...initial(), state: S.SEARCH, progress: { ...initial().progress, freed: [...FREED] },
     run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: {}, resolved: false } }
   // בלי שואב: שאיבה לא עושה כלום
   assert.equal(reduce(base, { type: 'WIND_SUCK', id: winds[0].id, t: 1 }), base)
@@ -528,7 +528,7 @@ test('גובטבו: הרוח שמחזיקה אותו יושבת על המסלו�
   assert.equal(winds.filter(w => w.holds).length, 1, 'אחת בלבד')
 
   const progress = { ...initial().progress, creatures: ['nimi', 'gali'], buddy: 'gali',
-    taken: { creature: 'nimi', at: 1 }, gear: ['vacuum'], freed: ['whisper'] }
+    taken: { creature: 'nimi', at: 1 }, gear: ['vacuum'], freed: [...FREED] }
   let g = { ...initial(), state: S.SEARCH, progress,
     run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: { vacuum: true },
       resolved: false, walked: 2000, walkStartedAt: 0, day: 'd2' } }
@@ -570,29 +570,32 @@ test('גובטבו: לא חוטף את היצור האחרון, ולא שניי�
 
 // ── "לא מכל רוח תישלף דמות" ──
 // "רק 2 דמויות מתוך 5. ה-3 האחרות יביאו מטבעות, לא דמות — 10 מטבעות."
-import { spatBy, availableFor, SUCK_COINS, SUCK_CYCLE, CREATURE_SLOTS } from '../src/app/wilden/engine/coins.js'
+import { spatBy, availableFor, SUCK_COINS, SUCK_CYCLE, CREATURE_SLOTS, FREED } from '../src/app/wilden/engine/coins.js'
 
 test('שאיבה: שתיים מתוך חמש נושאות דמות, שלוש נותנות מטבעות', () => {
   const p0 = initial().progress
   // בכל סבב של חמש — בדיוק שתי משבצות של דמות
   const slots = Array.from({ length: SUCK_CYCLE }, (_, i) => CREATURE_SLOTS.includes(i))
   assert.equal(slots.filter(Boolean).length, 2)
-  assert.equal(spatBy(p0, 0), 'whisper', 'הראשונה נושאת את ויספר')
+  assert.equal(spatBy(p0, 0), FREED[0], 'הראשונה נושאת את הראשון בבריכה')
   assert.equal(spatBy(p0, 1), null)
   assert.equal(spatBy(p0, 2), null)
-  assert.equal(spatBy(p0, 3), 'whisper', 'והרביעית — אבל רק אם נשאר מי שלא יצא')
+  assert.equal(spatBy(p0, 3), FREED[0], 'והרביעית — אבל רק אם נשאר מי שלא יצא')
   assert.equal(spatBy(p0, 4), null)
-  // מי שכבר נפלט לא נפלט שוב: המשבצת משלמת מטבעות
-  const out = { ...p0, freed: ['whisper'] }
+  // מי שכבר נפלט לא נפלט שוב — הבא בתור יוצא, ורק כשהבריכה ריקה
+  // המשבצת משלמת מטבעות.
+  const one = { ...p0, freed: [FREED[0]] }
+  assert.equal(spatBy(one, 0), FREED[1] || null, 'אחרי הראשון יוצא הבא')
+  const out = { ...p0, freed: [...FREED] }
   for (let i = 0; i < 10; i++) assert.equal(spatBy(out, i), null)
   // ומי שיצא — נמצא מעכשיו על המסלול
-  assert.ok(!availableFor(p0).includes('whisper'))
-  assert.ok(availableFor(out).includes('whisper'))
+  assert.ok(!availableFor(p0).includes(FREED[0]))
+  assert.ok(availableFor(out).includes(FREED[0]))
 
   // ובמכונה: שאיבה בלי דמות שווה עשרה מטבעות יותר
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
   const winds = placeWinds(PATH, { stops, n: 2, rng: () => 0.5 })
-  const base = { ...initial(), state: S.SEARCH, progress: { ...p0, freed: ['whisper'], sucks: 7 },
+  const base = { ...initial(), state: S.SEARCH, progress: { ...p0, freed: [...FREED], sucks: 7 },
     run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: { vacuum: true },
       resolved: false, walked: 2000, walkStartedAt: 0, day: 'd1' } }
   const coinsOnly = reduce(base, { type: 'WIND_SUCK', id: winds[0].id, t: 1 })
@@ -603,13 +606,13 @@ test('שאיבה: שתיים מתוך חמש נושאות דמות, שלוש נ�
   // ובפעם הראשונה בחיי המשחק: ויספר יוצא, ובלי עשרת המטבעות
   const first = { ...base, progress: { ...p0 } }
   const g = reduce(first, { type: 'WIND_SUCK', id: winds[0].id, t: 1 })
-  assert.equal(g.run.spat, 'whisper')
+  assert.equal(g.run.spat, FREED[0])
   assert.equal(g.run.lastWind.kind, 'spat')
   assert.equal(g.run.coinsTaken, WIND_COINS)
   const home = reduce({ ...g, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 2, rng: () => 0.5 })
-  assert.deepEqual(home.progress.freed, ['whisper'], 'הוא בחוץ מעכשיו')
+  assert.deepEqual(home.progress.freed, [FREED[0]], 'הוא בחוץ מעכשיו')
   assert.equal(home.progress.sucks, 1, 'והסבב נספר על פני כל המשחק')
-  assert.ok(availableFor(home.progress).includes('whisper'))
+  assert.ok(availableFor(home.progress).includes(FREED[0]))
 })
 
 // ── מה שבשואב, וביצת הלב ──
@@ -626,7 +629,7 @@ const windRun = (winds, stops, extra = {}) => ({ path: PATH, stops, stop: 0, tar
 test('שואב: חמישה נכנסים למיכל, וביצת הלב נוצרת רק כשהוא מלא', () => {
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
   const winds = placeWinds(PATH, { stops, n: 3, rng: () => 0.5 })
-  let g = { ...initial(), state: S.SEARCH, progress: { ...initial().progress, freed: ['whisper'] },
+  let g = { ...initial(), state: S.SEARCH, progress: { ...initial().progress, freed: [...FREED] },
     run: windRun(winds, stops, { mods: { vacuum: true } }) }
   for (const w of winds) g = reduce(g, { type: 'WIND_SUCK', id: w.id, t: 1 })
   g = reduce({ ...g, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 2, rng: () => 0.5 })
