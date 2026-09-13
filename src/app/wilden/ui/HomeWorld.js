@@ -8,8 +8,8 @@ import { sfxAppear, sfxCheer, sfxFinish, buzz } from '../engine/audio'
 import { Wear } from './Wear'
 import { CreatureAura } from './Aura'
 import { stageOf, stagedFor } from '../engine/stages'
-import { SPOTS, GUARDIAN, CAGE } from '../content/spots'
-import { WindCage } from './WindCage'
+import { SPOTS, GUARDIAN, TANK } from '../content/spots'
+import { WindTank, TankCard } from './WindTank'
 
 // ─── עולם הבית ───
 // "לא מבינה מה ילד רואה במעמד הבית." עכשיו: הרקע שלה (החורבה בשקיעה,
@@ -22,7 +22,7 @@ import { WindCage } from './WindCage'
 
 // איפה כל אחד עומד — ומה באמת יש בקבצים — יושב ב-content/spots.js, בלי
 // React, כדי שהבדיקה תוכל לוודא שאף שתי דמויות לא נוגעות זו בזו.
-export { SPOTS, GUARDIAN, CAGE }
+export { SPOTS, GUARDIAN, TANK }
 // הנחיל: היסטים ביחס לגובה של הגדול (ולא אחוזי עולם קבועים, שגלשו לשכן),
 // ומכפיל גודל — הרחוקים קטנים יותר, בשביל עומק.
 const SWARM_OFFS = [[-0.45, -0.12, 0.45], [0.45, -0.08, 0.45], [-0.75, 0.18, 0.4], [0.75, 0.22, 0.4], [-0.25, 0.34, 0.5], [0.3, 0.38, 0.5]]
@@ -35,7 +35,7 @@ function BuildingGlow({ id }) {
   return <div aria-hidden="true" style={{ width: '100%', aspectRatio: '1', borderRadius: '50%', background: `radial-gradient(circle, ${c} 0%, transparent 65%)` }} />
 }
 
-export function HomeWorld({ progress, onQuest, onCreatureTap, onTame, walks = 0, firstWord = false }) {
+export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWord = false }) {
   const world = worldState(progress)
   const quest = activeQuest(progress)
   const chapter = openChapter(progress)
@@ -43,6 +43,7 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, onTame, walks = 0,
   const [bubble, setBubble] = useState(null)      // { id, text }
   const [giving, setGiving] = useState(false)
   const [guardOpen, setGuardOpen] = useState(false)
+  const [tankOpen, setTankOpen] = useState(false)
   const timer = useRef(null)
   const say = (id, text) => {
     clearTimeout(timer.current)
@@ -168,9 +169,10 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, onTame, walks = 0,
         </div>
       ))}
 
-      {/* ── כלוב הרוחות ── מי שנשאב בחוץ עומד כאן. חמישה — וביצת הלב בוקעת. */}
-      <div style={{ ...W.cage, left: `${CAGE.x}%`, top: `${CAGE.y}%`, width: `${CAGE.w}%` }}>
-        <WindCage progress={progress} onTame={() => { onTame?.(); say('guardian', tr('רוח שרוככה… לא חשבתי שאראה את זה.')) }} />
+      {/* ── השואב ── מי שנשאב בחוץ מסתחרר בזכוכית שלו, עד שמסע שלם
+          מרכך אותו. בלי כלוב, ובלי לכלוא. */}
+      <div style={{ ...W.tank, left: `${TANK.x}%`, top: `${TANK.y}%`, width: `${TANK.w}%` }}>
+        <WindTank progress={progress} onOpen={() => setTankOpen(v => !v)} />
       </div>
 
       {bubble?.id === 'guardian' && (
@@ -179,8 +181,12 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, onTame, walks = 0,
 
       </div>
 
+      {/* מה יש בשואב — בגודל שאפשר לראות. מחוץ לסצנה, כמו כרטיס הבקשה,
+          כדי שצביטה לא תגרור אותו. */}
+      {tankOpen && <TankCard progress={progress} onClose={() => setTankOpen(false)} />}
+
       {/* הבקשה של השומר */}
-      {quest && guardOpen && (
+      {quest && guardOpen && !tankOpen && (
         <div style={W.questCard} onClick={e => e.stopPropagation()}>
           <p style={W.questTitle}>
             {world.guardianAwake ? tr('השומר') : tr('פסל אבן, כבוי')} · {tr(quest.title)}
@@ -241,7 +247,7 @@ const W = {
   zz: { position: 'absolute', top: -6, insetInlineEnd: -10, fontSize: 18 },
   mini: { position: 'absolute', pointerEvents: 'none', zIndex: 1, opacity: 0.96 },
   building: { position: 'absolute', transform: 'translate(-50%,-100%)', zIndex: 0, pointerEvents: 'none' },
-  cage: { position: 'absolute', transform: 'translate(-50%,-100%)', zIndex: 2 },
+  tank: { position: 'absolute', transform: 'translate(-50%,-100%)', zIndex: 2 },
   buildingTag: { position: 'absolute', left: '50%', top: '-10px', transform: 'translate(-50%,-100%)', whiteSpace: 'nowrap', background: 'rgba(15,21,15,.85)', border: '1px solid #F0C069', color: '#F0C069', borderRadius: 999, padding: '2px 8px', fontSize: 11.5, fontWeight: 800 },
   mark: { position: 'absolute', top: -8, insetInlineStart: -8, width: 24, height: 24, borderRadius: '50%', color: '#14200F', fontWeight: 900, fontSize: 15, display: 'grid', placeItems: 'center', boxShadow: '0 2px 6px rgba(0,0,0,.4)' },
   bubble: { position: 'absolute', display: 'block', bottom: '104%', left: '50%', transform: 'translateX(-50%)', minWidth: 150, maxWidth: 230, padding: '8px 12px', borderRadius: 12, background: 'rgba(233,229,216,.96)', color: '#14200F', fontSize: 13.5, fontWeight: 700, lineHeight: 1.4, textAlign: 'center', boxShadow: '0 4px 14px rgba(0,0,0,.35)', animation: 'wildenBubble 3.6s ease-out forwards', pointerEvents: 'none', zIndex: 5, whiteSpace: 'normal' },

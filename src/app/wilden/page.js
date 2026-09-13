@@ -4,7 +4,7 @@ import { initial, reduce, beaconView, S, RUN, MODE, nextRunKind, canStartStory }
 import { PHASE, PHASE_BUZZ, ACC_GATE, ACC_DIRECTION, ACC_COARSE, WALK_GATE } from './engine/beacon'
 import { PLACE_AFTER, stopInfo, kindName, JUNCTION_M } from './engine/placement'
 import { windNearby, windRound, WIND_NAME } from './engine/wind'
-import { tamedReady, cageFull, cagedShown, tamedCount, CAGE_MAX } from './engine/cage'
+import { tamedReady, hasHeartEgg, tankShown, tamedCount, TANK_MAX, HATCH_M as HEART_M } from './engine/tank'
 import { WindFlee } from './ar/WindFlee'
 import { WindSuck } from './ar/WindSuck'
 import { save, load, dayKey } from './engine/persist'
@@ -426,7 +426,7 @@ export default function Wilden() {
             onGear={(id, pay) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_GEAR', id, pay }) }}
             onSkin={(creature, skin) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_SKIN', creature, skin }) }}
             onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }}
-            onTame={() => dispatch({ type: 'TAME_WINDS', t: Date.now() })} P={P} onIntro={() => {
+            P={P} onIntro={() => {
               // פותחים את הפתיחה מהכפתור: זו לחיצה, ולכן מותר להתחיל קול —
               // וכך המוזיקה כבר מנגנת במסך הפתיחה ולא רק אחרי "להתחיל".
               try { primeMusic(); startMusic('magic', undefined, 0.5) } catch (e) { /* */ }
@@ -546,6 +546,11 @@ export default function Wilden() {
           <Panel eyebrow={tr('המסע נגמר')}>
             <h2 style={s.h2}>{g.progress.creatures.length ? tr('הוא חי בעולם שלכם עכשיו.') : tr('חזרתם.')}</h2>
             <NewBadges ids={g.newBadges} />
+            {/* ── ביצת הלב בקעה ── הרגע שההליכה של היום קנתה: חמישה
+                גובטבו יצאו מהשואב, וכבר לא פראיים. */}
+            {g.tamedNow > 0 && (
+              <p style={s.tamed}>{tr('❤️ ביצת הלב בקעה! {n} {wind} יצאו טובי לב — אחד מהם יוצא איתכם מהמסע הבא.', { n: g.tamedNow, wind: tr(WIND_NAME) })}</p>
+            )}
             {g.made?.length > 0 && (
               <p style={s.made}>🏠 {g.made.map(m => `${tr(m.name || BUILDINGS.find(b => b.id === m.id)?.name || m.id)} ${RES_ICONS[m.product] || ''} +${m.n || 1}`).join(' · ')}</p>
             )}
@@ -695,7 +700,7 @@ function poisText(pois) {
   return parts.join(' · ')
 }
 
-function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onKm, onLook, onTame, P, onIntro, music, firstWord, onLang }) {
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onKm, onLook, P, onIntro, music, firstWord, onLang }) {
   const [panel, setPanel] = useState(null)   // book | badges | shop
   const week = weeklyStatus(g.progress, today)
   const buddy = creatureById(g.progress.buddy)
@@ -727,7 +732,7 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
 
       {/* העולם עצמו: התפאורה שלה, היצורים החיים, והשומר שמבקש. */}
       <div style={{ margin: '16px 0 10px' }}>
-        <HomeWorld progress={g.progress} walks={walks} onQuest={onQuest} onTame={onTame} firstWord={firstWord} />
+        <HomeWorld progress={g.progress} walks={walks} onQuest={onQuest} firstWord={firstWord} />
       </div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
         <button onClick={() => setPanel('book')} style={s.chip}>📖 {tr('ספר היצורים')} <b>{g.progress.creatures.length}/{AVAILABLE.length}</b></button>
@@ -747,13 +752,13 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
         {!ownsGear(g.progress, 'vacuum') && (
           <button onClick={() => setPanel('shop')} style={s.windBuy}>{tr('לחנות')}</button>
         )}
-        {/* ── הכלוב ── מה שנשאב עומד בבית, ומי שרוכך יוצא איתכם היום. */}
-        {tamedCount(g.progress) > 0
-          ? <span style={s.cageNote}>{tr('❤️ {wind} טוב לב יוצא איתכם, ויבריח את הראשון שיקפוץ.', { wind: tr(WIND_NAME) })}</span>
-          : cageFull(g.progress)
-            ? <span style={s.cageNote}>{tr('🥚 הכלוב מלא. ביצת הלב מחכה עליו — לחצו עליה.')}</span>
-            : cagedShown(g.progress) > 0
-              ? <span style={s.cageNote}>{tr('🌀 בכלוב: {n}/{max}. עוד {k} ותהיה ביצת לב.', { n: cagedShown(g.progress), max: CAGE_MAX, k: CAGE_MAX - cagedShown(g.progress) })}</span>
+        {/* ── מה שבשואב ── ומה שמרכך אותם: ההליכה של היום, לא לחיצה. */}
+        {hasHeartEgg(g.progress)
+          ? <span style={s.tankNote}>{tr('🥚 ביצת הלב על השואב. מסע של {km} ק״מ והיא בוקעת — וחמישה יצאו טובי לב.', { km: (HEART_M / 1000).toFixed(1).replace(/\.0$/, '') })}</span>
+          : tamedCount(g.progress) > 0
+            ? <span style={s.tankNote}>{tr('❤️ {wind} טוב לב יוצא איתכם, ויבריח את הראשון שיקפוץ.', { wind: tr(WIND_NAME) })}</span>
+            : tankShown(g.progress) > 0
+              ? <span style={s.tankNote}>{tr('🌀 בשואב: {n}/{max}. עוד {k} ותהיה ביצת לב.', { n: tankShown(g.progress), max: TANK_MAX, k: TANK_MAX - tankShown(g.progress) })}</span>
               : null}
       </p>
 
@@ -1262,11 +1267,12 @@ const s = {
   buddyRow: { margin: '0 0 12px', padding: '10px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
   kmRow: { margin: '0 0 12px', padding: '10px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
   windNote: { margin: '10px 0 0', padding: '9px 12px', borderRadius: 12, background: 'rgba(110,168,230,.12)', border: '1px solid rgba(110,168,230,.35)', color: '#C3D8EE', fontSize: 13.5, lineHeight: 1.5 },
-  cageNote: { display: 'block', marginTop: 6, color: '#F0C069', fontWeight: 800 },
+  tankNote: { display: 'block', marginTop: 6, color: '#F0C069', fontWeight: 800 },
   windBuy: { marginInlineStart: 8, padding: '4px 12px', borderRadius: 999, border: '1px solid #6EA8E6', background: 'transparent', color: '#8ED0F0', fontFamily: 'inherit', fontSize: 13, fontWeight: 800, cursor: 'pointer' },
   armed: { margin: '-6px 0 12px', fontSize: 14, color: '#F0C069', fontWeight: 700 },
   locked: { margin: '-6px 0 12px', fontSize: 13.5, color: C.muted },
   made: { margin: '6px 0 0', fontSize: 15, color: '#F0C069', fontWeight: 700 },
+  tamed: { margin: '10px 0 0', padding: '9px 12px', borderRadius: 12, background: 'rgba(255,120,150,.12)', border: '1px solid rgba(255,150,170,.4)', color: '#FFD3DC', fontSize: 15, fontWeight: 800, lineHeight: 1.5 },
   kmTitle: { margin: '0 0 8px', fontSize: 12.5, fontWeight: 800, letterSpacing: '.08em', color: C.faint },
   kmPick: { display: 'flex', gap: 6 },
   kmChip: { flex: 1, padding: '8px 4px', borderRadius: 10, border: '1.5px solid', fontFamily: 'inherit', fontSize: 14, fontWeight: 800, cursor: 'pointer' },

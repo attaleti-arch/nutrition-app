@@ -32,7 +32,7 @@ export const GEAR = [
   // חוטפות את היצור וגוררות אותו קדימה; איתו — הן נכנסות פנימה.
   { id: 'vacuum', kind: 'tool', name: 'שואב הרוח', price: 55, effect: 'vacuum', value: true,
     desc: 'שואב את גובטבו מהמסלול, ומביא ממנו רוח הביתה. בלעדיו הוא קופץ בהפתעה, וצריך לברוח ממנו ברגליים.',
-    how: 'כלי. פעם אחת, לתמיד. רוח היא משאב שהשומר מבקש.' },
+    how: 'כלי. פעם אחת, לתמיד. חמישה בשואב — וביצת לב שמרככת אותם.' },
 ]
 export const gearById = id => GEAR.find(g => g.id === id) || null
 export const MAX_ITEMS = 3

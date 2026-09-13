@@ -21,7 +21,7 @@ import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest, produce, creaturesWanted } from './world.js'
 import { placeWinds, suckWind, windSteals, windFled, windTakesBuddy, scareWind, WIND_COINS } from './wind.js'
-import { tameWinds, tamedWind, tamedReady, cageFull, CAGE_NAME, SCARE_COINS } from './cage.js'
+import { toTank, hatchHeart, heartReady, tamedWind, tamedReady, TANK_MAX, SCARE_COINS } from './tank.js'
 import { newlyEarned } from './badges.js'
 
 // גובה קפיצה ממשך זמן באוויר: h = g·t²/8, בס"מ.
@@ -81,8 +81,9 @@ export function initial() {
       look: {},           // { [creatureId]: 'base' | מזהה צבע } — המראה שנבחר בספר
       gear: [], items: {}, // ציוד למרדף: קבוע, וחד-פעמי עם כמות (ראה engine/gear.js)
       skins: {}, stones: {}, // סקינים שנקנו ליצור, ואבני צמיחה (ראה engine/skins.js)
-      // ── הרוחות ── כמה גובטבו בכלוב, וכמה כבר טובי לב (ראה engine/cage.js)
-      caged: 0, tamed: 0,
+      // ── הרוחות ── כמה גובטבו במיכל השואב, ביצת הלב, וכמה כבר טובי לב
+      // (ראה engine/tank.js)
+      inTank: 0, heartEgg: null, tamed: 0,
 
       // ── הבונוס השבועי ── יום ראשון של השבוע שבו כבר ניתן (ראה engine/weekly.js)
       weeklyBonus: null,
@@ -562,9 +563,17 @@ export function reduce(g, ev) {
       // רק מרוחי — זו התשובה ל"למה לקנות אותו".
       if (r.windRes) res.wind = (res.wind || 0) + r.windRes
       // וטובי הלב שכבר בבית מביאים רוח בכל מסע, כמו מבנה — חמישה, רוח
-      // אחת. זה מה שהופך את הכלוב ממוצג למשק.
-      const fromCage = tamedWind(g.progress)
-      if (fromCage) { res.wind = (res.wind || 0) + fromCage; made.push({ id: 'cage', name: CAGE_NAME, product: 'wind', n: fromCage }) }
+      // אחת. זה מה שהופך אותם ממוצג למשק.
+      const fromTamed = tamedWind(g.progress)
+      if (fromTamed) { res.wind = (res.wind || 0) + fromTamed; made.push({ id: 'tamed', name: 'טובי הלב', product: 'wind', n: fromTamed }) }
+
+      // ── מה שבשואב, וביצת הלב ──
+      // כל מי שנשאב היום נכנס למיכל; החמישי מוליד את הביצה. והיא בוקעת
+      // רק אחרי מסע *שלם* איתה — כלומר לא היום, אלא בפעם הבאה שיוצאים.
+      // זו התשובה ל"מה הופך אותם לטובי לב": ההליכה, לא הלחיצה.
+      const hadEgg = !!g.progress.heartEgg
+      const tank = toTank(g.progress, r.windRes || 0)
+      const tamedNow = hadEgg && heartReady({ ...g.progress, ...tank }, r.walked) ? TANK_MAX : 0
       const goldTaken = (r.coins || []).some(c => c.gold && c.taken) ? 1 : 0
       const runDone = r.coinRun?.done ? 1 : 0
       const walkDays = [...(g.progress.walkDays || [])]
@@ -578,8 +587,7 @@ export function reduce(g, ev) {
           ...withBond,
           creatures,
           res,
-          // כל גובטבו שנשאב נכנס לכלוב שבבית. חמישה — וביצת הלב מופיעה.
-          caged: (g.progress.caged || 0) + (r.windRes || 0),
+          ...tank,
           egg: hatched ? null : g.progress.egg,
           variants,
           coins: (g.progress.coins || 0) + (r.coinsTaken || 0),
@@ -604,11 +612,13 @@ export function reduce(g, ev) {
       }
       // ── הבונוס השבועי ── שלושה מסעות השבוע: ביצה, או מטבעות אם כבר יש ביצה.
       const weekly = r.day ? grantWeekly(progress0, r.day, ev.t ?? null) : { progress: progress0, gift: null }
-      const progress = weekly.progress
+      // וביצת הלב, אם נשאה מסע שלם: חמישה יוצאים ממנה טובי לב.
+      const progress = tamedNow ? hatchHeart(weekly.progress) : weekly.progress
 
       return {
         ...g,
         state: isStory ? S.CLUE : S.RUN_COMPLETE,
+        tamedNow,     // כמה רוככו עכשיו — למסך הסיום. נמחק ב-RUN_CLOSED.
         hatched,
         // מה נפתח במסע הזה — למסך הסיום. נמחק ב-RUN_CLOSED, כמו hatched.
         newBadges: newlyEarned(g.progress, progress),
@@ -624,7 +634,7 @@ export function reduce(g, ev) {
       return { ...g, state: S.RUN_COMPLETE }
 
     case 'RUN_CLOSED':
-      return { ...g, state: S.BROKEN_WORLD, run: null, hatched: null, newBadges: null, weeklyGift: null, evolved: null, made: null }
+      return { ...g, state: S.BROKEN_WORLD, run: null, hatched: null, newBadges: null, weeklyGift: null, evolved: null, made: null, tamedNow: 0 }
 
     // ── החנות ──
     // במסך הבית בלבד. קנייה מורידה מטבעות; לבישה חופשית על מה שנקנה.
@@ -649,11 +659,6 @@ export function reduce(g, ev) {
       // אבן שמגדילה עכשיו — מסך ההתפתחות, כמו בפורטל
       const evolved = evolvedBetween(g.progress, progress)
       return { ...g, progress, evolved: evolved.length ? evolved : g.evolved || null }
-    }
-    // ── ביצת הלב ── הכלוב מלא: חמישה יוצאים ממנו טובי לב. בבית בלבד.
-    case 'TAME_WINDS': {
-      if (g.state !== S.BROKEN_WORLD || !cageFull(g.progress)) return g
-      return { ...g, progress: tameWinds(g.progress) }
     }
     // ── ציוד ── כלים למרדף. בבית בלבד; מטבעות יורדים מיד.
     case 'BUY_GEAR': {

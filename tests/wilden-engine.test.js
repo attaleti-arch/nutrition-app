@@ -487,47 +487,69 @@ test('רוחות במכונה: עם שואב נשאבות, בלי שואב חו�
   assert.equal(hit.run.lastWind.creature, 'nimi')
 })
 
-// ── כלוב הרוחות ──
-// "ולדעתי צריך כלוב של 5 גוסטבו בעולם, ואז ביצה או חפץ שהופך אותם טובי
-// לב." הלולאה כולה: שואבים בחוץ → נכנס לכלוב בבית → חמישה → ביצת הלב →
-// חמישה טובי לב, ואז אחד מהם יוצא איתך ומבריח את הפרא הראשון.
-import { CAGE_MAX, TAME_COINS, SCARE_COINS, cagedTotal, cagedShown, cageFull, tamedCount, tamedWind, tamedReady, tameWinds } from '../src/app/wilden/engine/cage.js'
-import { CAGE, cageBox } from '../src/app/wilden/content/spots.js'
+// ── מה שבשואב, וביצת הלב ──
+// "מה הופך אותם לטובי לב?" — ההליכה, ולא הלחיצה. וגם: "אני לא אוהבת את
+// הכלוב הזה" — אז אין כלוב; הם נשארים בתוך הכלי שקנו.
+//   חמישה נשאבו  → ביצת הלב נוצרת
+//   מסע שלם איתה → היא בוקעת, וחמישה יוצאים טובי לב
+import { TANK_MAX, TAME_COINS, SCARE_COINS, inTank, tankShown, tankFull, hasHeartEgg, tamedCount, tamedWind, tamedReady, heartReady, HATCH_M as HEART_M } from '../src/app/wilden/engine/tank.js'
+import { TANK, tankBox } from '../src/app/wilden/content/spots.js'
 
-test('כלוב: חמישה גובטבו נכנסים אליו, ביצת הלב מרככת אותם', () => {
+const windRun = (winds, stops, extra = {}) => ({ path: PATH, stops, stop: 0, target: stops[0], winds,
+  coinsTaken: 0, mods: {}, resolved: false, walked: 2000, walkStartedAt: 0, day: 'd1', ...extra })
+
+test('שואב: חמישה נכנסים למיכל, וביצת הלב נוצרת רק כשהוא מלא', () => {
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
   const winds = placeWinds(PATH, { stops, n: 3, rng: () => 0.5 })
-  // שואבים שלושה במסע אחד — שלושה נכנסים לכלוב, ועדיין לא מלא
-  let g = { ...initial(), state: S.SEARCH,
-    run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: { vacuum: true },
-      resolved: false, walked: 2000, walkStartedAt: 0, day: 'd1' } }
+  let g = { ...initial(), state: S.SEARCH, run: windRun(winds, stops, { mods: { vacuum: true } }) }
   for (const w of winds) g = reduce(g, { type: 'WIND_SUCK', id: w.id, t: 1 })
   g = reduce({ ...g, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 2, rng: () => 0.5 })
-  assert.equal(cagedTotal(g.progress), winds.length)
-  assert.equal(cageFull(g.progress), false)
-  // ביצה לפני שהכלוב מלא — לא קורה כלום
-  const early = reduce({ ...g, state: S.BROKEN_WORLD }, { type: 'TAME_WINDS', t: 3 })
-  assert.equal(tamedCount(early.progress), 0, 'אין ביצה לכלוב חלקי')
+  assert.equal(inTank(g.progress), winds.length)
+  assert.equal(tankFull(g.progress), false)
+  assert.equal(hasHeartEgg(g.progress), false, 'שלושה זה לא ביצה')
 
-  // מלא (ואפילו יותר): הביצה בוקעת, חמישה יוצאים, והשישי נשאר בתור
-  const full = { ...g, state: S.BROKEN_WORLD, progress: { ...g.progress, caged: CAGE_MAX + 1, coins: 0 } }
-  assert.equal(cagedShown(full.progress), CAGE_MAX, 'המונה על המסך לא עובר חמישה')
-  const tamed = reduce(full, { type: 'TAME_WINDS', t: 4 })
-  assert.equal(tamedCount(tamed.progress), CAGE_MAX)
-  assert.equal(cagedTotal(tamed.progress), 1, 'מי שנשאב מעבר לחמישה מחכה לביצה הבאה')
-  assert.equal(tamed.progress.coins, TAME_COINS)
-  // וזה גם משק: חמישה טובי לב = רוח אחת בכל מסע
-  assert.equal(tamedWind(tamed.progress), 1)
-  assert.equal(tamedWind({ tamed: CAGE_MAX * 4 }), 3, 'יש תקרה')
+  // עוד שניים — והביצה נוצרת. ולא בוקעת באותו רגע: היא עוד לא הלכה.
+  const winds2 = placeWinds(PATH, { stops, n: 2, rng: () => 0.5 })
+  let h = { ...g, state: S.SEARCH, run: windRun(winds2, stops, { mods: { vacuum: true } }) }
+  for (const w of winds2) h = reduce(h, { type: 'WIND_SUCK', id: w.id, t: 3 })
+  h = reduce({ ...h, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 4, rng: () => 0.5 })
+  assert.equal(hasHeartEgg(h.progress), true)
+  assert.equal(tamedCount(h.progress), 0, 'לא בוקעת באותו מסע שבו נוצרה')
+  assert.equal(tankShown(h.progress), TANK_MAX)
 })
 
-test('כלוב: הטוב שלכם מבריח את הפרא — פעם אחת בכל מסע', () => {
+test('שואב: ביצת הלב בוקעת רק אחרי מסע שלם — זה מה שמרכך אותם', () => {
+  const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
+  const base = { ...initial().progress, inTank: TANK_MAX, heartEgg: { at: 1 }, coins: 0, creatures: ['nimi'] }
+  assert.equal(heartReady(base, HEART_M - 1), false, 'מסע קצר לא מחמם ביצה')
+  assert.equal(heartReady(base, HEART_M), true)
+  assert.equal(heartReady({ ...base, heartEgg: null }, 9999), false, 'בלי ביצה אין בקיעה')
+
+  // מסע קצר: הביצה נשארת, ואיש לא מתרכך
+  const short = reduce({ ...initial(), state: S.PORTAL, progress: base,
+    run: windRun([], stops, { walked: 400 }) }, { type: 'PORTAL_ENTERED', t: 5, rng: () => 0.5 })
+  assert.equal(hasHeartEgg(short.progress), true, 'לא נשרפה')
+  assert.equal(tamedCount(short.progress), 0)
+  assert.equal(short.tamedNow, 0)
+
+  // מסע שלם: חמישה יוצאים טובי לב, והמיכל מתרוקן
+  const done = reduce({ ...initial(), state: S.PORTAL, progress: base,
+    run: windRun([], stops, { walked: HEART_M + 50 }) }, { type: 'PORTAL_ENTERED', t: 6, rng: () => 0.5 })
+  assert.equal(done.tamedNow, TANK_MAX)
+  assert.equal(tamedCount(done.progress), TANK_MAX)
+  assert.equal(inTank(done.progress), 0)
+  assert.equal(hasHeartEgg(done.progress), false)
+  assert.equal(done.progress.coins, TAME_COINS)
+  // וזה גם משק: חמישה טובי לב = רוח אחת בכל מסע
+  assert.equal(tamedWind(done.progress), 1)
+  assert.equal(tamedWind({ tamed: TANK_MAX * 4 }), 3, 'יש תקרה')
+})
+
+test('שואב: הטוב שלכם מבריח את הפרא — פעם אחת בכל מסע', () => {
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
   const winds = placeWinds(PATH, { stops, n: 2, rng: () => 0.5 })
-  const progress = { ...initial().progress, tamed: CAGE_MAX, buddy: 'nimi', creatures: ['nimi'] }
-  const base = { ...initial(), state: S.SEARCH, progress,
-    run: { path: PATH, stops, stop: 0, target: stops[0], winds, coinsTaken: 0, mods: {},
-      resolved: false, walked: 2000, walkStartedAt: 0, day: 'd1' } }
+  const progress = { ...initial().progress, tamed: TANK_MAX, buddy: 'nimi', creatures: ['nimi'] }
+  const base = { ...initial(), state: S.SEARCH, progress, run: windRun(winds, stops) }
   assert.equal(tamedReady(progress, base.run), true)
   const scared = reduce(base, { type: 'WIND_SCARED', id: winds[0].id, t: 1 })
   assert.equal(scared.run.coinsTaken, SCARE_COINS)
@@ -541,25 +563,25 @@ test('כלוב: הטוב שלכם מבריח את הפרא — פעם אחת ב�
   const none = { ...base, progress: { ...progress, tamed: 0 } }
   assert.equal(reduce(none, { type: 'WIND_SCARED', id: winds[0].id, t: 3 }), none)
 
-  // בבית: הכלוב מייצר רוח בכל מסע, כמו מבנה
+  // בבית: טובי הלב מייצרים רוח בכל מסע, כמו מבנה
   const home = reduce({ ...scared, state: S.PORTAL }, { type: 'PORTAL_ENTERED', t: 4, rng: () => 0.5 })
   assert.equal(home.progress.res.wind, 1)
-  assert.ok(home.made.some(m => m.id === 'cage' && m.product === 'wind'), 'ורואים את זה במסך הסיום')
+  assert.ok(home.made.some(m => m.id === 'tamed' && m.product === 'wind'), 'ורואים את זה במסך הסיום')
 })
 
-test('כלוב: עומד בשטח פנוי, לא על דמות ולא על מבנה', () => {
-  const box = cageBox()
+test('שואב: עומד בשטח פנוי, לא על דמות ולא על מבנה', () => {
+  const box = tankBox()
   for (const [id, sp] of Object.entries(SPOTS)) {
     const f = figureBox(id, sp)
     if (!f) continue
-    // הכלוב עומד בשורה הקדמית, ומותר לו להיכנס מעט מתחת לקנבס של מי
+    // הוא עומד בשורה הקדמית, ומותר לו להיכנס מעט מתחת לקנבס של מי
     // שעומד מאחוריו — אבל אף דמות לא יושבת עליו, ואף אחת לא מכסה אותו.
-    assert.ok(gapBetween(box, f) > -6, `${id} יושב על הכלוב`)
-    const inside = CAGE.x > f.left && CAGE.x < f.right && CAGE.y > f.top && CAGE.y < f.bottom
-    assert.equal(inside, false, `מרכז הכלוב בתוך ${id}`)
+    assert.ok(gapBetween(box, f) > -6, `${id} יושב על השואב`)
+    const inside = TANK.x > f.left && TANK.x < f.right && TANK.y > f.top && TANK.y < f.bottom
+    assert.equal(inside, false, `מרכז השואב בתוך ${id}`)
   }
   for (const b of BUILDINGS) {
-    assert.ok(Math.hypot(b.spot.x - CAGE.x, b.spot.y - CAGE.y) > 15, `רחוק מ${b.id}`)
+    assert.ok(Math.hypot(b.spot.x - TANK.x, b.spot.y - TANK.y) > 15, `רחוק מ${b.id}`)
   }
 })
 

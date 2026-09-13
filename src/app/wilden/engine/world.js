@@ -11,7 +11,7 @@
 
 import { CREATURES } from '../content/creatures.js'
 import { formTally, stageProgress } from './stages.js'
-import { cagedTotal, cagedShown, tamedCount, CAGE_MAX } from './cage.js'
+import { inTank, tankShown, tamedCount, TANK_MAX } from './tank.js'
 
 // מה כל יצור מביא הביתה. פעם אחת לכל תפיסה, גם חוזרת.
 export const RES_OF = {
@@ -202,9 +202,9 @@ export function nextGoals(progress) {
   const b = buildings(progress)
   out.push({ icon: '🏠', text: 'מבנים', have: b.filter(x => x.built).length, need: b.length })
   out.push({ icon: '🎨', text: 'צבעים', have: forms.colours, need: ids.length * 7 })
-  // הכלוב, למי שכבר שאב רוח אחת: גם זה משהו שנשאר לעשות מחר.
-  if (cagedTotal(progress) || tamedCount(progress)) {
-    out.push({ icon: '🌀', text: 'בכלוב', have: cagedShown(progress), need: CAGE_MAX })
+  // מה שבשואב, למי שכבר שאב רוח אחת: גם זה משהו שנשאר לעשות מחר.
+  if (inTank(progress) || tamedCount(progress)) {
+    out.push({ icon: '🌀', text: 'בשואב', have: tankShown(progress), need: TANK_MAX })
   }
   return out
 }
