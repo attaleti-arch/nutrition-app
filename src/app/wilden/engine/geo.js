@@ -159,8 +159,25 @@ export function progressAlong(path, pos, prevAlong = null) {
 // s = תנועת האצבע על המסך. במערכת של המפה היא R(rot)·s. panBy מזיז את
 // המבט ולא את התוכן, ולכן מחזירים את ההפך — וכך המפה נגררת בדיוק אחרי
 // האצבע בכל זווית. (ציר y של המסך יורד, ולכן זהו סיבוב עם כיוון השעון.)
-export function panDelta(dx, dy, rotDeg = 0) {
+export function rotVec(dx, dy, rotDeg = 0) {
   const a = (rotDeg || 0) * Math.PI / 180
   const c = Math.cos(a), s = Math.sin(a)
-  return [-(dx * c - dy * s), -(dx * s + dy * c)]
+  return [dx * c - dy * s, dx * s + dy * c]
 }
+
+export function panDelta(dx, dy, rotDeg = 0) {
+  const [x, y] = rotVec(dx, dy, rotDeg)
+  return [-x, -y]
+}
+
+// ── צביטה על מפה מסובבת ──
+// נקודה על המסך (יחסית למרכז החלון) → הנקודה המקבילה במערכת של מנוע
+// המפה, שהאלמנט שלו גדול מהחלון ומסובב. בלי זה הזום "קופץ" הצידה: מנוע
+// המפה מודד מרחקים מהפינה של האלמנט כאילו הוא ישר.
+export function pinchPoint(sx, sy, rotDeg, sizeX, sizeY) {
+  const [qx, qy] = rotVec(sx, sy, rotDeg)
+  return [sizeX / 2 + qx, sizeY / 2 + qy]
+}
+
+// כמה רמות זום הוסיפה הצביטה: יחס המרחק בין האצבעות, בבסיס 2.
+export const pinchZoom = (d0, d1) => (d0 > 0 && d1 > 0 ? Math.log2(d1 / d0) : 0)

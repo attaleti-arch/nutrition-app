@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { tr } from '../i18n'
-import { bearing as bearingOf, haversine, panDelta } from '../engine/geo'
+import { bearing as bearingOf, haversine, panDelta, pinchPoint, pinchZoom } from '../engine/geo'
 import { routeArrows, splitAt, routeDirAt } from '../engine/mapLines'
 import { angleDelta } from '../hooks/useOrient'
 import { kidSvg } from './Wear'
@@ -135,10 +135,12 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
     // יודע שהיא מוצגת מסובבת. כשהולכים דרומה הסיבוב הוא 180°, וכל גרירה
     // הפוכה בדיוק. לכן: הגרירה של Leaflet כבויה, ואנחנו מסובבים את
     // וקטור התנועה בעצמנו לפני שמזיזים (ראה panFinger למטה).
-    // touchZoom/doubleClick ב-'center' מאותה סיבה: הם מתרגמים נקודת מגע
-    // לנקודה על המפה, וגם זה שבור תחת סיבוב.
+    // גם הצביטה כבויה, ומאותה סיבה: Leaflet מתרגם נקודת מגע לנקודה על
+    // המפה לפי הפינה של האלמנט — והאלמנט מסובב וגדול מהחלון, אז הזום
+    // "קופץ" הצידה ומזיז את טבעת המסלול. zoomSnap 0 כדי שהצביטה תהיה
+    // רציפה ולא תקפוץ ברמות שלמות.
     const m = L.map(el.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false,
-      dragging: false, touchZoom: 'center', doubleClickZoom: 'center' })
+      dragging: false, touchZoom: false, doubleClickZoom: false, zoomSnap: 0, zoomAnimation: false })
       .setView(at ? [at.lat, at.lng] : [32.08, 34.78], FOLLOW_ZOOM)
     // ── אריחי המפה, עם גיבוי ──
     // אריחי OpenStreetMap עצמם. CARTO התחילו להטביע "API KEY REQUIRED" על
@@ -158,33 +160,70 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
       }
     })
     m.on('dragstart', () => { follow.current = false; setFollowing(false) })
-    // ── גרירה באצבע, עם תיקון הסיבוב ──
+    // ── אצבע אחת גוררת, שתיים מקרבות ──
     // s = תנועת האצבע על המסך. המפה מוצגת מסובבת ב-(-rot), ולכן התנועה
     // במערכת של המפה היא R(rot)·s. panBy מזיז את *המבט*, אז מעבירים לו
     // את ההפך — וככה המפה נגררת בדיוק אחרי האצבע, בכל זווית.
+    //
+    // "אי אפשר להשתמש במגע כדי לזוז ימינה ושמאלה." בדקתי עם עכבר, ובמגע
+    // זה לא עבד בכלל: בלי touch-action:none הדפדפן לוקח את תנועת האצבע
+    // לגלילת העמוד ושולח pointercancel, והגרירה מתה באמצע. עכשיו החלון
+    // מוותר על מחוות הדפדפן, והמאזין לא passive — כך אפשר לבטל אותן.
     const W = wrap.current
     if (W) {
-      let id = null, lx = 0, ly = 0, moved = false
+      const pts = new Map()          // אצבע → מקום אחרון
+      let panning = false            // עברנו את סף ה-6 פיקסלים
+      let lx = 0, ly = 0             // מקום האצבע הגוררת
+      let gap = 0, zAcc = 0          // מרחק בין שתי האצבעות, וזום שעוד לא הוחל
+      const two = () => [...pts.values()].slice(0, 2)
+      const reset = () => {
+        const p = two()
+        panning = false
+        if (p.length === 1) { lx = p[0].x; ly = p[0].y }
+        if (p.length >= 2) { gap = Math.hypot(p[1].x - p[0].x, p[1].y - p[0].y); zAcc = 0 }
+      }
+      const loose = () => { follow.current = false; setFollowing(false) }
+
       const down = e => {
         if (e.pointerType === 'mouse' && e.button !== 0) return
         if (e.target?.closest?.('button')) return
-        id = e.pointerId; lx = e.clientX; ly = e.clientY; moved = false
+        pts.set(e.pointerId, { x: e.clientX, y: e.clientY })
+        try { W.setPointerCapture(e.pointerId) } catch (err) { /* לא קריטי */ }
+        reset()
       }
       const move = e => {
-        if (id !== e.pointerId || !map.current) return
-        const dx = e.clientX - lx, dy = e.clientY - ly
-        if (!moved && Math.hypot(dx, dy) < 6) return
-        if (!moved) {
-          moved = true
-          follow.current = false; setFollowing(false)
-          try { W.setPointerCapture(e.pointerId) } catch (err) { /* לא קריטי */ }
+        if (!pts.has(e.pointerId) || !map.current) return
+        pts.set(e.pointerId, { x: e.clientX, y: e.clientY })
+        const m2 = map.current
+        const p = two()
+        if (p.length >= 2) {
+          // צביטה: הזום סביב הנקודה שבין האצבעות, מתורגמת דרך הסיבוב
+          e.preventDefault()
+          loose()
+          const d = Math.hypot(p[1].x - p[0].x, p[1].y - p[0].y)
+          zAcc += pinchZoom(gap, d)
+          gap = d
+          if (Math.abs(zAcc) >= 0.04) {
+            const r = W.getBoundingClientRect()
+            const sz = m2.getSize()
+            const [cx, cy] = pinchPoint((p[0].x + p[1].x) / 2 - (r.left + r.width / 2),
+              (p[0].y + p[1].y) / 2 - (r.top + r.height / 2), rot.current, sz.x, sz.y)
+            const z = Math.max(m2.getMinZoom(), Math.min(m2.getMaxZoom(), m2.getZoom() + zAcc))
+            zAcc = 0
+            if (z !== m2.getZoom()) m2.setZoomAround(L.point(cx, cy), z, { animate: false })
+          }
+          return
         }
+        const dx = e.clientX - lx, dy = e.clientY - ly
+        if (!panning && Math.hypot(dx, dy) < 6) return
+        if (!panning) { panning = true; loose() }
+        e.preventDefault()
         lx = e.clientX; ly = e.clientY
-        map.current.panBy(panDelta(dx, dy, rot.current), { animate: false })
+        m2.panBy(panDelta(dx, dy, rot.current), { animate: false })
       }
-      const up = e => { if (id === e.pointerId) { id = null; moved = false } }
+      const up = e => { pts.delete(e.pointerId); reset() }
       W.addEventListener('pointerdown', down, { passive: true })
-      W.addEventListener('pointermove', move, { passive: true })
+      W.addEventListener('pointermove', move, { passive: false })
       W.addEventListener('pointerup', up, { passive: true })
       W.addEventListener('pointercancel', up, { passive: true })
       drag.current = () => {
@@ -389,7 +428,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
   }
 
   return (
-    <div ref={wrap} style={{ position: 'relative', height, borderRadius: 16, overflow: 'hidden', border: '1px solid #2B382B', background: '#E8ECE6', '--rot': '0deg', '--wr': '0deg' }}>
+    <div ref={wrap} style={{ position: 'relative', height, borderRadius: 16, overflow: 'hidden', border: '1px solid #2B382B', background: '#E8ECE6', touchAction: 'none', '--rot': '0deg', '--wr': '0deg' }}>
       <style>{CSS}</style>
       {/* המפה גדולה מהחלון ב-50% לכל כיוון, כדי שכשהיא מסתובבת לא רואים פינות ריקות */}
       <div ref={el} style={{ position: 'absolute', inset: '-25%', transform: 'rotate(var(--rot))', transition: 'transform .4s ease-out', willChange: 'transform' }} />
