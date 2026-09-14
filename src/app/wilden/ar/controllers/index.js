@@ -31,8 +31,17 @@ const glow = makeChase({ id: 'glow', target: 'creature', style: 'run', copy: {
 
 // ויספר: הפועל ההפוך. לא רצים אליו — עומדים, והוא בא.
 const statue = makeStatue({ id: 'statue' })
+// "גם לדודו לא רצים." שושו יצא מאותה רוח, ובקליפ שלו הוא עושה בדיוק את
+// זה — הולך אל המצלמה. אותה מכניקה, אופי אחר: ויספר ביישן ומקשיב, שושו
+// סקרן ומרחרח. אותן מילים היו הופכות את שניהם לאותו יצור.
+const statueDrake = makeStatue({ id: 'statue-drake', copy: {
+  FAR: { line: 'אל תזוזו — הוא סקרן.', sub: 'הוא מתקרב רק כשעומדים בשקט.' },
+  MOVED: { line: 'זזתם, והוא נרתע.', sub: 'שוב. פסל.' },
+  NEAR: { line: 'הוא מולכם ומרחרח.', sub: 'עוד רגע אחד בלי לזוז…' },
+  DONE: { line: 'הוא בחר לבוא איתכם.', sub: '' },
+} })
 
-const REGISTRY = { 'tracks-true-or-false': run, buzz, gust, shadow, stomp, glow, statue }
+const REGISTRY = { 'tracks-true-or-false': run, buzz, gust, shadow, stomp, glow, statue, 'statue-drake': statueDrake }
 
 export function controllerFor(creature) {
   return REGISTRY[creature?.controller] || null

@@ -321,7 +321,9 @@ export const CREATURES = {
     sprites: null,
     heightM: 0.45,
     arMode: AR_MODE.GROUND,
-    controller: 'tracks-true-or-false',
+    // "גם לדודו לא רצים." גם הוא יצא מהרוח, וגם הוא בא מעצמו — עומדים
+    // כמו פסל (ar/controllers/statue.js), רק שהוא סקרן ולא ביישן.
+    controller: 'statue-drake',
     decal: null,
     clips: { ...CLIPS, special: 'EMBER' },
     verb: 'EMBER',

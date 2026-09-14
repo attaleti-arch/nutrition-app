@@ -841,6 +841,20 @@ test('ויספר: שקט מקרב אותו, תזוזה מרחיקה — ואין
   assert.equal(c.onCatch(m).state.phase, SP.FAR, 'רחוק — אין מה לתפוס')
 })
 
+test('"גם לדודו לא רצים": שושו על אותה מכניקה, במילים משלו', () => {
+  const w = CRE2.whisper, d = CRE2.drake
+  assert.ok(w && d)
+  assert.equal(controllerFor(w).needsStill, true, 'לוויספר עומדים')
+  assert.equal(controllerFor(d).needsStill, true, 'וגם לשושו')
+  assert.equal(controllerFor(d).style, 'statue')
+  // אבל הם לא אותו יצור: הטקסט שונה
+  const s0 = controllerFor(d).start(0, () => 0.5, 0)
+  const w0 = controllerFor(w).start(0, () => 0.5, 0)
+  assert.notEqual(controllerFor(d).copy(s0).line, controllerFor(w).copy(w0).line)
+  // ואף אחד מהם לא נתפס בלחיצה
+  assert.equal(controllerFor(d).onTap(s0, () => 0.5, 1).state.phase, s0.phase)
+})
+
 test('ויספר: אחרי דקה הוא בא בעצמו — אין ילד תקוע מול פסל', () => {
   const c = makeStatue({ id: 'whisper' })
   let s = c.start(0, () => 0.5, 0)
