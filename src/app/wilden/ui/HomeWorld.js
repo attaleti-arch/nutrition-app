@@ -114,6 +114,12 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
           transform הוא פיזי ולא לוגי, ולכן זה נכון גם בעברית וגם בגרמנית. */}
       {areas.map((a, i) => {
         const mine = a.id === DEFAULT_AREA        // שכבות החורבה שייכות למקום הראשון
+        // ── מקום שעוד ריק ──
+        // מי שפותח את החצר ביום הראשון רואה תפאורה יפה ואף אחד בתוכה,
+        // וזה נקרא כמו תקלה. משפט אחד הופך אותה מחדר ריק להבטחה.
+        const living = have.some(id => areaOfSpot(SPOTS[id]) === a.id)
+          || areaOfSpot(GUARDIAN) === a.id || (held && areaOfSpot(SPOTS[held]) === a.id)
+          || buildings(progress).some(b => b.built && areaOfSpot(b.spot) === a.id)
         return (
         <div key={a.id} style={{ ...W.area, transform: `translateX(${(i - here) * 100}%)`,
           visibility: Math.abs(i - here) > 1 ? 'hidden' : 'visible' }}>
@@ -224,6 +230,8 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
         <WindTank progress={progress} onOpen={() => setTankOpen(v => !v)} />
       </div>}
 
+      {!living && <p style={W.emptyArea}>{tr('כאן עוד אין אף אחד. מי שייתפס בהמשך — יגור פה.')}</p>}
+
       {bubble?.id === 'guardian' && areaOfSpot(GUARDIAN) === a.id && (
         <span style={{ ...W.bubble, position: 'absolute', bottom: 'auto', left: `${GUARDIAN.x}%`, top: `${GUARDIAN.y - GUARDIAN.h - 12}%`, display: 'block' }}>{bubble.text}</span>
       )}
@@ -324,6 +332,8 @@ const W = {
   mini: { position: 'absolute', pointerEvents: 'none', zIndex: 1, opacity: 0.96 },
   building: { position: 'absolute', transform: 'translate(-50%,-100%)', zIndex: 0, pointerEvents: 'none' },
   tank: { position: 'absolute', transform: 'translate(-50%,-100%)', zIndex: 2 },
+  emptyArea: { position: 'absolute', left: 16, right: 16, bottom: '14%', margin: 0, textAlign: 'center',
+    color: '#E9E5D8', fontSize: 14.5, fontWeight: 700, lineHeight: 1.5, textShadow: '0 2px 12px rgba(0,0,0,.9)' },
   heldMark: { position: 'absolute', top: -6, insetInlineEnd: -6, fontSize: 17, filter: 'drop-shadow(0 1px 3px rgba(0,0,0,.7))' },
   hole: { position: 'absolute', inset: '-18% -30%', pointerEvents: 'none', borderRadius: '50%',
     background: 'radial-gradient(circle, rgba(110,168,230,.45), rgba(20,34,50,.35) 48%, rgba(20,34,50,0) 72%)',

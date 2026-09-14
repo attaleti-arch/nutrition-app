@@ -122,6 +122,7 @@ export const DE = {
   '🌀 שאבתם את הרוח ש{name} היה בתוכה — הוא חוזר הביתה!': '🌀 Ihr habt den Wind eingesaugt, in dem {name} war — er kommt nach Hause!',
 
   // ── מה שבשואב, וביצת הלב ──
+  'כאן עוד אין אף אחד. מי שייתפס בהמשך — יגור פה.': 'Hier ist noch niemand. Wer später gefangen wird, wohnt hier.',
   'בשואב': 'Im Sauger', 'ביצת הלב': 'Herz-Ei', 'גובטבו טוב לב': 'Gutherziger Guvtavo',
   '🥚 מסע שלם והיא בוקעת': '🥚 Eine ganze Tour, dann schlüpft es',
   'ביצת הלב קרה. קחו אותה למסע שלם — {km} ק״מ — והיא תבקע.': 'Das Herz-Ei ist kalt. Nehmt es auf eine ganze Tour mit — {km} km — dann schlüpft es.',
