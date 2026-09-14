@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { tr } from '../i18n'
-import { bearing as bearingOf, haversine } from '../engine/geo'
+import { bearing as bearingOf, haversine, panDelta } from '../engine/geo'
 import { routeArrows, splitAt, routeDirAt } from '../engine/mapLines'
 import { angleDelta } from '../hooks/useOrient'
 import { kidSvg } from './Wear'
@@ -120,6 +120,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
   const lastPos = useRef(null)      // לחישוב הכיוון מהתנועה
   const motionDir = useRef(null)
   const rot = useRef(0)             // כמה המפה מסובבת עכשיו (מעלות, עם כיוון השעון)
+  const drag = useRef(null)         // ניקוי מאזיני הגרירה שלנו
   const [following, setFollowing] = useState(true)
   const [headingUp, setHeadingUp] = useState(true)
 
@@ -127,7 +128,17 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
     if (!ready || !el.current || map.current) return
     const L = Lmod
     const at = pos || home
-    const m = L.map(el.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false })
+    // ── הגרירה והסיבוב ──
+    // "כשאני מזיזה עם האצבע, תזוזה ימינה מזיזה מפה שמאלה ולמעלה הופך
+    // למטה." באג אמיתי: המפה מסובבת ב-CSS כדי שהמסלול יצביע לכיוון
+    // ההליכה, אבל Leaflet מקבל את תנועת האצבע במערכת הצירים *שלו* — ולא
+    // יודע שהיא מוצגת מסובבת. כשהולכים דרומה הסיבוב הוא 180°, וכל גרירה
+    // הפוכה בדיוק. לכן: הגרירה של Leaflet כבויה, ואנחנו מסובבים את
+    // וקטור התנועה בעצמנו לפני שמזיזים (ראה panFinger למטה).
+    // touchZoom/doubleClick ב-'center' מאותה סיבה: הם מתרגמים נקודת מגע
+    // לנקודה על המפה, וגם זה שבור תחת סיבוב.
+    const m = L.map(el.current, { zoomControl: false, attributionControl: false, scrollWheelZoom: false,
+      dragging: false, touchZoom: 'center', doubleClickZoom: 'center' })
       .setView(at ? [at.lat, at.lng] : [32.08, 34.78], FOLLOW_ZOOM)
     // ── אריחי המפה, עם גיבוי ──
     // אריחי OpenStreetMap עצמם. CARTO התחילו להטביע "API KEY REQUIRED" על
@@ -147,8 +158,42 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
       }
     })
     m.on('dragstart', () => { follow.current = false; setFollowing(false) })
+    // ── גרירה באצבע, עם תיקון הסיבוב ──
+    // s = תנועת האצבע על המסך. המפה מוצגת מסובבת ב-(-rot), ולכן התנועה
+    // במערכת של המפה היא R(rot)·s. panBy מזיז את *המבט*, אז מעבירים לו
+    // את ההפך — וככה המפה נגררת בדיוק אחרי האצבע, בכל זווית.
+    const W = wrap.current
+    if (W) {
+      let id = null, lx = 0, ly = 0, moved = false
+      const down = e => {
+        if (e.pointerType === 'mouse' && e.button !== 0) return
+        if (e.target?.closest?.('button')) return
+        id = e.pointerId; lx = e.clientX; ly = e.clientY; moved = false
+      }
+      const move = e => {
+        if (id !== e.pointerId || !map.current) return
+        const dx = e.clientX - lx, dy = e.clientY - ly
+        if (!moved && Math.hypot(dx, dy) < 6) return
+        if (!moved) {
+          moved = true
+          follow.current = false; setFollowing(false)
+          try { W.setPointerCapture(e.pointerId) } catch (err) { /* לא קריטי */ }
+        }
+        lx = e.clientX; ly = e.clientY
+        map.current.panBy(panDelta(dx, dy, rot.current), { animate: false })
+      }
+      const up = e => { if (id === e.pointerId) { id = null; moved = false } }
+      W.addEventListener('pointerdown', down, { passive: true })
+      W.addEventListener('pointermove', move, { passive: true })
+      W.addEventListener('pointerup', up, { passive: true })
+      W.addEventListener('pointercancel', up, { passive: true })
+      drag.current = () => {
+        W.removeEventListener('pointerdown', down); W.removeEventListener('pointermove', move)
+        W.removeEventListener('pointerup', up); W.removeEventListener('pointercancel', up)
+      }
+    }
     map.current = m
-    return () => { m.remove(); map.current = null; lay.current = { stops: [], arrows: [], coinMarks: new Map(), windMarks: new Map() }; fitted.current = false }
+    return () => { drag.current?.(); drag.current = null; m.remove(); map.current = null; lay.current = { stops: [], arrows: [], coinMarks: new Map(), windMarks: new Map() }; fitted.current = false }
   }, [ready])
 
   // המסלול והבית. בפעם הראשונה — כל הלולאה על המסך, שיראו לאן הולכים.
