@@ -568,6 +568,29 @@ test('גובטבו: לא חוטף את היצור האחרון, ולא שניי�
   assert.equal(takenId(home.progress), null, 'מי שרץ — לא מאבד אף אחד')
 })
 
+// ── "הרוח רפאים לא יכולה להופיע במסע הראשון" ──
+// "לפני שתופסים חיה. מהמסע השני או מרגע התפיסה לפחות."
+import { windsAllowed } from '../src/app/wilden/engine/wind.js'
+
+test('גובטבו: לא במסע הראשון, ולא לפני שיש יצור אחד בעולם', () => {
+  const p0 = initial().progress
+  assert.equal(windsAllowed(p0), false, 'מסע ראשון, בלי אף יצור')
+  assert.equal(windsAllowed({ ...p0, walks: 3 }), false, 'גם אחרי שלושה מסעות, אם אין אף אחד בעולם')
+  assert.equal(windsAllowed({ ...p0, creatures: ['nimi'] }), false, 'ובמסע הראשון — גם אם תפסו בו')
+  assert.equal(windsAllowed({ ...p0, walks: 1, creatures: ['nimi'] }), true, 'מהמסע השני, עם מישהו בבית')
+
+  // ובמכונה: המסלול הראשון נבנה בלי רוחות בכלל
+  const first = { ...initial(), state: S.ROUTE_BUILDING,
+    run: { kind: RUN.FREE, km: 2, pois: [POI.CREATURE], wantCreatures: ['nimi'], mods: {}, day: 'd1',
+      home: { lat: PATH[0].lat, lng: PATH[0].lng } } }
+  const built = reduce(first, { type: 'ROUTE_READY', path: PATH, t: 1, rng: () => 0.5 })
+  assert.deepEqual(built.run.winds, [], 'אין גובטבו על המסלול הראשון')
+  // ואחרי מסע אחד ותפיסה — כן
+  const later = { ...first, progress: { ...first.progress, walks: 1, creatures: ['nimi'] } }
+  const built2 = reduce(later, { type: 'ROUTE_READY', path: PATH, t: 1, rng: () => 0.5 })
+  assert.ok(built2.run.winds.length > 0, 'ומהמסע השני הוא שם')
+})
+
 // ── "לא מכל רוח תישלף דמות" ──
 // "רק 2 דמויות מתוך 5. ה-3 האחרות יביאו מטבעות, לא דמות — 10 מטבעות."
 import { spatBy, availableFor, SUCK_COINS, SUCK_CYCLE, CREATURE_SLOTS, FREED } from '../src/app/wilden/engine/coins.js'

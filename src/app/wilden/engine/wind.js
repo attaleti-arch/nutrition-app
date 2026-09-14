@@ -66,6 +66,15 @@ export const MAX_WINDS = 3
 // ── איפה הן ──
 // פרוסות על המסלול, לא על תחנה, ולא בהתחלה ובסוף. אותה שיטה כמו
 // המטבעות: pointAlong על הקו, כלומר תמיד על המסלול עצמו.
+// ── מתי הוא בכלל מופיע ──
+// "הרוח רפאים לא יכולה להופיע במסע הראשון לפני שתופסים חיה. מהמסע השני
+// או מרגע התפיסה לפחות." צודקת: ילד שיוצא בפעם הראשונה עוד לא מכיר
+// כלום, אין לו בן לוויה שאפשר לחטוף, ואין לו שואב — כלומר המפגש הראשון
+// שלו עם המשחק היה בריחה מדבר שהוא לא מבין. מהמסע השני, ורק אחרי שיש
+// לו מישהו בעולם.
+export const windsAllowed = progress =>
+  (progress?.walks || 0) >= 1 && (progress?.creatures || []).length > 0
+
 export function placeWinds(path, { stops = [], coinRun = null, flowerRun = null, n = 2, rng = Math.random, holds = null } = {}) {
   if (!path || path.length < 2) return []
   const total = pathLength(path)

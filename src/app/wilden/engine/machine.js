@@ -20,7 +20,7 @@ import { withExtraGold, AVAILABLE, availableFor, spatBy, SUCK_COINS, heatDistanc
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest, produce, creaturesWanted } from './world.js'
-import { placeWinds, suckWind, windSteals, windFled, windTakesBuddy, scareWind, takeCreature, freeCreature, takenId, canTake, WIND_COINS } from './wind.js'
+import { placeWinds, suckWind, windSteals, windFled, windTakesBuddy, scareWind, takeCreature, freeCreature, takenId, canTake, windsAllowed, WIND_COINS } from './wind.js'
 import { toTank, hatchHeart, heartReady, tamedWind, tamedReady, TANK_MAX, SCARE_COINS } from './tank.js'
 import { newlyEarned } from './badges.js'
 
@@ -255,7 +255,11 @@ export function reduce(g, ev) {
       // ── הרוחות ──
       // "רוחות שהרסו את העולם, ואפשר לשאוב אותן מהמסלול." שתיים בדרך,
       // שלוש במסלול ארוך. עם שואב — משאב ומטבעות. בלי — הן חוטפות.
-      const winds = placeWinds(ev.path, { stops, coinRun, flowerRun, n: (g.run.km || 2) >= 3 ? 3 : 2, holds: takenId(g.progress) })
+      // גובטבו לא יוצא למסע הראשון (ראה windsAllowed): הכרות ראשונה עם
+      // המשחק היא לא בריחה מדבר שאין עליו הסבר.
+      const winds = windsAllowed(g.progress)
+        ? placeWinds(ev.path, { stops, coinRun, flowerRun, n: (g.run.km || 2) >= 3 ? 3 : 2, holds: takenId(g.progress) })
+        : []
       return {
         ...g,
         state: S.SEARCH,

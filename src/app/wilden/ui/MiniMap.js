@@ -251,7 +251,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
       seen.add(w.id)
       if (marks.has(w.id)) return
       marks.set(w.id, L.marker([w.lat, w.lng], { interactive: false, zIndexOffset: 550, icon: L.divIcon({ className: '', iconSize: [34, 34], iconAnchor: [17, 17],
-        html: upright('<div style="width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:rgba(110,168,230,.28);border:2px solid #6EA8E6;box-shadow:0 2px 6px rgba(0,0,0,.35);animation:wildenPin 1.8s ease-in-out infinite"><img src="/world/wind/poster.webp" alt="" style="height:34px;width:auto;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))"></div>') }) }).addTo(m))
+        html: upright('<div style="width:40px;height:40px;display:grid;place-items:center;border-radius:50%;background:rgba(110,168,230,.28);border:2px solid #6EA8E6;box-shadow:0 2px 6px rgba(0,0,0,.35);animation:wildenPin 1.8s ease-in-out infinite"><img src="/world/wind/poster.webp" alt="" style="height:34px;width:auto;display:block;animation:wildenDrill 3.2s linear infinite;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))"></div>') }) }).addTo(m))
     })
     for (const [k, mk] of marks) if (!seen.has(k)) { mk.remove(); marks.delete(k) }
   }, [ready, winds])
@@ -373,6 +373,7 @@ export function MiniMap({ home, path, pos, along = 0, heading = null, stops = []
 
 const CSS = `
 @keyframes wildenPin{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes wildenDrill{from{transform:rotateY(0)}to{transform:rotateY(360deg)}}
 @keyframes wildenSpin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
 @keyframes wildenCoinPop{0%{transform:scale(1.35)}100%{transform:scale(1)}}
 @keyframes wildenCoinFloat{0%,100%{transform:translateY(0) scaleX(1)}30%{transform:translateY(-3px) scaleX(.72)}50%{transform:translateY(-4px) scaleX(1)}80%{transform:translateY(-1px) scaleX(.86)}}
