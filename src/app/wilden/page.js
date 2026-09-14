@@ -37,6 +37,7 @@ import { stagedFor, stageOf, stagedName, stageProgress } from './engine/stages'
 import { HomeWorld } from './ui/HomeWorld'
 import { Book, Badges } from './ui/Book'
 import { Shop } from './ui/Shop'
+import { Guide } from './ui/Guide'
 import { weeklyStatus, WEEKLY_COINS, km } from './engine/weekly'
 import { bondOf, buddyLine, BOND_M } from './engine/buddy'
 import { ROUTE_KM, routeKm, poisFor, creatureCount, plannedMsKm, plannedMin } from './engine/plan'
@@ -762,9 +763,12 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
         <button onClick={() => setPanel('book')} style={s.chip}>📖 {tr('ספר היצורים')} <b>{g.progress.creatures.length}/{AVAILABLE.length}</b></button>
         <button onClick={() => setPanel('badges')} style={s.chip}>🏅 {tr('הישגים')} <b>{badgeCount(g.progress)}</b></button>
         <button onClick={() => setPanel('shop')} style={s.chip}>🛍️ {tr('חנות')} <b>🪙 {g.progress.coins || 0}</b></button>
+        {/* "חסר הוראות והסברים" — וזה המקום שבו הן יושבות, לפני שיוצאים. */}
+        <button onClick={() => setPanel('guide')} style={s.chip}>❓ {tr('איך משחקים')}</button>
       </div>
       {panel === 'book' && <Book progress={g.progress} onClose={() => setPanel(null)} onLook={onLook} />}
       {panel === 'badges' && <Badges progress={g.progress} onClose={() => setPanel(null)} />}
+      {panel === 'guide' && <Guide onClose={() => setPanel(null)} />}
       {panel === 'shop' && <Shop progress={g.progress} onBuy={onBuy} onEquip={onEquip} onGear={onGear} onSkin={onSkin} onStone={onStone} onLook={onLook} onClose={() => setPanel(null)} />}
 
       {/* ── הבחירה ── "לרכוש שואב מראש כי יש רוח במסלול, ואם אין לו כסף
