@@ -7,7 +7,7 @@
 
 export const BOND_M = 2000
 
-// מי שגובטבו מחזיק לא יוצא לטיול — הוא לא בעולם (ראה engine/wind.js).
+// מי שגוסטבו מחזיק לא יוצא לטיול — הוא לא בעולם (ראה engine/wind.js).
 export const canBuddy = (progress, id) =>
   !!id && (progress?.creatures || []).includes(id) && progress?.taken?.creature !== id
 

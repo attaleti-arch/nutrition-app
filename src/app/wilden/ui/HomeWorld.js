@@ -59,7 +59,7 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
   }
   useEffect(() => () => clearTimeout(timer.current), [])
 
-  // מי שגובטבו מחזיק לא נמצא בעולם — ורואים את החור שהוא השאיר.
+  // מי שגוסטבו מחזיק לא נמצא בעולם — ורואים את החור שהוא השאיר.
   const held = takenId(progress)
   const have = (progress?.creatures || []).filter(id => id !== held)
   const seed = useMemo(() => Math.floor(Math.random() * 100), [])

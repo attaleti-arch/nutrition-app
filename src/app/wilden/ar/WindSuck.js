@@ -11,7 +11,7 @@ import { tr, dirOf } from '../i18n'
 const MS = 1700
 
 // ─── ומי שכבר ריכך חמישה ───
-// אותו מסך בדיוק, עם שחקן אחר במקום הכלי: גובטבו הזהוב שרוככתם עומד
+// אותו מסך בדיוק, עם שחקן אחר במקום הכלי: גוסטבו הזהוב שרוככתם עומד
 // מימין, והפרא נדחף ממנו והולך. זה הרגע שבו ילד רואה שמה ששבר את העולם
 // הפך למשהו שמגן עליו — ולא צריך לשם כך אף קובץ חדש.
 export function WindSuck({ coins = 0, freed = null, mode = 'suck', onDone }) {
@@ -58,7 +58,7 @@ const S = {
   // משמאל — ככה היא באמת נכנסת לתוכו, בכל שפה.
   vac: { position: 'absolute', top: '46%', right: '5%', transform: 'translateY(-50%)',
     height: '26vh', width: 'auto', filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.55))' },
-  // אותו גובטבו, בזהב חם ומסתובב לכיוון הפרא — אין כאן קובץ חדש, יש צבע.
+  // אותו גוסטבו, בזהב חם ומסתובב לכיוון הפרא — אין כאן קובץ חדש, יש צבע.
   tamed: { position: 'absolute', top: '46%', right: '8%', transform: 'translateY(-50%) scaleX(-1)',
     height: '30vh', width: 'auto',
     filter: 'sepia(.8) saturate(2.4) hue-rotate(-18deg) brightness(1.12) drop-shadow(0 0 22px rgba(255,214,110,.7))' },

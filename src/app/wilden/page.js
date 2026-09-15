@@ -273,7 +273,7 @@ export default function Wilden() {
       setSuckShow({ coins: lw.coins, freed: lw.kind === 'freed' ? tr(creatureById(lw.buddy)?.name || '') : null })
     }
     // הטוב שלכם הבריח אותו — גם את זה רואים, ובאותו מסך: לא השואב עומד
-    // שם אלא גובטבו הזהוב שרוככתם.
+    // שם אלא גוסטבו הזהוב שרוככתם.
     if (lw.kind === 'scared') setSuckShow({ coins: lw.coins, mode: 'scare' })
     // ── מה שיצא מהרוח ── אחרי השאיבה, ולא במקומה: קודם רואים את הכלי
     // עובד, ואז את מי שהיה בפנים.
@@ -373,7 +373,7 @@ export default function Wilden() {
         </Guard>
       )}
 
-      {/* ── מי שיוצא מגובטבו ── אחרי השאיבה, ורק בשאיבה שנושאת מישהו */}
+      {/* ── מי שיוצא מגוסטבו ── אחרי השאיבה, ורק בשאיבה שנושאת מישהו */}
       {freedShow && !suckShow && (
         <Guard where="freedClip" fallback={null}>
           <FreedClip id={freedShow} onDone={() => setFreedShow(null)} />
@@ -566,7 +566,7 @@ export default function Wilden() {
             <h2 style={s.h2}>{g.progress.creatures.length ? tr('הוא חי בעולם שלכם עכשיו.') : tr('חזרתם.')}</h2>
             <NewBadges ids={g.newBadges} />
             {/* ── ביצת הלב בקעה ── הרגע שההליכה של היום קנתה: חמישה
-                גובטבו יצאו מהשואב, וכבר לא פראיים. */}
+                גוסטבו יצאו מהשואב, וכבר לא פראיים. */}
             {g.rescuedNow && (
               <p style={s.tamed}>{tr('🌀 {name} יצא מהרוח וחזר הביתה.', { name: tr(creatureById(g.rescuedNow)?.name || '') })}</p>
             )}

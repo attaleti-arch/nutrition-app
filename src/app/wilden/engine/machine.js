@@ -77,13 +77,13 @@ export function initial() {
       owned: [], wear: {},
       // ── בן לוויה ── מי יוצא איתך, וכמה מטרים הלכתם יחד (ראה engine/buddy.js)
       buddy: null, bond: {},
-      taken: null,        // { creature, at } — מי שגובטבו מחזיק (ראה engine/wind.js)
+      taken: null,        // { creature, at } — מי שגוסטבו מחזיק (ראה engine/wind.js)
       sucks: 0, freed: [],  // כמה רוחות נשאבו, ומי כבר נפלט מהן (ראה engine/coins.js)
       routeKm: null,      // אורך המסלול שההורה בחר (ק"מ); null — הלוח
       look: {},           // { [creatureId]: 'base' | מזהה צבע } — המראה שנבחר בספר
       gear: [], items: {}, // ציוד למרדף: קבוע, וחד-פעמי עם כמות (ראה engine/gear.js)
       skins: {}, stones: {}, // סקינים שנקנו ליצור, ואבני צמיחה (ראה engine/skins.js)
-      // ── הרוחות ── כמה גובטבו במיכל השואב, ביצת הלב, וכמה כבר טובי לב
+      // ── הרוחות ── כמה גוסטבו במיכל השואב, ביצת הלב, וכמה כבר טובי לב
       // (ראה engine/tank.js)
       inTank: 0, heartEgg: null, tamed: 0,
 
@@ -182,7 +182,7 @@ export function reduce(g, ev) {
       const paid = extra ? { ...g.progress, coins: wallet - WALK_PLAN.extraCost } : g.progress
       const { progress: afterGear, used } = consume(paid)
       // מי בדרך: לפי הלוח; נעולים (בלי מפתח) מוחלפים; משרוקית מוסיפה אחד.
-      // ומי שגובטבו מחזיק — לא בדרך היום. אי אפשר לתפוס מישהו שרוח
+      // ומי שגוסטבו מחזיק — לא בדרך היום. אי אפשר לתפוס מישהו שרוח
       // מחזיקה; הדרך היחידה אליו היא לשאוב את הרוח הזאת.
       const held = takenId(g.progress)
       const avail = availableFor(g.progress, ev.available || AVAILABLE).filter(c => c !== held)
@@ -255,7 +255,7 @@ export function reduce(g, ev) {
       // ── הרוחות ──
       // "רוחות שהרסו את העולם, ואפשר לשאוב אותן מהמסלול." שתיים בדרך,
       // שלוש במסלול ארוך. עם שואב — משאב ומטבעות. בלי — הן חוטפות.
-      // גובטבו לא יוצא למסע הראשון (ראה windsAllowed): הכרות ראשונה עם
+      // גוסטבו לא יוצא למסע הראשון (ראה windsAllowed): הכרות ראשונה עם
       // המשחק היא לא בריחה מדבר שאין עליו הסבר.
       const winds = windsAllowed(g.progress)
         ? placeWinds(ev.path, { stops, coinRun, flowerRun, n: (g.run.km || 2) >= 3 ? 3 : 2, holds: takenId(g.progress) })
@@ -605,7 +605,7 @@ export function reduce(g, ev) {
       // בן הלוויה: המטרים של היום נזקפים לו (כל 2 ק"מ = תפיסה להתפתחות).
       // בן לוויה שרוח חטפה לא הלך איתנו — אין לו מטרים מהטיול הזה.
       const withBond = r.buddyTaken ? g.progress : addBond(g.progress, r.walked)
-      // ── שלוש התוצאות של גובטבו, כשחוזרים הביתה ──
+      // ── שלוש התוצאות של גוסטבו, כשחוזרים הביתה ──
       // שאבתם את הרוח שהחזיקה מישהו — הוא חוזר לעולם.
       // נשארתם בלי לזוז והוא חטף — הוא נשאר אצלו, ורואים את החור.
       const rescuedNow = r.rescued && takenId(g.progress) === r.rescued ? r.rescued : null

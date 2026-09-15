@@ -75,7 +75,7 @@ export const DE = {
   'עצרו על המדרכה, לא על הכביש.': 'Bleibt auf dem Gehweg stehen, nicht auf der Straße.',
   'התחנה על': 'Station auf', 'מצומת': 'Von Kreuzung',
   '🌀 {wind}!': '🌀 {wind}!',
-  'גובטבו': 'Guvtavo',
+  'גוסטבו': 'Gustavo',
   '{wind} תפס אתכם!': '{wind} hat euch erwischt!',
   '{name} יצא מתוכו!': '{name} kam heraus!',
   'רוצו! {wind} מנסה לחטוף את {name}': 'Lauft! {wind} will {name} schnappen',
@@ -94,7 +94,7 @@ export const DE = {
   '🌀 {wind} חטף את {name} וגרר אותו {n} מ׳ קדימה!': '🌀 {wind} hat {name} geschnappt und {n} m weiter gezogen!',
   '🌀 {wind} חלף כאן.': '🌀 {wind} ist hier vorbeigezogen.',
   'שואב הרוח': 'Windsauger',
-  'שואב את גובטבו מהמסלול, ומביא ממנו רוח הביתה. בלעדיו הוא קופץ בהפתעה, וצריך לברוח ממנו ברגליים.': 'Saugt Guvtavo von der Route ein und bringt Wind mit nach Hause. Ohne ihn taucht er plötzlich auf, und ihr müsst zu Fuß weglaufen.',
+  'שואב את גוסטבו מהמסלול, ומביא ממנו רוח הביתה. בלעדיו הוא קופץ בהפתעה, וצריך לברוח ממנו ברגליים.': 'Saugt Gustavo von der Route ein und bringt Wind mit nach Hause. Ohne ihn taucht er plötzlich auf, und ihr müsst zu Fuß weglaufen.',
   'כלי. פעם אחת, לתמיד. רוח היא משאב שהשומר מבקש.': 'Werkzeug. Einmal, für immer. Wind ist ein Rohstoff, den der Wächter braucht.',
   'כלי. פעם אחת, לתמיד.': 'Werkzeug. Einmal, für immer.',
   // ── איך משחקים ──
@@ -119,7 +119,7 @@ export const DE = {
   'הוא בחר לבוא איתכם.': 'Er hat sich entschieden mitzukommen.',
   'מבקש משאבים שהיצורים מביאים. כל בקשה שנסגרת בונה משהו שרואים: מים בכד, ניצנים בעץ, שער שנפתח.': 'Er bittet um Rohstoffe, die die Wesen mitbringen. Jede erfüllte Bitte baut etwas Sichtbares: Wasser im Krug, Knospen am Baum, ein Tor das aufgeht.',
   'מה שנשאב בחוץ מחכה במיכל הזכוכית שלו. כשיש בו {n} — ביצת הלב מופיעה עליו.': 'Was draußen eingesaugt wurde, wartet in seinem Glasbehälter. Sind {n} drin, erscheint das Herz-Ei darauf.',
-  'לא נפתחת בלחיצה. היא בוקעת אחרי מסע שלם איתה — ואז {n} גובטבו יוצאים טובי לב, ואחד מהם יוצא איתכם ומבריח את הפרא הבא.': 'Es geht nicht per Tippen auf. Es schlüpft nach einer ganzen Tour — dann werden {n} Guvtavo gutherzig, und einer kommt mit und vertreibt den nächsten wilden.',
+  'לא נפתחת בלחיצה. היא בוקעת אחרי מסע שלם איתה — ואז {n} גוסטבו יוצאים טובי לב, ואחד מהם יוצא איתכם ומבריח את הפרא הבא.': 'Es geht nicht per Tippen auf. Es schlüpft nach einer ganzen Tour — dann werden {n} Gustavo gutherzig, und einer kommt mit und vertreibt den nächsten wilden.',
   'ביצה רגילה': 'Normales Ei',
   'נקנית בחנות, מתחממת מההליכה, ובוקעת ליצור בצבע נדיר.': 'Im Laden gekauft, wird vom Gehen warm und schlüpft als Wesen in einer seltenen Farbe.',
   'החנות': 'Der Laden',
@@ -160,7 +160,7 @@ export const DE = {
 
   // ── מה שבשואב, וביצת הלב ──
   'כאן עוד אין אף אחד. מי שייתפס בהמשך — יגור פה.': 'Hier ist noch niemand. Wer später gefangen wird, wohnt hier.',
-  'בשואב': 'Im Sauger', 'ביצת הלב': 'Herz-Ei', 'גובטבו טוב לב': 'Gutherziger Guvtavo',
+  'בשואב': 'Im Sauger', 'ביצת הלב': 'Herz-Ei', 'גוסטבו טוב לב': 'Gutherziger Gustavo',
   '🥚 מסע שלם והיא בוקעת': '🥚 Eine ganze Tour, dann schlüpft es',
   'ביצת הלב קרה. קחו אותה למסע שלם — {km} ק״מ — והיא תבקע.': 'Das Herz-Ei ist kalt. Nehmt es auf eine ganze Tour mit — {km} km — dann schlüpft es.',
   'עוד {k} ו{wind} ייכנס לביצה.': 'Noch {k}, dann kommt {wind} ins Ei.',

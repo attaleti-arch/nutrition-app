@@ -443,8 +443,8 @@ test('רוחות: הבריחה — מספיק צעדים בזמן, אחרת הר
 
 // "אם האיום לא מתממש מדי פעם — למה לרכוש שואב?" שלוש תשובות, וכולן
 // נבדקות כאן: הוא מתחזק, השאיבה מביאה משאב, והבריחה היא ריצה.
-test('רוחות: גובטבו מתחזק בכל קפיצה, והשאיבה מביאה רוח הביתה', () => {
-  assert.equal(WIND_NAME, 'גובטבו')
+test('רוחות: גוסטבו מתחזק בכל קפיצה, והשאיבה מביאה רוח הביתה', () => {
+  assert.equal(WIND_NAME, 'גוסטבו')
   // ראשונה: 22 צעדים ב-15 שניות. שלישית: 30 ב-13.
   assert.deepEqual(fleeGoal(1), { steps: 22, ms: 15000 })
   assert.deepEqual(fleeGoal(2), { steps: 26, ms: 14000 })
@@ -491,13 +491,13 @@ test('רוחות במכונה: עם שואב נשאבות, בלי שואב חו�
   assert.equal(hit.run.lastWind.creature, 'nimi')
 })
 
-// ── שלוש התוצאות של גובטבו ──
+// ── שלוש התוצאות של גוסטבו ──
 // "אם שואבים יוצאת דמות — שווה לרכוש שואב. אם בורחים ורצים, מצליחים.
 // ואם נשארים אדישים בחוסר תנועה, דמות נחטפת — ובסיבוב הבא הזדמנות
 // להחזיר אותה בקניית שואב ושאיבה של הרוח שחטפה אותה."
 import { takenId, isTaken, canTake, takeCreature, freeCreature } from '../src/app/wilden/engine/wind.js'
 
-test('גובטבו: מי שנחטף נשאר חטוף — לא בבית, לא בן לוויה, ולא על המסלול', () => {
+test('גוסטבו: מי שנחטף נשאר חטוף — לא בבית, לא בן לוויה, ולא על המסלול', () => {
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
   const winds = placeWinds(PATH, { stops, n: 1, rng: () => 0.5 })
   const progress = { ...initial().progress, creatures: ['nimi', 'gali'], buddy: 'nimi', walks: 3 }
@@ -517,7 +517,7 @@ test('גובטבו: מי שנחטף נשאר חטוף — לא בבית, לא ב
   assert.ok(!out.run.wantCreatures.includes("nimi"), "נימי לא על המסלול — הוא לא שם")
 })
 
-test('גובטבו: הרוח שמחזיקה אותו יושבת על המסלול, והשאיבה מחזירה אותו', () => {
+test('גוסטבו: הרוח שמחזיקה אותו יושבת על המסלול, והשאיבה מחזירה אותו', () => {
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'gali', done: false }]
   // הרוח שמחזיקה מסומנת רק כשיש מי שמוחזק
   const plain = placeWinds(PATH, { stops, n: 3, rng: () => 0.5 })
@@ -546,7 +546,7 @@ test('גובטבו: הרוח שמחזיקה אותו יושבת על המסלו�
   assert.equal(canBuddy(home.progress, 'nimi'), true, 'ואפשר לצאת איתו שוב')
 })
 
-test('גובטבו: לא חוטף את היצור האחרון, ולא שניים בבת אחת', () => {
+test('גוסטבו: לא חוטף את היצור האחרון, ולא שניים בבת אחת', () => {
   const one = { ...initial().progress, creatures: ['nimi'], buddy: 'nimi' }
   assert.equal(canTake(one), false, 'לילד עם יצור אחד לא מרוקנים את העולם')
   assert.equal(takeCreature(one, 'nimi'), one)
@@ -621,7 +621,7 @@ test('מפה: צביטה — הנקודה שבין האצבעות נכונה ג�
 // "לפני שתופסים חיה. מהמסע השני או מרגע התפיסה לפחות."
 import { windsAllowed } from '../src/app/wilden/engine/wind.js'
 
-test('גובטבו: לא במסע הראשון, ולא לפני שיש יצור אחד בעולם', () => {
+test('גוסטבו: לא במסע הראשון, ולא לפני שיש יצור אחד בעולם', () => {
   const p0 = initial().progress
   assert.equal(windsAllowed(p0), false, 'מסע ראשון, בלי אף יצור')
   assert.equal(windsAllowed({ ...p0, walks: 3 }), false, 'גם אחרי שלושה מסעות, אם אין אף אחד בעולם')
@@ -633,7 +633,7 @@ test('גובטבו: לא במסע הראשון, ולא לפני שיש יצור 
     run: { kind: RUN.FREE, km: 2, pois: [POI.CREATURE], wantCreatures: ['nimi'], mods: {}, day: 'd1',
       home: { lat: PATH[0].lat, lng: PATH[0].lng } } }
   const built = reduce(first, { type: 'ROUTE_READY', path: PATH, t: 1, rng: () => 0.5 })
-  assert.deepEqual(built.run.winds, [], 'אין גובטבו על המסלול הראשון')
+  assert.deepEqual(built.run.winds, [], 'אין גוסטבו על המסלול הראשון')
   // ואחרי מסע אחד ותפיסה — כן
   const later = { ...first, progress: { ...first.progress, walks: 1, creatures: ['nimi'] } }
   const built2 = reduce(later, { type: 'ROUTE_READY', path: PATH, t: 1, rng: () => 0.5 })
