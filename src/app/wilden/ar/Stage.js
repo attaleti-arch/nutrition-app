@@ -8,7 +8,7 @@ import { createStillness } from '../engine/still'
 import { CreatureFigure, ModelLayer, Dust, Burst } from './Figure'
 import { useModelSrc, usePreloadModel } from '../hooks/useModelViewer'
 import { useBurst } from '../hooks/useBurst'
-import { Lantern } from './Lantern'
+import { Lantern, beamHit } from './Lantern'
 import { usePulse } from '../hooks/usePulse'
 import { useCamera } from '../hooks/useCamera'
 import { camText } from '../engine/camera'
@@ -133,6 +133,13 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
       if (n > 0) lastStepAt.current = t
       setCs(prev => {
         let next = prev
+        // ── האלומה ──
+        // צל: הבמה היא היחידה שיודעת איפה היצור ביחס למסך, ולכן היא זו
+        // שמדווחת אם האור עליו. הבקר מחליט מה זה אומר (ar/controllers/beam.js).
+        if (ctrl.onBeam) {
+          const r = ctrl.onBeam(next, beamRef.current, t)
+          if (r.state !== next) { next = r.state; if (r.feedback) fire(r.feedback, setFlash, setShake, creatureIdRef.current) }
+        }
         for (let i = 0; i < n && ctrl.onStep; i++) {
           const r = ctrl.onStep(next, t)
           if (r.state !== next) { next = r.state; if (r.feedback) fire(r.feedback, setFlash, setShake, creatureIdRef.current) }
@@ -182,7 +189,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   // ראש השביל הוא הזמנה, לא בחירה. אם הוא ניתן לנעילה, הילד "בוחר" את
   // הרגליים של עצמו והמפגש נתקע.
   const nearest = placed
-    .filter(t => !t.passive)
+    .filter(t => !t.passive && !t.unlit)
     .reduce((a, b) => (b.off < (a?.off ?? 999) ? b : a), null)
 
   // ── נעילה ──
@@ -275,7 +282,13 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   // ── היצור עצמו ──
   // מחושב פעם אחת: גם הספרייט בתוך היעד וגם שכבת המודל צריכים את זה.
   const ct = placed.find(t => t.kind === 'creature') || null
-  const ctVisible = !!ct && Math.abs(ct.dx ?? 999) < FOV / 2 + 4 && Math.abs(ct.dy) < 34
+  const ctVisible = !!ct && !ct.unlit && Math.abs(ct.dx ?? 999) < FOV / 2 + 4 && Math.abs(ct.dy) < 34
+  // ── בתוך האלומה, או מחוץ לה ──
+  // האלומה מכוונת למרכז המסך (Lantern), ולכן "האור עליו" הוא פשוט "הוא
+  // בתוך הכתם". החישוב עצמו יושב ב-Lantern, על אותה אליפסה שמצוירת שם,
+  // כדי שמה שנראה ומה שנמדד לא יוכלו להיפרד.
+  const inBeam = !!ct && beamHit(ct.dx, ct.dy, FOV)
+  const beamRef = useRef(false); beamRef.current = inBeam
   const ctFaceLeft = !!ct && ct.streak != null && angleDelta(ct.streak, ct.bearing) < 0
   const ctStreakSide = !ct || ct.streak == null ? null
     : angleDelta(ct.streak, ct.bearing) < 0 ? 'right' : 'left'
@@ -341,7 +354,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
       {/* רחוב חשוך: לצל תמיד, ולכולם בערב. הפנס (מפתח מהחנות) הוא אלומה
           אמיתית שזזה עם הטלפון; בלעדיו רואים רק במרכז, עמום. צל בלי פנס לא
           מגיע לכאן (הלוח מחליף אותו). */}
-      {dark && <Lantern on={!!mods?.lantern} />}
+      {dark && <Lantern on={!!mods?.lantern} hot={inBeam} />}
       {camState === 'on' && !videoLive && (
         <div style={S.camNote}>
           {tr('המצלמה אושרה אבל התמונה לא הגיעה.')}
@@ -372,12 +385,17 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
           מחוץ למסך — הם קיימים ב-DOM, נספרים בבדיקה, ואי אפשר לראות אותם.
           וגם: יעד שנראה ב-30% שקיפות בשמש פשוט לא קיים בשביל ילד. */}
       {!done && placed.map(t => {
-        const vis = Math.abs(t.dx ?? 999) < FOV / 2 + 4 && Math.abs(t.dy) < 34
+        // unlit: צל, כשהאלומה לא עליו. הוא שם — פשוט לא רואים אותו.
+        const vis = !t.unlit && Math.abs(t.dx ?? 999) < FOV / 2 + 4 && Math.abs(t.dy) < 34
         if (!vis) return null
         const locked = lockedRef.current === t.id && hold > 0
         return (
           <div key={t.id} style={{
             ...S.node,
+            // מי שהאלומה עליו מצויר *מעל* החושך. אחרת האור נופל עליו
+            // והשכבה הכהה מיד מכבה אותו בחזרה, וצל נשאר כתם על כתם.
+            // (unlit הוא false רק במפגש שנשלט באלומה; לכולם הוא undefined.)
+            zIndex: t.unlit === false ? 2 : undefined,
             left: `${50 + (t.dx / (FOV / 2)) * 50}%`,
             top: `${52 - t.dy * 1.5}%`,
             opacity: Math.max(0.6, 1 - Math.abs(t.dx) / 74),
@@ -497,6 +515,9 @@ function fire(kind, setFlash, setShake, creatureId = null) {
     moved: { t: 'זזתם! הוא נסוג.', buzz: [70, 40], sfx: sfxRustle },
     still: { t: 'לא לוחצים. עומדים.', buzz: [30], sfx: null },
     flee: { t: 'הוא ברח!', buzz: [70, 50, 70], sfx: creatureId ? null : sfxRustle },
+    // צל: האלומה תפסה אותו, והאלומה איבדה אותו.
+    beam: { t: 'האור עליו!', buzz: [40, 30, 60], sfx: sfxAppear },
+    slip: { t: 'הוא חמק בחושך!', buzz: [70, 50, 70], sfx: sfxRustle },
     near: { t: 'הוא נעצר.', buzz: [40], sfx: creatureId ? null : sfxAppear },
     ready: { t: 'עכשיו!', buzz: [60, 40, 60], sfx: sfxAppear },
     catch: { t: '', buzz: [40, 60, 40, 140], sfx: sfxCatch },

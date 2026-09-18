@@ -9,6 +9,7 @@
 import { makeChase } from './chase.js'
 import { makeStatue } from './statue.js'
 import { makeSky } from './sky.js'
+import { makeBeam } from './beam.js'
 
 const run = makeChase({ id: 'tracks-true-or-false', target: 'creature', style: 'run' })
 const buzz = makeChase({ id: 'buzz', target: 'creature', style: 'fly', copy: {
@@ -27,7 +28,10 @@ const gust = makeSky({ id: 'gust', copy: {
   BARE: { line: 'היא רחוקה מדי בשביל העיניים.', sub: 'בלי משקפת היא נשארת נקודה.' },
   DIVE: { line: 'היא צוללת אליכם!', sub: 'התכוננו לרוץ.' },
 } })
-const shadow = makeChase({ id: 'shadow', target: 'creature', style: 'shadow' })
+// ── צל ── "חשוב לי שהתחושה תהיה פנס אלומת אור." הוא היה מרדף רגיל עם
+// צל במקום דמות, והפנס היה תפאורה. עכשיו האלומה היא הפועל: בלי אור לא
+// רואים אותו, ומי שמוריד את האור מאבד אותו. ראה beam.js.
+const shadow = makeBeam({ id: 'shadow' })
 const stomp = makeChase({ id: 'stomp', target: 'creature', style: 'stomp' })
 // נוגה: לא רצה — נמוגה לאור ומופיעה במקום אחר. הפס שנשאר הוא שביל האור.
 const glow = makeChase({ id: 'glow', target: 'creature', style: 'run', copy: {

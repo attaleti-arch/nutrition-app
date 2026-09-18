@@ -3357,3 +3357,66 @@ test('רוחי: נקודה בשמיים, משקפת, צלילה — ורק אז 
   const stuck = sky.onTick(sky.start(0, rng, 0, { reveal: 0.45 }), SCAN_MS + 10)
   assert.equal(stuck.phase, SKY.SCOPE)
 })
+
+// ══════════════════════════════════════════════
+// ── צל: הפנס הוא הפועל ──
+// "חשוב לי שהתחושה תהיה פנס אלומת אור." לא עוד מרדף עם צל במקום דמות:
+// בלי אור לא רואים אותו, באור הצעדים מקרבים, ומי שמוריד את האור מאבד
+// אותו — ואחרי שתי שניות בחושך הוא כבר לא שם.
+import { makeBeam, DARK, SLIP_MS, FIND_MS, SCAN_MS as BEAM_SCAN_MS } from '../src/app/wilden/ar/controllers/beam.js'
+
+test('צל: בלי אלומה לא רואים אותו, באלומה מתקרבים, ובלעדיה הוא חומק', () => {
+  let k = 11
+  const rng = () => ((k = (k * 1103515245 + 12345) % 2147483648) / 2147483648)
+  const beam = makeBeam({ id: 'shadow' })
+  let s = beam.start(0, rng, 0)
+  assert.equal(s.phase, DARK)
+  assert.equal(beam.targets(s)[0].unlit, true, 'בחושך הוא קיים — ולא נראה')
+  assert.ok(beam.copy(s).line.includes('חשוך'))
+
+  // צעד בחושך לא מקרב: אי אפשר ללכת אל מי שלא רואים
+  const d0 = s.dist
+  s = beam.onStep(s, 100, rng).state
+  assert.equal(s.dist, d0, 'הליכה בחושך לא מקרבת')
+
+  // האלומה עליו
+  s = beam.onBeam(s, true, 1000).state
+  assert.equal(s.lit, true)
+  assert.equal(beam.targets(s)[0].unlit, false, 'באור — רואים אותו')
+  assert.equal(s.found, false, 'עוד לא "נמצא": צריך להחזיק את האור רגע')
+  s = beam.onBeam(s, true, 1000 + FIND_MS).state
+  assert.equal(s.found, true)
+  assert.ok(beam.copy(s).line.includes('האלומה עליו'))
+
+  // ועכשיו הצעדים מקרבים
+  s = beam.onStep(s, 2000, rng).state
+  assert.ok(s.dist < d0, 'באור, צעד מקרב')
+
+  // מורידים את האור: שתי שניות, והוא זז למקום אחר
+  const where = s.hidden
+  s = beam.onBeam(s, false, 3000).state
+  assert.equal(s.lit, false)
+  const still = beam.onTick(s, 3000 + SLIP_MS - 200)
+  assert.equal(still.hidden, where, 'רגע בלי אור זה עוד לא בריחה')
+  s = beam.onTick(s, 3000 + SLIP_MS)
+  assert.notEqual(s.hidden, where, 'שתי שניות בחושך — והוא כבר לא שם')
+  assert.equal(s.found, false, 'וצריך למצוא אותו מחדש')
+  assert.equal(s.slips, 1)
+
+  // בחושך אין על מה ללחוץ — האור הוא הפעולה
+  assert.equal(beam.onTap(s, rng, 4000).state, s)
+
+  // אחרי שתי חמיקות הוא נעצר, קם, ואפשר לתפוס
+  s = { ...s, slips: 2, lit: true, found: true, dist: 3.4 }
+  s = beam.onStep(s, 5000, rng).state
+  assert.equal(s.phase, 'NEAR')
+  assert.equal(beam.targets(s)[0].shadow, false, 'בסוף הוא קם מתוך הצל')
+  s = beam.onCatch(s).state
+  assert.equal(s.phase, 'DONE'); assert.ok(beam.isDone(s))
+})
+
+test('צל: רשת ביטחון — מי שסורק ולא מוצא לא נשאר בחושך', () => {
+  const beam = makeBeam({ id: 'shadow' })
+  const s = beam.onTick(beam.start(0, () => 0.42, 0), BEAM_SCAN_MS + 10)
+  assert.equal(s.found, true); assert.equal(s.lit, true)
+})

@@ -62,13 +62,13 @@ export function ShadowBlob({ faceLeft }) {
     <svg viewBox="0 0 200 70" aria-hidden="true" style={{ ...F.blob, transform: `translateX(-50%) ${faceLeft ? 'scaleX(-1)' : ''}` }}>
       <defs>
         <radialGradient id="wshadow" cx="50%" cy="50%" r="55%">
-          <stop offset="0" stopColor="#120A1E" stopOpacity=".92" />
-          <stop offset=".8" stopColor="#120A1E" stopOpacity=".7" />
+          <stop offset="0" stopColor="#0A0512" stopOpacity=".96" />
+          <stop offset=".8" stopColor="#120A1E" stopOpacity=".78" />
           <stop offset="1" stopColor="#120A1E" stopOpacity="0" />
         </radialGradient>
       </defs>
       <path d="M12 44 C30 22 70 18 110 24 L128 8 L134 26 L152 12 L154 30 C176 34 190 42 188 50 C180 62 120 66 70 62 C34 60 8 56 12 44 Z" fill="url(#wshadow)" />
-      <path d="M40 48 C70 38 120 40 160 46" fill="none" stroke="#8A5CF6" strokeWidth="2" strokeLinecap="round" opacity=".55" style={{ animation: 'wildenShadowPulse 1.6s ease-in-out infinite' }} />
+      <path d="M40 48 C70 38 120 40 160 46" fill="none" stroke="#9D6CFF" strokeWidth="3" strokeLinecap="round" opacity=".85" style={{ animation: 'wildenShadowPulse 1.6s ease-in-out infinite' }} />
     </svg>
   )
 }
