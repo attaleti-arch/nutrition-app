@@ -103,12 +103,18 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
       {!lost && (
         <span style={{ ...S.stormBox, opacity: won ? 0.3 : 0.5 + urgency * 0.45,
           transform: `translate(-50%,-50%) scale(${(won ? 0.7 : 1) * (0.8 + urgency * 0.8)})` }}>
-          {/* ── "שיסתובב כמו בורג" ──
+          {/* ── "שיסתובב כמו בורג", ו"למה לא המקורי שהסתחרר מהר" ──
               היה כאן rotateY על התמונה: סיבוב מזויף של ספרייט שטוח,
-              שנמעך לקו ב-90 מעלות. הקליפ החדש שלה מסתובב באמת — הפנים
-              נעלמות ברבע האחורי וחוזרות — ולכן הסיבוב של ה-CSS ירד. מה
-              שנשאר הוא מה שהזמן עושה לו: גדל ומתחזק ככל שהוא אוזל. */}
-          <img src="/world/wind/live.webp" alt="" draggable={false} style={S.storm} />
+              שנמעך לקו ב-90 מעלות. הקליפ מסתובב באמת — הפנים נעלמות
+              ברבע האחורי וחוזרות — ולכן הסיבוב המזויף ירד.
+              אבל איתו ירדה גם ההאצה, וזאת לא הייתה תפאורה: מהירות
+              הסיבוב עלתה ככל שהזמן אזל, וזה מה שאמר לילד "מהר יותר".
+              קצב של WebP מונפש לא ניתן לשליטה מ-CSS, ולכן ההאצה חוזרת
+              בערוץ שלא נלחם בסיבוב האמיתי: נדנוד סביב הציר הקדמי,
+              שמתקצר מ-1.6 שניות ל-0.5. הוא מתנדנד יותר ויותר בפראות,
+              והספרייט לא נמעך לרגע. */}
+          <img src="/world/wind/live.webp" alt="" draggable={false}
+            style={{ ...S.storm, animationDuration: `${(1.6 - urgency * 1.1).toFixed(2)}s` }} />
         </span>
       )}
       {lost && (
@@ -164,6 +170,7 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
 const CSS = `
 @keyframes wildenFleeRun { 0%,100% { transform: translateX(-50%) translateY(0) } 50% { transform: translateX(-50%) translateY(-10px) } }
 @keyframes wildenFleeIn { from { opacity: 0; transform: scale(.6) } to { opacity: 1; transform: scale(1) } }
+@keyframes wildenWhip { 0%,100% { transform: rotate(-5deg) } 50% { transform: rotate(5deg) } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important } }
 `
 
@@ -180,7 +187,8 @@ const S = {
   stormBox: { position: 'absolute', top: '27%', left: '50%', pointerEvents: 'none',
     transition: 'opacity .3s ease, transform .4s ease', display: 'block' },
   storm: { height: '34vh', width: 'auto', display: 'block',
-    filter: 'drop-shadow(0 0 34px rgba(110,168,230,.55))' },
+    filter: 'drop-shadow(0 0 34px rgba(110,168,230,.55))',
+    animation: 'wildenWhip 1.6s ease-in-out infinite', transformOrigin: '50% 90%' },
   // הזינוק: היא ממלאת את המסך. זה הרגע שבו היא לוקחת את בן הלוויה.
   lunge: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
     pointerEvents: 'none', animation: 'wildenFleeIn .35s ease-out both' },
