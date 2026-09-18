@@ -9,7 +9,7 @@ import { WindFlee } from './ar/WindFlee'
 import { WindSuck } from './ar/WindSuck'
 import { FreedClip } from './ar/FreedClip'
 import { save, load, dayKey } from './engine/persist'
-import { creatureById } from './content/creatures'
+import { creatureById, revealClip } from './content/creatures'
 import { briefFor, homeFor, todaysCreature } from './content/briefs'
 import { useProfile } from './hooks/useProfile'
 import { ProfileGate, ProfileBar } from './ui/ProfileGate'
@@ -402,7 +402,7 @@ export default function Wilden() {
         </Guard>
       )}
 
-      {g.state === S.ENCOUNTER && creature?.clip && !introSeen && (
+      {g.state === S.ENCOUNTER && revealClip(creature) && !introSeen && (
         <Guard where="reveal" fallback={null}>
           <CaughtClip creature={creature} variant="reveal" onDone={() => { sfxAppear(); buzz([40, 30, 80]); setIntroSeen(true) }} />
         </Guard>
@@ -411,7 +411,7 @@ export default function Wilden() {
       {/* הבמה: מצלמה, חיישנים, וידאו ותלת-ממד ביחד — הכי הרבה מה שיכול
           להישבר על טלפון אחד. אם היא נופלת, היצור נחשב נתפס והמסע ממשיך.
           לא לוקחים מילד תפיסה בגלל באג שלנו. */}
-      {g.state === S.ENCOUNTER && (introSeen || !creature?.clip) && (
+      {g.state === S.ENCOUNTER && (introSeen || !revealClip(creature)) && (
         <Guard where="ar" fallback={
           <div style={s.arFail}>
             <p style={s.arFailLine}>{tr('משהו נתקע. הוא בכל זאת שלכם.')}</p>
