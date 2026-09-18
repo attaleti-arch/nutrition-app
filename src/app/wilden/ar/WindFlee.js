@@ -117,7 +117,7 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
 
       {!go && <p style={S.burst}>{tr('🌀 {wind}!', { wind: tr(WIND_NAME) })}</p>}
 
-      {go && !won && (
+      {go && !won && !lost && (
         <>
           <p style={S.line}>{tr('רוצו! {wind} מנסה לחטוף את {name}', { wind: tr(WIND_NAME), name: buddyName || tr('בן הלוויה') })}</p>
           <p style={S.sub}>{tr('עוד {n} צעדים', { n: Math.max(0, goal.steps - count) })}</p>
@@ -125,21 +125,29 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
         </>
       )}
       {won && <p style={S.line}>{tr('ברחתם! {wind} נשאר מאחור.', { wind: tr(WIND_NAME) })}</p>}
-      {lost && <p style={{ ...S.line, color: '#F0A08C' }}>{tr('{wind} תפס אתכם!', { wind: tr(WIND_NAME) })}</p>}
+      {/* ── רגע התפיסה ──
+          כשהוא זונק, הוא ממלא את כל המסך. כל מה שהיה על המסך — "רוצו",
+          מונה הצעדים, הפסים ובן הלוויה — נשאר מצויר מעליו, כתוב כחול
+          ואפור על ענן לבן ובוהק, ואי אפשר לקרוא אף מילה. בשנייה וחצי
+          האלה יש רק דבר אחד לומר. */}
+      {lost && <p style={S.caught}>{tr('{wind} תפס אתכם!', { wind: tr(WIND_NAME) })}</p>}
 
-      <div style={S.barWrap}>
-        <div style={{ ...S.bar, width: `${Math.round(pct * 100)}%`, background: won ? '#8FB57C' : '#6EA8E6' }} />
-      </div>
-      <div style={S.clock}>
-        <div style={{ ...S.clockFill, width: `${Math.round((left / goal.ms) * 100)}%` }} />
-      </div>
-
-      {/* בן הלוויה רץ איתך — הוא זה שעל הכף */}
-      {buddyImg && (
-        <img src={buddyImg} alt="" draggable={false}
-          style={{ ...S.buddy, animation: go && !won ? 'wildenFleeRun .5s ease-in-out infinite' : 'none' }} />
+      {!lost && (
+        <>
+          <div style={S.barWrap}>
+            <div style={{ ...S.bar, width: `${Math.round(pct * 100)}%`, background: won ? '#8FB57C' : '#6EA8E6' }} />
+          </div>
+          <div style={S.clock}>
+            <div style={{ ...S.clockFill, width: `${Math.round((left / goal.ms) * 100)}%` }} />
+          </div>
+          {/* בן הלוויה רץ איתך — הוא זה שעל הכף */}
+          {buddyImg && (
+            <img src={buddyImg} alt="" draggable={false}
+              style={{ ...S.buddy, animation: go && !won ? 'wildenFleeRun .5s ease-in-out infinite' : 'none' }} />
+          )}
+          {go && !counting() && <p style={S.hint}>{tr('אין מד צעדים — נגעו במסך בכל צעד.')}</p>}
+        </>
       )}
-      {go && !counting() && <p style={S.hint}>{tr('אין מד צעדים — נגעו במסך בכל צעד.')}</p>}
 
       {/* ── השואב, כאן ולא על המפה ── */}
       {/* "ואז ישר כפתור (אם יש שואב אבק) לשאוב את גוסטבו." הוא יושב בתוך
@@ -178,6 +186,10 @@ const S = {
     pointerEvents: 'none', animation: 'wildenFleeIn .35s ease-out both' },
   burst: { position: 'relative', fontSize: 46, fontWeight: 900, color: '#8ED0F0', margin: 0, animation: 'wildenFleeIn .5s ease-out both' },
   line: { position: 'relative', fontSize: 25, fontWeight: 900, margin: 0, textShadow: '0 2px 14px rgba(0,0,0,.8)' },
+  // על ענן לבן במסך מלא, צל טקסט רגיל לא מספיק: קו מתאר כהה מסביב.
+  caught: { position: 'absolute', bottom: '13%', insetInline: 0, margin: 0, padding: '0 22px', textAlign: 'center',
+    fontSize: 30, fontWeight: 900, color: '#FFE8D8', zIndex: 5,
+    textShadow: '0 0 6px #1A0E08, 0 0 18px #1A0E08, 0 3px 20px rgba(0,0,0,.95)' },
   sub: { position: 'relative', fontSize: 19, fontWeight: 800, color: '#8ED0F0', margin: 0 },
   barWrap: { position: 'relative', width: '100%', maxWidth: 320, height: 16, borderRadius: 999, background: 'rgba(233,229,216,.15)', overflow: 'hidden', marginTop: 6 },
   bar: { height: '100%', borderRadius: 999, transition: 'width .2s' },
