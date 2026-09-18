@@ -44,7 +44,7 @@ export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approa
       {!flying && !shadow && <div style={F.shadow} />}
       {done && <div style={F.glow} />}
       {/* צל: רק הצל שלו על הרצפה. שטוח, כהה, מחליק — בלי הדמות. */}
-      {shadow ? <ShadowBlob faceLeft={faceLeft} />
+      {shadow ? <ShadowBlob faceLeft={faceLeft} src={creature?.shadowLive} />
         : !hideSprite && (
         <Sprite sprites={creature?.sprites} live={creature?.live} peeking={peeking} faceLeft={faceLeft} done={done} scale={scale} wear={wear} creatureId={creature?.id}
           aura={creature?.aura ? creature.stage : 0} anchors={creature?.anchors || null}
@@ -56,8 +56,19 @@ export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approa
 
 // ── הצל של צל ──
 // כתם כהה שטוח בצורת שועל, על הרצפה, עם קצה סגול שזוהר. זה מה שרואים
-// כשצל "כאן" אבל עוד לא קם. SVG סטטי, כדי שלא לעבד תמונה מונפשת.
-export function ShadowBlob({ faceLeft }) {
+// כשצל "כאן" אבל עוד לא קם.
+//
+// יש לו קליפ משלו (shadowLive): הוא שוכב שטוח, האוזניים מרטטות והראש
+// זז, והעשן הסגול עולה ממנו. זה מה שנמצא בתוך אלומת הפנס, ולכן הוא
+// חייב להיות חי — כתם שלא זז נראה כמו מדבקה על הרחוב. ה-SVG נשאר
+// כגיבוי, למי שהקליפ עוד לא ירד אצלו.
+export function ShadowBlob({ faceLeft, src = null }) {
+  if (src) {
+    return (
+      <img src={src} alt="" draggable={false} aria-hidden="true"
+        style={{ ...F.blobLive, transform: `translateX(-50%) ${faceLeft ? 'scaleX(-1)' : ''}` }} />
+    )
+  }
   return (
     <svg viewBox="0 0 200 70" aria-hidden="true" style={{ ...F.blob, transform: `translateX(-50%) ${faceLeft ? 'scaleX(-1)' : ''}` }}>
       <defs>
@@ -338,6 +349,10 @@ const F = {
     borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(0,0,0,.42), rgba(0,0,0,0) 70%)' },
   // הפס שנשאר אחרי ריצה: כיוון, לא ניחוש.
   blob: { position: 'absolute', bottom: '4%', left: '50%', width: '92%', height: 'auto', filter: 'blur(1.5px)' },
+  // הקליפ החי: אותו מקום, בלי הטשטוש (הוא כבר רך בעצמו) ועם זוהר סגול
+  // שמחליף את הקו שב-SVG.
+  blobLive: { position: 'absolute', bottom: '2%', left: '50%', width: '104%', height: 'auto',
+    pointerEvents: 'none', filter: 'drop-shadow(0 0 14px rgba(138,92,246,.45))' },
   dustWrap: { position: 'relative', width: '52vw', height: '24vh', pointerEvents: 'none' },
   dust: { position: 'absolute', bottom: 0, borderRadius: '50%', background: 'radial-gradient(circle at 40% 40%, rgba(214,200,170,.95), rgba(170,150,120,.55) 60%, rgba(150,130,100,0) 100%)',
     animation: 'wildenDust 1.3s ease-out forwards', transform: 'translateX(-50%)' },

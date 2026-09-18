@@ -103,11 +103,12 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
       {!lost && (
         <span style={{ ...S.stormBox, opacity: won ? 0.3 : 0.5 + urgency * 0.45,
           transform: `translate(-50%,-50%) scale(${(won ? 0.7 : 1) * (0.8 + urgency * 0.8)})` }}>
-          {/* ── "שיסתובב כמו בורג" ── סיבוב סביב הציר שלו עצמו (rotateY),
-              ולא סיבוב של התמונה: ככה הוא קודח באוויר והפנים שלו נשארות
-              למעלה. וככל שהזמן אוזל הוא מסתובב מהר יותר. */}
-          <img src="/world/wind/live.webp" alt="" draggable={false}
-            style={{ ...S.storm, animationDuration: `${(3.4 - urgency * 2).toFixed(2)}s` }} />
+          {/* ── "שיסתובב כמו בורג" ──
+              היה כאן rotateY על התמונה: סיבוב מזויף של ספרייט שטוח,
+              שנמעך לקו ב-90 מעלות. הקליפ החדש שלה מסתובב באמת — הפנים
+              נעלמות ברבע האחורי וחוזרות — ולכן הסיבוב של ה-CSS ירד. מה
+              שנשאר הוא מה שהזמן עושה לו: גדל ומתחזק ככל שהוא אוזל. */}
+          <img src="/world/wind/live.webp" alt="" draggable={false} style={S.storm} />
         </span>
       )}
       {lost && (
@@ -155,7 +156,6 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
 const CSS = `
 @keyframes wildenFleeRun { 0%,100% { transform: translateX(-50%) translateY(0) } 50% { transform: translateX(-50%) translateY(-10px) } }
 @keyframes wildenFleeIn { from { opacity: 0; transform: scale(.6) } to { opacity: 1; transform: scale(1) } }
-@keyframes wildenDrill { from { transform: rotateY(0deg) } to { transform: rotateY(360deg) } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important } }
 `
 
@@ -169,11 +169,10 @@ const S = {
   suck: { position: 'absolute', bottom: 'max(26px, env(safe-area-inset-bottom))', insetInline: 22, padding: '15px 18px',
     borderRadius: 14, border: 'none', background: '#6EA8E6', color: '#0C1218', fontFamily: 'inherit',
     fontSize: 18, fontWeight: 900, cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,.45)', zIndex: 4 },
-  stormBox: { position: 'absolute', top: '27%', left: '50%', perspective: '1000px', pointerEvents: 'none',
+  stormBox: { position: 'absolute', top: '27%', left: '50%', pointerEvents: 'none',
     transition: 'opacity .3s ease, transform .4s ease', display: 'block' },
   storm: { height: '34vh', width: 'auto', display: 'block',
-    filter: 'drop-shadow(0 0 34px rgba(110,168,230,.55))',
-    animation: 'wildenDrill 3s linear infinite', transformStyle: 'preserve-3d' },
+    filter: 'drop-shadow(0 0 34px rgba(110,168,230,.55))' },
   // הזינוק: היא ממלאת את המסך. זה הרגע שבו היא לוקחת את בן הלוויה.
   lunge: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
     pointerEvents: 'none', animation: 'wildenFleeIn .35s ease-out both' },

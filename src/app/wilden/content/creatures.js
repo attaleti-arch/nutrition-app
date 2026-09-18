@@ -210,6 +210,9 @@ export const CREATURES = {
     clip: '/creatures/tzel/caught.mp4',
     live: '/creatures/tzel/live.webp',
     poster: '/creatures/tzel/poster.webp',
+    // הצל שלו על הרצפה, חי: הוא שוכב שטוח, האוזניים מרטטות והעשן עולה.
+    // זה מה שרואים בתוך אלומת הפנס עד שהוא קם (ar/controllers/beam.js).
+    shadowLive: '/creatures/tzel/shadow.webp',
     sprites: null,
     heightM: 0.50,
     arMode: AR_MODE.GROUND,
