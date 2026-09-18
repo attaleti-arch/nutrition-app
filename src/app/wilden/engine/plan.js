@@ -70,18 +70,27 @@ export function placePois(path, kinds, { creatures = ['nimi'], buffer = STOP_BUF
   const fe = freshEndM ?? freshEnd(path)
   const end = Math.min(total - buffer, Math.max(fe, buffer + 200))
   const usable = Math.max(0, end - buffer)
-  // צפוף מדי? מוותרים על תחנות לפני שמוותרים על יצור — אבל יצור אחד לפחות תמיד.
+  // ── ריצת המטבעות יוצאת מהתחרות ──
+  // "ריצה מטבעות/קפיצה תמיד בכל סיבוב, ל-20 שניות מלאות."
+  // תחנה היא מקום שעוצרים בו; ריצת מטבעות היא עשרים שניות שעוברים דרכן
+  // בדרך לתחנה הראשונה. כשהיא נספרה כתחנה היא גם נדחפה החוצה ראשונה
+  // במסלול צפוף — וזה בדיוק מה שקרה לה בשטח: מסלול שלם בלי ריצה אחת.
+  // עכשיו היא נשלפת לפני חלוקת המקום, מונחת בדרך אל הנקודה הראשונה,
+  // ואינה מזיזה אף תחנה ממקומה.
   let list = [...kinds]
+  const ri = list.indexOf(POI.RUN)
+  const soloRun = ri >= 0
+  if (soloRun) list.splice(ri, 1)
+  // צפוף מדי? מוותרים על תחנות לפני שמוותרים על יצור — אבל יצור אחד לפחות תמיד.
   while (list.length > 1 && (usable * 0.85) / list.length < MIN_GAP_M) {
-    // צפוף: קודם מוותרים על הפרחים, אחר כך על הזהב, אחר כך על ריצת
-    // המטבעות. (התוכניות הקצרות בנויות כך שהריצה לעולם לא נדחסת החוצה:
-    // שתי נקודות אף פעם לא צפופות.)
+    // צפוף: קודם מוותרים על הפרחים, אחר כך על הזהב, אחר כך על ריצה נוספת.
     const drop = list.lastIndexOf(POI.FLOWERS) >= 0 ? list.lastIndexOf(POI.FLOWERS)
       : list.lastIndexOf(POI.GOLD) >= 0 ? list.lastIndexOf(POI.GOLD)
       : list.lastIndexOf(POI.RUN) >= 0 ? list.lastIndexOf(POI.RUN) : list.indexOf(POI.CREATURE)
     list.splice(drop, 1)
   }
   if (!list.includes(POI.CREATURE)) list.push(POI.CREATURE)
+  if (soloRun) list.unshift(POI.RUN)          // חוזרת למקומה, ראשונה בדרך
   const n = list.length
   const who = Array.isArray(creatures) && creatures.length ? creatures : ['nimi']
   let ci = 0

@@ -137,7 +137,10 @@ test('תחנות: כמה יצורים לאורך המסלול, קבועים מה
   for (const s of g.run.stops) {
     assert.ok(progressAlong(PATH, s).offPath < 5, 'על המסלול המאומת, לא מאחורי גדר')
     assert.ok(s.along >= 150 && s.along <= total - 150, 'מרווח מהבית בהתחלה ובסוף')
-    assert.ok(s.along - prev >= 200, 'לפחות 200 מ׳ בין תחנות')
+    // 180 ולא 200: ריצת המטבעות כבר לא נדחפת החוצה ממסלול צפוף (היא
+    // תמיד שם), ולכן על 1.2 ק"מ עם שלושה יצורים התחנות יושבות קצת יותר
+    // קרוב זו לזו. תחנות ב-190 מ׳ זה בסדר; מסע בלי ריצה זה לא.
+    assert.ok(s.along - prev >= 180, 'לפחות 180 מ׳ בין תחנות')
     prev = s.along
   }
 })
@@ -2965,6 +2968,18 @@ test('תוכנית: בלי בחירה — הלוח; עם בחירה — הק"מ 
     const p = poisFor(km, 0)
     assert.ok(p.lastIndexOf('creature') < p.length - 1, `${km} ק"מ: היצור לא אחרון`)
   }
+  // ── ועל הקרקע, לא רק בתוכנית ──
+  // "ריצה מטבעות/קפיצה תמיד בכל סיבוב, ל-20 שניות מלאות." התוכנית תמיד
+  // כללה ריצה, אבל הפיזור על מסלול צפוף היה מוותר עליה ראשונה. עכשיו
+  // היא לא נספרת בצפיפות בכלל — ולכן שורדת כל אורך מסלול.
+  for (const m of [400, 700, 1200, 2000, 2400]) {
+    const p = PATH.slice(0, Math.round(m / 20) + 1)
+    for (const km of [1, 1.5, 2, 3]) for (const w of [0, 1]) {
+      const plan = placePois(p, poisFor(km, w), { creatures: ['nimi', 'gali'] })
+      assert.ok(plan.coinRun, `${m} מ' / ${km} ק"מ / מסע ${w}: ריצת מטבעות`)
+      assert.ok(plan.stops.length >= 1, `${m} מ': ויצור אחד לפחות`)
+    }
+  }
 })
 
 test('תוכנית: יצור נוסף שנקנה נכנס אחרי היצור האחרון, לא בסוף המסלול', () => {
@@ -2985,15 +3000,20 @@ test('תוכנית: הנקודות מפוזרות שווה, היצור בערך 
   assert.ok(a.coinRun.along >= 300, 'הריצה לא ליד הבית')
   // ארבע נקודות — על מסלול של 2.4 ק"מ (על 1.2 ק"מ זה צפוף, ואז מוותרים על הזהב)
   const LONG = Array.from({ length: 121 }, (_, i) => destination(HOME, 0, i * 20))
-  assert.equal(placePois(PATH, ['run', 'creature', 'creature', 'gold'], { creatures: ['nimi', 'gali'] }).goldAlong, null, 'צפוף — בלי זהב')
+  // ריצת המטבעות אינה נספרת בצפיפות (היא לא תחנה — עוברים דרכה), ולכן
+  // צריך יצור שלישי כדי שהמסלול הקצר באמת ייחשב צפוף ויוותר על הזהב.
+  assert.equal(placePois(PATH, ['run', 'creature', 'creature', 'creature', 'gold'],
+    { creatures: ['nimi', 'gali', 'nimi'] }).goldAlong, null, 'צפוף — בלי זהב')
   const b = placePois(LONG, ['run', 'creature', 'gold', 'creature'], { creatures: ['nimi', 'gali'] })
   assert.deepEqual(b.stops.map(s => s.creature), ['nimi', 'gali'])
   assert.ok(b.stops[0].along > b.coinRun.along && b.goldAlong > b.stops[0].along && b.stops[1].along > b.goldAlong)
   assert.ok(b.stops[1].along - b.stops[0].along >= 300, 'רווח בין היצורים')
-  // מסלול קצר מאוד: נשאר רק יצור
+  // מסלול קצר מאוד: נשארים יצור — וריצה. "ריצת מטבעות תמיד בכל סיבוב":
+  // גם על 400 מ' הזהב יורד, אבל עשרים השניות של הריצה נשארות.
   const short = PATH.slice(0, 21)   // 400 מ'
   const c = placePois(short, ['run', 'creature', 'gold'])
-  assert.equal(c.stops.length, 1); assert.equal(c.coinRun, null); assert.equal(c.goldAlong, null)
+  assert.equal(c.stops.length, 1); assert.equal(c.goldAlong, null)
+  assert.ok(c.coinRun && c.coinRun.along < c.stops[0].along, 'הריצה שם, ולפני היצור')
   // הזהב במקום שהתוכנית קבעה; בלי זהב בתוכנית — בלי זהב
   const coins = placeCoins2(PATH, { stops: a.stops, goldAlong: a.goldAlong })
   const gold = coins.find(x => x.gold); assert.ok(gold && Math.abs(gold.along - a.goldAlong) <= 45, 'הזהב על המטבע הקרוב')
