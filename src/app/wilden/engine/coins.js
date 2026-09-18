@@ -200,6 +200,21 @@ export function spatBy(progress, sucks = progress?.sucks || 0) {
 // (כך שכמעט תמיד אחד על הרצפה ואחד באוויר). המטבעות פותחים שלישי.
 export const BASE_FROM_WALK = 1
 // count: כמה יצורים לפי תוכנית המסע (engine/plan.js); בלי — לפי הלוח.
+// ── ומי שבחרו ──
+// "שהם יבחרו את הדמות לתפיסה — נניח צל יהיה סגור עד שיש פנס, רוחי סגורה
+// עד שקונים משקפת. זה גורם לבזבז כסף בחנות."
+//
+// עד עכשיו הלוח בחר, והמפתחות רק *החליפו* יצור נעול במישהו אחר — כלומר
+// הילד לא ידע מה הוא מפספס, ולא הייתה סיבה לקנות. עכשיו הבחירה שלו:
+// הוא רואה את כולם, הנעולים עם מנעול ומחיר, ומי שבוחר נעול נשלח לחנות.
+// הבחירה נכנסת ראשונה ברשימה, והשאר ממשיך כמו שהיה.
+export function withPick(list, pick, available = AVAILABLE) {
+  if (!pick || !available.includes(pick)) return list
+  if (!list?.length) return [pick]
+  if (list[0] === pick) return list
+  return [pick, ...list.filter(c => c !== pick)].slice(0, list.length)
+}
+
 export function creaturesForWalk(walks, extra, available = AVAILABLE, count = null) {
   const n = available.length
   const first = available[walks % n]

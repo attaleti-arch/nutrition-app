@@ -16,7 +16,7 @@ import { evolvedBetween } from './stages.js'
 import { routeKm, poisFor, creatureCount, placePois, setRouteKm, withCreatures, POI } from './plan.js'
 import { modsFor, consume, buyGear, withKeys, withExtra, unlocked } from './gear.js'
 import { buySkin, buyStone } from './skins.js'
-import { withExtraGold, AVAILABLE, availableFor, spatBy, SUCK_COINS, heatDistance } from './coins.js'
+import { withExtraGold, AVAILABLE, availableFor, spatBy, SUCK_COINS, heatDistance, withPick } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest, produce, creaturesWanted } from './world.js'
@@ -187,7 +187,9 @@ export function reduce(g, ev) {
       const held = takenId(g.progress)
       const avail = availableFor(g.progress, ev.available || AVAILABLE).filter(c => c !== held)
       const planned = creaturesForWalk(walks, extra, avail, creatureCount(pois))
-      const keyed = withKeys(planned, g.progress, avail)
+      // מי שהילד בחר בבית נכנס ראשון — אם הוא פתוח ואינו מוחזק בידי גוסטבו.
+      const picked = g.progress.pick && unlocked(g.progress, g.progress.pick) ? g.progress.pick : null
+      const keyed = withKeys(withPick(planned, picked, avail), g.progress, avail)
       // ── מי שהשומר מחכה לו יוצא איתך ──
       // הראשון נשאר לפי הסבב (הלוח לא קופץ), והאחרון מוחלף במי שמביא את
       // מה שחסר לבקשה. בלי זה הבקשה נתקעת מסעות שלמים כי היצור הנכון
@@ -712,6 +714,15 @@ export function reduce(g, ev) {
       if (g.state !== S.BROKEN_WORLD) return g
       const progress = setRouteKm(g.progress, ev.km)
       return progress === g.progress ? g : { ...g, progress }
+    }
+    // ── את מי תופסים היום ── הילד בוחר בבית. נעול (בלי מפתח) לא נבחר —
+    // הלחיצה עליו שולחת לחנות, וזו בדיוק הסיבה לקנות שם.
+    case 'SET_PICK': {
+      if (g.state !== S.BROKEN_WORLD) return g
+      const id = ev.id ?? null
+      if (id && !unlocked(g.progress, id)) return g
+      if ((g.progress.pick || null) === id) return g
+      return { ...g, progress: { ...g.progress, pick: id } }
     }
     // ── בן לוויה ── מי יוצא איתך. בבית בלבד; רק מי שנתפס.
     case 'SET_BUDDY': {

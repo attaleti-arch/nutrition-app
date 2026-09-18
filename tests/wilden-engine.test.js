@@ -2951,7 +2951,12 @@ test('תוכנית: בלי בחירה — הלוח; עם בחירה — הק"מ 
   const p = setRouteKm({}, 7); assert.equal(p.routeKm, undefined, 'רק מהרשימה')
   assert.equal(setRouteKm({}, 3).routeKm, 3)
   assert.equal(plannedMin(1), 18); assert.equal(plannedMin(3), 55)
-  assert.deepEqual(poisFor(1, 0), ['creature', 'run']); assert.deepEqual(poisFor(1.5, 1), ['creature', 'gold'], 'לסירוגין')
+  // ריצת המטבעות בכל מסע: "לי לא הייתה ריצת מטבעות, המצלמה נפתחה עם
+  // מטבע אחד ונסגרה." הזהב הוא תוספת לסירוגין, לא תחליף.
+  assert.deepEqual(poisFor(1, 0), ['creature', 'run']); assert.deepEqual(poisFor(1.5, 1), ['run', 'creature', 'gold'], 'הזהב מתווסף, לא מחליף')
+  for (const km of [1, 1.5, 2, 3, 4]) for (const w of [0, 1, 2, 3]) {
+    assert.ok(poisFor(km, w).includes('run'), `${km} ק"מ, מסע ${w}: תמיד ריצת מטבעות`)
+  }
   assert.deepEqual(poisFor(2, 0), ['run', 'creature', 'flowers', 'gold'])
   assert.deepEqual(poisFor(3, 0), ['run', 'creature', 'flowers', 'creature', 'gold']); assert.equal(creatureCount(poisFor(4, 0)), 2)
   assert.deepEqual(poisFor(2.2, 0), ['run', 'creature', 'flowers', 'gold'], 'הלוח הישן: מסע 1 — יצור אחד'); assert.equal(creatureCount(poisFor(3.2, 1)), 2)
@@ -3258,4 +3263,29 @@ test('פרחים: ריצה של 20 שניות כמו המטבעות — בתוכ
   assert.equal(g.run.coinsTaken, 10)
   assert.equal(g.run.lastCoin.flowers, true)
   assert.equal(reduce(g, { type: 'FLOWER_RUN_DONE', got: 2 }), g, 'פעם אחת')
+})
+
+// ── "שהם יבחרו את הדמות לתפיסה" ──
+// "נניח צל יהיה סגור עד שיש פנס, רוחי סגורה עד שקונים משקפת. זה גורם
+// לבזבז כסף בחנות." עד עכשיו הלוח בחר, והמפתח רק החליף נעול במישהו אחר.
+import { withPick } from '../src/app/wilden/engine/coins.js'
+
+test('בחירה: מי שנבחר יוצא ראשון, ונעול לא נבחר בכלל', () => {
+  assert.deepEqual(withPick(['nimi', 'gali'], 'bolder'), ['bolder', 'nimi'], 'הנבחר ראשון, האורך נשמר')
+  assert.deepEqual(withPick(['nimi', 'gali'], 'gali'), ['gali', 'nimi'], 'גם מי שכבר בתוכנית עולה לראש')
+  assert.deepEqual(withPick(['nimi'], null), ['nimi'], 'בלי בחירה — הלוח')
+  assert.deepEqual(withPick(['nimi'], 'zzz'), ['nimi'], 'מי שלא קיים — מתעלמים')
+
+  // במכונה: בחירה נשמרת בבית בלבד, ונעולה נדחית
+  const g0 = initial()
+  const picked = reduce(g0, { type: 'SET_PICK', id: 'nimi' })
+  assert.equal(picked.progress.pick, 'nimi')
+  const locked = reduce(picked, { type: 'SET_PICK', id: 'tzel' })
+  assert.equal(locked.progress.pick, 'nimi', 'צל נעול בלי פנס — הבחירה לא משתנה')
+  const withKey = reduce({ ...picked, progress: { ...picked.progress, gear: ['lantern'] } }, { type: 'SET_PICK', id: 'tzel' })
+  assert.equal(withKey.progress.pick, 'tzel', 'עם פנס — נפתח')
+  // ומי שנבחר באמת יוצא לדרך
+  const ready = { ...withKey, progress: { ...withKey.progress, walks: 3, creatures: ['nimi'], pick: 'tzel', gear: ['lantern'] } }
+  const started = reduce(ready, { type: 'START_RUN', kind: RUN.FREE, t: 1, day: 'd1' })
+  assert.equal(started.run.wantCreatures[0], 'tzel', 'הבחירה ראשונה בדרך')
 })

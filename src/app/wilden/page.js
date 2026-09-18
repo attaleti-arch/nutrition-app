@@ -41,7 +41,7 @@ import { Guide } from './ui/Guide'
 import { weeklyStatus, WEEKLY_COINS, km } from './engine/weekly'
 import { bondOf, buddyLine, BOND_M } from './engine/buddy'
 import { ROUTE_KM, routeKm, poisFor, creatureCount, plannedMsKm, plannedMin } from './engine/plan'
-import { armed, gearById, withKeys, lockLine, ownsGear } from './engine/gear'
+import { armed, gearById, withKeys, lockLine, ownsGear, unlocked } from './engine/gear'
 import { BUILDINGS, RES_ICON as RES_ICONS } from './engine/world'
 import { boosting, streakFill, boostLeftMs, BOOST_REVEAL } from './engine/streak'
 import { usePulse } from './hooks/usePulse'
@@ -240,26 +240,28 @@ export default function Wilden() {
   }, [nearFlowers, flowersSkipped, flowersOpen])
 
   // ── רוח על המסלול ──
-  // "רוחות שהרסו את העולם. אפשר לשאוב אותן אם קונים שואב, ואם לא — היא
-  // מנסה לחטוף את הדמות." עם שואב מופיע כפתור; בלי שואב היא פועלת מיד,
-  // ואין מה ללחוץ — הילד רואה מה קרה ומה זה עלה לו.
+  // "הוא אמור להופיע במפה, מצלמה נפתחת, מתחילים לרוץ ואז ישר כפתור (אם
+  // יש שואב אבק) לשאוב את גוסטבו."
+  //
+  // קודם היו כאן שני מסלולים: מי שקנה שואב ראה כפתור על מסך ההליכה ולא
+  // פגש את גוסטבו בכלל, ומי שלא — קיבל בריחה בלי מצלמה. עכשיו מפגש אחד
+  // לשניהם, והשואב הוא כפתור בתוכו.
   const nearWind = g.state === S.SEARCH ? windNearby(g.run, g.run?.pos) : null
   const hasVacuum = !!g.run?.mods?.vacuum
-  // בלי שואב הרוח קופצת בהפתעה, ואז רצים. עם שואב — היא על המפה, ולוחצים.
   const [fleeFrom, setFleeFrom] = useState(null)
   const windRef = useRef(null)
   // ומי שכבר ריכך חמישה יוצא עם אחד מהם: הטוב עומד מול הפרא הראשון
   // במקומכם. פעם אחת בכל מסע — השני כבר עליכם.
   const tamedGuard = g.state === S.SEARCH && tamedReady(g.progress, g.run)
   useEffect(() => {
-    if (!nearWind || hasVacuum || fleeFrom) return
+    if (!nearWind || fleeFrom) return
     if (windRef.current === nearWind.id) return
     windRef.current = nearWind.id
     unlockAudio()
     if (tamedGuard) { dispatch({ type: 'WIND_SCARED', id: nearWind.id, t: Date.now() }); return }
     setFleeFrom(nearWind.id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [nearWind?.id, hasVacuum, fleeFrom, tamedGuard])
+  }, [nearWind?.id, fleeFrom, tamedGuard])
   // מה שקרה עם הרוח: צליל ורטט. המשפט עצמו במסך ההליכה.
   const [suckShow, setSuckShow] = useState(null)
   const [freedShow, setFreedShow] = useState(null)   // מי שהרוח פלטה, פעם אחת בחיי המשחק
@@ -380,13 +382,19 @@ export default function Wilden() {
         </Guard>
       )}
 
-      {/* ── הרוח קפצה עליכם ── בלי שואב אין מה ללחוץ: רצים. */}
+      {/* ── פגשתם את גוסטבו ── מצלמה, הרחוב, ורצים. עם שואב — גם כפתור. */}
       {fleeFrom && (
         <Guard where="windFlee" fallback={null}>
           <WindFlee
             round={windRound(g.run)}
+            canVacuum={hasVacuum}
             buddyImg={creatureById(g.progress.buddy)?.live || null}
             buddyName={tr(creatureById(g.progress.buddy)?.name || '')}
+            onSuck={() => {
+              unlockAudio()
+              dispatch({ type: 'WIND_SUCK', id: fleeFrom, t: Date.now() })
+              setFleeFrom(null)
+            }}
             onDone={ok => {
               dispatch({ type: ok ? 'WIND_FLED' : 'WIND_TOOK_BUDDY', id: fleeFrom, t: Date.now() })
               setFleeFrom(null)
@@ -440,6 +448,7 @@ export default function Wilden() {
             onBuy={(id, who, slot) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_ITEM', id, who, slot }) }}
             onEquip={(who, slot, id) => { sfxAppear(); dispatch({ type: 'EQUIP', who, slot, id }) }}
             onBuddy={id => { sfxAppear(); dispatch({ type: 'SET_BUDDY', id }) }}
+            onPick={id => { sfxAppear(); dispatch({ type: 'SET_PICK', id }) }}
             onKm={km => dispatch({ type: 'SET_ROUTE_KM', km })}
             onLook={(id, look) => { sfxAppear(); dispatch({ type: 'SET_LOOK', id, look }) }}
             onGear={(id, pay) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_GEAR', id, pay }) }}
@@ -489,8 +498,6 @@ export default function Wilden() {
 
         {g.state === S.SEARCH && (
           <SearchScreen g={g} view={view} geo={geo} degraded={route.degraded} reason={route.reason} note={route.note} creature={creature} burst={burst}
-            wind={nearWind} canVacuum={hasVacuum}
-            onSuck={() => { unlockAudio(); dispatch({ type: 'WIND_SUCK', id: nearWind?.id, t: Date.now() }) }}
             onSearch={() => dispatch({ type: 'SEARCH_PRESSED' })}
             onPortal={() => { sfxAppear(); dispatch({ type: 'PORTAL_OPEN' }) }}
             onAbort={() => dispatch({ type: 'ABORT' })} />
@@ -725,7 +732,7 @@ function poisText(pois) {
   return parts.join(' · ')
 }
 
-function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onKm, onLook, P, onIntro, music, firstWord, onLang }) {
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onPick, onKm, onLook, P, onIntro, music, firstWord, onLang }) {
   const [panel, setPanel] = useState(null)   // book | badges | shop
   const week = weeklyStatus(g.progress, today)
   const buddy = creatureById(g.progress.buddy)
@@ -775,8 +782,8 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
           הוא צריך לברוח." אז אומרים את זה לפני שיוצאים, ולא בשטח. */}
       <p style={s.windNote}>
         {ownsGear(g.progress, 'vacuum')
-          ? tr('🌀 שואב הרוח איתכם. {wind} יסומן על המפה — אפשר לשאוב אותו.', { wind: tr(WIND_NAME) })
-          : tr('🌀 {wind} בדרך. בלי שואב הוא קופץ בהפתעה, וצריך לברוח — ומי שלא מספיק, הוא חוטף לו את בן הלוויה.', { wind: tr(WIND_NAME) })}
+          ? tr('🌀 {wind} מסומן על המפה. כשמגיעים אליו נפתחת המצלמה — ואפשר לשאוב אותו בלחיצה.', { wind: tr(WIND_NAME) })
+          : tr('🌀 {wind} מסומן על המפה. כשמגיעים אליו נפתחת המצלמה וצריך לברוח ברגליים — ומי שלא מספיק, הוא חוטף לו את בן הלוויה.', { wind: tr(WIND_NAME) })}
         {!ownsGear(g.progress, 'vacuum') && (
           <button onClick={() => setPanel('shop')} style={s.windBuy}>{tr('לחנות')}</button>
         )}
@@ -842,6 +849,40 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
         <span>{tr('{names} בדרך', { names: keyed.creatures.map(id => tr(creatureById(id)?.name)).filter(Boolean).join(tr(' ו')) || tr(who?.name) || tr('יצורים') })}</span>
       </div>
       {keyed.locked.map(id => <p key={id} style={s.locked}>🔒 {tr(lockLine(id))}. {tr('בינתיים {name} במקומו.', { name: tr(creatureById(keyed.creatures[keyed.creatures.length - 1])?.name) })}</p>)}
+
+      {/* ── את מי תופסים היום ── */}
+      {/* "שהם יבחרו את הדמות לתפיסה, נניח צל סגור עד שיש פנס ורוחי סגורה
+          עד שקונים משקפת. זה גורם לבזבז כסף בחנות." עד עכשיו הלוח בחר,
+          והמפתח רק החליף יצור נעול במישהו אחר — כלומר הילד לא ידע מה הוא
+          מפספס. עכשיו הוא רואה את כולם, הנעולים עם מנעול ומחיר, ולחיצה
+          על נעול שולחת לחנות. */}
+      <div style={s.pickRow} aria-label={tr('את מי תופסים היום')}>
+        <p style={s.pickTitle}>{tr('את מי תופסים היום?')}</p>
+        <div style={s.pickGrid}>
+          {AVAILABLE.filter(id => id !== takenId(g.progress)).map(id => {
+            const c = creatureById(id); if (!c) return null
+            const open = unlocked(g.progress, id)
+            const on = open && g.progress.pick === id
+            const known = (g.progress.creatures || []).includes(id)
+            return (
+              <button key={id} onClick={() => (open ? onPick(on ? null : id) : setPanel('shop'))}
+                aria-label={open ? tr(c.name) : `${tr(c.name)} — ${tr(lockLine(id))}`}
+                style={{ ...s.pickChip, borderColor: on ? C.amber : C.line,
+                  background: on ? 'rgba(229,163,66,.18)' : C.card, opacity: open ? 1 : 0.62 }}>
+                <img src={c.live || c.sprites?.hero} alt="" draggable={false}
+                  style={{ ...s.pickImg, filter: open ? (known ? 'none' : 'brightness(.9)') : 'grayscale(1) brightness(.75)' }} />
+                {!open && <span style={s.pickLock}>🔒</span>}
+                <span style={s.pickName}>{tr(c.name)}</span>
+              </button>
+            )
+          })}
+        </div>
+        <p style={s.pickHint}>
+          {g.progress.pick
+            ? tr('{name} יחכה לכם בדרך.', { name: tr(creatureById(g.progress.pick)?.name || '') })
+            : tr('בלי בחירה — מי שתורו בלוח. נעול? המפתח בחנות.')}
+        </p>
+      </div>
 
       {/* להורה: אורך המסלול. במקום לנחש — 1 עד 4 ק"מ, וממנו הזמן ומה בדרך. */}
       <div style={s.kmRow} aria-label={tr('אורך המסלול')}>
@@ -919,7 +960,7 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
 // המסלול על רחובות אמיתיים, ההתקדמות עליו. הביקון הוא שכבה קטנה בפינה
 // שמתעוררת רק כשקרובים. היצורים לא מצוירים מראש — רק סימנים: עקבות,
 // סימן שאלה, ניצוץ. מגלים מי זה רק כשמגיעים.
-function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort, onPortal, creature, burst, wind = null, canVacuum = false, onSuck = null }) {
+function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort, onPortal, creature, burst }) {
   const r = g.run
   // המצפן, מדולל: המפה מסתובבת איתו כדי שלמעלה = קדימה.
   const orient = useOrient({ active: true, everyMs: 120, minDeg: 2 })
@@ -1019,7 +1060,7 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
         <MiniMap home={r.home} path={r.path} pos={geo.pos} along={r.along || 0} heading={orient.heading} coinRun={r.coinRun} flowerRun={r.flowerRun}
           stops={r.stops || (r.target ? [r.target] : [])} nextStop={r.stops ? r.stop : 0}
           reveal={reveal} known={g.progress.creatures} creatureImg={creature?.sprites?.hero}
-          coins={r.coins} winds={r.mods?.vacuum ? r.winds : []} height="100%" kid={g.progress.wear?.kid || null} buddyImg={buddy?.live || null} />
+          coins={r.coins} winds={r.winds} height="100%" kid={g.progress.wear?.kid || null} buddyImg={buddy?.live || null} />
 
         {/* מונה המטבעות: קופץ בכל גלינג. בדרך הביתה או בדחף — כפול. */}
         <div key={r.coinsTaken || 0} style={{ ...s.coinHud, ...(boost ? s.coinHudBoost : {}) }}>🪙 {r.coinsTaken || 0}{(homeward || boost) && <span style={{ fontSize: 12 }}> ×2</span>}</div>
@@ -1079,10 +1120,6 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
           </div>
         )}
 
-        {/* רוח בטווח, ויש שואב: הרגע שבו לוחצים */}
-        {wind && canVacuum && !view.canSearch && (
-          <button onClick={onSuck} style={{ ...s.searchOverlay, bottom: 58, background: '#6EA8E6' }}>{tr('🌀 לשאוב את {wind}', { wind: tr(WIND_NAME) })}</button>
-        )}
         {view.canSearch && !homeward && (
           <button onClick={onSearch} style={s.searchOverlay}>{tr('👁 משהו כאן. לחפש')}</button>
         )}
@@ -1303,6 +1340,15 @@ const s = {
   newBadge: { padding: '8px 12px', borderRadius: 999, background: '#F0C069', color: '#14200F', fontSize: 14, fontWeight: 900,
     boxShadow: '0 4px 14px rgba(240,192,105,.35)', animation: 'wildenCoinPop .5s ease-out' },
   weekly: { display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: C.muted, margin: '0 0 14px', padding: '8px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
+  pickRow: { border: `1px solid ${C.line}`, background: C.card, borderRadius: 14, padding: '11px 12px', marginBottom: 12 },
+  pickTitle: { margin: '0 0 8px', fontSize: 13.5, fontWeight: 800, color: C.dim },
+  pickGrid: { display: 'flex', flexWrap: 'wrap', gap: 7 },
+  pickChip: { position: 'relative', width: 72, padding: '6px 4px 5px', borderRadius: 12, border: '1px solid',
+    cursor: 'pointer', display: 'grid', justifyItems: 'center', gap: 2, fontFamily: 'inherit' },
+  pickImg: { width: 44, height: 44, objectFit: 'contain', display: 'block' },
+  pickLock: { position: 'absolute', top: 3, insetInlineEnd: 5, fontSize: 13 },
+  pickName: { fontSize: 11, fontWeight: 800, color: C.ink, lineHeight: 1.2, textAlign: 'center' },
+  pickHint: { margin: '8px 0 0', fontSize: 12.5, color: C.dim, lineHeight: 1.45 },
   buddyRow: { margin: '0 0 12px', padding: '10px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
   kmRow: { margin: '0 0 12px', padding: '10px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
   windNote: { margin: '10px 0 0', padding: '9px 12px', borderRadius: 12, background: 'rgba(110,168,230,.12)', border: '1px solid rgba(110,168,230,.35)', color: '#C3D8EE', fontSize: 13.5, lineHeight: 1.5 },

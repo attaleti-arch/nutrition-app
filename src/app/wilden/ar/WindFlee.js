@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { tr, dirOf } from '../i18n'
 import { useSteps } from '../hooks/useSteps'
+import { useCamera } from '../hooks/useCamera'
 import { sfxRumble, sfxCheer, sfxRustle, buzz } from '../engine/audio'
 import { fleeGoal, WIND_NAME } from '../engine/wind'
 
@@ -15,8 +16,19 @@ import { fleeGoal, WIND_NAME } from '../engine/wind'
 //
 // בלי מד צעדים (מחשב, או הרשאה שנדחתה): נגיעה במסך = צעד. אף ילד לא
 // נשאר בלי דרך לברוח.
+//
+// ── ומה שהיה שבור בשטח ──
+// "גוסטבו הופיע במסלול אבל זה לא פתח מצלמה לברוח ממנו, ואז כמה מאות
+// מטרים אחרי היה רשום לשאוב את גוסטבו. זה לא אמור להיות ככה. הוא אמור
+// להופיע במפה, מצלמה נפתחת, מתחילים לרוץ ואז ישר כפתור (אם יש שואב)
+// לשאוב אותו. גוסטבו צריך להופיע ברחוב."
+//
+// היו כאן שני מסלולים נפרדים: מי שקנה שואב קיבל כפתור על מסך ההליכה
+// ולא ראה אותו כלל, ומי שלא — קיבל במה כהה בלי מצלמה. עכשיו יש מפגש
+// אחד: מצלמה, הרחוב עצמו, גוסטבו מעליו, ורצים. השואב הוא כפתור *בתוך*
+// המפגש — דרך מהירה החוצה, לא מסך אחר.
 
-export function WindFlee({ buddyImg = null, buddyName = '', round = 1, onDone }) {
+export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum = false, onSuck = null, onDone }) {
   // כמה קשה הפעם: בכל קפיצה נוספת באותו טיול הוא מהיר יותר.
   const goal = fleeGoal(round)
   const steps = useSteps({ active: true })
@@ -28,6 +40,9 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, onDone })
   const doneRef = useRef(false)
   const tapSteps = useRef(0)
   const lastStepAt = useRef(0)
+  // הרחוב עצמו מאחוריו. אותה מצלמה של הבמה הראשית, כדי שלא יהיו שתי
+  // דרכים לפתוח מצלמה ושתי דרכים להיכשל.
+  const cam = useCamera({ active: true })
 
   // רגע ההפתעה: קול, רטט, ואז רצים.
   useEffect(() => {
@@ -79,6 +94,10 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, onDone })
   return (
     <div dir={dirOf()} style={S.wrap} onClick={tap}>
       <style>{CSS}</style>
+      {/* הרחוב. אם אין מצלמה — הרקע הכהה נשאר מתחת, ואף אחד לא נתקע. */}
+      <video ref={cam.videoRef} playsInline muted autoPlay
+        style={{ ...S.video, opacity: cam.state === 'on' ? 1 : 0 }} />
+      <div style={S.veil} />
       {/* ── היא עצמה ── מסתחררת מאחור וגדלה ככל שהזמן אוזל. וכשהזמן
           נגמר היא זונקת על המצלמה — הקליפ השני, במסך מלא. */}
       {!lost && (
@@ -120,6 +139,15 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, onDone })
           style={{ ...S.buddy, animation: go && !won ? 'wildenFleeRun .5s ease-in-out infinite' : 'none' }} />
       )}
       {go && !counting() && <p style={S.hint}>{tr('אין מד צעדים — נגעו במסך בכל צעד.')}</p>}
+
+      {/* ── השואב, כאן ולא על המפה ── */}
+      {/* "ואז ישר כפתור (אם יש שואב אבק) לשאוב את גוסטבו." הוא יושב בתוך
+          המרדף: מי שקנה אותו רואה את גוסטבו ברחוב, מתחיל לרוץ, ויכול
+          לגמור את זה בלחיצה. מי שלא — רץ עד הסוף. */}
+      {canVacuum && go && !won && !lost && (
+        <button onClick={e => { e.stopPropagation(); if (doneRef.current) return; doneRef.current = true; onSuck?.() }}
+          style={S.suck}>{tr('🌀 לשאוב את {wind}', { wind: tr(WIND_NAME) })}</button>
+      )}
     </div>
   )
 }
@@ -135,6 +163,12 @@ const S = {
   wrap: { position: 'fixed', inset: 0, zIndex: 3200, background: 'radial-gradient(circle at 50% 40%, #1E2A38, #0C1218 70%)',
     color: '#E9E5D8', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
     gap: 10, padding: 24, textAlign: 'center', fontFamily: 'inherit', overflow: 'hidden', userSelect: 'none' },
+  video: { position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity .3s' },
+  // מעט חושך על הרחוב, אחרת הטקסט הלבן לא נקרא על שמיים בהירים
+  veil: { position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(8,14,20,.35), rgba(8,14,20,.62))', pointerEvents: 'none' },
+  suck: { position: 'absolute', bottom: 'max(26px, env(safe-area-inset-bottom))', insetInline: 22, padding: '15px 18px',
+    borderRadius: 14, border: 'none', background: '#6EA8E6', color: '#0C1218', fontFamily: 'inherit',
+    fontSize: 18, fontWeight: 900, cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,.45)', zIndex: 4 },
   stormBox: { position: 'absolute', top: '27%', left: '50%', perspective: '1000px', pointerEvents: 'none',
     transition: 'opacity .3s ease, transform .4s ease', display: 'block' },
   storm: { height: '34vh', width: 'auto', display: 'block',

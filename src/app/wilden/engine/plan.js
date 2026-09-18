@@ -37,8 +37,16 @@ export function setRouteKm(progress, km) {
 // נקודה או שתיים — שגם לדרך חזרה יש מה להציע.
 // פרחים: "כמו מטבעות, לפחות 20 שניות לאסוף בקפיצה או ריצה, ושיראו אותם."
 // אותה ריצה של 20 שניות, עם פרחים, מ-2 ק"מ ומעלה (בקצר אין מקום לעוד תחנה).
+// ── ריצת המטבעות תמיד ──
+// "לי לא הייתה ריצת מטבעות, המצלמה נפתחה עם מטבע אחד ונסגרה — זה קצת
+// מבאס. שתהיה תמיד ריצת מטבעות של 20 שניות מינימום."
+//
+// היא צודקת, וזו הייתה החלטה שלי: במסלול קצר הריצה והזהב התחלפו לפי
+// זוגיות המסע, וחצי מהמסעות הקצרים יצאו בלי ריצה בכלל. מטבע זהב הוא
+// קפיצה אחת ושתי שניות; הריצה היא עשרים שניות של ריצה אמיתית, והיא
+// הסיבה שיוצאים. אז היא תמיד בפנים, והזהב הוא תוספת.
 export function poisFor(km, walks = 0) {
-  if (km <= 1.5) return [POI.CREATURE, walks % 2 ? POI.GOLD : POI.RUN]
+  if (km <= 1.5) return walks % 2 ? [POI.RUN, POI.CREATURE, POI.GOLD] : [POI.CREATURE, POI.RUN]
   if (km < 3) return [POI.RUN, POI.CREATURE, POI.FLOWERS, POI.GOLD]
   return [POI.RUN, POI.CREATURE, POI.FLOWERS, POI.CREATURE, POI.GOLD]
 }
@@ -65,7 +73,9 @@ export function placePois(path, kinds, { creatures = ['nimi'], buffer = STOP_BUF
   // צפוף מדי? מוותרים על תחנות לפני שמוותרים על יצור — אבל יצור אחד לפחות תמיד.
   let list = [...kinds]
   while (list.length > 1 && (usable * 0.85) / list.length < MIN_GAP_M) {
-    // צפוף: קודם מוותרים על הפרחים, אחר כך על הזהב, אחר כך על ריצת המטבעות.
+    // צפוף: קודם מוותרים על הפרחים, אחר כך על הזהב, אחר כך על ריצת
+    // המטבעות. (התוכניות הקצרות בנויות כך שהריצה לעולם לא נדחסת החוצה:
+    // שתי נקודות אף פעם לא צפופות.)
     const drop = list.lastIndexOf(POI.FLOWERS) >= 0 ? list.lastIndexOf(POI.FLOWERS)
       : list.lastIndexOf(POI.GOLD) >= 0 ? list.lastIndexOf(POI.GOLD)
       : list.lastIndexOf(POI.RUN) >= 0 ? list.lastIndexOf(POI.RUN) : list.indexOf(POI.CREATURE)
