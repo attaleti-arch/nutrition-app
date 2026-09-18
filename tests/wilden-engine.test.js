@@ -3289,3 +3289,51 @@ test('בחירה: מי שנבחר יוצא ראשון, ונעול לא נבחר 
   const started = reduce(ready, { type: 'START_RUN', kind: RUN.FREE, t: 1, day: 'd1' })
   assert.equal(started.run.wantCreatures[0], 'tzel', 'הבחירה ראשונה בדרך')
 })
+
+// ── רוחי בשמיים, ולמשקפת יש סוף סוף אפקט ──
+// "רוחי נתפסה בלי המשקפת, לא היה למשקפת שום אפקט. היא לא התחילה מרחוק.
+// חפשו אותה בשמיים, לחיצה ורואים נקודה קטנה מרוחקת, ואז משקפת כדי
+// לראות טוב יותר, ואז ללחוץ ושהיא תתקרב מהשמיים אלינו."
+import { makeSky, SKY, SKY_DIST_M, SKY_SCALE, DIVE_MS, SCAN_MS } from '../src/app/wilden/ar/controllers/sky.js'
+import { PHASE as CHASE_PHASE } from '../src/app/wilden/ar/controllers/chase.js'
+
+test('רוחי: נקודה בשמיים, משקפת, צלילה — ורק אז המרדף הרגיל', () => {
+  const sky = makeSky({ id: 'gust' })
+  const rng = () => 0.5
+  let s = sky.start(0, rng, 0, { reveal: 0.45 })
+  assert.equal(s.phase, SKY.SKY)
+  assert.equal(s.dist, SKY_DIST_M, 'מתחילה רחוק')
+  const [dot] = sky.targets(s, 0)
+  assert.equal(dot.scale, SKY_SCALE, 'ורק נקודה')
+  assert.ok(dot.elev > 25, 'גבוה בשמיים')
+  // צעדים לא מקרבים אותה כל עוד היא שם — בשמיים מחפשים, לא רצים
+  assert.equal(sky.onStep(s, 100, rng).state.dist, SKY_DIST_M)
+  // הטקסט משתנה ברגע שהיא בפריים
+  assert.notEqual(sky.copy(s, false).line, sky.copy(s, true).line)
+
+  // לחיצה ראשונה: המשקפת
+  s = sky.onTap(s, rng, 1000).state
+  assert.equal(s.phase, SKY.SCOPE)
+  assert.equal(s.scope, true, 'המשקפת נפתחת על המסך')
+  assert.ok(sky.targets(s, 1000)[0].scale > 0.9, 'ודרכה רואים אותה מקרוב')
+
+  // לחיצה שנייה: היא צוללת, ואחרי הצלילה זה המרדף הרגיל
+  s = sky.onTap(s, rng, 2000).state
+  assert.equal(s.phase, SKY.DIVE)
+  assert.equal(s.scope, false, 'בצלילה מורידים את המשקפת')
+  const mid = sky.targets(s, 2000 + DIVE_MS / 2)[0]
+  assert.ok(mid.elev < 34 && mid.scale > SKY_SCALE, 'באמצע הצלילה היא כבר נמוכה וגדולה יותר')
+  s = sky.onTick(s, 2000 + DIVE_MS)
+  assert.equal(s.phase, CHASE_PHASE.FAR, 'ומכאן המרדף הרגיל')
+  assert.equal(sky.onStep(s, 2100, rng).state.dist < s.dist, true, 'ועכשיו הצעדים מקרבים')
+
+  // בלי משקפת: היא נשארת נקודה, והטקסט אומר למה
+  let bare = makeSky({ id: 'gust' }).start(0, rng, 0, {})
+  bare = sky.onTap(bare, rng, 500).state
+  assert.equal(bare.scope, false, 'בלי משקפת אין מה לפתוח')
+  assert.ok(sky.copy(bare).line.includes('רחוקה'), 'ונאמר שהיא רחוקה מדי')
+
+  // ורשת ביטחון: מי שסורק ולא מוצא לא נשאר תקוע בשמיים
+  const stuck = sky.onTick(sky.start(0, rng, 0, { reveal: 0.45 }), SCAN_MS + 10)
+  assert.equal(stuck.phase, SKY.SCOPE)
+})

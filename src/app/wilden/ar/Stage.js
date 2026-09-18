@@ -235,7 +235,6 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   }, [cs, ctrl])
 
   const done = cs && ctrl ? ctrl.isDone(cs) : false
-  const copy = cs && ctrl ? ctrl.copy(cs) : { line: '', sub: '' }
   const creatureIdRef = useRef(creature?.id); creatureIdRef.current = creature?.id
 
   // ── תפיסה ──
@@ -280,6 +279,9 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   const ctFaceLeft = !!ct && ct.streak != null && angleDelta(ct.streak, ct.bearing) < 0
   const ctStreakSide = !ct || ct.streak == null ? null
     : angleDelta(ct.streak, ct.bearing) < 0 ? 'right' : 'left'
+  // הטקסט יודע אם היצור על המסך. רוחי בשמיים משתמשת בזה: "חפשו אותה"
+  // הופך ל"שם! נקודה קטנה גבוה" ברגע שהיא נכנסת לפריים.
+  const copy = cs && ctrl ? ctrl.copy(cs, ctVisible) : { line: '', sub: '' }
   // עוצמת הקול: קרוב = חזק, על המסך = חזק יותר, נתפס = שקט.
   useEffect(() => {
     const v = voiceRef.current
@@ -401,10 +403,19 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
         )
       })}
 
+      {/* ── המשקפת ── */}
+      {/* "להשתמש במשקפת כדי לראות אותה טוב יותר." עד עכשיו היא הייתה
+          מפתח בלבד — קונים ושום דבר לא משתנה על המסך. עכשיו היא נפתחת
+          ממש: מסכה עגולה על הרחוב, והיצור בתוכה מקרוב. */}
+      {cs?.scope && !done && <div style={S.scope} aria-hidden="true" />}
+
       {/* אזור הלחיצה על היצור: גדול, שקוף, במקום שבו הוא נראה. ילד לוחץ
           על הדמות — לא על כפתור. */}
+      {/* ויש רגעים שבהם הדמות היא נקודה — רוחי בשמיים. אז ברגע שהיא בפריים
+          כל המסך הוא הלחיצה: מצאת אותה, לא צריך גם לקלוע אליה. הבקר מבקש
+          את זה (bigTap); הבמה לא יודעת מה זה שמיים. */}
       {!done && ct && ctVisible && !canCatch && (
-        <button aria-label={tr('לחצו על היצור')} onClick={doTap} style={{
+        <button aria-label={tr('לחצו על היצור')} onClick={doTap} style={cs?.bigTap ? S.catchArea : {
           ...S.tapArea,
           left: `${50 + (Math.max(-0.6, Math.min(0.6, ct.dx / (FOV / 2)))) * 50}%`,
           top: `${52 - ct.dy * 1.5}%`,
@@ -622,6 +633,9 @@ const S = {
     textShadow: '0 2px 12px rgba(0,0,0,.85)' },
   hintSub: { color: '#C3C8BA', fontSize: 15, margin: '4px 0 0',
     textShadow: '0 2px 10px rgba(0,0,0,.8)' },
+  // עיגול נקי באמצע, שחור סביבו — מה שרואים כשמצמידים משקפת לעיניים
+  scope: { position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none',
+    background: 'radial-gradient(circle at 50% 44%, rgba(0,0,0,0) 26%, rgba(0,0,0,.55) 30%, rgba(4,8,6,.94) 42%)' },
   scan: { width: '100%', maxWidth: 320, marginTop: 12, accentColor: '#E5A342', pointerEvents: 'auto' },
   distWrap: { display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', marginTop: 10 },
   distBar: { width: 160, height: 10, borderRadius: 999, background: 'rgba(15,21,15,.6)', overflow: 'hidden', border: '1px solid rgba(233,229,216,.25)' },

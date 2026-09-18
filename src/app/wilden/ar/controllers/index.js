@@ -8,6 +8,7 @@
 
 import { makeChase } from './chase.js'
 import { makeStatue } from './statue.js'
+import { makeSky } from './sky.js'
 
 const run = makeChase({ id: 'tracks-true-or-false', target: 'creature', style: 'run' })
 const buzz = makeChase({ id: 'buzz', target: 'creature', style: 'fly', copy: {
@@ -15,10 +16,16 @@ const buzz = makeChase({ id: 'buzz', target: 'creature', style: 'fly', copy: {
   FLEE: { line: 'הוא עף!', sub: 'חפשו אותו באוויר ורוצו שוב!' },
   NEAR: { line: 'הוא מרחף מולכם.', sub: 'לחצו במסך כדי לתפוס!' },
 } })
-const gust = makeChase({ id: 'gust', target: 'creature', style: 'fly', copy: {
-  FAR: { line: 'משהו מרשרש למעלה. מהרו לפני שהוא עף!', sub: 'הרימו את הטלפון ורוצו!' },
-  FLEE: { line: 'משב רוח! הוא עף!', sub: 'חפשו אותו גבוה ורוצו שוב!' },
-  NEAR: { line: 'הוא מרחף מולכם.', sub: 'לחצו במסך כדי לתפוס!' },
+// ── רוחי ── "היא לא התחילה מרחוק. חפשו אותה בשמיים, לחיצה ורואים נקודה
+// קטנה מרוחקת, ואז להשתמש במשקפת כדי לראות אותה טוב יותר, ואז ללחוץ
+// ושהיא תתקרב מהשמיים אלינו." המשקפת הייתה מפתח בלבד — עכשיו יש לה
+// אפקט שרואים. ראה sky.js.
+const gust = makeSky({ id: 'gust', copy: {
+  SKY: { line: 'חפשו את רוחי בשמיים.', sub: 'הרימו את הטלפון וסובבו. היא רק נקודה משם.' },
+  SKY_FOUND: { line: 'שם! נקודה קטנה גבוה.', sub: 'לחצו עליה כדי להסתכל במשקפת.' },
+  SCOPE: { line: 'במשקפת רואים אותה.', sub: 'לחצו שוב — והיא תרד אליכם.' },
+  BARE: { line: 'היא רחוקה מדי בשביל העיניים.', sub: 'בלי משקפת היא נשארת נקודה.' },
+  DIVE: { line: 'היא צוללת אליכם!', sub: 'התכוננו לרוץ.' },
 } })
 const shadow = makeChase({ id: 'shadow', target: 'creature', style: 'shadow' })
 const stomp = makeChase({ id: 'stomp', target: 'creature', style: 'stomp' })
