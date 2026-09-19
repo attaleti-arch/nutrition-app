@@ -163,10 +163,10 @@ const S = {
     transformOrigin: '50% 80%', animation: 'wildenPourJar .9s ease-in-out both' },
   // הצנצנת נטויה ב-118°, ולכן הפתח שלה יוצא ימינה־ומטה מנקודת הסיבוב.
   // החוט מתחיל שם ולא במרכז, אחרת הדבש נשפך מהבטן של הצנצנת.
-  pourStream: { position: 'absolute', left: 33, top: 58, width: 9, height: 92, borderRadius: 999,
+  pourStream: { position: 'absolute', left: 31, top: 58, width: 9, height: 92, borderRadius: 999,
     background: 'linear-gradient(#FFD98A, #E8A32E)', transformOrigin: '50% 0',
     boxShadow: '0 0 14px rgba(255,200,90,.7)', animation: 'wildenStream .9s ease-in both' },
-  sparks: { position: 'absolute', left: 'calc(50% + 33px)', top: '26%', fontSize: 34, zIndex: 2, pointerEvents: 'none',
+  sparks: { position: 'absolute', left: 'calc(50% + 31px)', top: '26%', fontSize: 34, zIndex: 2, pointerEvents: 'none',
     animation: 'wildenSpark .9s ease-out both' },
   barWrap: { width: '100%', maxWidth: 340, textAlign: 'center', margin: '4px 0 12px' },
   barTop: { margin: 0, fontSize: 15, fontWeight: 800, color: '#E9E5D8' },
