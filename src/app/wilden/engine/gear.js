@@ -7,7 +7,17 @@
 //   משרוקית זהב — היצור הבא שנתפס מגיע בצבע מיוחד, בלי ביצה.
 //   מגנט, מפת אוצר — יותר מטבעות, לא פחות דרך.
 //   שואב הרוח — הרוחות שעל המסלול נשאבות במקום לחטוף את היצור.
-// חד-פעמי אפשר לקנות גם בדבש (הכוורת מייצרת) — הלולאה של הבן שלה.
+//
+// ── ומה קונים במה ──
+// "שמשרוקית תתאפשר לקנייה רק עם דבש." היא צודקת, וזו הייתה הבעיה:
+// דבש ומטבעות קנו בדיוק את אותם שני דברים, ולכן דבש לא היה נחשק —
+// ילד לא חשב "אני צריך דבש", הוא חשב "אני צריך 30 מטבעות". מטבע שני
+// שקונה את מה שהראשון כבר קונה הוא לא מטבע.
+//
+// אז ההפרדה: **מטבעות קונים כלים. דבש קונה יצורים.**
+//   מטבעות — מפתחות, מגנט, מפת אוצר, שואב. דברים שהילד מחזיק.
+//   דבש    — משרוקית, משרוקית זהב, וביצה. כל מה שמביא עוד יצור או צבע.
+// ודבש בא רק מפרחים, ופרחים באים רק מלרוץ. אין קיצור דרך.
 //
 // טהור. progress.gear — קבוע; progress.items — { id: כמה }.
 
@@ -20,10 +30,10 @@ export const GEAR = [
     desc: 'פותחת את רוחי: הוא גבוה מדי בלעדיה. וכל יצור נראה על המפה ממרחק כפול.', how: 'מפתח. פעם אחת, לתמיד.', lock: 'רוחי גבוה מדי. צריך משקפת' },
   { id: 'pickaxe', kind: 'key', name: 'מכוש', price: 45, effect: 'pickaxe', value: true, opens: 'kraag',
     desc: 'פותח את קראג: קליפת אבן, והמכוש שובר אותה.', how: 'מפתח. פעם אחת, לתמיד.', lock: 'קראג בקליפת אבן. צריך מכוש' },
-  { id: 'whistle', kind: 'item', name: 'משרוקית', price: 30, honey: 3, effect: 'extraStop', value: 1,
-    desc: 'במסע הבא יצור נוסף בדרך. עוד תחנה, עוד מרדף.', how: 'חד-פעמי. 30 מטבעות או 3 דבש.' },
-  { id: 'goldWhistle', kind: 'item', name: 'משרוקית זהב', price: 60, honey: 6, effect: 'colorNext', value: 1,
-    desc: 'היצור הבא שתתפסו יגיע בצבע מיוחד, בלי ביצה.', how: 'חד-פעמי. 60 מטבעות או 6 דבש.' },
+  { id: 'whistle', kind: 'item', name: 'משרוקית', price: null, honey: 3, effect: 'extraStop', value: 1,
+    desc: 'במסע הבא יצור נוסף בדרך. עוד תחנה, עוד מרדף.', how: 'חד-פעמי. בדבש בלבד — שלוש צנצנות.' },
+  { id: 'goldWhistle', kind: 'item', name: 'משרוקית זהב', price: null, honey: 6, effect: 'colorNext', value: 1,
+    desc: 'היצור הבא שתתפסו יגיע בצבע מיוחד, בלי ביצה.', how: 'חד-פעמי. בדבש בלבד — שש צנצנות.' },
   { id: 'magnet', kind: 'item', name: 'מגנט מטבעות', price: 20, effect: 'coinRadius', value: 28,
     desc: 'במסע הבא המטבעות נמשכים אליכם מרחוק.', how: 'חד-פעמי. פי שניים רדיוס איסוף.' },
   { id: 'map', kind: 'item', name: 'מפת אוצר', price: 25, effect: 'extraGold', value: 1,
@@ -52,7 +62,7 @@ export function canBuyGear(progress, id, pay = 'coins') {
   if (!g) return false
   if (pay === 'honey') {
     if (!g.honey || (progress?.res?.honey || 0) < g.honey) return false
-  } else if ((progress?.coins || 0) < g.price) return false
+  } else if (g.price == null || (progress?.coins || 0) < g.price) return false   // price: null — בדבש בלבד
   if (g.kind !== 'item') return !ownsGear(progress, id)
   return itemCount(progress, id) < MAX_ITEMS
 }

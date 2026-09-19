@@ -9,7 +9,7 @@ import { phaseOf, powerOf, POWER, PHASE, showsArrow, PHASE_COPY, SHORTCUT_COPY, 
 import { placeTarget, revalidate, PLACE_AFTER, freshEnd, stopInfo, JUNCTION_M, isFootKind } from './placement.js'
 import { placeCoins, collectCoins, coinsValue, WALK_PLAN, creaturesForWalk, HOME_BONUS, CATCH_BONUS } from './coins.js'
 import { mergeProgress } from './profile.js'
-import { EGG_PRICE, HATCH_M, canBuyEgg, hatch, rollVariant } from './egg.js'
+import { EGG_HONEY, HATCH_M, canBuyEgg, hatch, rollVariant } from './egg.js'
 import { buy as buyItem, equip as equipItem } from './shop.js'
 import { grantWeekly, walkSummary } from './weekly.js'
 import { evolvedBetween } from './stages.js'
@@ -742,12 +742,13 @@ export function reduce(g, ev) {
     }
 
     // ── קונים ביצה ──
-    // במסך הבית בלבד. מטבעות יורדים מיד; הביצה יושבת על הביקון עד המסע.
+    // במסך הבית בלבד. הדבש יורד מיד; הביצה יושבת על הביקון עד המסע.
     case 'BUY_EGG': {
       if (g.state !== S.BROKEN_WORLD || !canBuyEgg(g.progress)) return g
       return {
         ...g,
-        progress: { ...g.progress, coins: g.progress.coins - EGG_PRICE, egg: { boughtAt: ev.t ?? null } },
+        progress: { ...g.progress, res: { ...(g.progress.res || {}), honey: (g.progress.res?.honey || 0) - EGG_HONEY },
+          egg: { boughtAt: ev.t ?? null } },
       }
     }
 

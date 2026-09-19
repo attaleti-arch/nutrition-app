@@ -49,7 +49,7 @@ import { usePulse } from './hooks/usePulse'
 import { badgeById } from './engine/badges'
 import { RES_NAME as RES_NAMES } from './engine/world'
 import { CaughtClip, usePreloadClip } from './ui/CaughtClip'
-import { EGG_PRICE, canBuyEgg, eggWarmth, warmthWord, variantName } from './engine/egg'
+import { EGG_HONEY, canBuyEgg, eggWarmth, warmthWord, variantName } from './engine/egg'
 import { haversine } from './engine/geo'
 import { sfxCoin, sfxTally, sfxCheer, resumeAudio } from './engine/audio'
 import 'leaflet/dist/leaflet.css'
@@ -959,10 +959,10 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
       ) : canBuyEgg(g.progress) ? (
         <button onClick={onEgg} style={{ ...s.cta, ...s.ctaGhost, display: 'flex', alignItems: 'center', gap: 12, textAlign: 'start' }}>
           <span style={s.eggIcon}>🥚</span>
-          <span>🪙 {EGG_PRICE} — {tr('ביצה')}<br /><span style={{ fontSize: 13.5, color: C.muted, fontWeight: 500 }}>{tr('מי בפנים? באיזה צבע? מגלים רק כשהיא בוקעת.')}</span></span>
+          <span>🍯 {EGG_HONEY} — {tr('ביצה')}<br /><span style={{ fontSize: 13.5, color: C.muted, fontWeight: 500 }}>{tr('מי בפנים? באיזה צבע? מגלים רק כשהיא בוקעת.')}</span></span>
         </button>
       ) : g.progress.creatures.length > 0 && (
-        <p style={s.note}>{tr('🥚 ביצה עולה {cost} מטבעות. יש לכם {have}.', { cost: EGG_PRICE, have: g.progress.coins || 0 })}</p>
+        <p style={s.note}>{tr('🥚 ביצה עולה {cost} צנצנות דבש. יש לכם {have}. דבש בא מפרחים.', { cost: EGG_HONEY, have: g.progress.res?.honey || 0 })}</p>
       )}
 
       {g.notice === 'no-location' && <p style={s.warn}>{tr('בלי אישור מיקום אי אפשר לצאת.')}</p>}

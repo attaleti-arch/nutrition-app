@@ -2057,7 +2057,7 @@ test('תשעה יצורים: לכולם מודל אמיתי, controller רשום
 // ═══════════════════════════════════════════════════════════════
 // הביצה
 // ═══════════════════════════════════════════════════════════════
-import { EGG_PRICE, HATCH_M, VARIANTS, rollVariant, canBuyEgg, eggWarmth, warmthWord, hatch, hasVariant, tintOf } from '../src/app/wilden/engine/egg.js'
+import { EGG_HONEY, EGG_PRICE, HATCH_M, VARIANTS, rollVariant, canBuyEgg, eggWarmth, warmthWord, hatch, hasVariant, tintOf } from '../src/app/wilden/engine/egg.js'
 import { skinTint as skinTint2 } from '../src/app/wilden/engine/skins.js'
 
 test('ביצה: שבעה צבעים, ההגרלה לפי ההסתברויות, ולכל צבע יש שם וגוון', () => {
@@ -2079,17 +2079,23 @@ test('ביצה: שבעה צבעים, ההגרלה לפי ההסתברויות, �
   assert.ok(ice > 170 && ice < 400, 'קרח ~7%: ' + ice)
 })
 
-test('ביצה: קונים רק עם מטבעות, רק עם יצור אחד לפחות, ורק אחת', () => {
-  assert.ok(!canBuyEgg({ coins: 100, creatures: [] }), 'בלי יצור — למי היא תבקע?')
-  assert.ok(!canBuyEgg({ coins: EGG_PRICE - 1, creatures: ['nimi'] }))
-  assert.ok(canBuyEgg({ coins: EGG_PRICE, creatures: ['nimi'] }))
-  assert.ok(!canBuyEgg({ coins: 100, creatures: ['nimi'], egg: { boughtAt: 1 } }), 'אחת בכל פעם')
+// ── הביצה בדבש ──
+// "מה בסוף עם הביצים, אם כסף קונה חיות בצבעים?" — משרוקית הזהב נתנה
+// צבע במטבעות בלי הליכה, והביצה דורשת קילומטר וחצי. עכשיו שתיהן בדבש,
+// והדבש בא מפרחים: אין דרך לצבע שלא עוברת ברגליים.
+test('ביצה: קונים רק בדבש, רק עם יצור אחד לפחות, ורק אחת', () => {
+  const hon = n => ({ res: { honey: n } })
+  assert.ok(!canBuyEgg({ ...hon(99), creatures: [] }), 'בלי יצור — למי היא תבקע?')
+  assert.ok(!canBuyEgg({ ...hon(EGG_HONEY - 1), creatures: ['nimi'] }))
+  assert.ok(canBuyEgg({ ...hon(EGG_HONEY), creatures: ['nimi'] }))
+  assert.ok(!canBuyEgg({ coins: 999, creatures: ['nimi'] }), 'מטבעות לא קונים ביצה')
+  assert.ok(!canBuyEgg({ ...hon(99), creatures: ['nimi'], egg: { boughtAt: 1 } }), 'אחת בכל פעם')
 
   let g = initial()
-  g = { ...g, progress: { ...g.progress, coins: 50, creatures: ['nimi'] } }
+  g = { ...g, progress: { ...g.progress, res: { honey: 9 }, creatures: ['nimi'] } }
   const before = g
   g = reduce(g, { type: 'BUY_EGG', t: 7 })
-  assert.equal(g.progress.coins, 10)
+  assert.equal(g.progress.res.honey, 9 - EGG_HONEY, 'הדבש יורד מיד')
   assert.deepEqual(g.progress.egg, { boughtAt: 7 })
   assert.equal(reduce(g, { type: 'BUY_EGG', t: 8 }), g, 'שנייה לא נקנית')
   // לא במסך הבית — לא קונים
@@ -2104,9 +2110,9 @@ test('ביצה: מתחממת בהליכה, בוקעת בפורטל רק כשחמ
   assert.equal(warmthWord(0), 'קרה')
   assert.equal(warmthWord(1), 'מוכנה לבקוע!')
 
-  // מסע קצר: לא בקעה, הביצה נשארת, המטבעות לא חוזרים
+  // מסע קצר: לא בקעה, הביצה נשארת, הדבש לא חוזר
   let g = initial()
-  g = { ...g, progress: { ...g.progress, coins: 50, creatures: ['nimi'] } }
+  g = { ...g, progress: { ...g.progress, res: { honey: 9 }, creatures: ['nimi'] } }
   g = reduce(g, { type: 'BUY_EGG', t: 1 })
   g = started(['dabashon'], g)
   g = walk(g, 200)
@@ -2154,7 +2160,7 @@ test('ביצה: מעדיפה יצור שעוד אין לו את הצבע הזה'
 
 test('ביצה: נשלחת לשרת ומתמזגת, ומה שבקע לא נעלם', () => {
   let g = initial()
-  g = { ...g, progress: { ...g.progress, coins: 50, creatures: ['nimi'], variants: [{ creature: 'nimi', variant: 'ice', at: 1 }] } }
+  g = { ...g, progress: { ...g.progress, res: { honey: 9 }, creatures: ['nimi'], variants: [{ creature: 'nimi', variant: 'ice', at: 1 }] } }
   g = reduce(g, { type: 'BUY_EGG', t: 2 })
   const out = forServer(g)
   assert.deepEqual(out.progress.egg, { boughtAt: 2 })
@@ -3093,12 +3099,17 @@ test('ציוד: מפתח נקנה פעם אחת, חד-פעמי נערם עד 3 �
   assert.ok(canBuyGear(p0, 'lantern')); assert.ok(!canBuyGear({ ...p0, coins: 10 }, 'lantern'))
   const p1 = buyGear(p0, 'lantern'); assert.equal(p1.coins, 60); assert.ok(ownsGear(p1, 'lantern')); assert.ok(unlocked(p1, 'tzel')); assert.ok(!unlocked(p1, 'kraag'))
   assert.equal(buyGear(p1, 'lantern'), p1, 'לא פעמיים')
-  // משרוקית בדבש
+  // ── המשרוקית בדבש בלבד ──
+  // "שמשרוקית תתאפשר לקנייה רק עם דבש." מטבעות קונים כלים; דבש קונה
+  // יצורים, והוא בא רק מפרחים.
+  assert.equal(gearById('whistle').price, null); assert.equal(gearById('goldWhistle').price, null)
+  assert.ok(!canBuyGear({ ...p1, coins: 9999 }, 'whistle'), 'מטבעות לא קונים משרוקית')
   assert.ok(canBuyGear(p1, 'whistle', 'honey')); assert.ok(!canBuyGear(p1, 'goldWhistle', 'honey'), '6 דבש — אין')
   const p2 = buyGear(p1, 'whistle', 'honey')
   assert.equal(p2.res.honey, 1); assert.equal(p2.coins, 60); assert.equal(itemCount(p2, 'whistle'), 1)
-  const p3 = buyGear(buyGear(p2, 'whistle'), 'whistle'); assert.equal(itemCount(p3, 'whistle'), 3)
-  assert.equal(itemCount(buyGear({ ...p3, coins: 99 }, 'whistle'), 'whistle'), MAX_ITEMS, 'לא יותר משלושה')
+  const p3 = buyGear(buyGear({ ...p2, res: { honey: 9 } }, 'whistle', 'honey'), 'whistle', 'honey')
+  assert.equal(itemCount(p3, 'whistle'), 3)
+  assert.equal(itemCount(buyGear({ ...p3, res: { honey: 99 } }, 'whistle', 'honey'), 'whistle'), MAX_ITEMS, 'לא יותר משלושה')
   assert.deepEqual(modsFor(p3), { lantern: true, extraStop: 1 })
   assert.deepEqual(armed(p3).map(a => [a.id, a.n]), [['whistle', 3]])
   const c = consume(p3); assert.deepEqual(c.used, ['whistle']); assert.equal(itemCount(c.progress, 'whistle'), 2)
@@ -3122,9 +3133,12 @@ test('מפתחות בלוח: יצור נעול מוחלף בפנוי הבא, ו�
 test('ציוד במכונה: משרוקית = עוד יצור; משרוקית זהב = צבע בפורטל; מגנט ומפה; נעול מוחלף', () => {
   // כל הבקשות סגורות: הלוח נקי מהטיית "מי שהשומר מחכה לו", והבדיקה
   // בודקת ציוד בלבד.
-  let g = { ...initial(), progress: { ...initial().progress, coins: 300, walks: 1, quests: ALL_QUESTS } }
-  g = reduce(g, { type: 'BUY_GEAR', id: 'whistle' }); g = reduce(g, { type: 'BUY_GEAR', id: 'goldWhistle' }); g = reduce(g, { type: 'BUY_GEAR', id: 'magnet' }); g = reduce(g, { type: 'BUY_GEAR', id: 'map' })
-  assert.equal(g.progress.coins, 300 - 30 - 60 - 20 - 25)
+  // המשרוקיות בדבש, המגנט והמפה במטבעות — ההפרדה שהילד לומד בחנות.
+  let g = { ...initial(), progress: { ...initial().progress, coins: 300, res: { honey: 20 }, walks: 1, quests: ALL_QUESTS } }
+  g = reduce(g, { type: 'BUY_GEAR', id: 'whistle', pay: 'honey' }); g = reduce(g, { type: 'BUY_GEAR', id: 'goldWhistle', pay: 'honey' })
+  g = reduce(g, { type: 'BUY_GEAR', id: 'magnet' }); g = reduce(g, { type: 'BUY_GEAR', id: 'map' })
+  assert.equal(g.progress.coins, 300 - 20 - 25)
+  assert.equal(g.progress.res.honey, 20 - 3 - 6)
   g = reduce(g, { type: 'START_RUN', kind: RUN.FREE, day: DAY, t: 0 })
   assert.deepEqual(g.run.locked, ['tzel'], 'מסע 2: צל בלוח, בלי פנס — נעול')
   assert.equal(g.run.wantCreatures.length, 3, 'שניים מהלוח (צל הוחלף) + משרוקית')

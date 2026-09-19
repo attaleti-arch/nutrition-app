@@ -62,8 +62,11 @@ export function Shop({ progress, onBuy, onEquip, onGear = null, onSkin = null, o
                   : item.kind === 'item' && n >= MAX_ITEMS ? <p style={{ ...T.gearPrice, color: '#767F71' }}>{tr('יש {n} — המקסימום', { n })}</p>
                   : (
                     <div style={T.payRow}>
-                      <button onClick={() => can && onGear?.(item.id, 'coins')} disabled={!can} aria-label={tr(item.name)}
-                        style={{ ...T.payBtn, borderColor: can ? '#E5A342' : '#2B382B', color: can ? '#E5A342' : '#767F71' }}>🪙 {item.price}</button>
+                      {/* price: null — נקנה בדבש בלבד (מטבעות קונים כלים, דבש קונה יצורים) */}
+                      {item.price != null && (
+                        <button onClick={() => can && onGear?.(item.id, 'coins')} disabled={!can} aria-label={tr(item.name)}
+                          style={{ ...T.payBtn, borderColor: can ? '#E5A342' : '#2B382B', color: can ? '#E5A342' : '#767F71' }}>🪙 {item.price}</button>
+                      )}
                       {item.honey && (
                         <button onClick={() => canHoney && onGear?.(item.id, 'honey')} disabled={!canHoney} aria-label={`${tr(item.name)} ${tr('בדבש')}`}
                           style={{ ...T.payBtn, borderColor: canHoney ? '#F0C069' : '#2B382B', color: canHoney ? '#F0C069' : '#767F71' }}>🍯 {item.honey}</button>
