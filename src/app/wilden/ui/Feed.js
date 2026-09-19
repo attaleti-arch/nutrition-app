@@ -19,10 +19,14 @@ import { sfxCoin, sfxAppear, buzz } from '../engine/audio'
 // ומה שמשתנה בכל האכלה: הפס. שלוש צנצנות — נקודת צמיחה, ואז מסך
 // ההתפתחות (ui/Evolve.js) נכנס מעצמו מהמכונה.
 //
-// הצנצנת היא 🍯 בינתיים. ביום שתהיה תמונה — JAR_ICON, ושום דבר אחר
-// בקובץ הזה לא משתנה.
+// והצנצנת היא הצנצנת שלה: זכוכית, נייר וחוט, עם לב קטן. אחת לכל
+// המקומות שבהם מופיע דבש — המדף, האצבע, השפיכה, והספירה בסוף המסע.
 
-const JAR_ICON = '🍯'
+export const JAR_SRC = '/world/jar.webp'
+export const Jar = ({ h, style }) => (
+  <img src={JAR_SRC} alt="" draggable={false}
+    style={{ height: h, width: 'auto', display: 'block', ...style }} />
+)
 const POUR_MS = 900
 
 export function Feed({ progress, creature, onFeed, onClose }) {
@@ -95,7 +99,7 @@ export function Feed({ progress, creature, onFeed, onClose }) {
               שנשפך עליו, ולא כמו קו שחוצה אותו. הניצוצות מלפנים. */}
           {pour > 0 && (
             <div key={`p${pour}`} style={S.pourWrap} aria-hidden="true">
-              <span style={S.pourJar}>{JAR_ICON}</span>
+              <Jar h={54} style={S.pourJar} />
               <span style={S.pourStream} />
             </div>
           )}
@@ -122,15 +126,13 @@ export function Feed({ progress, creature, onFeed, onClose }) {
       <p style={S.shelfTitle}>{jars ? tr('גררו צנצנת אליו') : tr('אין דבש. ריצת פרחים מכינה אותו.')}</p>
       <div style={S.shelf} onTouchStart={grab} onMouseDown={grab} role="button" aria-label={tr('צנצנת דבש')}>
         {Array.from({ length: Math.min(jars, 12) }, (_, i) => (
-          <span key={i} style={S.jar}>{JAR_ICON}</span>
+          <Jar key={i} h={36} style={S.jar} />
         ))}
         {jars > 12 && <span style={S.more}>+{jars - 12}</span>}
       </div>
 
       {/* הצנצנת שבאצבע */}
-      {drag && (
-        <span style={{ ...S.held, left: drag.x, top: drag.y }} aria-hidden="true">{JAR_ICON}</span>
-      )}
+      {drag && <Jar h={50} style={{ ...S.held, left: drag.x, top: drag.y }} />}
     </div>
   )
 }
@@ -156,12 +158,15 @@ const S = {
   figure: { display: 'grid', placeItems: 'center', transformOrigin: '50% 100%', position: 'relative', zIndex: 1 },
   live: { height: '34vh', width: 'auto', display: 'block', filter: 'drop-shadow(0 8px 18px rgba(0,0,0,.55))' },
   pourWrap: { position: 'absolute', top: '-22%', left: '50%', width: 0, pointerEvents: 'none', zIndex: 0 },
-  pourJar: { position: 'absolute', left: 0, top: 0, fontSize: 44, display: 'block',
+  pourJar: { position: 'absolute', left: 0, top: 0,
+    filter: 'drop-shadow(0 4px 10px rgba(0,0,0,.55))',
     transformOrigin: '50% 80%', animation: 'wildenPourJar .9s ease-in-out both' },
-  pourStream: { position: 'absolute', left: 0, top: 42, width: 9, height: 96, borderRadius: 999,
+  // הצנצנת נטויה ב-118°, ולכן הפתח שלה יוצא ימינה־ומטה מנקודת הסיבוב.
+  // החוט מתחיל שם ולא במרכז, אחרת הדבש נשפך מהבטן של הצנצנת.
+  pourStream: { position: 'absolute', left: 33, top: 58, width: 9, height: 92, borderRadius: 999,
     background: 'linear-gradient(#FFD98A, #E8A32E)', transformOrigin: '50% 0',
     boxShadow: '0 0 14px rgba(255,200,90,.7)', animation: 'wildenStream .9s ease-in both' },
-  sparks: { position: 'absolute', left: '50%', top: '26%', fontSize: 34, zIndex: 2, pointerEvents: 'none',
+  sparks: { position: 'absolute', left: 'calc(50% + 33px)', top: '26%', fontSize: 34, zIndex: 2, pointerEvents: 'none',
     animation: 'wildenSpark .9s ease-out both' },
   barWrap: { width: '100%', maxWidth: 340, textAlign: 'center', margin: '4px 0 12px' },
   barTop: { margin: 0, fontSize: 15, fontWeight: 800, color: '#E9E5D8' },
@@ -174,8 +179,8 @@ const S = {
   shelf: { display: 'flex', flexWrap: 'wrap', gap: 4, justifyContent: 'center', alignItems: 'center',
     padding: '10px 14px', borderRadius: 14, minHeight: 58, width: '100%', maxWidth: 340,
     background: 'rgba(233,229,216,.06)', border: '1px solid rgba(233,229,216,.14)', cursor: 'grab' },
-  jar: { fontSize: 30, lineHeight: 1, filter: 'drop-shadow(0 2px 5px rgba(0,0,0,.5))' },
+  jar: { filter: 'drop-shadow(0 2px 5px rgba(0,0,0,.5))' },
   more: { fontSize: 14, fontWeight: 800, color: '#F0C069' },
-  held: { position: 'fixed', fontSize: 42, transform: 'translate(-50%,-50%)', pointerEvents: 'none', zIndex: 5,
+  held: { position: 'fixed', transform: 'translate(-50%,-50%)', pointerEvents: 'none', zIndex: 5,
     filter: 'drop-shadow(0 4px 10px rgba(0,0,0,.6))' },
 }

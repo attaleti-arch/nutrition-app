@@ -13,6 +13,7 @@ import { openAreas, areaOfSpot, DEFAULT_AREA } from '../content/areas'
 import { WindTank, TankCard } from './WindTank'
 import { takenId, WIND_NAME } from '../engine/wind'
 import { canFeed } from '../engine/feed'
+import { Jar } from './Feed'
 
 // ─── עולם הבית ───
 // "לא מבינה מה ילד רואה במעמד הבית." עכשיו: הרקע שלה (החורבה בשקיעה,
@@ -183,7 +184,7 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, onFeed, walks = 0,
             {!sp.air && <span style={{ ...W.groundShadow, bottom: `calc(${(sp.foot || 0) * 100}% - 4px)` }} />}
             {/* הצנצנת עומדת על הקרקע לידו, בגובה הרגליים — לא באוויר מעל
                 הראש, שם לכל ספרייט יש שוליים שקופים בגודל אחר. */}
-            {feedable && <span style={{ ...W.jarMark, bottom: `calc(${(sp.foot || 0) * 100}% - 2px)` }} aria-hidden="true">🍯</span>}
+            {feedable && <Jar h={24} style={{ ...W.jarMark, bottom: `calc(${(sp.foot || 0) * 100}% - 2px)` }} />}
             {bubble?.id === id && <span style={{ ...W.bubble, ...bubbleAt(sp.x) }}>{bubble.text}</span>}
           </button>
         )
@@ -352,8 +353,8 @@ const W = {
   buildingTag: { position: 'absolute', left: '50%', top: '-10px', transform: 'translate(-50%,-100%)', whiteSpace: 'nowrap', background: 'rgba(15,21,15,.85)', border: '1px solid #F0C069', color: '#F0C069', borderRadius: 999, padding: '2px 8px', fontSize: 11.5, fontWeight: 800 },
   mark: { position: 'absolute', top: -8, insetInlineStart: -8, width: 24, height: 24, borderRadius: '50%', color: '#14200F', fontWeight: 900, fontSize: 15, display: 'grid', placeItems: 'center', boxShadow: '0 2px 6px rgba(0,0,0,.4)' },
   // הצנצנת שעומדת ליד בן הלוויה כשיש דבש — הסימן שאפשר להאכיל
-  jarMark: { position: 'absolute', left: '-16%', fontSize: 19, lineHeight: 1,
-    filter: 'drop-shadow(0 2px 6px rgba(0,0,0,.65))', animation: 'wildenHover 2.4s ease-in-out infinite', zIndex: 4, pointerEvents: 'none' },
+  jarMark: { position: 'absolute', left: '-18%',
+    filter: 'drop-shadow(0 3px 6px rgba(0,0,0,.7))', animation: 'wildenHover 2.4s ease-in-out infinite', zIndex: 4, pointerEvents: 'none' },
   bubble: { position: 'absolute', display: 'block', bottom: '104%', left: '50%', transform: 'translateX(-50%)', minWidth: 150, maxWidth: 230, padding: '8px 12px', borderRadius: 12, background: 'rgba(233,229,216,.96)', color: '#14200F', fontSize: 13.5, fontWeight: 700, lineHeight: 1.4, textAlign: 'center', boxShadow: '0 4px 14px rgba(0,0,0,.35)', animation: 'wildenBubble 3.6s ease-out forwards', pointerEvents: 'none', zIndex: 5, whiteSpace: 'normal' },
   basinWater: { position: 'absolute', left: '39%', top: '43%', width: '23%', height: '6%', borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(120,190,230,.75), rgba(60,120,180,.4) 70%, rgba(60,120,180,0))', animation: 'wildenWater 3s ease-in-out infinite', pointerEvents: 'none' },
   beaconGlow: { position: 'absolute', left: '50.5%', top: '45%', width: '26%', height: '18%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,230,140,.85), rgba(240,192,105,.35) 45%, rgba(240,192,105,0) 70%)', animation: 'wildenBeacon 2.4s ease-in-out infinite', pointerEvents: 'none' },

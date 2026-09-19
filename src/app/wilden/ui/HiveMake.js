@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { tr, dirOf } from '../i18n'
 import { sfxCoin, sfxCheer, buzz } from '../engine/audio'
+import { Jar } from './Feed'
 
 // ─── הכוורת עובדת ───
 // "האני נכנסת בקליפ לכוורת עם פרחים ויוצאת עם דבש. צליל של דבש מצטבר
@@ -61,7 +62,7 @@ export function HiveMake({ jars = 0, used = 0, onDone }) {
         {/* הצנצנות עצמן: אחת־אחת, כל אחת קופצת פנימה */}
         <div style={S.jars} aria-label={tr('{n} צנצנות דבש', { n: jars })}>
           {Array.from({ length: jars }, (_, i) => (
-            <span key={i} style={{ ...S.jar, ...(i < shown ? S.jarIn : S.jarOut) }}>🍯</span>
+            <Jar key={i} h={44} style={{ ...S.jar, ...(i < shown ? S.jarIn : S.jarOut) }} />
           ))}
         </div>
         {shown === jars && jars > 0 && (
@@ -89,9 +90,8 @@ const S = {
   text: { position: 'absolute', left: 0, right: 0, bottom: '7%', padding: '0 22px', textAlign: 'center' },
   line: { margin: 0, fontSize: 25, fontWeight: 900, color: '#FFE8C4', textShadow: '0 2px 16px rgba(0,0,0,.9)' },
   sub: { margin: '3px 0 0', fontSize: 15, color: '#D9CDB4', textShadow: '0 2px 10px rgba(0,0,0,.85)' },
-  jars: { display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', margin: '12px 0 0', minHeight: 44 },
-  jar: { fontSize: 34, lineHeight: 1, display: 'inline-block',
-    filter: 'drop-shadow(0 3px 8px rgba(0,0,0,.6))' },
+  jars: { display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', margin: '12px 0 0', minHeight: 50 },
+  jar: { filter: 'drop-shadow(0 3px 8px rgba(0,0,0,.6))' },
   jarIn: { animation: 'wildenJarIn .42s cubic-bezier(.2,1.5,.4,1) both' },
   jarOut: { opacity: 0 },
   got: { margin: '10px 0 0', fontSize: 19, fontWeight: 800, color: '#F0C069', textShadow: '0 2px 12px rgba(0,0,0,.85)' },
