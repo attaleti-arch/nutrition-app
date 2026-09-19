@@ -254,10 +254,37 @@ export const buildingState = (progress, b) => {
   return { ...b, have: Math.min(b.need, n), byQuest, built: byQuest || n >= b.need }
 }
 export const buildings = progress => BUILDINGS.map(b => buildingState(progress, b))
-// בסוף מסע: כל מבנה שעובד מייצר אחד. מחזיר { res, made: [{ id, product }] }.
+
+// ── הכוורת אוכלת פרחים ──
+// "למה אוספים פרחים, מה זה נותן?" — עד עכשיו: כלום. פרחים היו המשאב
+// היחיד במשחק שאף משימה ואף מבנה לא ביקש, והם נערמו בבית לנצח. ובמקביל
+// הכוורת ייצרה דבש יש־מאין, בכל מסע, בלי שום קשר למה שהילד עשה בדרך.
+//
+// שני החורים האלה הם חור אחד, והתשובה היא מה שדבורים באמת עושות:
+// ארבעה פרחים → צנצנת דבש. "בלי פרחים אין דבש."
+//
+// ולכן ריצת הפרחים היא עכשיו הסיבה שיש דבש, והדבש הוא מה שמאכיל את
+// בן הלוויה ומגדל אותו. שרשרת אחת שילד יכול להגיד בקול.
+export const FLOWERS_PER_HONEY = 4
+
+// בסוף מסע: כל מבנה שעובד מייצר. מחזיר { res, made: [{ id, product, n }] }.
+// הכוורת היא היחידה שצורכת חומר גלם; השאר מייצרים אחד, כמו קודם.
 export function produce(progress) {
   const res = { ...(progress?.res || {}) }
   const made = []
-  for (const b of buildings(progress)) if (b.built) { res[b.product] = (res[b.product] || 0) + 1; made.push({ id: b.id, product: b.product }) }
+  for (const b of buildings(progress)) {
+    if (!b.built) continue
+    if (b.id === 'hive') {
+      const have = res.flowers || 0
+      const jars = Math.floor(have / FLOWERS_PER_HONEY)
+      if (!jars) { made.push({ id: b.id, product: b.product, n: 0, idle: true, flowers: have }); continue }
+      res.flowers = have - jars * FLOWERS_PER_HONEY
+      res.honey = (res.honey || 0) + jars
+      made.push({ id: b.id, product: b.product, n: jars, used: jars * FLOWERS_PER_HONEY })
+      continue
+    }
+    res[b.product] = (res[b.product] || 0) + 1
+    made.push({ id: b.id, product: b.product, n: 1 })
+  }
   return { res, made }
 }

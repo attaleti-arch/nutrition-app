@@ -3158,14 +3158,24 @@ test('נחיל ומבנים: 7 מאותו יצור — הכוורת עובדת �
   const b = buildings({ caught: { dabashon: 6 } }).find(x => x.id === 'hive')
   assert.equal(b.built, false); assert.equal(b.have, 6)
   assert.ok(buildings({ caught: { dabashon: 7 } }).find(x => x.id === 'hive').built)
-  assert.deepEqual(produce({ caught: { dabashon: 7 }, res: { honey: 2 } }), { res: { honey: 3 }, made: [{ id: 'hive', product: 'honey' }] })
+  // ── והכוורת אוכלת פרחים ──
+  // "למה אוספים פרחים, מה זה נותן?" ארבעה פרחים — צנצנת. בלי פרחים
+  // היא מחכה, ולא מייצרת דבש יש־מאין.
+  assert.deepEqual(produce({ caught: { dabashon: 7 }, res: { honey: 2, flowers: 9 } }),
+    { res: { honey: 4, flowers: 1 }, made: [{ id: 'hive', product: 'honey', n: 2, used: 8 }] },
+    'תשעה פרחים — שתי צנצנות, ואחד נשאר למחר')
+  const idle = produce({ caught: { dabashon: 7 }, res: { honey: 2, flowers: 3 } })
+  assert.equal(idle.res.honey, 2, 'שלושה פרחים זה לא מספיק — אין דבש')
+  assert.equal(idle.res.flowers, 3, 'והם נשארים')
+  assert.equal(idle.made[0].idle, true, 'והילד מקבל על זה משפט')
   assert.deepEqual(produce({ caught: { dabashon: 2 } }).made, [])
   // במכונה: התפיסה השביעית של האני — הכוורת עובדת כבר במסע הזה
-  let g = started(['dabashon'], { ...initial(), progress: { ...initial().progress, caught: { dabashon: 6 }, creatures: ['dabashon'] } })
+  let g = started(['dabashon'], { ...initial(), progress: { ...initial().progress, caught: { dabashon: 6 }, creatures: ['dabashon'], res: { flowers: 5 } } })
   g = walk(g, 200); g = catchHere(g, 500000)
   g = run(g, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED' }])
-  assert.equal(g.progress.res.honey, 2, 'האני הביאה 1 + הכוורת ייצרה 1')
-  assert.deepEqual(g.made, [{ id: 'hive', product: 'honey' }])
+  assert.equal(g.progress.res.honey, 2, 'האני הביאה 1 + הכוורת עשתה 1 מארבעה פרחים')
+  assert.equal(g.progress.res.flowers, 1, 'ונשאר אחד')
+  assert.deepEqual(g.made, [{ id: 'hive', product: 'honey', n: 1, used: 4 }])
   assert.equal(reduce(reduce(g, { type: 'CLUE_SEEN' }), { type: 'RUN_CLOSED' }).made, null)
 })
 

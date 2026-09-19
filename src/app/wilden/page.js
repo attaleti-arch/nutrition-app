@@ -32,6 +32,7 @@ import { cheer, milestone } from './content/cheers'
 import { GoldStage } from './ar/GoldStage'
 import { CoinRun } from './ar/CoinRun'
 import { Hatch } from './ui/Hatch'
+import { HiveMake } from './ui/HiveMake'
 import { Evolve } from './ui/Evolve'
 import { stagedFor, stageOf, stagedName, stageProgress } from './engine/stages'
 import { HomeWorld } from './ui/HomeWorld'
@@ -208,6 +209,9 @@ export default function Wilden() {
   // וחוזרים — לא נטפל בילד.
   const [goldOpen, setGoldOpen] = useState(false)
   const [hatchSeen, setHatchSeen] = useState(false)
+  // ── הכוורת של היום ── מה שהיא עשתה מהפרחים במסע הזה, אם עשתה.
+  const [hiveSeen, setHiveSeen] = useState(false)
+  const hive = g.made?.find(m => m.id === 'hive' && m.n > 0) || null
   const [seenEvolved, setSeenEvolved] = useState(null)   // הרשימה שכבר הוצגה (לפי זהות)
   // ── הקליפ אחרי התפיסה ── פעם אחת לכל תפיסה; נטען מראש בזמן המפגש.
   const [clipSeen, setClipSeen] = useState(false)
@@ -353,8 +357,16 @@ export default function Wilden() {
           onClose={() => { setFlowersOpen(false); setFlowersSkipped(true) }} />
       )}
 
+      {/* ── הכוורת עובדת ── */}
+      {/* "צליל של דבש מצטבר וכמות צנצנות עולה על המסך, שהילד רואה לנגד
+          עיניו." לפני הביצה, כי זה הדבר שהוא עשה בדרך — ולא הפתעה. */}
+      {hive && (g.state === S.CLUE || g.state === S.RUN_COMPLETE) && !hiveSeen && (
+        <Guard where="hiveMake" fallback={null}>
+          <HiveMake jars={hive.n} used={hive.used} onDone={() => setHiveSeen(true)} />
+        </Guard>
+      )}
       {/* הביצה בקעה: מסך אחד מעל הכול, לפני הבית */}
-      {g.hatched && (g.state === S.CLUE || g.state === S.RUN_COMPLETE) && !hatchSeen && (
+      {g.hatched && (g.state === S.CLUE || g.state === S.RUN_COMPLETE) && (!hive || hiveSeen) && !hatchSeen && (
         <Hatch hatched={g.hatched} onClose={() => setHatchSeen(true)} />
       )}
       {/* מי גדל במסע הזה — אחרי הביצה, לפני מסך הסיום */}
@@ -584,7 +596,12 @@ export default function Wilden() {
               <p style={s.tamed}>{tr('❤️ ביצת הלב בקעה! {n} {wind} יצאו טובי לב — אחד מהם יוצא איתכם מהמסע הבא.', { n: g.tamedNow, wind: tr(WIND_NAME) })}</p>
             )}
             {g.made?.length > 0 && (
-              <p style={s.made}>🏠 {g.made.map(m => `${tr(m.name || BUILDINGS.find(b => b.id === m.id)?.name || m.id)} ${RES_ICONS[m.product] || ''} +${m.n || 1}`).join(' · ')}</p>
+              <p style={s.made}>🏠 {g.made.filter(m => !m.idle).map(m => `${tr(m.name || BUILDINGS.find(b => b.id === m.id)?.name || m.id)} ${RES_ICONS[m.product] || ''} +${m.n || 1}`).join(' · ')}</p>
+            )}
+            {/* הכוורת בלי פרחים: לא שורה חסרה, אלא משפט. הילד צריך לדעת
+                *למה* אין דבש היום, אחרת ריצת הפרחים נשארת מיני־משחק. */}
+            {g.made?.some(m => m.idle) && (
+              <p style={s.idleHive}>{tr('🍯 הכוורת מחכה. בלי פרחים אין דבש — ריצת הפרחים היא מה שמכין אותו.')}</p>
             )}
             <ParentCard walk={g.progress.lastWalk && { ...g.progress.lastWalk, buddy: g.progress.buddy, stageProgress: g.progress.buddy ? stageProgress(g.progress, g.progress.buddy) : null }} gift={g.weeklyGift} />
             <Stats g={g} />
@@ -1357,6 +1374,7 @@ const s = {
   armed: { margin: '-6px 0 12px', fontSize: 14, color: '#F0C069', fontWeight: 700 },
   locked: { margin: '-6px 0 12px', fontSize: 13.5, color: C.muted },
   made: { margin: '6px 0 0', fontSize: 15, color: '#F0C069', fontWeight: 700 },
+  idleHive: { margin: '6px 0 0', fontSize: 14, color: '#C3C8BA', lineHeight: 1.5 },
   taken: { margin: '10px 0 0', padding: '9px 12px', borderRadius: 12, background: 'rgba(110,168,230,.12)', border: '1px solid rgba(110,168,230,.4)', color: '#C3D8EE', fontSize: 15, fontWeight: 800, lineHeight: 1.5 },
   takenNote: { display: 'block', marginTop: 6, color: '#8ED0F0', fontWeight: 800 },
   tamed: { margin: '10px 0 0', padding: '9px 12px', borderRadius: 12, background: 'rgba(255,120,150,.12)', border: '1px solid rgba(255,150,170,.4)', color: '#FFD3DC', fontSize: 15, fontWeight: 800, lineHeight: 1.5 },

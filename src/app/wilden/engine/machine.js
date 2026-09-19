@@ -578,11 +578,16 @@ export function reduce(g, ev) {
       // ── מונים להישגים ──
       const caught = { ...(g.progress.caught || {}) }
       for (const id of caughtIds) if (id) caught[id] = (caught[id] || 0) + 1
-      // מבנים שעובדים (7 מאותו יצור) מייצרים בכל מסע: הכוורת — דבש.
-      const made = produce({ caught }).made
-      for (const m of made) res[m.product] = (res[m.product] || 0) + 1
-      // פרחים מהריצה: הביתה, כמשאב.
+      // ── פרחים, ואז הכוורת ──
+      // הפרחים של היום נכנסים *לפני* הייצור: מה שנקטף בדרך הוא מה
+      // שהכוורת עושה ממנו דבש הערב, ולא מחר. ארבעה פרחים — צנצנת.
+      // (engine/world.js: produce)
       if (r.flowerRun?.done && r.flowerRun.got) res.flowers = (res.flowers || 0) + r.flowerRun.got
+      // מבנים שעובדים (7 מאותו יצור) מייצרים בכל מסע. הכוורת צורכת
+      // פרחים; השאר מייצרים אחד, כמו תמיד.
+      const prod = produce({ caught, res })
+      const made = prod.made
+      Object.assign(res, prod.res)
       // ומה שנשאב לשואב: רוח. השומר מבקש אותה, ובלי השואב היא מגיעה
       // רק מרוחי — זו התשובה ל"למה לקנות אותו".
       if (r.windRes) res.wind = (res.wind || 0) + r.windRes
