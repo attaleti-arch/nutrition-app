@@ -12,7 +12,7 @@ import { Lantern, beamHit } from './Lantern'
 import { usePulse } from '../hooks/usePulse'
 import { useCamera } from '../hooks/useCamera'
 import { camText } from '../engine/camera'
-import { sfxAppear, sfxRustle, sfxCatch, buzz, startVoice, sfxVoice } from '../engine/audio'
+import { sfxAppear, sfxRustle, sfxCatch, sfxCall, buzz, startVoice, sfxVoice } from '../engine/audio'
 import { bearing, haversine } from '../engine/geo'
 import { cheer } from '../content/cheers'
 import { tr } from '../i18n'
@@ -525,6 +525,8 @@ function fire(kind, setFlash, setShake, creatureId = null) {
   const m = map[kind]
   if (!m) return
   try { m.sfx?.(); buzz(m.buzz) } catch (e) { /* אודיו לא קריטי */ }
+  // ורגע אחרי התפיסה — הוא עונה בקול שלו. זה הרגע שבו הוא הופך משלך.
+  if (kind === 'catch' && creatureId) setTimeout(() => { try { sfxCall(creatureId) } catch (e) { /* */ } }, 520)
   if (!m.t) return
   setFlash(m.t ? tr(m.t) : m.t)
   setTimeout(() => setFlash(null), 1400)

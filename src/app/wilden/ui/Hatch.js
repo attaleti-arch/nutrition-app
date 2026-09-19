@@ -4,7 +4,7 @@ import { tr, dirOf } from '../i18n'
 import { useModelViewer } from '../hooks/useModelViewer'
 import { creatureById } from '../content/creatures'
 import { variantById, variantName, tintOf } from '../engine/egg'
-import { sfxCatch, sfxCheer, sfxCrack, sfxHatch, buzz } from '../engine/audio'
+import { sfxCatch, sfxCheer, sfxCrack, sfxHatch, sfxCall, buzz } from '../engine/audio'
 import { Aura } from './Aura'
 
 // ─── הביצה בוקעת ───
@@ -59,7 +59,7 @@ export function Hatch({ hatched, onClose }) {
     setPhase('flash')
     try { sfxHatch(); buzz([80, 40, 60, 40, 160]) } catch (e) { /* לא קריטי */ }
     setTimeout(() => { setPhase('creature'); try { sfxCatch() } catch (e) { /* */ } }, FLASH_MS)
-    setTimeout(() => { try { sfxCheer() } catch (e) { /* */ } }, FLASH_MS + 700)
+    setTimeout(() => { try { sfxCheer(); sfxCall(creature?.id) } catch (e) { /* */ } }, FLASH_MS + 700)
   }
 
   // משרוקית: בלי ביצה. הבזק, ואז היצור.
@@ -68,7 +68,7 @@ export function Hatch({ hatched, onClose }) {
     doneRef.current = true
     try { sfxHatch(); buzz([80, 40, 160]) } catch (e) { /* */ }
     const t1 = setTimeout(() => { setPhase('creature'); try { sfxCatch() } catch (e) { /* */ } }, FLASH_MS)
-    const t2 = setTimeout(() => { try { sfxCheer() } catch (e) { /* */ } }, FLASH_MS + 700)
+    const t2 = setTimeout(() => { try { sfxCheer(); sfxCall(creature?.id) } catch (e) { /* */ } }, FLASH_MS + 700)
     return () => { clearTimeout(t1); clearTimeout(t2) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

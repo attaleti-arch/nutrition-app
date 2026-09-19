@@ -11,6 +11,7 @@ import { itemById } from '../engine/shop'
 import { Wear } from './Wear'
 import { CreatureAura, StageTag } from './Aura'
 import { STAGES, stageProgress, staged, stagedFor, stagedName, hasLook, looksFor, lookName, formsOf, formTally } from '../engine/stages'
+import { sfxCall, hasCall } from '../engine/audio'
 
 // ─── ספר היצורים, והישגים ───
 // "ספר היצורים צריך לכלול יותר מ-9, שיראו המון דמויות."
@@ -135,6 +136,13 @@ function CreaturePage({ id, progress, onClose, onLook }) {
       </div>
       <p style={B.pageHint}>{dressed ? `${tr(c.name)} ${tr('עם')} ${Object.values(wear).map(w => tr(itemById(w)?.name)).filter(Boolean).join(tr(' ו'))}` : tr('סובבו אותו עם האצבע')}</p>
       <h3 style={B.pageName}>{stagedName(c, sp.stage)}{c.look ? ` ${tr(lookName(c.look, c))}` : ''}</h3>
+      {/* ── הקול שלו ── בספר אפשר להאזין לכל אחד, שוב ושוב. וככל שהוא
+          גדל הקול יורד, אז אותו כפתור נשמע אחרת בכל שלב. */}
+      {hasCall(id) && (
+        <button onClick={() => { try { sfxCall(id, sp.stage) } catch (e) { /* */ } }} style={B.listen}>
+          🔊 {c.gender === 'f' ? tr('הקול שלה') : tr('הקול שלו')}
+        </button>
+      )}
       {/* שלושת השלבים: מה הושג, ומה הסף הבא */}
       <div style={B.stages} aria-label={tr('שלבי התפתחות')}>
         {STAGES.map(st => (
@@ -236,6 +244,7 @@ const B = {
   stage: { width: '100%', height: '48vh', display: 'grid', placeItems: 'center' },
   pageHint: { margin: 0, fontSize: 12.5, color: '#767F71' },
   pageName: { margin: '8px 0 0', fontSize: 30, fontWeight: 900, color: '#E5A342' },
+  listen: { margin: '8px auto 0', display: 'block', padding: '7px 16px', borderRadius: 999, border: '1px solid #3A4A38', background: 'rgba(233,229,216,.06)', color: '#E9E5D8', fontFamily: 'inherit', fontSize: 14, fontWeight: 800, cursor: 'pointer' },
   pageLine: { margin: '6px 0 14px', fontSize: 16, color: '#C3C8BA', fontStyle: 'italic', textAlign: 'center' },
   facts: { display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   fact: { padding: '6px 12px', borderRadius: 999, background: '#161E17', border: '1px solid #2B382B', fontSize: 14 },

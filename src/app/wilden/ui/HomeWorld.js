@@ -4,7 +4,7 @@ import { usePinch } from './usePinch'
 import { tr } from '../i18n'
 import { creatureById } from '../content/creatures'
 import { activeQuest, questProgress, canComplete, worldState, creatureLine, RES_NAME, RES_ICON, swarmOf, buildings, openChapter, CHAPTERS, nextGoals } from '../engine/world'
-import { sfxAppear, sfxCheer, sfxFinish, buzz } from '../engine/audio'
+import { sfxAppear, sfxCheer, sfxFinish, sfxCall, buzz } from '../engine/audio'
 import { Wear } from './Wear'
 import { CreatureAura } from './Aura'
 import { stageOf, stagedFor } from '../engine/stages'
@@ -169,7 +169,8 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, onFeed, walks = 0,
         const feedable = !!onFeed && canFeed(progress, id)
         return (
           <button key={id} onClick={() => {
-            try { sfxAppear() } catch (e) { /* */ }
+            // הוא עונה בקול שלו, ולא ב"פלינג" שמשותף לכולם
+            try { sfxCall(id, stage) } catch (e) { /* */ }
             if (feedable) { onFeed(id); return }
             say(id, creatureLine(id, seed + walks)); onCreatureTap?.(id)
           }}

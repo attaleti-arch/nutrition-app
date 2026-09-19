@@ -319,6 +319,29 @@ const VOICES = {
   // בולדר וקראג: רעם אבן — רעש נמוך מאוד.
   bolder: c => stoneVoice(c, 0.22),
   kraag: c => stoneVoice(c, 0.16),
+  // ויספר: נשימה רכה ורחוקה, והמיה נמוכה מתחתיה. הוא מקשיב, לא מרעיש.
+  whisper: c => {
+    const src = loopNoise(c); const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = 1.6
+    const amp = c.createGain(); amp.gain.value = 0.55
+    const lfo = c.createOscillator(); lfo.frequency.value = 0.45; const lg = c.createGain(); lg.gain.value = 0.5
+    lfo.connect(lg); lg.connect(amp.gain)
+    const o = c.createOscillator(); o.frequency.value = 220; const og = c.createGain(); og.gain.value = 0.25
+    o.connect(og); og.connect(amp)
+    src.connect(bp); bp.connect(amp)
+    return { out: amp, start: () => { src.start(); lfo.start(); o.start() }, stop: () => { src.stop(); lfo.stop(); o.stop() }, base: 0.1 }
+  },
+  // שושו: נשיפת דרקון — רעש חם ונמוך, נהמה מתחת, ונחירה מדי פעם.
+  drake: c => {
+    const src = loopNoise(c); const lp = c.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700
+    const amp = c.createGain(); amp.gain.value = 0.6
+    const lfo = c.createOscillator(); lfo.frequency.value = 0.8; const lg = c.createGain(); lg.gain.value = 0.4
+    lfo.connect(lg); lg.connect(amp.gain)
+    const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 108; const og = c.createGain(); og.gain.value = 0.18
+    o.connect(og); og.connect(amp)
+    src.connect(lp); lp.connect(amp)
+    const growl = setInterval(() => { if (!muted) tone({ freq: 300, glideTo: 180, dur: 0.22, type: 'sawtooth', vol: 0.05 }) }, 3200)
+    return { out: amp, start: () => { src.start(); lfo.start(); o.start() }, stop: () => { src.stop(); lfo.stop(); o.stop(); clearInterval(growl) }, base: 0.12 }
+  },
   // נימי: רשרוש בשיחים כל כמה שניות, וטפיפה.
   nimi: c => {
     const amp = c.createGain(); amp.gain.value = 1
@@ -405,6 +428,107 @@ export function sfxVoice(id, kind) {
       default: tone({ freq: 660, dur: 0.16, type: 'triangle', vol: 0.14 }); tone({ freq: 990, dur: 0.28, type: 'sine', vol: 0.12, delay: 0.09 })
     }
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ── הקריאה ──
+// הקול המתמשך שלמעלה שייך למפגש: הוא רץ דקה ומתחזק כשמתקרבים. אבל
+// ביתר המשחק היצור לא נשמע בכלל — לחיצה עליו בבית נתנה את אותו
+// "פלינג" גנרי לכל אחד־עשר.
+//
+// הקריאה היא משפט קצר משלו, חצי שנייה, שתיים־שלוש נגיעות. היא נשמעת
+// כשלוחצים עליו בבית, ברגע שנתפס, וכשהוא גומר לאכול. זה מה שהופך
+// אחד־עשר ספרייטים לאחד־עשר יצורים.
+//
+// וככל שהוא גדל הקול יורד: גור דק, אגדי עמוק. מכפיל אחד על כל
+// התדרים, ושום דבר אחר לא משתנה.
+// ═══════════════════════════════════════════════════════════════
+
+const STAGE_PITCH = [1, 0.86, 0.74]
+
+const CALLS = {
+  // נימי: שני ציוצים עולים ורשרוש קטן אחריהם — גור סקרן
+  nimi: p => {
+    tone({ freq: 720 * p, glideTo: 880 * p, dur: 0.13, type: 'triangle', vol: 0.16 })
+    tone({ freq: 990 * p, glideTo: 1180 * p, dur: 0.16, type: 'triangle', vol: 0.14, delay: 0.14 })
+    noise({ dur: 0.18, freq: 3400, q: 1.1, vol: 0.07, delay: 0.26 })
+  },
+  // האני: זמזום שעולה, ונגיעת פעמון בסוף — דבורה מרוצה
+  dabashon: p => {
+    tone({ freq: 180 * p, glideTo: 280 * p, dur: 0.3, type: 'sawtooth', vol: 0.13 })
+    tone({ freq: 1046 * p, dur: 0.24, type: 'sine', vol: 0.09, delay: 0.24 })
+  },
+  // בולדר: נהמה אחת ארוכה שעולה, וחצץ שנושר — הוא קם
+  bolder: p => {
+    tone({ freq: 58 * p, glideTo: 96 * p, dur: 0.5, type: 'sine', vol: 0.21 })
+    noise({ dur: 0.36, freq: 260, q: 0.4, vol: 0.11, delay: 0.08 })
+  },
+  // קראג: שתי חבטות כבדות ואז רעם — הוא הגדול, והמקצב הוא שמבדיל
+  // אותו מבולדר. שני ענקי אבן עם אותו קול בגובה אחר נשמעים זהים.
+  kraag: p => {
+    [0, 0.17].forEach(d => {
+      tone({ freq: 84 * p, glideTo: 44 * p, dur: 0.14, type: 'sine', vol: 0.22, delay: d })
+      noise({ dur: 0.12, freq: 200, q: 0.8, vol: 0.13, delay: d })
+    })
+    tone({ freq: 40 * p, glideTo: 33 * p, dur: 0.7, type: 'sine', vol: 0.16, delay: 0.32 })
+  },
+  // רוחי: שריקה אחת ארוכה על מצע רוח — הרוח נשמעת לכל האורך, וזה
+  // מה שמפריד אותה מהציוצים הקצרים של נימי.
+  ruchi: p => {
+    noise({ dur: 0.62, freq: 1500, q: 0.45, vol: 0.13 })
+    tone({ freq: 1200 * p, glideTo: 2900 * p, dur: 0.3, type: 'sine', vol: 0.1 })
+    tone({ freq: 2900 * p, glideTo: 1500 * p, dur: 0.3, type: 'sine', vol: 0.09, delay: 0.3 })
+  },
+  // לומי: ארבעה נצנוצים קצרצרים מטפסים, וריצוד גבוה מעליהם
+  lumi: p => {
+    [0, 0.07, 0.14, 0.21].forEach((d, i) =>
+      tone({ freq: 1568 * p * Math.pow(2, i / 3), dur: 0.09, type: 'triangle', vol: 0.11, delay: d }))
+    noise({ dur: 0.25, freq: 9000, q: 0.8, vol: 0.05, delay: 0.1 })
+  },
+  // גלי: בועות — ארבעה בליפים יורדים במקצב לא אחיד, ומים מתחת
+  gali: p => {
+    [0, 0.08, 0.19, 0.3].forEach((d, i) =>
+      tone({ freq: (1500 - i * 180) * p, glideTo: (620 - i * 60) * p, dur: 0.07, type: 'sine', vol: 0.12, delay: d }))
+    noise({ dur: 0.3, freq: 420, q: 0.8, vol: 0.1, delay: 0.14 })
+  },
+  // צל: נשיפה, וטון עמוק שעולה מתחתיה
+  tzel: p => {
+    noise({ dur: 0.4, freq: 2400, q: 1.5, vol: 0.12 })
+    tone({ freq: 70 * p, glideTo: 150 * p, dur: 0.45, type: 'sine', vol: 0.16, delay: 0.04 })
+  },
+  // נוגה: הקשה, ואז צלצול ארוך שנמשך — הזנב הארוך הוא מה שמבדיל
+  // אותה מהנצנוצים הקצרים של לומי.
+  noga: p => {
+    noise({ dur: 0.05, freq: 5000, q: 1.2, vol: 0.09 })
+    tone({ freq: 1318 * p, dur: 1.0, type: 'sine', vol: 0.11, delay: 0.01 })
+    tone({ freq: 1976 * p, dur: 0.85, type: 'sine', vol: 0.06, delay: 0.02 })
+    tone({ freq: 880 * p, dur: 1.2, type: 'sine', vol: 0.07, delay: 0.18 })
+  },
+  // ויספר: המיה רכה, שני צלילים יורדים על נשימה. גבוה מהזמזום של האני,
+  // כדי ששניהם לא ישבו באותו אזור ויישמעו דומה.
+  whisper: p => {
+    noise({ dur: 0.5, freq: 2600, q: 1.1, vol: 0.09 })
+    tone({ freq: 640 * p, glideTo: 700 * p, dur: 0.24, type: 'sine', vol: 0.12, delay: 0.04 })
+    tone({ freq: 790 * p, glideTo: 700 * p, dur: 0.34, type: 'sine', vol: 0.09, delay: 0.26 })
+  },
+  // שושו: צריחה חדה וקצרה של דרקון, ואז נשיפה נמוכה
+  drake: p => {
+    tone({ freq: 900 * p, glideTo: 380 * p, dur: 0.15, type: 'sawtooth', vol: 0.16 })
+    tone({ freq: 1350 * p, glideTo: 560 * p, dur: 0.13, type: 'square', vol: 0.05 })
+    noise({ dur: 0.3, freq: 1900, q: 0.7, vol: 0.13, delay: 0.16 })   // נשיפה, לא חצץ — אחרת הוא ובולדר אותו דבר
+  },
+}
+
+// יש קריאה ליצור הזה? (כדי שמסך יוכל לדעת בלי להשמיע)
+export const hasCall = id => !!CALLS[id]
+
+// stage: 1 גור, 2 בוגר, 3 אגדי — ככל שגדל, הקול עמוק יותר.
+export function sfxCall(id, stage = 1) {
+  if (muted) return
+  const f = CALLS[id]
+  if (!f) { sfxAppear(); return }
+  const p = STAGE_PITCH[Math.max(1, Math.min(STAGE_PITCH.length, stage || 1)) - 1]
+  try { f(p) } catch (e) { /* לא קריטי */ }
 }
 
 // ── ריצת המטבעות: ספירה לאחור ויציאה ──

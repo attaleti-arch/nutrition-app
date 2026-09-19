@@ -4,7 +4,7 @@ import { tr, dirOf } from '../i18n'
 import { creatureById } from '../content/creatures'
 import { staged, stagedName, stageProgress, stageInfo, lookOf, MAX_STAGE } from '../engine/stages'
 import { JARS_PER_POINT, jarsOf, towardNext, honeyOf } from '../engine/feed'
-import { sfxCoin, sfxAppear, buzz } from '../engine/audio'
+import { sfxCoin, sfxCall, buzz } from '../engine/audio'
 
 // ─── להאכיל ───
 // "איך מתבצעת ההאכלה ויזואלית?"
@@ -59,7 +59,8 @@ export function Feed({ progress, creature, onFeed, onClose }) {
     try { sfxCoin(true); buzz([20, 40, 30]) } catch (err) { /* לא קריטי */ }
     // השפיכה רצה, ורק בסופה הצנצנת באמת יורדת מהמדף
     setTimeout(() => {
-      try { sfxAppear() } catch (err) { /* */ }
+      // והוא עונה — בקול שלו, בגובה של השלב שהוא בו
+      try { sfxCall(id, sp.stage) } catch (err) { /* */ }
       onFeed?.(id)
       busy.current = false
     }, POUR_MS)
