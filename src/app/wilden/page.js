@@ -36,6 +36,7 @@ import { HiveMake } from './ui/HiveMake'
 import { Evolve } from './ui/Evolve'
 import { stagedFor, stageOf, stagedName, stageProgress } from './engine/stages'
 import { HomeWorld } from './ui/HomeWorld'
+import { Feed } from './ui/Feed'
 import { Book, Badges } from './ui/Book'
 import { Shop } from './ui/Shop'
 import { Guide } from './ui/Guide'
@@ -50,6 +51,7 @@ import { badgeById } from './engine/badges'
 import { RES_NAME as RES_NAMES } from './engine/world'
 import { CaughtClip, usePreloadClip } from './ui/CaughtClip'
 import { EGG_HONEY, canBuyEgg, eggWarmth, warmthWord, variantName } from './engine/egg'
+import { JARS_PER_POINT, towardNext } from './engine/feed'
 import { haversine } from './engine/geo'
 import { sfxCoin, sfxTally, sfxCheer, resumeAudio } from './engine/audio'
 import 'leaflet/dist/leaflet.css'
@@ -466,6 +468,7 @@ export default function Wilden() {
             onGear={(id, pay) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_GEAR', id, pay }) }}
             onSkin={(creature, skin) => { sfxCheer(); buzz([30, 30, 60]); dispatch({ type: 'BUY_SKIN', creature, skin }) }}
             onStone={creature => { sfxFinish(); buzz([60, 40, 120]); dispatch({ type: 'BUY_STONE', creature }) }}
+            onFeed={id => dispatch({ type: 'FEED', id })}
             P={P} onIntro={() => {
               // פותחים את הפתיחה מהכפתור: זו לחיצה, ולכן מותר להתחיל קול —
               // וכך המוזיקה כבר מנגנת במסך הפתיחה ולא רק אחרי "להתחיל".
@@ -749,8 +752,9 @@ function poisText(pois) {
   return parts.join(' · ')
 }
 
-function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onPick, onKm, onLook, P, onIntro, music, firstWord, onLang }) {
+function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear, onSkin, onStone, onBuddy, onPick, onKm, onLook, onFeed, P, onIntro, music, firstWord, onLang }) {
   const [panel, setPanel] = useState(null)   // book | badges | shop
+  const [feeding, setFeeding] = useState(null)   // איזה יצור פתוח להאכלה
   const week = weeklyStatus(g.progress, today)
   const buddy = creatureById(g.progress.buddy)
   // routeLen ולא km: km הוא פורמט המרחק (engine/weekly) שמשמש כאן למטה.
@@ -781,8 +785,20 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
 
       {/* העולם עצמו: התפאורה שלה, היצורים החיים, והשומר שמבקש. */}
       <div style={{ margin: '16px 0 10px' }}>
-        <HomeWorld progress={g.progress} walks={walks} onQuest={onQuest} firstWord={firstWord} />
+        <HomeWorld progress={g.progress} walks={walks} onQuest={onQuest} firstWord={firstWord}
+          onFeed={id => setFeeding(id)} />
       </div>
+      {/* ── ההאכלה ── גוררים צנצנת מהמדף אל בן הלוויה, והוא גדל */}
+      {feeding && creatureById(feeding) && (
+        <Feed progress={g.progress} creature={creatureById(feeding)} onClose={() => setFeeding(null)}
+          onFeed={id => {
+            // הצנצנת השלישית היא נקודת צמיחה — ואז מסך ההתפתחות תופס את
+            // המסך, אז יורדים מההאכלה כדי לא לחסום אותו.
+            const grows = towardNext(g.progress, id) === JARS_PER_POINT - 1
+            onFeed?.(id)
+            if (grows) setFeeding(null)
+          }} />
+      )}
       <div style={{ display: 'flex', gap: 8, marginBottom: 18 }}>
         <button onClick={() => setPanel('book')} style={s.chip}>📖 {tr('ספר היצורים')} <b>{g.progress.creatures.length}/{AVAILABLE.length}</b></button>
         <button onClick={() => setPanel('badges')} style={s.chip}>🏅 {tr('הישגים')} <b>{badgeCount(g.progress)}</b></button>

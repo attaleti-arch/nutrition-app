@@ -98,6 +98,8 @@ export function mergeProgress(local, remote) {
     ...mergeGear(base, other),
     ...mergeSkins(base, other),
     bond: mergeMax(base.bond, other.bond),
+    // צנצנות שהאכילו: הגבוה מבין השניים, כמו bond — האכלה לא נמחקת
+    fed: mergeMax(base.fed, other.fed),
     taken: base.taken || other.taken || null,
     sucks: Math.max(base.sucks || 0, other.sucks || 0),
     freed: [...new Set([...(base.freed || []), ...(other.freed || [])])],

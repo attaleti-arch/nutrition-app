@@ -2823,7 +2823,7 @@ test('דופק: רחוק — לאט, קרוב — מהר, בלי מרחק — ש
 
 // ══════════════════════════════════════════════
 // ─── שלבי התפתחות ───
-import { STAGES, stageFor, stageOf, stageProgress, evolvedBetween, staged, stagedName, grewVerb, stageScale, countAtStage } from '../src/app/wilden/engine/stages.js'
+import { STAGES, stageFor, stageOf, stagePoints, stageProgress, evolvedBetween, staged, stagedName, grewVerb, stageScale, countAtStage } from '../src/app/wilden/engine/stages.js'
 import { sizeOf as sizeOf2 } from '../src/app/wilden/content/creatures.js'
 
 test('שלבים: 3 תפיסות = בוגר, 7 = אגדי; נגזר מהמונה, לא מצב נפרד', () => {
@@ -3191,6 +3191,47 @@ test('נחיל ומבנים: 7 מאותו יצור — הכוורת עובדת �
   assert.equal(g.progress.res.flowers, 1, 'ונשאר אחד')
   assert.deepEqual(g.made, [{ id: 'hive', product: 'honey', n: 1, used: 4 }])
   assert.equal(reduce(reduce(g, { type: 'CLUE_SEEN' }), { type: 'RUN_CLOSED' }).made, null)
+})
+
+// ══════════════════════════════════════════════
+// ─── ההאכלה ───
+// "אני עדיין לא מבינה מה הדבש מביא." זה מה: קטפתי פרחים → האני עשתה
+// דבש → האכלתי את בן הלוויה → הוא גדל.
+import { JARS_PER_POINT, jarsOf, fedCredits, towardNext, canFeed, feed } from '../src/app/wilden/engine/feed.js'
+
+test('האכלה: שלוש צנצנות הן נקודת צמיחה, ורק לבן הלוויה', () => {
+  const p0 = { ...initial().progress, creatures: ['nimi', 'gali'], buddy: 'nimi', caught: { nimi: 1 }, res: { honey: 3 } }
+  assert.equal(JARS_PER_POINT, 3)
+  // רק בן הלוויה, רק מי שנתפס, ורק אם יש צנצנת
+  assert.ok(canFeed(p0, 'nimi'))
+  assert.ok(!canFeed(p0, 'gali'), 'גלי אינה בת הלוויה')
+  assert.ok(!canFeed({ ...p0, res: { honey: 0 } }, 'nimi'), 'אין דבש — אין האכלה')
+  assert.ok(!canFeed({ ...p0, buddy: 'boulder' }, 'boulder'), 'בן לוויה שלא נתפס')
+  const dry = { ...p0, res: { honey: 0 } }
+  assert.equal(feed(dry), dry, 'בלי דבש מחזירים את אותו אובייקט, בלי לגעת')
+  // כל צנצנת: יורדת מהמלאי, נרשמת עליו, והפס זז
+  let p = feed(p0)
+  assert.equal(p.res.honey, 2); assert.equal(jarsOf(p, 'nimi'), 1)
+  assert.equal(towardNext(p, 'nimi'), 1); assert.equal(fedCredits(p, 'nimi'), 0, 'עוד לא נקודה')
+  p = feed(p); p = feed(p)
+  assert.equal(p.res.honey, 0); assert.equal(fedCredits(p, 'nimi'), 1, 'שלוש צנצנות — נקודה')
+  assert.equal(towardNext(p, 'nimi'), 0, 'והפס מתאפס לסיבוב הבא')
+  assert.equal(feed(p), p, 'נגמר הדבש — שום דבר לא משתנה')
+  assert.equal(jarsOf(p, 'gali'), 0, 'מה שנימי אכל לא נזקף לגלי')
+  assert.equal(stagePoints(p, 'nimi'), 2, 'תפיסה אחת + נקודת האכלה')
+})
+
+test('האכלה במכונה: רק בבית, ומסך ההתפתחות נפתח כשהיא מגדילה', () => {
+  const base = { ...initial(), progress: { ...initial().progress, creatures: ['nimi'], buddy: 'nimi', caught: { nimi: 2 }, res: { honey: 5 } } }
+  let g = reduce(reduce(reduce(base, { type: 'FEED' }), { type: 'FEED' }), { type: 'FEED' })
+  assert.equal(g.progress.res.honey, 2)
+  assert.equal(stageOf(g.progress, 'nimi'), 2, '2 תפיסות + נקודת האכלה = בוגר')
+  assert.deepEqual(g.evolved, [{ id: 'nimi', from: 1, to: 2 }], 'ההאכלה השלישית פותחת את מסך ההתפתחות')
+  // בשטח לא מאכילים — הידיים על הטלפון והרגליים הולכות
+  const walking = started(['nimi'], { ...g, evolved: null })
+  assert.equal(reduce(walking, { type: 'FEED' }), walking)
+  // ונשמר: לשרת ולמכשיר
+  assert.equal(forServer(g).progress.fed.nimi, 3)
 })
 
 // ══════════════════════════════════════════════

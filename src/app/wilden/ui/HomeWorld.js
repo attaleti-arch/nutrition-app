@@ -12,6 +12,7 @@ import { SPOTS, GUARDIAN, TANK } from '../content/spots'
 import { openAreas, areaOfSpot, DEFAULT_AREA } from '../content/areas'
 import { WindTank, TankCard } from './WindTank'
 import { takenId, WIND_NAME } from '../engine/wind'
+import { canFeed } from '../engine/feed'
 
 // ─── עולם הבית ───
 // "לא מבינה מה ילד רואה במעמד הבית." עכשיו: הרקע שלה (החורבה בשקיעה,
@@ -42,7 +43,7 @@ function BuildingGlow({ id }) {
   return <div aria-hidden="true" style={{ width: '100%', aspectRatio: '1', borderRadius: '50%', background: `radial-gradient(circle, ${c} 0%, transparent 65%)` }} />
 }
 
-export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWord = false }) {
+export function HomeWorld({ progress, onQuest, onCreatureTap, onFeed, walks = 0, firstWord = false }) {
   const world = worldState(progress)
   const quest = activeQuest(progress)
   const chapter = openChapter(progress)
@@ -162,9 +163,16 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
         const c = stagedFor(progress, creatureById(id))
         if (!c || !sp || !c.live) return null
         const h = sp.h * (1 + (stage - 1) * 0.15)
+        // ── הצנצנת מעל בן הלוויה ── יש דבש? לחיצה עליו פותחת את ההאכלה,
+        // ולא משפט. בלי דבש הוא מדבר כרגיל — אין טעם לפתוח מדף ריק.
+        const feedable = !!onFeed && canFeed(progress, id)
         return (
-          <button key={id} onClick={() => { say(id, creatureLine(id, seed + walks)); onCreatureTap?.(id); try { sfxAppear() } catch (e) { /* */ } }}
-            aria-label={c.name}
+          <button key={id} onClick={() => {
+            try { sfxAppear() } catch (e) { /* */ }
+            if (feedable) { onFeed(id); return }
+            say(id, creatureLine(id, seed + walks)); onCreatureTap?.(id)
+          }}
+            aria-label={feedable ? tr('להאכיל') : c.name}
             style={{ ...W.spot, left: `${sp.x}%`, top: `${sp.y + h * (sp.foot || 0)}%`, height: `${h}%`, animation: sp.air ? 'wildenHover 3.2s ease-in-out infinite' : 'none' }}>
             <div style={{ ...W.figure, width: 'fit-content', position: 'relative', transform: sp.flip ? 'scaleX(-1)' : 'none' }}>
               <CreatureAura c={c} />
@@ -173,6 +181,9 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, walks = 0, firstWo
             </div>
             {/* הצל מתחת לרגליים, לא מתחת לקנבס */}
             {!sp.air && <span style={{ ...W.groundShadow, bottom: `calc(${(sp.foot || 0) * 100}% - 4px)` }} />}
+            {/* הצנצנת עומדת על הקרקע לידו, בגובה הרגליים — לא באוויר מעל
+                הראש, שם לכל ספרייט יש שוליים שקופים בגודל אחר. */}
+            {feedable && <span style={{ ...W.jarMark, bottom: `calc(${(sp.foot || 0) * 100}% - 2px)` }} aria-hidden="true">🍯</span>}
             {bubble?.id === id && <span style={{ ...W.bubble, ...bubbleAt(sp.x) }}>{bubble.text}</span>}
           </button>
         )
@@ -340,6 +351,9 @@ const W = {
     animation: 'wildenHole 3.4s ease-in-out infinite' },
   buildingTag: { position: 'absolute', left: '50%', top: '-10px', transform: 'translate(-50%,-100%)', whiteSpace: 'nowrap', background: 'rgba(15,21,15,.85)', border: '1px solid #F0C069', color: '#F0C069', borderRadius: 999, padding: '2px 8px', fontSize: 11.5, fontWeight: 800 },
   mark: { position: 'absolute', top: -8, insetInlineStart: -8, width: 24, height: 24, borderRadius: '50%', color: '#14200F', fontWeight: 900, fontSize: 15, display: 'grid', placeItems: 'center', boxShadow: '0 2px 6px rgba(0,0,0,.4)' },
+  // הצנצנת שעומדת ליד בן הלוויה כשיש דבש — הסימן שאפשר להאכיל
+  jarMark: { position: 'absolute', left: '-16%', fontSize: 19, lineHeight: 1,
+    filter: 'drop-shadow(0 2px 6px rgba(0,0,0,.65))', animation: 'wildenHover 2.4s ease-in-out infinite', zIndex: 4, pointerEvents: 'none' },
   bubble: { position: 'absolute', display: 'block', bottom: '104%', left: '50%', transform: 'translateX(-50%)', minWidth: 150, maxWidth: 230, padding: '8px 12px', borderRadius: 12, background: 'rgba(233,229,216,.96)', color: '#14200F', fontSize: 13.5, fontWeight: 700, lineHeight: 1.4, textAlign: 'center', boxShadow: '0 4px 14px rgba(0,0,0,.35)', animation: 'wildenBubble 3.6s ease-out forwards', pointerEvents: 'none', zIndex: 5, whiteSpace: 'normal' },
   basinWater: { position: 'absolute', left: '39%', top: '43%', width: '23%', height: '6%', borderRadius: '50%', background: 'radial-gradient(ellipse, rgba(120,190,230,.75), rgba(60,120,180,.4) 70%, rgba(60,120,180,0))', animation: 'wildenWater 3s ease-in-out infinite', pointerEvents: 'none' },
   beaconGlow: { position: 'absolute', left: '50.5%', top: '45%', width: '26%', height: '18%', borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,230,140,.85), rgba(240,192,105,.35) 45%, rgba(240,192,105,0) 70%)', animation: 'wildenBeacon 2.4s ease-in-out infinite', pointerEvents: 'none' },

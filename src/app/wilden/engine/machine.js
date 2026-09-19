@@ -15,6 +15,7 @@ import { grantWeekly, walkSummary } from './weekly.js'
 import { evolvedBetween } from './stages.js'
 import { routeKm, poisFor, creatureCount, placePois, setRouteKm, withCreatures, POI } from './plan.js'
 import { modsFor, consume, buyGear, withKeys, withExtra, unlocked } from './gear.js'
+import { feed, canFeed } from './feed.js'
 import { buySkin, buyStone } from './skins.js'
 import { withExtraGold, AVAILABLE, availableFor, spatBy, SUCK_COINS, heatDistance, withPick } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
@@ -83,6 +84,7 @@ export function initial() {
       look: {},           // { [creatureId]: 'base' | מזהה צבע } — המראה שנבחר בספר
       gear: [], items: {}, // ציוד למרדף: קבוע, וחד-פעמי עם כמות (ראה engine/gear.js)
       skins: {}, stones: {}, // סקינים שנקנו ליצור, ואבני צמיחה (ראה engine/skins.js)
+      fed: {},            // כמה צנצנות דבש אכל כל יצור (ראה engine/feed.js)
       // ── הרוחות ── כמה גוסטבו במיכל השואב, ביצת הלב, וכמה כבר טובי לב
       // (ראה engine/tank.js)
       inTank: 0, heartEgg: null, tamed: 0,
@@ -698,6 +700,17 @@ export function reduce(g, ev) {
       const progress = buyStone(g.progress, ev.creature)
       if (progress === g.progress) return g
       // אבן שמגדילה עכשיו — מסך ההתפתחות, כמו בפורטל
+      const evolved = evolvedBetween(g.progress, progress)
+      return { ...g, progress, evolved: evolved.length ? evolved : g.evolved || null }
+    }
+    // ── האכלה ── צנצנת דבש לבן הלוויה. בבית בלבד.
+    // "דבש מאכיל ומגדל." אם הצנצנת הזאת השלימה נקודה והיצור גדל —
+    // מסך ההתפתחות נכנס מיד, בדיוק כמו אבן צמיחה ובדיוק כמו בפורטל.
+    case 'FEED': {
+      if (g.state !== S.BROKEN_WORLD) return g
+      const id = ev.id || g.progress.buddy
+      if (!canFeed(g.progress, id)) return g
+      const progress = feed(g.progress, id)
       const evolved = evolvedBetween(g.progress, progress)
       return { ...g, progress, evolved: evolved.length ? evolved : g.evolved || null }
     }

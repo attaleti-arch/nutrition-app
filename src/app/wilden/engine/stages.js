@@ -11,6 +11,7 @@
 import { bondCredits } from './buddy.js'
 import { tintOf, variantName } from './egg.js'
 import { skinTint, skinById, ownsSkin, stoneCredits } from './skins.js'
+import { fedCredits } from './feed.js'
 import { tr } from '../i18n/index.js'
 
 export const STAGES = [
@@ -30,8 +31,11 @@ export function stageFor(points) {
   return s
 }
 // הנקודות של יצור: תפיסות, ועוד אחת על כל 2 ק"מ שהלכו איתו כבן לוויה,
-// ועוד אחת על כל אבן צמיחה מהחנות.
-export const stagePoints = (progress, id) => (progress?.caught?.[id] || 0) + bondCredits(progress, id) + stoneCredits(progress, id)
+// ועוד אחת על כל אבן צמיחה מהחנות — ועוד אחת על כל שלוש צנצנות דבש
+// שהאכילו אותו (engine/feed.js). ההאכלה היא הדרך שמרוויחים ברגליים:
+// פרחים → דבש → צמיחה.
+export const stagePoints = (progress, id) =>
+  (progress?.caught?.[id] || 0) + bondCredits(progress, id) + stoneCredits(progress, id) + fedCredits(progress, id)
 export const stageOf = (progress, id) => stageFor(stagePoints(progress, id))
 
 // לספר: { stage, have, need, next } — need הוא הסף של השלב הבא, null באגדי.
