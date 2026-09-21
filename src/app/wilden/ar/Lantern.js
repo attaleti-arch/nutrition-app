@@ -34,7 +34,11 @@ export function Lantern({ on, hot = false }) {
   const poolRef = useRef(null)
   const dustRef = useRef(null)
   const [vb, setVb] = useState(216)            // גובה המערכת, ביחידות של אחוז-רוחב
-  // מרכז האלומה יושב על 52% מהגובה — בדיוק המרכז שסביבו הבמה מציבה יעדים.
+  // ── ולמה הכתם נמוך ──
+  // הוא ישב על 52% — מרכז המסך. אבל צל הוא צל על הרצפה: הבמה מציבה
+  // אותו בזווית -16° מתחת לאופק, כלומר ב-76% מגובה המסך. כתם במרכז לא
+  // יכול היה לגעת בו לעולם, והוא התגלה רק דרך רשת הביטחון של 50 שניות —
+  // "צל פתאום מופיע". פנס שמאיר על רחוב מכוון לרצפה, ושם הוא עכשיו.
 
   useEffect(() => {
     if (!on) return
@@ -49,7 +53,7 @@ export function Lantern({ on, hot = false }) {
 
   useEffect(() => {
     if (!on || !ref.current) return
-    const mid = vb * 0.52
+    const mid = vb * BEAM_Y
     let raf = 0, tx = 50, ty = mid, x = 50, y = mid
     const onOrient = e => {
       const g = Math.max(-25, Math.min(25, e.gamma || 0))          // הטיה ימינה/שמאלה
@@ -77,7 +81,7 @@ export function Lantern({ on, hot = false }) {
 
   if (!on) return <div style={L.dim} aria-hidden="true" />
 
-  const mid = vb * 0.52
+  const mid = vb * BEAM_Y
   return (
     <div ref={ref} style={{ ...L.wrap, '--ly': '52%' }} aria-hidden="true">
       <style>{LANTERN_CSS}</style>
@@ -112,7 +116,7 @@ export function Lantern({ on, hot = false }) {
           ))}
         </g>
         {/* הכתם: רחב מגבוה — כך נופל אור על רצפה */}
-        <ellipse ref={poolRef} cx="50" cy={mid} rx="33" ry="16" fill="url(#wl-pool)" filter="url(#wl-edge)" />
+        <ellipse ref={poolRef} cx="50" cy={mid} rx={BEAM_RX} ry={BEAM_RY} fill="url(#wl-pool)" filter="url(#wl-edge)" />
       </svg>
       {/* 3. הפנס ביד: המקור שממנו האלומה יוצאת */}
       <div style={L.hand} className="wildenFlame" />
@@ -162,13 +166,19 @@ const L = {
 // אנכית), ולכן "בתוך האלומה" לפי מעלות היה משהו אחר לגמרי מהאליפסה
 // שמצוירת. אז המדידה היא במקום שבו הילד רואה אותה: אחוזי מסך, ואותה
 // אליפסה בדיוק — עם מעט פנומברה, כי אור נגמר בהדרגה.
-// הכתם שמצויר הוא rx=33 ry=16, והמבחן הולך איתו — אחרת הילד מכוון
-// אור שרואים עליו ושום דבר לא קורה.
-export const BEAM_RX = 34        // אחוזי רוחב מהמרכז
-export const BEAM_RY = 17        // אחוזי גובה מהמרכז
-export const beamHit = (dx, dy, fov) => {
-  if (dx == null) return false
-  const bx = (dx / (fov / 2)) * 50
-  const by = dy * 1.5
+// ── איפה האלומה, ומה בתוכה ──
+// הכול באחוזי *רוחב*, כמו ה-SVG שמצייר. BEAM_Y הוא מרכז הכתם כחלק
+// מגובה המסך — והמבחן נמדד ממנו, ולא ממרכז המסך.
+export const BEAM_Y = 0.74       // מרכז הכתם, כחלק מגובה המסך
+export const BEAM_RX = 33        // רדיוס אופקי, אחוזי רוחב — כמו שמצויר
+export const BEAM_RY = 16        // רדיוס אנכי, אחוזי רוחב — כמו שמצויר
+
+// aspect = גובה/רוחב של המסך. בלעדיו אי אפשר להשוות מרחק אנכי (שנמדד
+// באחוזי גובה) לרדיוס שמצויר באחוזי רוחב — וזה בדיוק מה שהיה שבור.
+export const beamHit = (dx, dy, fov, aspect = 2.2) => {
+  if (dx == null || dy == null) return false
+  const bx = (dx / (fov / 2)) * 50                      // אחוזי רוחב מהמרכז
+  const topPct = 52 - dy * 1.5                          // איפה היצור, באחוזי גובה
+  const by = (topPct - BEAM_Y * 100) * aspect           // ההפרש, מומר לאחוזי רוחב
   return (bx * bx) / (BEAM_RX * BEAM_RX) + (by * by) / (BEAM_RY * BEAM_RY) <= 1
 }

@@ -287,7 +287,11 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   // האלומה מכוונת למרכז המסך (Lantern), ולכן "האור עליו" הוא פשוט "הוא
   // בתוך הכתם". החישוב עצמו יושב ב-Lantern, על אותה אליפסה שמצוירת שם,
   // כדי שמה שנראה ומה שנמדד לא יוכלו להיפרד.
-  const inBeam = !!ct && beamHit(ct.dx, ct.dy, FOV)
+  // יחס המסך נחוץ למבחן האלומה — הרדיוס מצויר באחוזי רוחב, והמרחק
+  // האנכי נמדד באחוזי גובה.
+  const aspect = typeof window !== 'undefined' && window.innerWidth
+    ? window.innerHeight / window.innerWidth : 2.2
+  const inBeam = !!ct && beamHit(ct.dx, ct.dy, FOV, aspect)
   const beamRef = useRef(false); beamRef.current = inBeam
   const ctFaceLeft = !!ct && ct.streak != null && angleDelta(ct.streak, ct.bearing) < 0
   const ctStreakSide = !ct || ct.streak == null ? null
