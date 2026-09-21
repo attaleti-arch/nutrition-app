@@ -3353,7 +3353,7 @@ test('פרחים: ריצה של 20 שניות כמו המטבעות — בתוכ
 // ── "שהם יבחרו את הדמות לתפיסה" ──
 // "נניח צל יהיה סגור עד שיש פנס, רוחי סגורה עד שקונים משקפת. זה גורם
 // לבזבז כסף בחנות." עד עכשיו הלוח בחר, והמפתח רק החליף נעול במישהו אחר.
-import { withPick } from '../src/app/wilden/engine/coins.js'
+import { withPick, AVAILABLE as AVAILABLE2 } from '../src/app/wilden/engine/coins.js'
 
 test('בחירה: מי שנבחר יוצא ראשון, ונעול לא נבחר בכלל', () => {
   assert.deepEqual(withPick(['nimi', 'gali'], 'bolder'), ['bolder', 'nimi'], 'הנבחר ראשון, האורך נשמר')
@@ -3373,6 +3373,25 @@ test('בחירה: מי שנבחר יוצא ראשון, ונעול לא נבחר 
   const ready = { ...withKey, progress: { ...withKey.progress, walks: 3, creatures: ['nimi'], pick: 'tzel', gear: ['lantern'] } }
   const started = reduce(ready, { type: 'START_RUN', kind: RUN.FREE, t: 1, day: 'd1' })
   assert.equal(started.run.wantCreatures[0], 'tzel', 'הבחירה ראשונה בדרך')
+})
+
+// "תפסתי חלק וזה מראה לי את מי תופסים היום, לא תקין" — שני באגים באותו מסך.
+test('בחירה: מה שהבית מכריז זה מי שבאמת יוצא, והבחירה נגמרת עם המסע', () => {
+  // ── הבית הכריז את הלוח, והבוחר מתחתיו הכריז את הבחירה ──
+  // page.js בנה את שורת "מי בדרך" מ-briefFor בלבד, ש-pick לא מגיע אליו.
+  // שתי השורות על אותו מסך אמרו שני שמות שונים, והנכון היה של הבוחר.
+  const plan = ['gali', 'nimi']
+  const shown = withPick(plan, 'tzel', AVAILABLE2)          // מה שהבית צריך להכריז
+  const g = { ...initial(), progress: { ...initial().progress, walks: 3, creatures: ['nimi'], pick: 'tzel', gear: ['lantern'] } }
+  const started = reduce(g, { type: 'START_RUN', kind: RUN.FREE, t: 1, day: 'd1' })
+  assert.equal(shown[0], started.run.wantCreatures[0], 'מה שכתוב בבית = מי שבאמת בדרך')
+
+  // ── והבחירה נגמרת עם המסע ──
+  // בלי זה היא נדבקת לכל המסעות הבאים: הסבב של הלוח מאבד משמעות,
+  // והילד פוגש את אותו יצור שוב ושוב במקום להשלים את הספר.
+  const home = run(started, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED', t: 600000 }])
+  assert.equal(home.progress.pick, null, 'אחרי שחזרו הביתה — "היום" נגמר')
+  assert.equal(home.progress.walks, 4, 'והמסע נספר')
 })
 
 // ── רוחי בשמיים, ולמשקפת יש סוף סוף אפקט ──

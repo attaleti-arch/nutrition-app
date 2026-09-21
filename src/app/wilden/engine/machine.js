@@ -633,6 +633,10 @@ export function reduce(g, ev) {
           variants,
           coins: (g.progress.coins || 0) + (r.coinsTaken || 0),
           walks: (g.progress.walks || 0) + 1,
+          // "את מי תופסים היום" — והיום נגמר. בלי האיפוס הבחירה נדבקת
+          // לכל המסעות הבאים, הסבב של הלוח מאבד משמעות, והילד פוגש
+          // את אותו יצור שוב ושוב במקום להשלים את הספר.
+          pick: null,
           catches: (g.progress.catches || 0) + caughtIds.filter(Boolean).length,
           caught,
           golds: (g.progress.golds || 0) + goldTaken,

@@ -27,7 +27,7 @@ import { useRoute } from './hooks/useRoute'
 import { MiniMap } from './ui/MiniMap'
 import { turnsFor, nextCue, cueText, floorCue, cueGlyph, timeLeftMs, fmtClock } from './engine/turns'
 import { pathLength } from './engine/geo'
-import { heatDistance, loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, coinRunNearby, flowerRunNearby, plannedMs, AVAILABLE } from './engine/coins'
+import { heatDistance, loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, coinRunNearby, flowerRunNearby, plannedMs, AVAILABLE, withPick } from './engine/coins'
 import { cheer, milestone } from './content/cheers'
 import { GoldStage } from './ar/GoldStage'
 import { CoinRun } from './ar/CoinRun'
@@ -769,7 +769,12 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
   const brief = briefFor(g.progress)
   const who = creatureById(brief.creature)
   // מפתחות: יצור נעול מוחלף, והבית אומר מה חסר ("צל מחכה ברחוב החשוך. צריך פנס")
-  const keyed = withKeys((brief.creatures || []).slice(0, nCreatures), g.progress, AVAILABLE)
+  // ── מי באמת בדרך ──
+  // START_RUN מעביר את הרשימה דרך withPick, כך שהבחירה של הילד נכנסת
+  // ראשונה. השורה הזאת לא עשתה את זה, ולכן הבית הכריז "גלי בדרך"
+  // בזמן שהבוחר מתחתיה אמר "צל יחכה לכם בדרך" — ומי שיצא היה צל.
+  const picked = g.progress.pick && unlocked(g.progress, g.progress.pick) ? g.progress.pick : null
+  const keyed = withKeys(withPick((brief.creatures || []).slice(0, nCreatures), picked, AVAILABLE), g.progress, AVAILABLE)
   return (
     <>
       <p style={s.eyebrow}>WILDEN</p>
