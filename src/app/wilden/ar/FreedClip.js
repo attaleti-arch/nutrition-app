@@ -42,13 +42,18 @@ export function FreedClip({ id = 'whisper', onDone }) {
   const c = creatureById(id)
   const done = useRef(false)
   const finish = () => { if (!done.current) { done.current = true; onDone?.() } }
+  // ── הדילוג מזיז את השעון, לא את המונה ──
+  // המונה נדרס ממילא בטיק הבא. מי שמדלג בעצם מקדים את t0.
+  const t0 = useRef(0)
   useEffect(() => {
-    const t0 = Date.now()
-    const iv = setInterval(() => setMs(Date.now() - t0), 120)
-    const end = setTimeout(finish, MS)
-    return () => { clearInterval(iv); clearTimeout(end) }
+    t0.current = Date.now()
+    const iv = setInterval(() => setMs(Date.now() - t0.current), 120)
+    return () => clearInterval(iv)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+  // הסיום נגזר מהזמן, כדי שדילוג יקדים גם אותו
+  useEffect(() => { if (ms >= MS) finish() }, [ms])          // eslint-disable-line react-hooks/exhaustive-deps
+  const skipToStreet = () => { t0.current = Date.now() - CLIP_MS }
 
   const base = c?.freed || '/world/whisper/freed'
   const beat = [...BEATS].reverse().find(b => ms >= b.at) || BEATS[0]
@@ -59,16 +64,16 @@ export function FreedClip({ id = 'whisper', onDone }) {
 
   if (street) {
     return (
-      <div dir={dirOf()} style={S.street} onClick={() => canSkip && finish()}>
+      <div dir={dirOf()} style={S.street}>
         <StreetRun c={c} k={k} />
         <p style={S.streetLine}>{tr(beat.line, { wind: tr(WIND_NAME), name: tr(c?.name || '') })}</p>
-        {canSkip && <span style={S.skip}>{tr('להמשיך')}</span>}
+        {k > 0.45 && <button onClick={finish} style={S.skipBtn}>{tr('להמשיך')}</button>}
       </div>
     )
   }
 
   return (
-    <div dir={dirOf()} style={S.wrap} onClick={() => canSkip && finish()}>
+    <div dir={dirOf()} style={S.wrap}>
       {/* שני קידודים: אייפון מנגן H.264, ודפדפן בלי הקודק הזה (וגם
           הדפדפן שבו אני בודק) נופל ל-VP9. בלי זה הרגע הזה פשוט לבן.
           והנתיב מגיע מהמרשם — לכל מי שנפלט הקליפ שלו. */}
@@ -80,7 +85,7 @@ export function FreedClip({ id = 'whisper', onDone }) {
       <p key={beat.at} style={S.line}>
         {tr(beat.line, { wind: tr(WIND_NAME), name: tr(c?.name || '') })}
       </p>
-      {canSkip && <span style={S.skip}>{tr('להמשיך')}</span>}
+      {canSkip && <button onClick={skipToStreet} style={S.skipBtn}>{tr('לדלג')}</button>}
     </div>
   )
 }
@@ -138,6 +143,9 @@ const S = {
   streetLine: { position: 'absolute', bottom: '9%', insetInline: 0, margin: 0, padding: '0 24px', textAlign: 'center',
     color: '#E9E5D8', fontSize: 20, fontWeight: 900, lineHeight: 1.5, textShadow: '0 2px 16px rgba(0,0,0,.9)',
     animation: 'wildenFadeIn .4s ease-out both' },
+  skipBtn: { position: 'absolute', top: 14, insetInlineEnd: 14, padding: '7px 15px', borderRadius: 999,
+    background: 'rgba(20,32,15,.78)', border: '1px solid rgba(233,229,216,.3)', color: '#E9E5D8',
+    fontFamily: 'inherit', fontSize: 13.5, fontWeight: 800, cursor: 'pointer', zIndex: 6 },
   skip: { position: 'absolute', top: 14, insetInlineEnd: 14, padding: '5px 13px', borderRadius: 999,
     background: 'rgba(20,32,15,.72)', color: '#E9E5D8', fontSize: 13, fontWeight: 800 },
 }
