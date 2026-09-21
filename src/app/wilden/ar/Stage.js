@@ -633,7 +633,13 @@ const S = {
     background: 'linear-gradient(#5A5F3E, #33381F)' },
   center: { position: 'absolute', inset: 0, display: 'grid', placeItems: 'center' },
   dim: { color: '#9BA495', fontSize: 15 },
-  node: { position: 'absolute', transition: 'opacity .2s, transform .35s', pointerEvents: 'none' },
+  // ── ממורכז על היעד ──
+  // בלי translate הפינה השמאלית-עליונה של היצור יושבת על הנקודה, כלומר
+  // הוא מצויר חצי-גובה מתחתיה וחצי-רוחב ימינה ממנה. באור יום אף אחד
+  // לא שם לב; באלומה של צל זה בולט — הראש על קו האור וכל הגוף תלוי
+  // מתחתיו, "ענקי ולא בתוך האלומה".
+  node: { position: 'absolute', transform: 'translate(-50%,-50%)',
+    transition: 'opacity .2s, transform .35s', pointerEvents: 'none' },
   tapArea: { position: 'absolute', width: '54vw', height: '46vh', transform: 'translate(-50%,-50%)',
     background: 'transparent', border: 'none', padding: 0, zIndex: 4, cursor: 'pointer',
     WebkitTapHighlightColor: 'transparent' },

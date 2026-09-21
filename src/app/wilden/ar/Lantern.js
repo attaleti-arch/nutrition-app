@@ -112,7 +112,7 @@ export function Lantern({ on, hot = false }) {
           ))}
         </g>
         {/* הכתם: רחב מגבוה — כך נופל אור על רצפה */}
-        <ellipse ref={poolRef} cx="50" cy={mid} rx="22" ry="10.5" fill="url(#wl-pool)" filter="url(#wl-edge)" />
+        <ellipse ref={poolRef} cx="50" cy={mid} rx="33" ry="16" fill="url(#wl-pool)" filter="url(#wl-edge)" />
       </svg>
       {/* 3. הפנס ביד: המקור שממנו האלומה יוצאת */}
       <div style={L.hand} className="wildenFlame" />
@@ -162,8 +162,10 @@ const L = {
 // אנכית), ולכן "בתוך האלומה" לפי מעלות היה משהו אחר לגמרי מהאליפסה
 // שמצוירת. אז המדידה היא במקום שבו הילד רואה אותה: אחוזי מסך, ואותה
 // אליפסה בדיוק — עם מעט פנומברה, כי אור נגמר בהדרגה.
-export const BEAM_RX = 25        // אחוזי רוחב מהמרכז
-export const BEAM_RY = 10        // אחוזי גובה מהמרכז
+// הכתם שמצויר הוא rx=33 ry=16, והמבחן הולך איתו — אחרת הילד מכוון
+// אור שרואים עליו ושום דבר לא קורה.
+export const BEAM_RX = 34        // אחוזי רוחב מהמרכז
+export const BEAM_RY = 17        // אחוזי גובה מהמרכז
 export const beamHit = (dx, dy, fov) => {
   if (dx == null) return false
   const bx = (dx / (fov / 2)) * 50
