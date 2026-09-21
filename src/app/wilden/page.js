@@ -27,7 +27,7 @@ import { useRoute } from './hooks/useRoute'
 import { MiniMap } from './ui/MiniMap'
 import { turnsFor, nextCue, cueText, floorCue, cueGlyph, timeLeftMs, fmtClock } from './engine/turns'
 import { pathLength } from './engine/geo'
-import { heatDistance, loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, coinRunNearby, flowerRunNearby, plannedMs, AVAILABLE, withPick } from './engine/coins'
+import { heatDistance, loopTargetM, canBuyExtra, WALK_PLAN, heatOf, goldNearby, coinRunNearby, flowerRunNearby, plannedMs, AVAILABLE, withPick, SURPRISE } from './engine/coins'
 import { cheer, milestone } from './content/cheers'
 import { GoldStage } from './ar/GoldStage'
 import { CoinRun } from './ar/CoinRun'
@@ -889,36 +889,43 @@ function BrokenWorld({ g, today, onStart, onEgg, onQuest, onBuy, onEquip, onGear
       {keyed.locked.map(id => <p key={id} style={s.locked}>🔒 {tr(lockLine(id))}. {tr('בינתיים {name} במקומו.', { name: tr(creatureById(keyed.creatures[keyed.creatures.length - 1])?.name) })}</p>)}
 
       {/* ── את מי תופסים היום ── */}
-      {/* "שהם יבחרו את הדמות לתפיסה, נניח צל סגור עד שיש פנס ורוחי סגורה
-          עד שקונים משקפת. זה גורם לבזבז כסף בחנות." עד עכשיו הלוח בחר,
-          והמפתח רק החליף יצור נעול במישהו אחר — כלומר הילד לא ידע מה הוא
-          מפספס. עכשיו הוא רואה את כולם, הנעולים עם מנעול ומחיר, ולחיצה
-          על נעול שולחת לחנות. */}
+      {/* "שכל היצורים פתוחים זה מבאס." תשעה ריבועים פתוחים הרגו את
+          ההפתעה: הילד ידע בדיוק מי מחכה לו עוד לפני שיצא, והבחירה הפכה
+          לרשימה. עכשיו שתיים בלבד — "שיהיה אחד בטוח בדרך שהוא היצור
+          הפתוח הבא לפי הסדר, או סימן שאלה שיגריל אחד אחר."
+          ודאות מול מזל, וזו בחירה שילד באמת מתלבט בה. */}
       <div style={s.pickRow} aria-label={tr('את מי תופסים היום')}>
         <p style={s.pickTitle}>{tr('את מי תופסים היום?')}</p>
-        <div style={s.pickGrid}>
-          {AVAILABLE.filter(id => id !== takenId(g.progress)).map(id => {
-            const c = creatureById(id); if (!c) return null
-            const open = unlocked(g.progress, id)
-            const on = open && g.progress.pick === id
-            const known = (g.progress.creatures || []).includes(id)
+        <div style={s.pickTwo}>
+          {(() => {
+            const sure = keyed.creatures[0] || brief.creature
+            const c = creatureById(sure)
+            const on = !g.progress.pick || g.progress.pick === sure
             return (
-              <button key={id} onClick={() => (open ? onPick(on ? null : id) : setPanel('shop'))}
-                aria-label={open ? tr(c.name) : `${tr(c.name)} — ${tr(lockLine(id))}`}
-                style={{ ...s.pickChip, borderColor: on ? C.amber : C.line,
-                  background: on ? 'rgba(229,163,66,.18)' : C.card, opacity: open ? 1 : 0.62 }}>
-                <img src={c.live || c.sprites?.hero} alt="" draggable={false}
-                  style={{ ...s.pickImg, filter: open ? (known ? 'none' : 'brightness(.9)') : 'grayscale(1) brightness(.75)' }} />
-                {!open && <span style={s.pickLock}>🔒</span>}
-                <span style={s.pickName}>{tr(c.name)}</span>
+              <button onClick={() => onPick(null)} aria-label={tr(c?.name || '')}
+                style={{ ...s.pickBig, borderColor: on ? C.amber : C.line,
+                  background: on ? 'rgba(229,163,66,.18)' : C.card }}>
+                {c?.live || c?.sprites?.hero
+                  ? <img src={c.live || c.sprites.hero} alt="" draggable={false} style={s.pickBigImg} />
+                  : <span style={s.pickQ}>🐾</span>}
+                <span style={s.pickName}>{tr(c?.name || '')}</span>
+                <span style={s.pickSub}>{tr('בטוח בדרך')}</span>
               </button>
             )
-          })}
+          })()}
+          <button onClick={() => onPick(g.progress.pick === SURPRISE ? null : SURPRISE)}
+            aria-label={tr('הפתעה — מגרילים מישהו אחר')}
+            style={{ ...s.pickBig, borderColor: g.progress.pick === SURPRISE ? C.amber : C.line,
+              background: g.progress.pick === SURPRISE ? 'rgba(229,163,66,.18)' : C.card }}>
+            <span style={s.pickQ}>❓</span>
+            <span style={s.pickName}>{tr('הפתעה')}</span>
+            <span style={s.pickSub}>{tr('מגרילים מישהו אחר')}</span>
+          </button>
         </div>
         <p style={s.pickHint}>
-          {g.progress.pick
-            ? tr('{name} יחכה לכם בדרך.', { name: tr(creatureById(g.progress.pick)?.name || '') })
-            : tr('בלי בחירה — מי שתורו בלוח. נעול? המפתח בחנות.')}
+          {g.progress.pick === SURPRISE
+            ? tr('לא נדע מי עד שנגיע אליו. רק מי שיש לכם ציוד בשבילו.')
+            : tr('{name} יחכה לכם בדרך.', { name: tr(creatureById(keyed.creatures[0] || brief.creature)?.name || '') })}
         </p>
       </div>
 
@@ -1393,6 +1400,12 @@ const s = {
   weekly: { display: 'flex', alignItems: 'center', gap: 10, fontSize: 14, color: C.muted, margin: '0 0 14px', padding: '8px 12px', background: C.card2, border: `1px solid ${C.line}`, borderRadius: 12 },
   pickRow: { border: `1px solid ${C.line}`, background: C.card, borderRadius: 14, padding: '11px 12px', marginBottom: 12 },
   pickTitle: { margin: '0 0 8px', fontSize: 13.5, fontWeight: 800, color: C.dim },
+  pickTwo: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 },
+  pickBig: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '14px 8px 12px',
+    borderRadius: 14, border: '1px solid', cursor: 'pointer', fontFamily: 'inherit', minHeight: 132 },
+  pickBigImg: { height: 66, width: 'auto', display: 'block', objectFit: 'contain' },
+  pickQ: { fontSize: 52, lineHeight: '66px', display: 'block' },
+  pickSub: { fontSize: 12.5, color: '#9BA495', fontWeight: 600 },
   pickGrid: { display: 'flex', flexWrap: 'wrap', gap: 7 },
   pickChip: { position: 'relative', width: 72, padding: '6px 4px 5px', borderRadius: 12, border: '1px solid',
     cursor: 'pointer', display: 'grid', justifyItems: 'center', gap: 2, fontFamily: 'inherit' },

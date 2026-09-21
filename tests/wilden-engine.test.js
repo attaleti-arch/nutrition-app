@@ -3366,7 +3366,8 @@ test('פרחים: ריצה של 20 שניות כמו המטבעות — בתוכ
 // ── "שהם יבחרו את הדמות לתפיסה" ──
 // "נניח צל יהיה סגור עד שיש פנס, רוחי סגורה עד שקונים משקפת. זה גורם
 // לבזבז כסף בחנות." עד עכשיו הלוח בחר, והמפתח רק החליף נעול במישהו אחר.
-import { withPick, AVAILABLE as AVAILABLE2 } from '../src/app/wilden/engine/coins.js'
+import { withPick, AVAILABLE as AVAILABLE2, rollSurprise, SURPRISE } from '../src/app/wilden/engine/coins.js'
+import { unlocked as unlocked2 } from '../src/app/wilden/engine/gear.js'
 
 test('בחירה: מי שנבחר יוצא ראשון, ונעול לא נבחר בכלל', () => {
   assert.deepEqual(withPick(['nimi', 'gali'], 'bolder'), ['bolder', 'nimi'], 'הנבחר ראשון, האורך נשמר')
@@ -3405,6 +3406,26 @@ test('בחירה: מה שהבית מכריז זה מי שבאמת יוצא, וה
   const home = run(started, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED', t: 600000 }])
   assert.equal(home.progress.pick, null, 'אחרי שחזרו הביתה — "היום" נגמר')
   assert.equal(home.progress.walks, 4, 'והמסע נספר')
+})
+
+// "שכל היצורים פתוחים זה מבאס" — שתי אפשרויות בלבד: אחד בטוח, או הגרלה.
+test('הפתעה: מגרילים ביציאה, מבין הפתוחים, ואף פעם לא את זה שבטוח בדרך', () => {
+  assert.equal(SURPRISE, '?')
+  assert.equal(rollSurprise(['a', 'b', 'c'], 'a', () => 0), 'b', 'מי שבטוח בדרך לא בהגרלה')
+  assert.equal(rollSurprise(['a', 'b', 'c'], 'a', () => 0.999), 'c', 'והקצה העליון לא גולש')
+  assert.equal(rollSurprise(['a'], 'a', () => 0), null, 'אין את מי להגריל — מחזירים כלום')
+
+  // במכונה: סימן שאלה נבחר גם בלי "לפתוח" אותו, ונעול לא נכנס להגרלה
+  const base = { ...initial(), progress: { ...initial().progress, walks: 3, creatures: ['nimi'] } }
+  const q = reduce(base, { type: 'SET_PICK', id: SURPRISE })
+  assert.equal(q.progress.pick, SURPRISE)
+  const out = reduce(q, { type: 'START_RUN', kind: RUN.FREE, t: 1, day: 'd1', rng: () => 0.5 })
+  const first = out.run.wantCreatures[0]
+  assert.ok(first, 'מישהו הוגרל')
+  assert.ok(unlocked2(out.progress, first), 'ורק מי שיש לו ציוד — "הפתעה" שאי אפשר לתפוס היא מסע מבוזבז')
+  // וההגרלה נגמרת עם המסע, כמו כל בחירה
+  const home = run(out, [{ type: 'PORTAL_OPEN' }, { type: 'PORTAL_ENTERED', t: 600000 }])
+  assert.equal(home.progress.pick, null)
 })
 
 // "תפס את בולדר, שאב את גוסטבו, ויספר יצא מהשואב, לחץ לעולם — וזה איפס

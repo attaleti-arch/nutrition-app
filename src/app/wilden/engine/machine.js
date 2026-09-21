@@ -17,7 +17,7 @@ import { routeKm, poisFor, creatureCount, placePois, setRouteKm, withCreatures, 
 import { modsFor, consume, buyGear, withKeys, withExtra, unlocked } from './gear.js'
 import { feed, canFeed } from './feed.js'
 import { buySkin, buyStone } from './skins.js'
-import { withExtraGold, AVAILABLE, availableFor, spatBy, SUCK_COINS, heatDistance, withPick } from './coins.js'
+import { withExtraGold, AVAILABLE, availableFor, spatBy, SUCK_COINS, heatDistance, withPick, rollSurprise, SURPRISE } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest, produce, creaturesWanted } from './world.js'
@@ -190,7 +190,12 @@ export function reduce(g, ev) {
       const avail = availableFor(g.progress, ev.available || AVAILABLE).filter(c => c !== held)
       const planned = creaturesForWalk(walks, extra, avail, creatureCount(pois))
       // מי שהילד בחר בבית נכנס ראשון — אם הוא פתוח ואינו מוחזק בידי גוסטבו.
-      const picked = g.progress.pick && unlocked(g.progress, g.progress.pick) ? g.progress.pick : null
+      // סימן שאלה: מגרילים כאן, ברגע היציאה, מבין הפתוחים — כדי שהגילוי
+      // יקרה בשטח. יצור נעול לא נכנס להגרלה; "הפתעה" שאי אפשר לתפוס
+      // היא מסע מבוזבז, לא הפתעה.
+      const picked = g.progress.pick === SURPRISE
+        ? rollSurprise(avail.filter(c => unlocked(g.progress, c)), planned[0], ev.rng || Math.random)
+        : (g.progress.pick && unlocked(g.progress, g.progress.pick) ? g.progress.pick : null)
       const keyed = withKeys(withPick(planned, picked, avail), g.progress, avail)
       // ── מי שהשומר מחכה לו יוצא איתך ──
       // הראשון נשאר לפי הסבב (הלוח לא קופץ), והאחרון מוחלף במי שמביא את
@@ -742,7 +747,7 @@ export function reduce(g, ev) {
     case 'SET_PICK': {
       if (g.state !== S.BROKEN_WORLD) return g
       const id = ev.id ?? null
-      if (id && !unlocked(g.progress, id)) return g
+      if (id && id !== SURPRISE && !unlocked(g.progress, id)) return g
       if ((g.progress.pick || null) === id) return g
       return { ...g, progress: { ...g.progress, pick: id } }
     }

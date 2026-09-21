@@ -208,6 +208,20 @@ export const BASE_FROM_WALK = 1
 // הילד לא ידע מה הוא מפספס, ולא הייתה סיבה לקנות. עכשיו הבחירה שלו:
 // הוא רואה את כולם, הנעולים עם מנעול ומחיר, ומי שבוחר נעול נשלח לחנות.
 // הבחירה נכנסת ראשונה ברשימה, והשאר ממשיך כמו שהיה.
+// ── סימן השאלה ──
+// "שיהיה אחד בטוח בדרך שהוא היצור הפתוח הבא לפי הסדר, או סימן שאלה
+// שיגריל אחד אחר." תשעה ריבועים פתוחים הרגו את ההפתעה: הילד ידע בדיוק
+// מי מחכה לו עוד לפני שיצא. עכשיו יש שתי אפשרויות בלבד — ודאות או מזל.
+//
+// וההגרלה נעשית ביציאה ולא בבחירה, אחרת היא כבר לא הפתעה.
+export const SURPRISE = '?'
+
+export function rollSurprise(pool, planned, rng = Math.random) {
+  const list = (pool || []).filter(c => c && c !== planned)
+  if (!list.length) return null
+  return list[Math.min(list.length - 1, Math.floor(rng() * list.length))]
+}
+
 export function withPick(list, pick, available = AVAILABLE) {
   if (!pick || !available.includes(pick)) return list
   if (!list?.length) return [pick]
