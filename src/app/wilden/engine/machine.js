@@ -769,20 +769,58 @@ export function reduce(g, ev) {
       }
     }
 
-    case 'ABORT':
-      // "לעצור" שומר הכל. אין עונש על לחזור הביתה — גם המטבעות שנאספו נשארים.
-      // גם מה שהלכו נספר — להורה, ולמטרים.
-      const aborted = g.run ? { ...walkSummary({ walked: g.run.walked, startedAt: g.run.walkStartedAt, t: ev.t }), day: g.run.day || null } : null
+    case 'ABORT': {
+      // ── "לעצור" שומר הכל, וזה חייב להיות נכון ──
+      // "תפס את בולדר, שאב את גוסטבו, ויספר יצא מהשואב, לחץ לעולם — וזה
+      // איפס הכל ובולדר לא מופיע." זה היה אמיתי: כאן נשמרו רק מטבעות,
+      // קשר ומטרים. כל מי שנתפס בשטח פשוט נמחק, מתחת למסך שכתוב בו
+      // "הכול נשמר".
+      //
+      // הגבול הנכון הוא לא "תפסת או לא" אלא "איפה זה קרה": מה שהרוויחו
+      // ברגליים בשטח נשאר תמיד — יצורים, מה שהם מביאים, מה שנשאב, מי
+      // שיצא מהרוח. מה שמגיע דווקא מהחזרה הביתה — ספירת המסע, הבונוס
+      // השבועי, בקיעת הביצה והמבנים שמייצרים — לא, כי לא חזרו.
+      const r = g.run
+      const aborted = r ? { ...walkSummary({ walked: r.walked, startedAt: r.walkStartedAt, t: ev.t }), day: r.day || null } : null
+      const caughtIds = r?.stops ? r.stops.filter(s => s.done).map(s => s.creature).filter(Boolean) : []
+      const creatures = [...g.progress.creatures]
+      for (const id of caughtIds) if (!creatures.includes(id)) creatures.push(id)
+      const caught = { ...(g.progress.caught || {}) }
+      for (const id of caughtIds) caught[id] = (caught[id] || 0) + 1
+      const res = { ...g.progress.res }
+      for (const k of r?.loot || []) res[k] = (res[k] || 0) + 1
+      for (const [k, n] of Object.entries(bringsFor(caughtIds))) res[k] = (res[k] || 0) + n
+      if (r?.flowerRun?.done && r.flowerRun.got) res.flowers = (res.flowers || 0) + r.flowerRun.got
+      if (r?.windRes) res.wind = (res.wind || 0) + r.windRes
+      // מי שהרוח פלטה בשטח — הילד ראה אותו יוצא, אז הוא נפתח
+      const freed = r?.spat && !(g.progress.freed || []).includes(r.spat)
+        ? [...(g.progress.freed || []), r.spat] : (g.progress.freed || [])
+      const withBond = r?.buddyTaken ? g.progress : addBond(g.progress, r?.walked)
+      // בן לוויה שנחלץ מרוח חוזר גם אם עצרו באמצע
+      const rescuedNow = r?.rescued && takenId(g.progress) === r.rescued ? r.rescued : null
+      const base = rescuedNow ? freeCreature(withBond, rescuedNow) : withBond
       return {
         ...g,
         state: S.ABORTED,
+        rescuedNow,
         progress: {
-          ...(g.run?.buddyTaken ? g.progress : addBond(g.progress, g.run?.walked)),
-          coins: (g.progress.coins || 0) + (g.run?.coinsTaken || 0),
+          ...base,
+          creatures,
+          caught,
+          res,
+          freed,
+          catches: (g.progress.catches || 0) + caughtIds.length,
+          sucks: (g.progress.sucks || 0) + (r?.sucks || 0),
+          golds: (g.progress.golds || 0) + ((r?.coins || []).some(c => c.gold && c.taken) ? 1 : 0),
+          runs: (g.progress.runs || 0) + (r?.coinRun?.done ? 1 : 0),
+          bestRun: Math.max(g.progress.bestRun || 0, r?.coinRun?.got || 0),
+          coins: (g.progress.coins || 0) + (r?.coinsTaken || 0),
+          coinsEarned: (g.progress.coinsEarned || 0) + (r?.coinsTaken || 0),
           ...(aborted ? { lastWalk: aborted, minutesTotal: (g.progress.minutesTotal || 0) + aborted.minutes, metersTotal: (g.progress.metersTotal || 0) + aborted.meters } : {}),
         },
-        run: { ...g.run, resolved: false, coinsTaken: 0 },
+        run: { ...g.run, resolved: false, coinsTaken: 0, spat: null },
       }
+    }
 
     case 'SET_CREATURE':
       return { ...g, run: { ...g.run, creature: ev.id } }

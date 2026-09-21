@@ -1004,6 +1004,12 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
   const orient = useOrient({ active: true, everyMs: 120, minDeg: 2 })
   // ── טיימר לאחור ──
   const [now, setNow] = useState(Date.now())
+  const [sure, setSure] = useState(false)     // "לעצור" — אישור בשתי לחיצות
+  useEffect(() => {
+    if (!sure) return
+    const id = setTimeout(() => setSure(false), 4000)
+    return () => clearTimeout(id)
+  }, [sure])
   useEffect(() => { const id = setInterval(() => setNow(Date.now()), 1000); return () => clearInterval(id) }, [])
   const left = timeLeftMs(r.walkStartedAt, r.km ? plannedMsKm(r.km) : plannedMs(r.walkIndex || 0), now)
   // ── מילות עידוד ──
@@ -1188,7 +1194,14 @@ function SearchScreen({ g, view, geo, degraded, reason, note, onSearch, onAbort,
         </p>
       )}
 
-      <button onClick={onAbort} style={{ ...s.cta, ...s.ctaGhost, marginTop: 26 }}>{tr('לעצור')}</button>
+      {/* ── לעצור זה לא לחיצה אחת ── */}
+      {/* הילד לחץ עליו באמצע המסע וסיים אותו בטעות. עכשיו הלחיצה
+          הראשונה רק שואלת, וחוזרת לעצמה אחרי ארבע שניות. */}
+      <button onClick={() => (sure ? onAbort() : setSure(true))}
+        style={{ ...s.cta, ...s.ctaGhost, marginTop: 26,
+          ...(sure ? { borderColor: C.amber, color: C.amber } : null) }}>
+        {sure ? tr('בטוח? לסיים את המסע') : tr('לעצור')}
+      </button>
     </>
   )
 }
