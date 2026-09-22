@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { BEAM_Y, BEAM_RX, BEAM_RY } from './beamGeom'
 
 // ─── רחוב חשוך ופנס ───
 // "הפנס יעשה אפקט פנס אמיתי?" — כן. וזה נכתב מחדש אחרי "חשוב לי
@@ -166,19 +167,5 @@ const L = {
 // אנכית), ולכן "בתוך האלומה" לפי מעלות היה משהו אחר לגמרי מהאליפסה
 // שמצוירת. אז המדידה היא במקום שבו הילד רואה אותה: אחוזי מסך, ואותה
 // אליפסה בדיוק — עם מעט פנומברה, כי אור נגמר בהדרגה.
-// ── איפה האלומה, ומה בתוכה ──
-// הכול באחוזי *רוחב*, כמו ה-SVG שמצייר. BEAM_Y הוא מרכז הכתם כחלק
-// מגובה המסך — והמבחן נמדד ממנו, ולא ממרכז המסך.
-export const BEAM_Y = 0.74       // מרכז הכתם, כחלק מגובה המסך
-export const BEAM_RX = 38        // רדיוס אופקי, אחוזי רוחב — כמו שמצויר
-export const BEAM_RY = 19        // רדיוס אנכי, אחוזי רוחב — כמו שמצויר
+export { BEAM_Y, BEAM_RX, BEAM_RY, beamHit } from './beamGeom'
 
-// aspect = גובה/רוחב של המסך. בלעדיו אי אפשר להשוות מרחק אנכי (שנמדד
-// באחוזי גובה) לרדיוס שמצויר באחוזי רוחב — וזה בדיוק מה שהיה שבור.
-export const beamHit = (dx, dy, fov, aspect = 2.2) => {
-  if (dx == null || dy == null) return false
-  const bx = (dx / (fov / 2)) * 50                      // אחוזי רוחב מהמרכז
-  const topPct = 52 - dy * 1.5                          // איפה היצור, באחוזי גובה
-  const by = (topPct - BEAM_Y * 100) * aspect           // ההפרש, מומר לאחוזי רוחב
-  return (bx * bx) / (BEAM_RX * BEAM_RX) + (by * by) / (BEAM_RY * BEAM_RY) <= 1
-}

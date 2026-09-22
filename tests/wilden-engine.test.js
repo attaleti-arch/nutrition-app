@@ -3464,11 +3464,14 @@ test('השואב: פעם אחת בסיבוב, והמונה הוא שמכריע',
 test('צל: אפשר לתפוס אותו גם בלי מד צעדים, והוא נכנס לתוך האלומה', async () => {
   const { makeBeam, BEAM_MAX_SCALE, SLIP_MS } = await import('../src/app/wilden/ar/controllers/beam.js')
   const beam = makeBeam({})
-  // ── הגודל ── הכתם הוא 19% מרוחב המסך לרדיוס אנכי; צל חייב להיכנס בו
-  const poolH = 2 * 19 / 100 * 402
-  const figH = 36 * (BEAM_MAX_SCALE * 0.70) / 100 * 880      // ar/Figure: 36vh * scale * sizeOf
-  assert.ok(figH < poolH, `צל (${figH.toFixed(0)}px) קטן מהכתם (${poolH.toFixed(0)}px)`)
-  assert.ok(figH > poolH * 0.5, 'אבל לא זעיר — הוא עדיין הדמות, לא נקודה')
+  // ── הגודל ── נמדד בדפדפן על מסך 402×880: הכתם 354×177, וצל 125×160.
+  // "כל היצורים היו על רקע ירוק, גם האני ורוחי, והם נראים ברחוב בצורה
+  // בולטת ויפה" — אז הוא לא מוקטן לנקודה. הכתם הוא שגדל סביבו.
+  const { BEAM_RX, BEAM_RY } = await import('../src/app/wilden/ar/beamGeom.js')
+  const poolH = 2 * BEAM_RY / 100 * 402
+  const poolW = 2 * BEAM_RX / 100 * 402
+  assert.ok(poolH > 160 && poolW > 330, `הכתם גדול מספיק (${poolW.toFixed(0)}×${poolH.toFixed(0)})`)
+  assert.ok(BEAM_MAX_SCALE >= 0.5, 'וצל נשאר בגודל של דמות, לא של נקודה')
 
   // ── וההתקדמות ── בלי מד צעדים, לחיצה באור מקדמת
   let s = beam.start(0, () => 0.5, 0)
