@@ -28,6 +28,10 @@ import { fleeGoal, WIND_NAME } from '../engine/wind'
 // אחד: מצלמה, הרחוב עצמו, גוסטבו מעליו, ורצים. השואב הוא כפתור *בתוך*
 // המפגש — דרך מהירה החוצה, לא מסך אחר.
 
+// כמה מהריצה צריך לעשות לפני שהשואב נפתח. "בסוף הריצה תהיה אפשרות
+// לשאוב" — לא בהתחלה, ולא במקומה.
+export const SUCK_AT = 0.6
+
 export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum = false, onSuck = null, onDone }) {
   // כמה קשה הפעם: בכל קפיצה נוספת באותו טיול הוא מהיר יותר.
   const goal = fleeGoal(round)
@@ -102,7 +106,12 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
           נגמר היא זונקת על המצלמה — הקליפ השני, במסך מלא. */}
       {!lost && (
         <span style={{ ...S.stormBox, opacity: won ? 0.3 : 0.5 + urgency * 0.45,
-          transform: `translate(-50%,-50%) scale(${(won ? 0.7 : 1) * (0.8 + urgency * 0.8)})` }}>
+          // ── "ושגוסטבו יהיה זז מולם" ──
+          // הוא ישב במקום אחד וגדל. עכשיו הוא חוצה את הרחוב מולם, הלוך
+          // ושוב, והמעבר נעשה מהיר יותר ככל שהזמן אוזל — מ-5.2 שניות
+          // לפחות משתיים. זה מה שהופך אותו מרקע למשהו שרודף.
+          animation: `wildenGustSweep ${(5.2 - urgency * 3.3).toFixed(2)}s ease-in-out infinite`,
+          '--gust-scale': (won ? 0.7 : 1) * (0.8 + urgency * 0.8) }}>
           {/* ── "שיסתובב כמו בורג", ו"למה לא המקורי שהסתחרר מהר" ──
               היה כאן rotateY על התמונה: סיבוב מזויף של ספרייט שטוח,
               שנמעך לקו ב-90 מעלות. הקליפ מסתובב באמת — הפנים נעלמות
@@ -159,9 +168,17 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
       {/* "ואז ישר כפתור (אם יש שואב אבק) לשאוב את גוסטבו." הוא יושב בתוך
           המרדף: מי שקנה אותו רואה את גוסטבו ברחוב, מתחיל לרוץ, ויכול
           לגמור את זה בלחיצה. מי שלא — רץ עד הסוף. */}
-      {canVacuum && go && !won && !lost && (
+      {/* ── והוא נפתח רק אחרי שרצו ──
+          קודם הוא הופיע ברגע שהמרדף התחיל, ואז אפשר היה לגמור את גוסטבו
+          בלחיצה אחת בלי לזוז — כלומר השואב החליף את הריצה במקום להשלים
+          אותה. עכשיו הוא מגיע אחרי שישים אחוז מהצעדים: הילד כבר רץ, והוא
+          חוסך לו רק את המקטע האחרון. */}
+      {canVacuum && go && !won && !lost && pct >= SUCK_AT && (
         <button onClick={e => { e.stopPropagation(); if (doneRef.current) return; doneRef.current = true; onSuck?.() }}
-          style={S.suck}>{tr('🌀 לשאוב את {wind}', { wind: tr(WIND_NAME) })}</button>
+          style={S.suck}>{tr('🌀 עכשיו! לשאוב את {wind}', { wind: tr(WIND_NAME) })}</button>
+      )}
+      {canVacuum && go && !won && !lost && pct < SUCK_AT && (
+        <p style={S.suckSoon}>{tr('🌀 עוד {n} צעדים ואפשר לשאוב אותו', { n: Math.max(1, Math.ceil((SUCK_AT - pct) * goal.steps)) })}</p>
       )}
     </div>
   )
@@ -170,6 +187,12 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
 const CSS = `
 @keyframes wildenFleeRun { 0%,100% { transform: translateX(-50%) translateY(0) } 50% { transform: translateX(-50%) translateY(-10px) } }
 @keyframes wildenFleeIn { from { opacity: 0; transform: scale(.6) } to { opacity: 1; transform: scale(1) } }
+@keyframes wildenGustSweep {
+  0%,100% { transform: translate(-50%,-50%) translateX(-30vw) scale(calc(var(--gust-scale) * .88)) }
+  25%     { transform: translate(-50%,-50%) translateX(0) translateY(-2vh) scale(var(--gust-scale)) }
+  50%     { transform: translate(-50%,-50%) translateX(30vw) scale(calc(var(--gust-scale) * .88)) }
+  75%     { transform: translate(-50%,-50%) translateX(0) translateY(2vh) scale(var(--gust-scale)) }
+}
 @keyframes wildenWhip { 0%,100% { transform: rotate(-5deg) } 50% { transform: rotate(5deg) } }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important } }
 `
@@ -185,7 +208,9 @@ const S = {
     borderRadius: 14, border: 'none', background: '#6EA8E6', color: '#0C1218', fontFamily: 'inherit',
     fontSize: 18, fontWeight: 900, cursor: 'pointer', boxShadow: '0 6px 18px rgba(0,0,0,.45)', zIndex: 4 },
   stormBox: { position: 'absolute', top: '27%', left: '50%', pointerEvents: 'none',
-    transition: 'opacity .3s ease, transform .4s ease', display: 'block' },
+    transition: 'opacity .3s ease', display: 'block', willChange: 'transform' },
+  suckSoon: { position: 'absolute', bottom: 'max(30px, env(safe-area-inset-bottom))', insetInline: 22,
+    fontSize: 14.5, fontWeight: 800, color: '#9FC6F0', opacity: .85, margin: 0 },
   storm: { height: '34vh', width: 'auto', display: 'block',
     filter: 'drop-shadow(0 0 34px rgba(110,168,230,.55))',
     animation: 'wildenWhip 1.6s ease-in-out infinite', transformOrigin: '50% 90%' },

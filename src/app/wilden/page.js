@@ -253,7 +253,12 @@ export default function Wilden() {
   // פגש את גוסטבו בכלל, ומי שלא — קיבל בריחה בלי מצלמה. עכשיו מפגש אחד
   // לשניהם, והשואב הוא כפתור בתוכו.
   const nearWind = g.state === S.SEARCH ? windNearby(g.run, g.run?.pos) : null
-  const hasVacuum = !!g.run?.mods?.vacuum
+  // ── השואב הוא חיסכון בבריחה אחת, לא תחליף לריצה ──
+  // "אני לא רוצה שהשואב יחליף ריצה. אני רוצה שגוסטבו עדיין יגרום לילד
+  // לרוץ, ובסוף הריצה תהיה אפשרות לשאוב." אז הוא נפתח רק אחרי שרצו
+  // (בתוך ar/WindFlee.js), והוא טוב לפעם אחת בכל מסע: רוח שנייה באותו
+  // מסע היא בריחה בלבד.
+  const hasVacuum = !!g.run?.mods?.vacuum && (g.run?.sucks || 0) === 0
   const [fleeFrom, setFleeFrom] = useState(null)
   const windRef = useRef(null)
   // ומי שכבר ריכך חמישה יוצא עם אחד מהם: הטוב עומד מול הפרא הראשון

@@ -3408,6 +3408,25 @@ test('בחירה: מה שהבית מכריז זה מי שבאמת יוצא, וה
   assert.equal(home.progress.walks, 4, 'והמסע נספר')
 })
 
+// "אני לא רוצה שהשואב יחליף ריצה" — הוא חוסך בריחה אחת, פעם אחת במסע.
+test('השואב: פעם אחת בסיבוב, והמונה הוא שמכריע', () => {
+  const { SUCK_AT } = { SUCK_AT: 0.6 }          // ar/WindFlee.js
+  assert.ok(SUCK_AT > 0.5 && SUCK_AT < 1, 'נפתח באמצע-סוף הריצה, לא בהתחלה ולא רק בסוף')
+  const here = { lat: 32.0853, lng: 34.7818 }
+  let g = started(['nimi'], { ...initial(), progress: { ...initial().progress,
+    walks: 3, creatures: ['nimi'], buddy: 'nimi', gear: ['vacuum'] } })
+  g = { ...g, run: { ...g.run, pos: here, mods: { ...(g.run.mods || {}), vacuum: true },
+    winds: [{ id: 'w1', ...here }, { id: 'w2', ...here }] } }
+  // הכלל שהמסך מפעיל: יש שואב, ועוד לא שאבו במסע הזה
+  const canVacuum = gg => !!gg.run?.mods?.vacuum && (gg.run?.sucks || 0) === 0
+  assert.equal(canVacuum(g), true, 'רוח ראשונה — אפשר')
+  const after = reduce(g, { type: 'WIND_SUCK', id: 'w1', t: 1000 })
+  assert.equal(after.run.sucks, 1, 'השאיבה נספרה')
+  assert.equal(canVacuum(after), false, 'רוח שנייה באותו מסע — בריחה בלבד')
+  // ובמסע הבא הוא שוב זמין
+  assert.equal((initial().run?.sucks || 0), 0)
+})
+
 // "מופיעה אלומת אור אבל היא קטנה ממש, וצל מופיע ענקי לא בתוכה."
 // הסיבה האמיתית: צל מוצב ב--16° מתחת לאופק, כלומר ב-76% מגובה המסך,
 // והכתם צויר ב-52%. גם כשמכוונים ישירות אליו המבחן יצא 1.99 — כלומר
