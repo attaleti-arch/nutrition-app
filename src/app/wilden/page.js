@@ -612,12 +612,26 @@ export default function Wilden() {
           </Panel>
         )}
 
+        {/* ── עצרו באמצע ── */}
+        {/* "לעולם חוזרים אך ורק בסוף מסלול. מי שחותך לפני לא יכול להגיע
+            לעולם." אז המסך הזה לא מתחזה לסיום: אין בו "לעולם" ואין בו
+            "הכול נשמר" בכותרת, כי המסלול לא הושלם.
+            אבל מה שנתפס בשטח כן נשאר — "שלא תהיה עוגמת נפש" — ולכן
+            אומרים את זה במפורש, בשם, במקום להשאיר ילד לנחש. */}
         {g.state === S.ABORTED && (
-          <Panel eyebrow={tr('עצרנו')}>
-            <h2 style={s.h2}>{tr('הכול נשמר')}</h2>
-            <p style={s.body}>{tr('מה שאספתם נשאר. אפשר לצאת שוב מתי שבא לכם.')}</p>
+          <Panel eyebrow={tr('עצרנו באמצע')}>
+            <h2 style={s.h2}>{tr('המסלול לא הושלם')}</h2>
+            <p style={s.body}>
+              {tr('הפורטל נפתח רק בסוף המסלול, אז הפעם חוזרים בלעדיו.')}
+              {' '}
+              {g.progress.creatures?.length
+                ? tr('מה שתפסתם בדרך נשאר אצלכם.')
+                : tr('מה שאספתם בדרך נשאר אצלכם.')}
+            </p>
             <ParentCard walk={g.progress.lastWalk} />
-            <button onClick={() => dispatch({ type: 'RUN_CLOSED' })} style={s.cta}>{tr('לעולם')}</button>
+            <button onClick={() => dispatch({ type: 'RUN_CLOSED' })} style={{ ...s.cta, ...s.ctaGhost }}>
+              {tr('חזרה למסך הבית')}
+            </button>
           </Panel>
         )}
       </Shell>
