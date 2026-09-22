@@ -183,7 +183,12 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   // החיפוש אופקי בלבד — אחרת יעד שנקבע לו גובה בלתי ניתן למציאה.
   const placed = targets.map(t => {
     const dx = angleDelta(live, t.bearing)
-    const dy = hasSensors ? (t.elev ?? 0) - (pitch || 0) : 0
+    // ── והגובה נשמר גם בלי חיישנים ──
+    // כאן ישב dy = 0 לכל מי שאין לו חיישן כיוון, כלומר כל היצורים
+    // נדחסו לגובה העיניים: צל שאמור לשכב על המדרכה עלה למרכז המסך,
+    // והאלומה שמאירה על הרצפה לא יכלה לגעת בו לעולם. הגובה הוא תכונה
+    // של היצור ולא של החיישן; מה שהחיישן מוסיף הוא רק תיקון ההטיה.
+    const dy = (t.elev ?? 0) - (hasSensors ? (pitch || 0) : 0)
     return { ...t, dx, dy, off: dx == null ? 999 : Math.hypot(dx, dy) }
   })
   // ראש השביל הוא הזמנה, לא בחירה. אם הוא ניתן לנעילה, הילד "בוחר" את
