@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { idleFor, IDLE_CSS } from '../content/idle'
 import { useModelViewer, useModelSrc } from '../hooks/useModelViewer'
 import { sizeOf } from '../content/creatures'
 import { Wear } from '../ui/Wear'
@@ -30,14 +31,21 @@ export function CreatureFigure({ creature, peeking, faceLeft, streakSide, approa
   // הגודל: הפאזה כפול הגובה האמיתי של היצור. בולדר גדול מנימי גם כשהם
   // באותו מרחק.
   const scale = phaseScale * sizeOf(creature)
-  // דמות חיה כבר זזה בעצמה; אנימציית CSS מעליה רק מכבידה.
-  const anim = hideSprite || creature?.live ? 'none'
+  // ── וברחוב הוא גם נושם ──
+  // "אז עכשיו ברחוב הדמויות יזוזו?" — לא היו. כאן עמדה ההנחה שדמות חיה
+  // כבר זזה בעצמה ושאנימציה מעליה רק מכבידה, וזו בדיוק אותה הנחה שהשאירה
+  // את בולדר קפוא בעולם הבית: WebP של סלע לא זז. אז מי שיש לו קליפ חי
+  // מקבל את תנועת העמידה שלו (content/idle.js) — אותה אחת שבבית, כך
+  // שאותו יצור מתנהג אותו דבר בשני המקומות. ברחוב יש דמות אחת על המסך
+  // ולא שש, אז זה גם זול יותר.
+  const anim = hideSprite ? 'none'
     : approaching ? 'wildenBob 1.1s ease-in-out infinite'
-    : done ? 'wildenBreathe 2.6s ease-in-out infinite' : 'none'
+    : done ? 'wildenBreathe 2.6s ease-in-out infinite'
+    : idleFor(creature?.id)
   return (
-    <div className="wilden-figure" style={{ ...F.figure, animation: anim,
+    <div className="wilden-figure" style={{ ...F.figure, animation: anim, transformOrigin: '50% 100%',
       width: `${(60 * scale).toFixed(1)}vw`, height: `${(36 * scale).toFixed(1)}vh` }}>
-      <style>{FIGURE_CSS}</style>
+      <style>{FIGURE_CSS}{IDLE_CSS}</style>
       {streakSide && (
         <div style={{ ...F.streak, ...(streakSide === 'left' ? F.streakL : F.streakR) }} />
       )}
