@@ -3460,6 +3460,37 @@ test('השואב: פעם אחת בסיבוב, והמונה הוא שמכריע',
   assert.equal((initial().run?.sucks || 0), 0)
 })
 
+// "צל גרוע, ממש בלתי ניתן לתפיסה. הפנס קטן ומעצבן, הדמות גדולה ומגושמת."
+test('צל: אפשר לתפוס אותו גם בלי מד צעדים, והוא נכנס לתוך האלומה', async () => {
+  const { makeBeam, BEAM_MAX_SCALE, SLIP_MS } = await import('../src/app/wilden/ar/controllers/beam.js')
+  const beam = makeBeam({})
+  // ── הגודל ── הכתם הוא 19% מרוחב המסך לרדיוס אנכי; צל חייב להיכנס בו
+  const poolH = 2 * 19 / 100 * 402
+  const figH = 36 * (BEAM_MAX_SCALE * 0.70) / 100 * 880      // ar/Figure: 36vh * scale * sizeOf
+  assert.ok(figH < poolH, `צל (${figH.toFixed(0)}px) קטן מהכתם (${poolH.toFixed(0)}px)`)
+  assert.ok(figH > poolH * 0.5, 'אבל לא זעיר — הוא עדיין הדמות, לא נקודה')
+
+  // ── וההתקדמות ── בלי מד צעדים, לחיצה באור מקדמת
+  let s = beam.start(0, () => 0.5, 0)
+  s = beam.onBeam(s, true, 0).state              // האלומה עליו
+  s = beam.onBeam(s, true, 700).state            // ואחרי FIND_MS הוא "נמצא"
+  assert.equal(s.found, true, 'האור מצא אותו')
+  const d0 = s.dist
+  const tapped = beam.onTap(s, () => 0.5, 800)
+  assert.ok(tapped.state.dist < d0, 'לחיצה כשהאור עליו מקרבת — זו הרשת למי שאין לו מד צעדים')
+  // בחושך היא עדיין לא עושה כלום: האור הוא הפעולה
+  const dark = { ...s, lit: false }
+  assert.equal(beam.onTap(dark, () => 0.5, 900).state.dist, s.dist, 'בחושך לחיצה לא מקדמת')
+
+  // ── וחמיקה אחת, לא שתיים ──
+  let walk = { ...s, dist: 3.4, slips: 0 }
+  const first = beam.onStep(walk, 1000)
+  assert.equal(first.feedback, 'slip', 'בפעם הראשונה הוא חומק')
+  const second = beam.onStep({ ...first.state, dist: 3.4, lit: true, found: true }, 2000)
+  assert.equal(second.feedback, 'near', 'ובשנייה הוא כבר נעצר — לא שלושה סבבים בחושך')
+  assert.ok(SLIP_MS >= 3000, 'ויש יותר זמן לאבד אותו לרגע בלי שיברח')
+})
+
 // "מופיעה אלומת אור אבל היא קטנה ממש, וצל מופיע ענקי לא בתוכה."
 // הסיבה האמיתית: צל מוצב ב--16° מתחת לאופק, כלומר ב-76% מגובה המסך,
 // והכתם צויר ב-52%. גם כשמכוונים ישירות אליו המבחן יצא 1.99 — כלומר

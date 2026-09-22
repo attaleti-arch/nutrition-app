@@ -20,8 +20,11 @@
 import { makeChase, PHASE, scaleFor } from './chase.js'
 
 export const DARK = 'DARK'
-export const SLIP_MS = 2000        // כמה זמן בחושך לפני שהוא זז
+export const SLIP_MS = 3200        // כמה זמן בחושך לפני שהוא זז
 export const FIND_MS = 600         // כמה זמן להחזיק עליו אלומה כדי ש"נמצא"
+// גודלו המרבי של צל בתוך האלומה. הכתם הוא 16% מרוחב המסך לגובה, ובגודל
+// הזה הוא יוצא כשני שלישים ממנו — נמצא בתוכו, ולא מסתיר אותו.
+export const BEAM_MAX_SCALE = 0.52
 export const SCAN_MS = 50000       // רשת ביטחון: אחרי זמן סריקה ארוך הוא מתגלה
 
 const norm = a => ((a % 360) + 360) % 360
@@ -69,8 +72,14 @@ export function makeBeam({ id = 'beam', target = 'creature', copy = null } = {})
       if (!inDark(s)) return out
       // בחושך הוא קיים — הבמה צריכה את הכיוון שלו כדי לדעת אם האור עליו —
       // אבל היא מציירת אותו רק כשהוא מואר. unlit הוא "כאן, ולא נראה".
+      // ── והוא קטן, בתוך הכתם ──
+      // "הפנס קטן ומעצבן, הדמות גדולה ומגושמת." בלי התקרה הזאת הוא הגיע
+      // ל-scale 1.6 — יצור ברוחב שני שלישים מהמסך, שמסתיר את הכתם לגמרי.
+      // ואז הילד כבר לא רואה איפה האלומה, ו"תחזיקו עליו את האור" הופך
+      // למשחק בלי משוב. הוא צל על המדרכה: הוא צריך לשבת *בתוך* האור,
+      // לא לבלוע אותו.
       return out.map(o => (o.id === target
-        ? { ...o, scale: scaleFor(s.dist), shadow: true, unlit: !s.lit }
+        ? { ...o, scale: Math.min(scaleFor(s.dist), BEAM_MAX_SCALE), shadow: true, unlit: !s.lit }
         : o))
     },
 
@@ -88,7 +97,9 @@ export function makeBeam({ id = 'beam', target = 'creature', copy = null } = {})
       if (on) {
         if (s.lit) {
           // מספיק זמן באור — והוא "נמצא": מכאן הצעדים מקרבים.
-          if (!s.found && s.litT && t - s.litT >= FIND_MS) {
+          // litT != null ולא litT: חותמת זמן אפס היא זמן תקף, ועם הבדיקה
+          // הקודמת הוא פשוט לא היה נמצא לעולם באותו מקרה.
+          if (!s.found && s.litT != null && t - s.litT >= FIND_MS) {
             return { state: { ...s, found: true }, feedback: 'beam' }
           }
           return { state: s }
@@ -106,7 +117,9 @@ export function makeBeam({ id = 'beam', target = 'creature', copy = null } = {})
       const dist = Math.max(0, s.dist - (s.mods?.stepM ?? 0.95))
       if (dist <= 3.2) {
         // הגיעו אליו באור: או שהוא חומק (פעמיים), או שהוא נעצר וקם.
-        if ((s.slips || 0) < 2) return { state: slip({ ...s, dist }, rng, t), feedback: 'slip' }
+        // חמיקה אחת, לא שתיים: כל חמיקה היא סבב מלא של למצוא־ולהתקרב
+        // מחדש, ושלושה סבבים כאלה בחושך שברו את הרגע במקום לבנות אותו.
+        if ((s.slips || 0) < 1) return { state: slip({ ...s, dist }, rng, t), feedback: 'slip' }
         return { state: { ...s, phase: PHASE.NEAR, ready: true, dist: 2.4, lit: true, lastMoveT: t }, feedback: 'near' }
       }
       return { state: { ...s, dist, lastMoveT: t } }
@@ -115,7 +128,7 @@ export function makeBeam({ id = 'beam', target = 'creature', copy = null } = {})
     onTick(s, t = 0) {
       if (!inDark(s)) return base.onTick(s, t)
       // שתי שניות בחושך — והוא כבר לא שם.
-      if (!s.lit && s.darkT && s.found && t - s.darkT >= SLIP_MS) {
+      if (!s.lit && s.darkT != null && s.darkT !== 0 && s.found && t - s.darkT >= SLIP_MS) {
         return slip(s, Math.random, t)
       }
       // רשת ביטחון: ילד שסורק ולא מוצא לא נשאר בחושך לנצח.
@@ -125,9 +138,20 @@ export function makeBeam({ id = 'beam', target = 'creature', copy = null } = {})
       return s.tickT === t ? s : { ...s, tickT: t }
     },
 
-    // בחושך אין על מה ללחוץ: האור הוא הפעולה, לא האצבע.
+    // ── בחושך אין על מה ללחוץ, אבל באור כן ──
+    // "ממש בלתי ניתן לתפיסה." וזה היה נכון: ההתקדמות כאן תלויה *רק*
+    // בצעדים, והתפיסה הזאת היא היחידה שבה הילד מחזיק את הטלפון מורם
+    // ומכוון אותו למדרכה — בדיוק התנוחה שבה מד הצעדים כמעט לא סופר.
+    // לכל שאר היצורים יש רשת: כשאין מד צעדים, לחיצה מקדמת. כאן היא
+    // נחסמה לגמרי, ואז לא נשארה שום דרך להתקדם.
+    //
+    // האור נשאר הפעולה: בחושך הלחיצה עדיין לא עושה כלום. אבל ברגע
+    // שהאלומה עליו והוא נמצא — לחיצה שווה צעד.
     onTap(s, rng = Math.random, t = 0, opts = {}) {
-      if (inDark(s)) return { state: s }
+      if (inDark(s)) {
+        if (s.lit && s.found) return this.onStep(s, t, rng)
+        return { state: s }
+      }
       return base.onTap(s, rng, t, opts)
     },
 
