@@ -5,19 +5,20 @@
 // היום בדרך, לפי כמה מסעות כבר היו.
 
 import M01 from './missions/m01-signal.js'
-import { creaturesForWalk } from '../engine/coins.js'
+import { creaturesForWalk, availableFor, withFreedFirst } from '../engine/coins.js'
 import { creatureById } from './creatures.js'
 import { tr } from '../i18n/index.js'
 
 // מי היום בדרך — היצור הראשון לפי הלוח. השני (בתשלום) לא מוכרז מראש.
 export function todaysCreature(progress) {
-  const walks = progress?.walks || 0
-  return creatureById(creaturesForWalk(walks, false)[0])
+  return todaysCreatures(progress)[0] || null
 }
 // כולם, לפי הסדר. מהמסע השני — שניים.
 export function todaysCreatures(progress) {
   const walks = progress?.walks || 0
-  return creaturesForWalk(walks, false).map(creatureById).filter(Boolean)
+  // אותה רשימה שהמכונה תבנה ביציאה: כולל מי שנפלט מהשואב, ובראש התור.
+  const avail = availableFor(progress)
+  return withFreedFirst(creaturesForWalk(walks, false, avail), progress).map(creatureById).filter(Boolean)
 }
 // הניסוח עובר דרך tr (גרמנית): כל משפט תבנית עם משתנים, לא הדבקת מילים.
 const namesOf = list => list.map(c => tr(c.name)).join(tr(' ו'))

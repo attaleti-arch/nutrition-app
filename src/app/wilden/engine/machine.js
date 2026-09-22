@@ -17,7 +17,7 @@ import { routeKm, poisFor, creatureCount, placePois, setRouteKm, withCreatures, 
 import { modsFor, consume, buyGear, withKeys, withExtra, unlocked } from './gear.js'
 import { feed, canFeed } from './feed.js'
 import { buySkin, buyStone } from './skins.js'
-import { withExtraGold, AVAILABLE, availableFor, spatBy, SUCK_COINS, heatDistance, withPick, rollSurprise, SURPRISE } from './coins.js'
+import { withExtraGold, AVAILABLE, availableFor, spatBy, SUCK_COINS, heatDistance, withPick, rollSurprise, SURPRISE, withFreedFirst } from './coins.js'
 import { freshStreak, tickStreak, boosting, BOOST_COINS } from './streak.js'
 import { setBuddy, addBond } from './buddy.js'
 import { bringsFor, completeQuest, produce, creaturesWanted } from './world.js'
@@ -188,7 +188,9 @@ export function reduce(g, ev) {
       // מחזיקה; הדרך היחידה אליו היא לשאוב את הרוח הזאת.
       const held = takenId(g.progress)
       const avail = availableFor(g.progress, ev.available || AVAILABLE).filter(c => c !== held)
-      const planned = creaturesForWalk(walks, extra, avail, creatureCount(pois))
+      // מי שנפלט מהשואב ועוד לא נתפס עומד ראשון — המסך הבטיח לילד
+      // "בסיבוב הבא", ובלי זה הוא היה מחכה עשרה מסעות.
+      const planned = withFreedFirst(creaturesForWalk(walks, extra, avail, creatureCount(pois)), g.progress)
       // מי שהילד בחר בבית נכנס ראשון — אם הוא פתוח ואינו מוחזק בידי גוסטבו.
       // סימן שאלה: מגרילים כאן, ברגע היציאה, מבין הפתוחים — כדי שהגילוי
       // יקרה בשטח. יצור נעול לא נכנס להגרלה; "הפתעה" שאי אפשר לתפוס

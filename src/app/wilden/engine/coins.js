@@ -188,6 +188,26 @@ export const FREED = ['whisper', 'drake']
 export const SUCK_CYCLE = 5
 export const CREATURE_SLOTS = [0, 3]
 export const SUCK_COINS = 10
+// ── ומי שכבר ברח לרחוב עומד ראשון בתור ──
+// "תפסתי מזמן את ויספר והוא לא נכנס למשחק לתפיסה."
+//
+// הוא נכנס לרשימה — אבל בסופה. והסבב לוקח את available[walks % n], אז
+// יצור שנוסף עשירי היה עולה בתורו רק במסע התשיעי, העשרים ותשעה וכן
+// הלאה. בינתיים המסך אמר לילד במפורש "הוא ברח לרחוב שלכם, הוא שם בחוץ
+// עכשיו", ו"הזדמנות לתפוס בסיבובים הבאים" — הבטחה שהקוד לא קיים.
+//
+// עכשיו מי שנפלט ועוד לא נתפס עומד בראש התור, עד שתופסים אותו.
+export const freedWaiting = progress =>
+  (progress?.freed || []).filter(id => !(progress?.creatures || []).includes(id))
+
+export function withFreedFirst(list, progress) {
+  const waiting = freedWaiting(progress)
+  if (!waiting.length || !list?.length) return list
+  const who = waiting[0]
+  if (list[0] === who) return list
+  return [who, ...list.filter(c => c !== who)].slice(0, list.length)
+}
+
 export const availableFor = (progress, base = AVAILABLE) =>
   (progress?.freed || []).length ? [...base, ...(progress.freed || [])] : base
 // מי יוצא מהשאיבה הבאה: מזהה יצור, או null אם זו שאיבה של מטבעות.

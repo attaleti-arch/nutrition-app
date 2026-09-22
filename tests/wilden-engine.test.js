@@ -3408,6 +3408,39 @@ test('בחירה: מה שהבית מכריז זה מי שבאמת יוצא, וה
   assert.equal(home.progress.walks, 4, 'והמסע נספר')
 })
 
+// "תפסתי מזמן את ויספר והוא לא נכנס למשחק לתפיסה."
+// המסך הבטיח לילד "הוא ברח לרחוב שלכם, הוא שם בחוץ עכשיו" — והקוד
+// הוסיף אותו לסוף רשימת הסבב, שם הוא היה מחכה עשרה מסעות.
+test('מי שנפלט מהשואב: ראשון בתור במסע הבא, עד שתופסים אותו', async () => {
+  const { withFreedFirst, freedWaiting, availableFor, creaturesForWalk } =
+    await import('../src/app/wilden/engine/coins.js')
+  const base = { ...initial().progress, creatures: ['nimi'], caught: { nimi: 1 } }
+
+  // בלי מי שנפלט — הסבב כרגיל
+  assert.deepEqual(withFreedFirst(['gali', 'lumi'], base), ['gali', 'lumi'])
+  // נפלט ועוד לא נתפס — ראשון, והאורך נשמר
+  const freed = { ...base, freed: ['whisper'] }
+  assert.deepEqual(freedWaiting(freed), ['whisper'])
+  assert.deepEqual(withFreedFirst(['gali', 'lumi'], freed), ['whisper', 'gali'])
+  // נתפס — חוזר להיות אחד מהחבורה, בלי קדימות
+  const caughtHim = { ...freed, creatures: ['nimi', 'whisper'] }
+  assert.deepEqual(freedWaiting(caughtHim), [])
+  assert.deepEqual(withFreedFirst(['gali', 'lumi'], caughtHim), ['gali', 'lumi'])
+
+  // ── וזה מה שהיה שבור ──
+  // בסבב הרגיל הוא נוסף עשירי, ולכן היה עולה רק כש-walks % 10 === 9
+  const avail = availableFor(freed)
+  assert.equal(avail.length, 10)
+  let firstAt = null
+  for (let w = 0; w < 10; w++) if (creaturesForWalk(w, false, avail)[0] === 'whisper') { firstAt = w; break }
+  assert.equal(firstAt, 9, 'בלי התיקון הוא היה מחכה עד המסע התשיעי')
+  // ועם התיקון — כבר במסע הבא, יהיה אשר יהיה
+  for (let w = 0; w < 10; w++) {
+    assert.equal(withFreedFirst(creaturesForWalk(w, false, avail), freed)[0], 'whisper',
+      `מסע ${w}: הוא ראשון`)
+  }
+})
+
 // "אני לא רוצה שהשואב יחליף ריצה" — הוא חוסך בריחה אחת, פעם אחת במסע.
 test('השואב: פעם אחת בסיבוב, והמונה הוא שמכריע', () => {
   const { SUCK_AT } = { SUCK_AT: 0.6 }          // ar/WindFlee.js
