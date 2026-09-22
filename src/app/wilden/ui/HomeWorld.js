@@ -37,6 +37,32 @@ const SWARM_BUDGET = 12
 const bubbleAt = x => (x < 28 ? { left: 0, transform: 'none', maxWidth: '56vw' }
   : x > 72 ? { left: 'auto', right: 0, transform: 'none', maxWidth: '56vw' } : null)
 
+// ─── התנועה של כל אחד ───
+// "אני ממש אשמח שהחיות ינועו במרחב ולא סתם יהיו שם. יש תנועה אבל היא
+// מרגישה לא איכותית כמו בסרטון של האני שיש התעופפות קלה. נניח בולדר
+// ממש גוש לא זז."
+//
+// היא צודקת, וזו הייתה פשוט חסרה: רק המעופפים קיבלו wildenHover, וכל
+// מי שעל הקרקע קיבל animation: 'none' — כלומר הוא זז רק אם ה-WebP שלו
+// זז מבפנים. בולדר הוא סלע, אז הוא לא זז בכלל.
+//
+// לטייל במרחב הם לא יכולים: המקומות צפופים במכוון, ויש בדיקה שמוודאת
+// שאף שתי דמויות לא נוגעות גם כשכולן אגדיות. אז התנועה היא במקום —
+// אבל אופיינית לכל אחד, ולא אותו ריחוף לכולם.
+const IDLE = {
+  bolder: 'wildenLumber 7s',      // גוש אבן: מעביר משקל לאט, ונושם
+  kraag: 'wildenLumber 9.5s',     // אותו דבר, כבד ואיטי יותר
+  nimi: 'wildenPerk 6.5s',        // גור: עומד, ופתאום קפיצה קטנה
+  gali: 'wildenSlosh 4.2s',       // מים: מתנדנדת כמו נוזל
+  lumi: 'wildenFlicker 3.4s',     // אור: מרצד ועולה קצת
+  tzel: 'wildenCreep 5s',         // צל: נמתח ומתכווץ על הקרקע
+  noga: 'wildenSway 5.5s',        // מתנדנדת ברוח
+  whisper: 'wildenBreathe 4.6s',  // ביישן: רק נושם
+  drake: 'wildenSway 4s',         // דרקון קטן: מתנדנד על הרגליים
+}
+// למעופפים כבר יש הריחוף על הכפתור עצמו — לא מכפילים.
+const idleFor = (id, air) => (air ? null : IDLE[id] ? `${IDLE[id]} ease-in-out infinite` : 'wildenBreathe 5.2s ease-in-out infinite')
+
 // עד שתמונת המבנה תגיע: רק הילה חמה במקום שלו (הנחיל מסביב עושה את העבודה)
 const GLOW = { hive: 'rgba(240,192,105,.55)', pond: 'rgba(120,200,240,.5)', quarry: 'rgba(200,170,140,.5)', nest: 'rgba(180,230,255,.5)' }
 function BuildingGlow({ id }) {
@@ -177,9 +203,13 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, onFeed, walks = 0,
             aria-label={feedable ? tr('להאכיל') : c.name}
             style={{ ...W.spot, left: `${sp.x}%`, top: `${sp.y + h * (sp.foot || 0)}%`, height: `${h}%`, animation: sp.air ? 'wildenHover 3.2s ease-in-out infinite' : 'none' }}>
             <div style={{ ...W.figure, width: 'fit-content', position: 'relative', transform: sp.flip ? 'scaleX(-1)' : 'none' }}>
-              <CreatureAura c={c} />
-              <img src={c.live} alt="" draggable={false} style={{ ...W.figure, position: 'relative', zIndex: 1, filter: c.tint || 'none' }} />
-              <Wear id={id} wear={progress?.wear?.[id]} anchors={c.anchors} />
+              {/* שכבת התנועה נפרדת מהיפוך הכיוון, אחרת האנימציה דורסת אותו.
+                  והיא מסתובבת סביב הרגליים, לא סביב המרכז. */}
+              <div style={{ ...W.figure, position: 'relative', transformOrigin: '50% 100%', animation: idleFor(id, sp.air) }}>
+                <CreatureAura c={c} />
+                <img src={c.live} alt="" draggable={false} style={{ ...W.figure, position: 'relative', zIndex: 1, filter: c.tint || 'none' }} />
+                <Wear id={id} wear={progress?.wear?.[id]} anchors={c.anchors} />
+              </div>
             </div>
             {/* הצל מתחת לרגליים, לא מתחת לקנבס */}
             {!sp.air && <span style={{ ...W.groundShadow, bottom: `calc(${(sp.foot || 0) * 100}% - 4px)` }} />}
@@ -318,6 +348,14 @@ export function HomeWorld({ progress, onQuest, onCreatureTap, onFeed, walks = 0,
 
 const CSS = `
 @keyframes wildenHover { 0%,100% { transform: translate(-50%,-100%) translateY(0) } 50% { transform: translate(-50%,-100%) translateY(-6px) } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important } }
+@keyframes wildenLumber { 0%,100% { transform: translateY(0) rotate(0deg) scale(1,1) } 28% { transform: translateY(-0.7%) rotate(-0.55deg) scale(1.006,0.995) } 62% { transform: translateY(0) rotate(0.5deg) scale(0.996,1.006) } }
+@keyframes wildenPerk { 0%,70%,100% { transform: translateY(0) scale(1,1) } 76% { transform: translateY(0) scale(1.05,0.94) } 84% { transform: translateY(-5.5%) scale(0.97,1.04) } 92% { transform: translateY(0) scale(1.02,0.98) } }
+@keyframes wildenSlosh { 0%,100% { transform: skewX(0deg) scale(1,1) } 50% { transform: skewX(1.7deg) scale(0.985,1.025) } }
+@keyframes wildenFlicker { 0%,100% { transform: translateY(0) scale(1) } 50% { transform: translateY(-2.6%) scale(1.022) } }
+@keyframes wildenCreep { 0%,100% { transform: scale(1,1) translateY(0) } 50% { transform: scale(1.03,0.965) translateY(1.1%) } }
+@keyframes wildenSway { 0%,100% { transform: rotate(-1.3deg) } 50% { transform: rotate(1.3deg) } }
+@keyframes wildenBreathe { 0%,100% { transform: scale(1,1) } 50% { transform: scale(1.012,0.99) } }
 @keyframes wildenBubble { 0% { opacity: 0; transform: translate(-50%, 6px) } 12% { opacity: 1; transform: translate(-50%, 0) } 85% { opacity: 1 } 100% { opacity: 0 } }
 @keyframes wildenHole { 0%,100% { opacity: .75; transform: scale(1) rotate(0) } 50% { opacity: 1; transform: scale(1.08) rotate(180deg) } }
 @keyframes wildenWater { 0%,100% { opacity: .55 } 50% { opacity: .8 } }
