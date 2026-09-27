@@ -17,6 +17,8 @@ const nextConfig = {
       { source: '/one-day/', destination: '/one-day.html' },
       { source: '/running', destination: '/running.html' },
       { source: '/running/', destination: '/running.html' },
+      { source: '/quiz', destination: '/quiz.html' },
+      { source: '/quiz/', destination: '/quiz.html' },
     ]
   },
 }

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>מה באמת מנהל אותך? | אתי רפאלה זיתון</title>
+<meta name="description" content="תשע שאלות קצרות על הבוקר, על המשקל ועל מה שקורה אחר כך. בלי תשובות נכונות — רק מה שקרוב אלייך.">
+<link rel="canonical" href="https://eti-zitun.com/quiz">
+<!-- שיתוף: הקישור נשלח מהסטוריז ומהוואטסאפ, אז הוא צריך תצוגה מקדימה -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://eti-zitun.com/quiz">
+<meta property="og:title" content="מה באמת מנהל אותך?">
+<meta property="og:description" content="תשע שאלות קצרות על הבוקר, על המשקל ועל מה שקורה אחר כך. אקרא, ואחזור אלייך עם שיקוף אישי.">
+<meta property="og:image" content="https://eti-zitun.com/eti-hero.jpeg">
+<meta property="og:locale" content="he_IL">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f0de; --paper:#fbf7ea; --ink:#2b2a22; --muted:#6d6a58;
+  --olive:#5f6b3a; --olive-deep:#3e4726; --gold:#b8913a; --line:#e3dac0;
+  --sel-bg:#eef0dc; --on-olive:#fbf7ea;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#1f2117; --paper:#282b1e; --ink:#efe8d2; --muted:#b3ad94;
+    --olive:#a4b36c; --olive-deep:#c9d59a; --gold:#d6b262; --line:#3b3f2c;
+    --sel-bg:#343a24; --on-olive:#1f2117;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#1f2117; --paper:#282b1e; --ink:#efe8d2; --muted:#b3ad94;
+  --olive:#a4b36c; --olive-deep:#c9d59a; --gold:#d6b262; --line:#3b3f2c;
+  --sel-bg:#343a24; --on-olive:#1f2117;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
+*,*::before,*::after{box-sizing:inherit}
+body{
+  margin:0;min-height:100%;background:var(--bg);color:var(--ink);
+  font-family:"Assistant","Heebo","Arial Hebrew",Arial,sans-serif;font-size:18px;line-height:1.55;
+}
+.wrap{max-width:520px;margin:0 auto;padding:20px 20px 40px}
+header{display:flex;align-items:center;gap:12px;margin-bottom:28px}
+.wheel{width:44px;height:44px;flex:none;color:var(--olive);transition:transform .6s cubic-bezier(.3,.7,.3,1)}
+.bar{flex:1;height:4px;background:var(--line);border-radius:2px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--gold);transition:width .4s ease}
+.count{font-size:14px;color:var(--muted);min-width:44px;text-align:left}
+h1,h2{font-family:"Frank Ruhl Libre",Georgia,serif;color:var(--olive-deep);margin:0 0 12px}
+h1{font-size:40px;line-height:1.1;font-weight:900}
+h2{font-size:27px;line-height:1.25;font-weight:700}
+.sub{color:var(--muted);margin:0 0 28px}
+.hint{font-size:15px;color:var(--muted);margin:-4px 0 18px}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{
+  font:inherit;text-align:right;color:var(--ink);background:var(--paper);
+  border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer;
+  display:flex;align-items:center;gap:12px;min-height:56px;
+}
+.opt .mark{width:22px;height:22px;flex:none;border:1.5px solid var(--muted);border-radius:50%;display:grid;place-items:center}
+.opt.multi .mark{border-radius:6px}
+.opt[aria-pressed="true"]{border-color:var(--olive);background:var(--sel-bg)}
+.opt[aria-pressed="true"] .mark{background:var(--olive);border-color:var(--olive)}
+.opt[aria-pressed="true"] .mark::after{content:"";width:8px;height:8px;border-radius:50%;background:var(--on-olive)}
+.opt.multi[aria-pressed="true"] .mark::after{width:10px;height:6px;border-radius:0;background:none;border:2px solid var(--on-olive);border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+input[type=text],textarea{
+  font:inherit;width:100%;color:var(--ink);background:var(--paper);
+  border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-top:10px;
+}
+textarea{min-height:180px;font-size:15px;line-height:1.5;resize:vertical}
+.nav{display:flex;gap:10px;margin-top:26px;align-items:center}
+.btn{
+  font:inherit;font-weight:700;border:0;border-radius:999px;padding:14px 26px;cursor:pointer;
+  background:var(--olive);color:var(--on-olive);text-decoration:none;display:inline-flex;justify-content:center;align-items:center;min-height:52px
+}
+.btn[disabled]{opacity:.4;cursor:default}
+.btn.ghost{background:none;color:var(--muted);padding:14px 8px;font-weight:600}
+.btn.wide{width:100%}
+.btn.gold{background:var(--gold);color:#2b2a22}
+.stack{display:flex;flex-direction:column;gap:10px;margin-top:22px}
+.note{font-size:15px;color:var(--olive-deep);min-height:24px;margin-top:10px}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.sign{margin-top:36px;font-size:14px;color:var(--muted)}
+.sign a{color:var(--muted)}
+.screen{animation:in .35s ease}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion: reduce){.screen{animation:none}.wheel,.bar i{transition:none}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header aria-hidden="true">
+    <svg class="wheel" id="wheel" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3">
+      <circle cx="24" cy="24" r="20"/><circle cx="24" cy="24" r="5"/>
+      <path d="M24 19V4M19.7 26.5 6.8 34M28.3 26.5 41.2 34" stroke-linecap="round"/>
+    </svg>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="count" id="count"></div>
+  </header>
+  <main id="app"></main>
+  <p class="sign">אתי רפאלה זיתון · <a href="https://eti-zitun.com">בין הראש לצלחת</a></p>
+</div>
+
+<script>
+// הוואטסאפ של אתי, בפורמט בינלאומי בלי + ובלי 0 — כמו בשאר האתר.
+const WA_NUMBER = "972523336766";
+const IG_USER = "eti.rafaela.zitun";
+
+const Q = [
+  {q:"בבוקר שהמשקל ירד, מה עובר לך בראש?", short:"בוקר שהמשקל ירד", other:true,
+   o:["״ישששש! הדיאטה מצליחה!״","״איזו הקלה״","״עכשיו אסור לי לקלקל״","״יופי, ממשיכה כרגיל״"]},
+  {q:"ובערב של אותו יום?", short:"ובערב",
+   o:["מרשה לעצמי קצת יותר","אוכלת כמו שתכננתי","אוכלת פחות, כדי לא לקלקל"]},
+  {q:"בבוקר שהמשקל עלה, מה עובר לך בראש?", short:"בוקר שהמשקל עלה", other:true,
+   o:["״שוב נכשלתי״","״זה בטח מים או מלח״","״אני חייבת להדק״","״אין טעם, זה לא עובד״"]},
+  {q:"ובערב של אותו יום?", short:"ובערב",
+   o:["מצמצמת כדי לתקן","״ממילא הרסתי״, ואוכלת בלי לספור","אוכלת כמו שתכננתי"]},
+  {q:"כמה עלייה מספיקה כדי להרוס לך את מצב הרוח?", short:"עלייה שהורסת את מצב הרוח",
+   o:["כל עלייה, אפילו קטנה","בערך חצי קילו","קילו ומעלה","זה כמעט לא משפיע עליי"]},
+  {q:"אחרי כמה זמן בלי ירידה את מרגישה שזה לא עובד?", short:"זמן עד ״זה לא עובד״",
+   o:["כמה ימים","שבוע","שבועיים-שלושה","חודש ומעלה"]},
+  {q:"ומה את עושה אז?", short:"ומה אני עושה אז", other:true,
+   o:["מחמירה עוד יותר","עוזבת ומחפשת שיטה אחרת","מתייאשת לתקופה","ממשיכה כרגיל"]},
+  {q:"יש משפט על הגוף או על האוכל שלך ששמעת פעם, ואת עדיין שומעת?", short:"משפט שאני עדיין שומעת", other:true, otherLabel:"משפט אחר",
+   o:["״חבל, יש לך פנים כל כך יפות״","״רק עוד כמה קילו ותהיי מושלמת״","״אחותך אוכלת הכול ולא משמינה״","״וואו, ירדת? את נראית מעולה״","לא עולה לי משפט כזה"]},
+  {q:"חוץ מהמספר על המשקל, מה עוד מראה לך שאת מתקדמת?", short:"סימני התקדמות חוץ מהמשקל", multi:true, none:"קשה לי למצוא משהו",
+   hint:"אפשר לסמן כמה",
+   o:["בגדים שיושבים אחרת","יותר אנרגיה","הרגל שהצלחתי להחזיק","פחות נשנושים בערב","שינה טובה יותר","קשה לי למצוא משהו"]}
+];
+const TOTAL = Q.length;
+const ans = Q.map(q => q.multi ? [] : null);
+const otherText = Q.map(() => "");
+let name = "", step = -1;
+
+const app = document.getElementById("app");
+const el = (t, a={}, ...kids) => {const n=document.createElement(t);for(const k in a){if(k==="class")n.className=a[k];else if(k.startsWith("on"))n.addEventListener(k.slice(2),a[k]);else n.setAttribute(k,a[k]);}kids.flat().forEach(c=>n.append(c));return n;};
+
+function progress(){
+  const done = Math.max(0, Math.min(step, TOTAL));
+  document.getElementById("bar").style.width = (done/TOTAL*100)+"%";
+  document.getElementById("wheel").style.transform = `rotate(${-done/TOTAL*300}deg)`;
+  document.getElementById("count").textContent = (step>=0 && step<TOTAL) ? `${step+1}/${TOTAL}` : "";
+}
+
+function render(){
+  progress();
+  app.innerHTML = "";
+  const s = el("section",{class:"screen"});
+  if(step === -1) intro(s);
+  else if(step < TOTAL) question(s, step);
+  else if(step === TOTAL) nameScreen(s);
+  else finish(s);
+  app.append(s);
+  const h = s.querySelector("h1,h2"); if(h){h.setAttribute("tabindex","-1");h.focus({preventScroll:true});}
+  window.scrollTo(0,0);
+}
+
+function intro(s){
+  s.append(
+    el("h1",{},"מה באמת מנהל אותך?"),
+    el("p",{class:"sub"},"9 שאלות קצרות על הבוקר, על המשקל ועל מה שקורה אחר כך. סמני את מה שהכי קרוב אלייך. אין תשובות נכונות. אקרא, ואחזור אלייך עם שיקוף אישי."),
+    el("button",{class:"btn wide",onclick:()=>{step=0;render();}},"מתחילות")
+  );
+}
+
+function question(s, i){
+  const q = Q[i];
+  s.append(el("h2",{},q.q));
+  if(q.hint) s.append(el("p",{class:"hint"},q.hint));
+  const box = el("div",{class:"opts",role:q.multi?"group":"radiogroup"});
+  const list = q.other ? [...q.o, q.otherLabel || "משהו אחר"] : q.o;
+  const otherIdx = q.other ? list.length-1 : -1;
+  const input = el("input",{type:"text",placeholder:"כתבי במילים שלך",value:otherText[i]});
+  input.addEventListener("input",()=>{otherText[i]=input.value;nextBtn.disabled=!ready(i);});
+  list.forEach((label, k) => {
+    const pressed = q.multi ? ans[i].includes(k) : ans[i]===k;
+    const b = el("button",{class:"opt"+(q.multi?" multi":""),"aria-pressed":String(pressed),type:"button"},
+      el("span",{class:"mark","aria-hidden":"true"}), el("span",{},label));
+    b.addEventListener("click",()=>{
+      if(q.multi){
+        const noneIdx = q.o.indexOf(q.none);
+        let a = ans[i];
+        if(a.includes(k)) a = a.filter(x=>x!==k);
+        else a = (k===noneIdx) ? [k] : [...a.filter(x=>x!==noneIdx), k];
+        ans[i] = a;
+        [...box.children].forEach((c,j)=>c.setAttribute("aria-pressed",String(a.includes(j))));
+        nextBtn.disabled = !ready(i);
+      } else {
+        ans[i] = k;
+        [...box.children].forEach((c,j)=>c.setAttribute("aria-pressed",String(j===k)));
+        input.hidden = k!==otherIdx;
+        nextBtn.disabled = !ready(i);
+        if(k===otherIdx) input.focus();
+        else setTimeout(()=>{ if(step===i){step++;render();} }, 320);
+      }
+    });
+    box.append(b);
+  });
+  s.append(box);
+  if(q.other){ input.hidden = ans[i]!==otherIdx; s.append(input); }
+  const nextBtn = el("button",{class:"btn",type:"button",onclick:()=>{step++;render();}},"הבא");
+  nextBtn.disabled = !ready(i);
+  s.append(el("div",{class:"nav"}, nextBtn, el("button",{class:"btn ghost",type:"button",onclick:()=>{step--;render();}},"חזרה")));
+}
+
+function ready(i){
+  const q = Q[i];
+  if(q.multi) return ans[i].length>0;
+  if(ans[i]===null) return false;
+  if(q.other && ans[i]===q.o.length) return otherText[i].trim().length>0;
+  return true;
+}
+
+function nameScreen(s){
+  s.append(el("h2",{},"ואיך קוראים לך?"),
+    el("p",{class:"hint"},"כדי שאדע למי לחזור עם השיקוף"));
+  const input = el("input",{type:"text",placeholder:"השם שלך",value:name,autocomplete:"given-name"});
+  const go = el("button",{class:"btn",type:"button",onclick:()=>{step++;render();}},"לסיום");
+  go.disabled = !name.trim();
+  input.addEventListener("input",()=>{name=input.value;go.disabled=!name.trim();});
+  input.addEventListener("keydown",e=>{if(e.key==="Enter"&&name.trim()){step++;render();}});
+  s.append(input, el("div",{class:"nav"}, go, el("button",{class:"btn ghost",type:"button",onclick:()=>{step--;render();}},"חזרה")));
+}
+
+function answerText(i){
+  const q = Q[i];
+  if(q.multi) return ans[i].map(k=>q.o[k]).join(", ");
+  if(q.other && ans[i]===q.o.length) return otherText[i].trim();
+  return q.o[ans[i]];
+}
+
+function message(){
+  const lines = [`היי אתי, מילאתי את התרגיל ״מה באמת מנהל אותך״ 🌿`, `שם: ${name.trim()}`, ""];
+  Q.forEach((q,i)=>lines.push(`${i+1}. ${q.short}: ${answerText(i)}`));
+  return lines.join("\n");
+}
+
+async function copy(text, ta){
+  try{ await navigator.clipboard.writeText(text); return true; }
+  catch(e){
+    try{ ta.focus(); ta.select(); return document.execCommand("copy"); } catch(_){ return false; }
+  }
+}
+
+function finish(s){
+  const text = message();
+  s.append(el("h2",{},`תודה, ${name.trim()}`),
+    el("p",{class:"sub"},"נשאר רק לשלוח לי את התשובות. אקרא אותן בעצמי ואחזור אלייך עם שיקוף אישי."));
+  const ta = el("textarea",{readonly:"","aria-label":"התשובות שלך"}); ta.value = text;
+  const note = el("p",{class:"note",role:"status"});
+  const stack = el("div",{class:"stack"});
+  if(WA_NUMBER){
+    stack.append(el("a",{class:"btn wide",href:`https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(text)}`,target:"_blank",rel:"noopener"},"שליחה בוואטסאפ"));
+  }
+  const igBtn = el("button",{class:"btn wide "+(WA_NUMBER?"gold":""),type:"button"},"העתקה ושליחה באינסטגרם");
+  igBtn.addEventListener("click", async ()=>{
+    const ok = await copy(text, ta);
+    note.textContent = ok ? "התשובות הועתקו. עכשיו הדביקי אותן בהודעה אליי." : "סמני את הטקסט למטה, העתיקי, והדביקי בהודעה אליי.";
+    window.open(`https://ig.me/m/${IG_USER}`,"_blank","noopener");
+  });
+  stack.append(igBtn);
+  s.append(stack, note, ta,
+    el("div",{class:"nav"}, el("button",{class:"btn ghost",type:"button",onclick:()=>{step=0;render();}},"לשנות תשובות")));
+}
+
+render();
+</script>
+<!-- מדידת כניסות: Vercel Web Analytics. בלי קוקיז, בלי זיהוי אישי, בלי באנר הסכמה. -->
+<script defer src="/_vercel/insights/script.js"></script>
+</body>
+</html>
