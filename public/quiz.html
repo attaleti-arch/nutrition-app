@@ -11,33 +11,31 @@
 <meta property="og:url" content="https://eti-zitun.com/quiz">
 <meta property="og:title" content="מה באמת מנהל אותך?">
 <meta property="og:description" content="תשע שאלות קצרות על הבוקר, על המשקל ועל מה שקורה אחר כך. אקרא, ואחזור אלייך עם שיקוף אישי.">
-<meta property="og:image" content="https://eti-zitun.com/eti-hero.jpeg">
+<meta property="og:image" content="https://eti-zitun.com/og-brand.jpg?v=1">
+<meta property="og:image:secure_url" content="https://eti-zitun.com/og-brand.jpg?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:alt" content="בין הראש לצלחת — אתי רפאלה זיתון">
 <meta property="og:locale" content="he_IL">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://eti-zitun.com/og-brand.jpg?v=1">
+<link rel="icon" href="/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Assistant:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f6f0de; --paper:#fbf7ea; --ink:#2b2a22; --muted:#6d6a58;
-  --olive:#5f6b3a; --olive-deep:#3e4726; --gold:#b8913a; --line:#e3dac0;
-  --sel-bg:#eef0dc; --on-olive:#fbf7ea;
+  /* אותם צבעים בדיוק כמו ב-/celiac ובשאר המדריכים */
+  --bg:#efe7d4; --paper:#f8f5ee; --ink:#2a2a24; --muted:#6b6a5e;
+  --olive:#5c6b3c; --olive-deep:#3d4728; --gold:#b8933f; --line:#e2d9c2;
+  --sel-bg:#eef1e4; --on-olive:#f8f5ee;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --bg:#1f2117; --paper:#282b1e; --ink:#efe8d2; --muted:#b3ad94;
-    --olive:#a4b36c; --olive-deep:#c9d59a; --gold:#d6b262; --line:#3b3f2c;
-    --sel-bg:#343a24; --on-olive:#1f2117;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#1f2117; --paper:#282b1e; --ink:#efe8d2; --muted:#b3ad94;
-  --olive:#a4b36c; --olive-deep:#c9d59a; --gold:#d6b262; --line:#3b3f2c;
-  --sel-bg:#343a24; --on-olive:#1f2117;
-}
+/* בלי מצב כהה: כל האתר שלה קרם, תמיד. דף שמתהפך לכהה אצל חלק
+   מהנשים שמקבלות את הקישור מהקרוסלה נראה כמו אתר אחר. */
 html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%}
 *,*::before,*::after{box-sizing:inherit}
 body{
@@ -84,6 +82,11 @@ textarea{min-height:180px;font-size:15px;line-height:1.5;resize:vertical}
 .stack{display:flex;flex-direction:column;gap:10px;margin-top:22px}
 .note{font-size:15px;color:var(--olive-deep);min-height:24px;margin-top:10px}
 :focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.cover{text-align:center}
+.cover-logo{display:block;width:104px;height:auto;margin:4px auto 20px}
+.cover-tag{display:inline-block;font-size:11.5px;letter-spacing:.24em;font-weight:700;
+  color:var(--gold);background:#f7efdc;border-radius:99px;padding:6px 18px;margin:0 0 14px}
+.cover .sub{margin-inline:auto;max-width:34ch}
 .sign{margin-top:36px;font-size:14px;color:var(--muted)}
 .sign a{color:var(--muted)}
 .screen{animation:in .35s ease}
@@ -141,6 +144,8 @@ const app = document.getElementById("app");
 const el = (t, a={}, ...kids) => {const n=document.createElement(t);for(const k in a){if(k==="class")n.className=a[k];else if(k.startsWith("on"))n.addEventListener(k.slice(2),a[k]);else n.setAttribute(k,a[k]);}kids.flat().forEach(c=>n.append(c));return n;};
 
 function progress(){
+  // הכריכה היא כריכה: סרגל ריק מעליה נראה כמו טעינה תקועה
+  document.querySelector("header").hidden = step === -1;
   const done = Math.max(0, Math.min(step, TOTAL));
   document.getElementById("bar").style.width = (done/TOTAL*100)+"%";
   document.getElementById("wheel").style.transform = `rotate(${-done/TOTAL*300}deg)`;
@@ -161,7 +166,10 @@ function render(){
 }
 
 function intro(s){
+  s.className = "screen cover";
   s.append(
+    el("img",{class:"cover-logo",src:"/logo-mark.png",alt:"בין הראש לצלחת",width:"515",height:"520"}),
+    el("p",{class:"cover-tag"},"תרגיל קצר"),
     el("h1",{},"מה באמת מנהל אותך?"),
     el("p",{class:"sub"},"9 שאלות קצרות על הבוקר, על המשקל ועל מה שקורה אחר כך. סמני את מה שהכי קרוב אלייך. אין תשובות נכונות. אקרא, ואחזור אלייך עם שיקוף אישי."),
     el("button",{class:"btn wide",onclick:()=>{step=0;render();}},"מתחילות")
