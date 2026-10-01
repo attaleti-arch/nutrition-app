@@ -4,9 +4,9 @@ import { supabase } from '../supabase'
 import { createClient } from '@supabase/supabase-js'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
 import WelcomeDocument from '../WelcomeDocument'
+import { abnormalMarkers, detectPatterns, fastingFlag } from '../lib/bloodInsights'
 
-const GOALS_SPLIT = {
-  'ירידה במשקל': { protein: 35, carbs: 35, fat: 30 },
+const GOALS_SPLIT = {  'ירידה במשקל': { protein: 35, carbs: 35, fat: 30 },
   'חיטוב': { protein: 40, carbs: 30, fat: 30 },
   'שמירה על משקל': { protein: 30, carbs: 40, fat: 30 },
   'עלייה במסה': { protein: 30, carbs: 50, fat: 20 },
@@ -540,6 +540,119 @@ function renderMd(text) {
     '</div>'
   ).join('')
   return { __html: html }
+}
+
+function SessionBriefing({ bloodTests, profile }) {
+  const [copied, setCopied] = useState(false)
+  const markers = abnormalMarkers(bloodTests)
+  const patterns = detectPatterns(bloodTests, {
+    medicalHistory: (profile && (profile.medical_history || '')) || '',
+    digestion: (profile && (profile.digestion || '')) || '',
+    medications: (profile && (profile.medications || '')) || ''
+  })
+  const fasting = fastingFlag(profile)
+
+  if (!markers.length && !patterns.length && !fasting) {
+    return (
+      <div style={{ background: '#f0fdf4', borderRadius: 18, padding: '16px 18px', marginBottom: 12, border: '1.5px solid #bbf7d0' }}>
+        <div style={{ fontWeight: 700, color: '#166534', fontSize: 14 }}>🗣️ נקודות לשיחה</div>
+        <div style={{ fontSize: 13, color: '#15803d', marginTop: 6 }}>אין ערכים חריגים ואין צירופים. אין כאן נקודת פתיחה מהבדיקות.</div>
+      </div>
+    )
+  }
+
+  function asText() {
+    const lines = []
+    if (patterns.length) {
+      lines.push('צירופים')
+      patterns.forEach(p => {
+        lines.push('• ' + p.title + (p.markers.length ? ' (' + p.markers.join(', ') + ')' : ''))
+        lines.push('  ' + p.direction)
+        if (p.talk) lines.push('  לשיחה: ' + p.talk)
+      })
+      lines.push('')
+    }
+    if (markers.length) {
+      lines.push('ערכים חריגים')
+      markers.forEach(m => {
+        lines.push('• ' + m.name + ': ' + m.value + ' (' + m.direction + ', תקין ' + m.low + '-' + m.high + ')')
+        if (m.meaning) lines.push('  ' + m.meaning)
+        if (m.nutrition && m.nutrition.length) lines.push('  תזונתית: ' + m.nutrition.join(' | '))
+        if (m.ask) lines.push('  לשאול: ' + m.ask)
+      })
+    }
+    if (fasting) {
+      lines.push('')
+      lines.push('שימי לב: ' + fasting.title + ' (' + fasting.where + ')')
+      lines.push('  ' + fasting.talk)
+    }
+    return lines.join('\n')
+  }
+
+  async function copyAll() {
+    try {
+      await navigator.clipboard.writeText(asText())
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2200)
+    } catch (_) { setCopied(false) }
+  }
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, border: '1.5px solid #fbbf24' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4, flexWrap: 'wrap' }}>
+        <div style={{ fontWeight: 800, fontSize: 15, color: '#92400e' }}>🗣️ נקודות לשיחה</div>
+        <button onClick={copyAll} style={{ marginInlineStart: 'auto', padding: '6px 14px', borderRadius: 9, background: copied ? '#16a34a' : '#fffbeb', color: copied ? '#fff' : '#92400e', border: '1.5px solid ' + (copied ? '#16a34a' : '#fcd34d'), cursor: 'pointer', fontWeight: 700, fontSize: 12 }}>
+          {copied ? '✅ הועתק' : '📋 העתקה'}
+        </button>
+      </div>
+      <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 14 }}>רק בשבילך. הלקוחה לא רואה את זה.</div>
+
+      {patterns.map((p, i) => (
+        <div key={'p' + i} style={{ background: '#eff6ff', border: '1.5px solid #93c5fd', borderRadius: 12, padding: '12px 14px', marginBottom: 10 }}>
+          <div style={{ fontWeight: 700, fontSize: 13.5, color: '#1e3a8a' }}>
+            {p.title}
+            {p.referral && <span style={{ marginInlineStart: 8, fontSize: 10.5, fontWeight: 700, color: '#92400e', background: '#fef3c7', borderRadius: 99, padding: '2px 8px' }}>בירור רפואי</span>}
+          </div>
+          {p.markers.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>
+              {p.markers.map((m, j) => <span key={j} style={{ fontSize: 11, color: '#1d4ed8', background: '#dbeafe', borderRadius: 6, padding: '2px 7px' }}>{m}</span>)}
+            </div>
+          )}
+          <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.6, marginTop: 8 }}>{p.direction}</div>
+          {p.talk && <div style={{ fontSize: 12.5, color: '#7c2d12', background: '#fff7ed', borderRadius: 8, padding: '7px 10px', marginTop: 8, lineHeight: 1.6 }}>🗣️ {p.talk}</div>}
+        </div>
+      ))}
+
+      {fasting && (
+        <div style={{ background: '#fff7ed', border: '1.5px solid #fdba74', borderRadius: 12, padding: '12px 14px', marginBottom: 10 }}>
+          <div style={{ fontWeight: 700, fontSize: 13.5, color: '#9a3412' }}>⏳ {fasting.title} — {fasting.where}</div>
+          <div style={{ fontSize: 12.5, color: '#7c2d12', lineHeight: 1.6, marginTop: 6 }}>{fasting.talk}</div>
+        </div>
+      )}
+
+      {markers.length > 0 && (
+        <div style={{ marginTop: patterns.length || fasting ? 14 : 0 }}>
+          <div style={{ fontSize: 11.5, fontWeight: 700, color: '#92400e', letterSpacing: '.06em', marginBottom: 8 }}>כל ערך חריג בנפרד</div>
+          {markers.map((m, i) => (
+            <div key={m.key} style={{ borderTop: i ? '1px solid #f3f4f6' : 'none', padding: '11px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 700, fontSize: 13.5, color: '#1a1a1a' }}>{m.name}</span>
+                <span style={{ fontSize: 12.5, fontWeight: 700, color: m.isLow ? '#2563eb' : '#dc2626' }}>{m.value} {m.direction}</span>
+                <span style={{ fontSize: 11, color: '#9ca3af' }}>תקין {m.low}–{m.high}</span>
+              </div>
+              {m.meaning && <div style={{ fontSize: 12.5, color: '#4b5563', lineHeight: 1.6, marginTop: 5 }}>{m.meaning}</div>}
+              {m.nutrition && m.nutrition.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 7 }}>
+                  {m.nutrition.map((n, j) => <span key={j} style={{ fontSize: 11.5, color: '#166534', background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 7, padding: '3px 9px' }}>{n}</span>)}
+                </div>
+              )}
+              {m.ask && <div style={{ fontSize: 12.5, color: '#92400e', marginTop: 7 }}>לשאול: {m.ask}</div>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function AdminPage() {
@@ -2685,8 +2798,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                   <textarea value={extraBloodNotes} onChange={e => setExtraBloodNotes(e.target.value)} onBlur={async e => { if (selectedClient) await supabase.from('client_profiles').upsert({ client_password: selectedClient.password, extra_blood_notes: e.target.value, updated_at: new Date().toISOString() }, { onConflict: 'client_password' }) }} placeholder="לדוגמה: IgG 2328 (גבוה)..." rows={3} style={{ width: '100%', padding: '8px 12px', borderRadius: 10, border: '1.5px solid #e5e7eb', fontSize: 13, resize: 'none', outline: 'none', textAlign: 'right', boxSizing: 'border-box' }} />
                 </div>
                 <div style={{ background: '#fff', borderRadius: 18, padding: 16, border: '1.5px solid #f0f0f0' }}>
-                  <div style={{ fontWeight: 700, marginBottom: 12 }}>🩸 ערכי בדיקות דם</div>
-                  {BLOOD_TESTS.map(function(test) {
+                  <div style={{ fontWeight: 700, marginBottom: 12 }}>🩸 ערכי בדיקות דם</div>                  {BLOOD_TESTS.map(function(test) {
                     var val = (profile.blood_tests || {})[test.key] || ''
                     return (
                       <div key={test.key} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr', gap: 8, alignItems: 'center', marginBottom: 8, padding: '8px 0', borderBottom: '1px solid #f3f4f6' }}>
@@ -2696,6 +2808,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       </div>
                     )
                   })}
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  <SessionBriefing bloodTests={profile.blood_tests} profile={profile} />
                 </div>
                 <button onClick={saveProfile} disabled={saving} style={{ width: '100%', padding: 14, borderRadius: 14, marginTop: 16, background: saved ? '#16a34a' : '#0f4c2a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 16 }}>
                   {saving ? '⏳ שומר...' : saved ? '✅ נשמר!' : '💾 שמרי בדיקות'}
