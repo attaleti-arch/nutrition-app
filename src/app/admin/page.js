@@ -379,6 +379,9 @@ const BLOOD_TESTS = [
   { key: 'homocysteine', label: 'הומוציסטאין', unit: 'μmol/L', normal: '<15' },
   { key: 'alt', label: 'תפקוד כבד ALT', unit: 'U/L', normal: '<35' },
   { key: 'ast', label: 'תפקוד כבד AST', unit: 'U/L', normal: '<40' },
+  { key: 'ggt', label: 'תפקוד כבד GGT', unit: 'U/L', normal: 'נשים: <38' },
+  { key: 'alp', label: 'זרחתית בסיסית ALP', unit: 'U/L', normal: '40-130' },
+  { key: 'bilirubin', label: 'בילירובין כללי', unit: 'mg/dL', normal: '<1.2' },
   { key: 'creatinine', label: 'קריאטינין (כליות)', unit: 'mg/dL', normal: '0.6-1.2' },
   { key: 'urea', label: 'אוריאה', unit: 'mg/dL', normal: '7-20' },
   { key: 'uric_acid', label: 'חומצה אורית', unit: 'mg/dL', normal: 'נשים: 2.4-6.0' },
@@ -2620,6 +2623,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-s
                       { title: '🫀 תפקודי כבד וכליות', color: '#0d9488', bg: '#f0fdfa', tests: [
                         { key: 'alt', label: 'ALT (כבד)', normal: '7-40 U/L' },
                         { key: 'ast', label: 'AST (כבד)', normal: '10-40 U/L' },
+                        { key: 'ggt', label: 'GGT (כבד)', normal: 'נשים: 5-38 U/L' },
+                        { key: 'alp', label: 'ALP (זרחתית בסיסית)', normal: '40-130 U/L' },
                         { key: 'creatinine', label: 'קריאטינין (כליות)', normal: '0.5-1.0 mg/dL' },
                       ]},
                       { title: '⚖️ איזון הורמונלי', color: '#7c3aed', bg: '#faf5ff', tests: [

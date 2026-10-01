@@ -13,6 +13,7 @@ const BLOOD_NAMES = {
   calcium:'סידן',zinc:'אבץ',magnesium:'מגנזיום',
   tsh:'TSH',t3:'T3',t4:'T4',crp:'CRP דלקת',esr:'שקיעת דם',
   homocysteine:'הומוציסטאין',alt:'ALT כבד',ast:'AST כבד',
+  ggt:'GGT כבד',alp:'ALP זרחתית בסיסית',bilirubin:'בילירובין',
   creatinine:'קריאטינין',urea:'אוריאה',uric_acid:'חומצה אורית',
   estrogen:'אסטרוגן',progesterone:'פרוגסטרון',testosterone:'טסטוסטרון',
   insulin:'אינסולין',wbc:'WBC',rbc:'RBC',platelets:'טסיות',
@@ -21,12 +22,100 @@ const BLOOD_NAMES = {
 }
 
 const BLOOD_RANGES = {
-  glucose:[70,100],hba1c:[0,5.7],cholesterol:[0,200],hdl:[60,999],
+  glucose:[70,100],hba1c:[0,5.7],cholesterol:[0,200],hdl:[50,999],
   ldl:[0,100],triglycerides:[0,150],hemoglobin:[12,16],ferritin:[12,150],
   iron:[60,170],vitamin_b12:[200,900],vitamin_d:[30,100],tsh:[0.4,4.0],
   crp:[0,1.0],insulin:[2,25],zinc:[70,120],magnesium:[1.7,2.2],
-  calcium:[8.5,10.5],alt:[0,35],ast:[0,40],creatinine:[0.6,1.2],uric_acid:[2.4,6.0]
+  calcium:[8.5,10.5],alt:[0,35],ast:[0,40],ggt:[0,38],alp:[40,130],
+  bilirubin:[0,1.2],creatinine:[0.6,1.2],uric_acid:[2.4,6.0]
 }
+
+// ── זיהוי צירופים ──
+// הטווחים למעלה בודקים כל מדד לחוד. התמונה הקלינית מורכבת מצירוף של
+// כמה מדדים יחד, ולכן היא מחושבת כאן ולא נשענת על המודל.
+const num = v => {
+  if (v === null || v === undefined || v === '') return null
+  const n = parseFloat(String(v).replace(',', '.'))
+  return isNaN(n) ? null : n
+}
+
+const hasText = (txt, words) => {
+  const t = String(txt || '').toLowerCase()
+  return words.some(w => t.includes(w))
+}
+
+function detectPatterns(bloodTests, ctx) {
+  const b = bloodTests || {}
+  const tg = num(b.triglycerides), alt = num(b.alt), ast = num(b.ast)
+  const ggt = num(b.ggt), hdl = num(b.hdl), glucose = num(b.glucose)
+  const a1c = num(b.hba1c), insulin = num(b.insulin), alp = num(b.alp)
+  const patterns = []
+
+  // תמונה מטבולית — חשד לכבד שומני
+  const metabolic = []
+  if (tg !== null && tg > 150) metabolic.push('טריגליצרידים ' + tg)
+  if (alt !== null && alt > 35) metabolic.push('ALT ' + alt)
+  if (ggt !== null && ggt > 38) metabolic.push('GGT ' + ggt)
+  if (hdl !== null && hdl < 50) metabolic.push('HDL ' + hdl)
+  if (glucose !== null && glucose >= 100) metabolic.push('גלוקוז ' + glucose)
+  if (a1c !== null && a1c >= 5.7) metabolic.push('HbA1c ' + a1c)
+  if (insulin !== null && insulin > 15) metabolic.push('אינסולין ' + insulin)
+
+  const liverUp = (alt !== null && alt > 35) || (ggt !== null && ggt > 38) || (ast !== null && ast > 40)
+  if (metabolic.length >= 3 && liverUp) {
+    patterns.push({
+      id: 'metabolic_liver',
+      title: 'תמונה מטבולית — שווה בירור כבד שומני',
+      markers: metabolic,
+      referral: true,
+      direction: 'סוכר מוסף, משקאות ממותקים ופחמימות מעובדות הם הכיוון המרכזי. תבנית ים-תיכונית, ירידה הדרגתית, וצמצום אלכוהול.'
+    })
+  } else if (metabolic.length >= 3) {
+    patterns.push({
+      id: 'metabolic_cluster',
+      title: 'צירוף מטבולי ללא עליית אנזימי כבד',
+      markers: metabolic,
+      referral: false,
+      direction: 'סדר אכילה, צמצום סוכר מוסף ופחמימות מעובדות, תוספת סיבים מסיסים בהדרגה.'
+    })
+  }
+
+  // GGT מבודד
+  if (ggt !== null && ggt > 38 && !patterns.length) {
+    patterns.push({
+      id: 'ggt_isolated',
+      title: 'GGT מוגבר',
+      markers: ['GGT ' + ggt].concat(alp !== null && alp > 130 ? ['ALP ' + alp] : []),
+      referral: true,
+      direction: 'סוכר מוסף, משקאות ממותקים ואלכוהול מעלים GGT ישירות. זה הכיוון הראשון לבדוק.'
+    })
+  }
+
+  // כיס מרה — קיים או לאחר כריתה
+  const med = [ctx.medicalHistory, ctx.digestion, ctx.medications].join(' ')
+  const removed = hasText(med, ['כריתת כיס מרה', 'הסרת כיס מרה', 'ללא כיס מרה', 'כולציסטקטומיה', 'אחרי ניתוח כיס מרה'])
+  const stones = hasText(med, ['אבני מרה', 'אבנים בכיס המרה', 'כיס מרה'])
+  if (removed) {
+    patterns.push({
+      id: 'gallbladder_removed',
+      title: 'אחרי כריתת כיס מרה',
+      markers: [],
+      referral: false,
+      direction: 'המרה מטפטפת כל היום ולא מגיעה במנה גדולה, לכן שומן מתון ומפוזר על פני כל הארוחות ולא מרוכז באחת. סיבים וקטניות מוסיפים בהדרגה.'
+    })
+  } else if (stones) {
+    patterns.push({
+      id: 'gallbladder_present',
+      title: 'כיס מרה — אבנים או רקע',
+      markers: [],
+      referral: false,
+      direction: 'שומן מתון בכל ארוחה הוא מה שמרוקן את כיס המרה. תפריט דל שומן מאוד והפסקות צום ארוכות משאירים אותו עומד ומעלים סיכון לאבנים. ירידה הדרגתית ולא מהירה.'
+    })
+  }
+
+  return patterns
+}
+
 
 const AGENT_SYSTEM = `אתה "עוזר החירום" של תוכנית "בין הראש לצלחת" – מבוסס שיטת אתי אטל ו-NLP של שירלי.
 
@@ -60,13 +149,24 @@ const AGENT_SYSTEM = `אתה "עוזר החירום" של תוכנית "בין �
 - 10-20% שומן מהצומח: שמן זית, אבוקדו, טחינה גולמית
 - סדר אכילה: חלבון וירק קודם → פחמימה אחרונה
 
-## 📋 6 פרוטוקולים קליניים
+## 📋 8 פרוטוקולים קליניים
 1. מטבולי (סוכרת, אינסולין): 40% חלבון | 30% שומן | 30% פחמימה. חלבון לפני פחמימה. פעילות: כוח + אירובי. תוספים: מגנזיום, כרום, אומגה 3.
 2. קרדיולוגי (לב, כולסטרול, לחץ דם): 30% חלבון רזה | 20% שומן (אומגה 3) | 50% ירקות. ללא נתרן מיותר. פעילות: אירובי מתון בלבד. לא HIIT.
 3. אונקולוגי: 50% חלבון | 30% שומן | 20% פחמימה מבושלת. מניעת קכקסיה. להימנע מסוכר. פעילות: תנועה מתונה.
 4. בלוטת תריס (כולל כריתה): סלניום (2 אגוזי ברזיל/יום), אבץ, יוד. לא HIIT. לבותירוקסין על קיבה ריקה.
 5. עיכול (קרוהן, קוליטיס, IBS, צליאק): מזון מבושל/מאודה בלבד בדלקת. 5-6 ארוחות קטנות. פרוביוטיקה. פעילות: יוגה ופילאטיס.
 6. כליות וגאוט: 15-20% חלבון | הידרציה 2.5-3 ליטר | הימנעות מפורינים בגאוט.
+7. כבד שומני / GGT ו-ALT מוגברים: הכיוון המרכזי הוא פחות סוכר מוסף, משקאות ממותקים ופחמימות מעובדות. תבנית ים-תיכונית — שמן זית, דגים, אגוזים, ירקות. אלכוהול לצמצם, הוא מעלה GGT ישירות. סיבים מסיסים — שיבולת שועל, קטניות, פירות — בהדרגה בגלל נפיחות. ירידה הדרגתית ולא מהירה. קפה: אין סיבה למנוע, במחקרים תצפיתיים הוא קשור לערכי כבד טובים יותר.
+8. כיס מרה — קיים או לאחר כריתה: שומן מתון בכל ארוחה. אצל מי שיש לה כיס מרה, שומן בארוחה הוא מה שגורם לו להתרוקן, ולכן תפריט דל שומן מאוד משאיר את המרה עומדת ומעלה סיכון לאבנים. אצל מי שעברה כריתה — אותו עיקרון של פיזור, כי המרה מטפטפת לאורך היום ולא מגיעה במנה גדולה. ירידה מהירה במשקל היא גורם סיכון מוכר לאבני מרה. סיבים וקטניות בהדרגה.
+
+## ⏳ צום ארוך — כלל חוצה פרוטוקולים
+הפסקות ארוכות מדי בלי אוכל משאירות את המרה עומדת.
+גם בגישה של ארוחה עיקרית אחת — הבוקר והערב הקלים חייבים לכלול קצת שומן, לא רק ירק.
+אם לקוחה מתארת בוקר של קפה בלבד או ערב של סלט בלי שומן — זה כמעט צום. אמרי לה את זה והוסיפי מקור שומן אחד.
+
+## 💊 ויטמינים מסיסים בשומן
+תוסף ויטמין D (לפי הרופא) נלקח עם ארוחה שיש בה שומן, לא על בטן ריקה. זה משפר את הספיגה.
+אותו כלל ל-A, E ו-K.
 
 ## 🧠 גישת NLP (שירלי)
 - "מה כן לאכול" — לא "מה אסור"
@@ -159,7 +259,7 @@ export async function POST(request) {
         max_tokens: 800,
         messages: [{ role: 'user', content: [
           { type: 'image', source: { type: 'base64', media_type: body.mediaType || 'image/jpeg', data: body.imageBase64 } },
-          { type: 'text', text: 'זהו דף בדיקות דם. חלץ את הערכים ותחזיר JSON בלבד (null אם לא קיים):\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"iron":null,"folic_acid":null,"vitamin_b12":null,"vitamin_b6":null,"vitamin_d":null,"calcium":null,"zinc":null,"magnesium":null,"tsh":null,"t3":null,"t4":null,"crp":null,"esr":null,"homocysteine":null,"alt":null,"ast":null,"creatinine":null,"urea":null,"uric_acid":null,"estrogen":null,"progesterone":null,"testosterone":null,"insulin":null,"wbc":null,"rbc":null,"platelets":null,"extra_abnormals":""}\nמספרים בלבד ללא יחידות. extra_abnormals: ערכים חריגים שאינם בשדות האחרים.' }
+          { type: 'text', text: 'זהו דף בדיקות דם. חלץ את הערכים ותחזיר JSON בלבד (null אם לא קיים):\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"iron":null,"folic_acid":null,"vitamin_b12":null,"vitamin_b6":null,"vitamin_d":null,"calcium":null,"zinc":null,"magnesium":null,"tsh":null,"t3":null,"t4":null,"crp":null,"esr":null,"homocysteine":null,"alt":null,"ast":null,"ggt":null,"alp":null,"bilirubin":null,"creatinine":null,"urea":null,"uric_acid":null,"estrogen":null,"progesterone":null,"testosterone":null,"insulin":null,"wbc":null,"rbc":null,"platelets":null,"extra_abnormals":""}\nמספרים בלבד ללא יחידות. GGT עשוי להופיע כ-Gamma GT או GGTP. ALP עשוי להופיע כ-Alkaline Phosphatase. extra_abnormals: ערכים חריגים שאינם בשדות האחרים.' }
         ]}]
       })
       try {
@@ -176,7 +276,7 @@ export async function POST(request) {
       const msg = await client.messages.create({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 600,
-        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם. החזר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null,"extra_abnormals":""}\nב-extra_abnormals: ערכים חריגים שאינם בשאר השדות. מספרים בלבד.\nטקסט: ' + String(body.bloodText).substring(0, 2000) }]
+        messages: [{ role: 'user', content: 'חלץ ערכי בדיקות דם. החזר JSON בלבד:\n{"glucose":null,"hba1c":null,"cholesterol":null,"hdl":null,"ldl":null,"triglycerides":null,"hemoglobin":null,"ferritin":null,"vitamin_b12":null,"vitamin_d":null,"tsh":null,"crp":null,"alt":null,"ast":null,"ggt":null,"alp":null,"bilirubin":null,"creatinine":null,"zinc":null,"magnesium":null,"insulin":null,"extra_abnormals":""}\nב-extra_abnormals: ערכים חריגים שאינם בשאר השדות. מספרים בלבד.\nטקסט: ' + String(body.bloodText).substring(0, 2000) }]
       })
       try {
         const text = msg.content[0].text.replace(/```json|```/g,'').trim()
@@ -462,6 +562,18 @@ ${medicalCards}
         `${a.name}: ${a.value} (${a.isLow ? 'נמוך מ-' + a.low : 'גבוה מ-' + a.high}, תקין: ${a.low}-${a.high})`
       ).join(' | ')
 
+      const patterns = detectPatterns(bloodTests, {
+        medicalHistory, digestion, medications
+      })
+      const patternSummary = patterns.length
+        ? patterns.map(p =>
+            `[${p.id}] ${p.title}` +
+            (p.markers.length ? ' — על בסיס: ' + p.markers.join(', ') : '') +
+            ` | כיוון תזונתי: ${p.direction}` +
+            ` | הפניה לרופא: ${p.referral ? 'כן' : 'לא'}`
+          ).join('\n')
+        : 'לא זוהה צירוף'
+
       const prompt = `אתה אתי אטל — יועצת בריאות ותזונה התנהגותית. בנה מסמך פתיחה אישי עבור ${clientName}.
 
 נתוני הלקוחה:
@@ -487,6 +599,9 @@ ${medicalCards}
 - בדיקות דם חריגות: ${bloodSummary || 'לא נמצאו חריגות'}
 - ערכים חריגים נוספים: ${extraBlood || 'אין'}
 
+צירופים שזוהו במערכת (חושבו בקוד, לא על ידך — אל תמציא צירופים נוספים ואל תסתור אותם):
+${patternSummary}
+
 החזר JSON בלבד, ללא backticks, במבנה הבא:
 {
   "greeting": "משפט פתיחה אחד חם בלבד",
@@ -504,6 +619,17 @@ ${medicalCards}
       "icon": "אמוג'י",
       "meaning": "משפט קליני אחד בלבד",
       "recommendation": "פעולה אחת ספציפית בלבד"
+    }
+  ],
+  "patterns": [
+    {
+      "id": "המזהה בדיוק כפי שהופיע בסוגריים המרובעים ברשימת הצירופים",
+      "title": "כותרת קצרה בשפה של הלקוחה",
+      "icon": "אמוג'י",
+      "markers": ["הערך ששימש לזיהוי", "עוד ערך"],
+      "meaning": "2 משפטים: מה הצירוף הזה מתאר, בשפה פשוטה",
+      "nutrition": ["צעד תזונתי 1", "צעד תזונתי 2", "עד 4"],
+      "referral": "משפט אחד שמפנה לבירור אצל רופא, או מחרוזת ריקה אם אין צורך"
     }
   ],
   "medicalCards": [
@@ -528,6 +654,11 @@ ${medicalCards}
 כללים חשובים:
 - plate: התאם אחוזים לפרוטוקול הקליני לפי המחלות. סכום חייב להיות 100.
 - bloodDeficits: רק ערכים שבאמת חריגים. אם אין — [].
+- patterns: אך ורק הצירופים שהמערכת זיהתה ברשימה למעלה, אחד לכל צירוף, באותו id בדיוק. אם נכתב "לא זוהה צירוף" — החזר [].
+- patterns.markers: רק הערכים שהמערכת ציינה כבסיס לזיהוי. אל תוסיף ערכים משלך.
+- patterns.meaning: תאר מה הצירוף מראה. אל תקבע אבחנה ואל תכתוב שיש לה מחלה. "תמונה שמתאימה ל-" ולא "יש לך".
+- patterns.referral: אם המערכת כתבה "הפניה לרופא: כן" — כתוב משפט אחד חם שממליץ לגשת לרופא לבירור. אם כתבה "לא" — החזר מחרוזת ריקה.
+- patterns.nutrition: צעדים מהכיוון התזונתי שהמערכת נתנה, בניסוח של מה כן לעשות.
 - medicalCards: לפי מחלות הרקע בלבד. אם אין מחלות — כרטיס אחד "ירידה במשקל בריאה".
 - greeting: משפט אחד חם בלבד, ללא עידוד מוגזם.
 - physio: עובדות קליניות בלבד, 2 משפטים קצרים, ללא שפה רגשית.

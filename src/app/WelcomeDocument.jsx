@@ -135,6 +135,42 @@ function BloodDeficitCard({ name, value, normal, meaning, recommendation, icon }
   )
 }
 
+function PatternCard({ title, icon, markers, meaning, nutrition, referral }) {
+  return (
+    <div style={{ background: '#fff', borderRadius: 14, border: '1.5px solid #93c5fd', overflow: 'hidden', marginBottom: 8 }}>
+      <div style={{ background: '#eff6ff', padding: '12px 16px', borderBottom: '1px solid #dbeafe' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 18 }}>{icon || '🔍'}</span>
+          <div style={{ fontWeight: 700, fontSize: 14, color: '#1e3a8a' }}>{title}</div>
+        </div>
+        {markers && markers.length > 0 && (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 8 }}>
+            {markers.map((m, i) => (
+              <span key={i} style={{ fontSize: 11, color: '#1d4ed8', background: '#dbeafe', borderRadius: 6, padding: '3px 8px' }}>{m}</span>
+            ))}
+          </div>
+        )}
+      </div>
+      <div style={{ padding: '12px 16px' }}>
+        {meaning && <div style={{ fontSize: 12.5, color: '#334155', lineHeight: 1.65, marginBottom: 10 }}>{meaning}</div>}
+        {nutrition && nutrition.length > 0 && (
+          <div style={{ marginBottom: referral ? 10 : 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#166534', marginBottom: 5 }}>מה כן לעשות</div>
+            {nutrition.map((n, i) => (
+              <div key={i} style={{ fontSize: 12, color: '#166534', background: '#f0fdf4', borderRadius: 8, padding: '6px 10px', marginBottom: 4 }}>💚 {n}</div>
+            ))}
+          </div>
+        )}
+        {referral && (
+          <div style={{ fontSize: 12, color: '#92400e', background: '#fffbeb', border: '1px solid #fcd34d', borderRadius: 8, padding: '8px 10px', lineHeight: 1.6 }}>
+            🩺 {referral}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
 function DefaultDocument({ clientName, onClose }) {
   return (
     <div style={{ direction: 'rtl', fontFamily: 'sans-serif', maxWidth: 520, margin: '0 auto', padding: '0 14px 100px' }}>
@@ -185,7 +221,7 @@ function DefaultDocument({ clientName, onClose }) {
 }
 
 function DocContent({ data, onContinue, generatedAt }) {
-  const { plate, medicalCards, bloodDeficits, greeting, name, exerciseSummary } = data
+  const { plate, medicalCards, bloodDeficits, patterns, greeting, name, exerciseSummary } = data
   return (
     <div style={{ direction: 'rtl', fontFamily: 'sans-serif', maxWidth: 520, margin: '0 auto', padding: '0 14px 100px' }}>
       <div style={{ background: 'linear-gradient(135deg,#3a7a6e,#4a9b8e)', borderRadius: '0 0 24px 24px', padding: '28px 24px 32px', marginBottom: 20, color: '#fff', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
@@ -217,6 +253,14 @@ function DocContent({ data, onContinue, generatedAt }) {
         <div style={{ marginBottom: 16 }}>
           <div style={{ fontWeight: 800, fontSize: 16, color: '#1a1a1a', marginBottom: 12 }}>🩸 מה אומרות הבדיקות</div>
           {bloodDeficits.map((def, i) => <BloodDeficitCard key={i} {...def} />)}
+        </div>
+      )}
+
+      {patterns && patterns.length > 0 && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontWeight: 800, fontSize: 16, color: '#1a1a1a', marginBottom: 4 }}>🔍 מה מצטייר מכמה ערכים יחד</div>
+          <div style={{ fontSize: 12, color: '#9ca3af', marginBottom: 12 }}>לא כל ערך לחוד, אלא התמונה שהם מרכיבים</div>
+          {patterns.map((p, i) => <PatternCard key={i} {...p} />)}
         </div>
       )}
 

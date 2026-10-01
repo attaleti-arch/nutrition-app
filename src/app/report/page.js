@@ -16,7 +16,7 @@ const BLOOD_RANGES = {
   glucose: { name: 'סוכר בצום', min: 70, max: 100, unit: 'mg/dL' },
   hba1c: { name: 'המוגלובין A1C', min: 0, max: 5.7, unit: '%' },
   cholesterol: { name: 'כולסטרול כללי', min: 0, max: 200, unit: 'mg/dL' },
-  hdl: { name: 'HDL טוב', min: 60, max: 999, unit: 'mg/dL' },
+  hdl: { name: 'HDL טוב', min: 50, max: 999, unit: 'mg/dL' },
   ldl: { name: 'LDL רע', min: 0, max: 100, unit: 'mg/dL' },
   triglycerides: { name: 'טריגליצרידים', min: 0, max: 150, unit: 'mg/dL' },
   hemoglobin: { name: 'המוגלובין', min: 12, max: 16, unit: 'g/dL' },
@@ -29,6 +29,11 @@ const BLOOD_RANGES = {
   insulin: { name: 'אינסולין', min: 2, max: 25, unit: 'µIU/mL' },
   zinc: { name: 'אבץ', min: 70, max: 120, unit: 'µg/dL' },
   magnesium: { name: 'מגנזיום', min: 1.7, max: 2.2, unit: 'mg/dL' },
+  alt: { name: 'ALT כבד', min: 0, max: 35, unit: 'U/L' },
+  ast: { name: 'AST כבד', min: 0, max: 40, unit: 'U/L' },
+  ggt: { name: 'GGT כבד', min: 0, max: 38, unit: 'U/L' },
+  alp: { name: 'ALP זרחתית בסיסית', min: 40, max: 130, unit: 'U/L' },
+  bilirubin: { name: 'בילירובין', min: 0, max: 1.2, unit: 'mg/dL' },
 }
 
 function getAbnormalTests(bloodTestsJson) {
