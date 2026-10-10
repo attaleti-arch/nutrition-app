@@ -57,6 +57,8 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   // ── צעדים ──
   // המרדף רץ על צעדים, לא על GPS (ראה hooks/useSteps).
   const steps = useSteps({ active: true })
+  // מתג הפנס. יושב כאן עם שאר ההוקים כדי שלא ייקרא בתנאי.
+  const [torch, setTorch] = useState(false)
   // ── ולוויספר: ההפך ──
   // הוא מתקרב כשעומדים. מה שנמדד הוא הרעד סביב הממוצע, לא הערך עצמו
   // (ראה engine/still.js), וזה חייב להיות סלחני: ילד שנושם אינו זז.
@@ -296,7 +298,17 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   // האנכי נמדד באחוזי גובה.
   const aspect = typeof window !== 'undefined' && window.innerWidth
     ? window.innerHeight / window.innerWidth : 2.2
-  const inBeam = !!ct && beamHit(ct.dx, ct.dy, FOV, aspect)
+  const hour = new Date().getHours()
+  const dark = !done && (creature?.id === 'tzel' || hour >= 18 || hour < 6)
+  // ── מתג הפנס ──
+  // "בא לי שיופיע מתג הפעל פנס, וכשאלחץ יש מהחושך עיגול מואר גדול."
+  // עד עכשיו הפנס פשוט דלק מעצמו למי שקנה אותו, ולכן לא היה שום רגע
+  // שבו הילד *מדליק* אותו. הדלקה היא פעולה, וזה מה שהופך את החושך
+  // ממצב נתון למשהו שעשית לו משהו. כבוי — אין אלומה, ולכן גם אין
+  // "האור עליו": בחושך באמת לא רואים.
+  const hasLantern = !!mods?.lantern
+  const torchOn = hasLantern && torch
+  const inBeam = !!ct && (!dark || torchOn) && beamHit(ct.dx, ct.dy, FOV, aspect)
   const beamRef = useRef(false); beamRef.current = inBeam
   const ctFaceLeft = !!ct && ct.streak != null && angleDelta(ct.streak, ct.bearing) < 0
   const ctStreakSide = !ct || ct.streak == null ? null
@@ -347,8 +359,6 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
   const chasing = !done && (cs?.phase === 'FAR' || cs?.phase === 'FLEE') && cs?.dist != null
   canCatchRef.current = canCatch
   // חשוך: צל תמיד; כולם אחרי 18:00 ולפני 6:00.
-  const hour = new Date().getHours()
-  const dark = !done && (creature?.id === 'tzel' || hour >= 18 || hour < 6)
   // חם/קר בדופק: רועד לאט כשרחוק, מהר כשקרוב — גם ההורה שלידו מרגיש.
   usePulse(chasing ? cs.dist : null)
 
@@ -363,7 +373,7 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
       {/* רחוב חשוך: לצל תמיד, ולכולם בערב. הפנס (מפתח מהחנות) הוא אלומה
           אמיתית שזזה עם הטלפון; בלעדיו רואים רק במרכז, עמום. צל בלי פנס לא
           מגיע לכאן (הלוח מחליף אותו). */}
-      {dark && <Lantern on={!!mods?.lantern} hot={inBeam} />}
+      {dark && <Lantern on={torchOn} hot={inBeam} />}
       {camState === 'on' && !videoLive && (
         <div style={S.camNote}>
           {tr('המצלמה אושרה אבל התמונה לא הגיעה.')}
@@ -503,6 +513,15 @@ export function Stage({ creature, onMode, onFound, onGiveUp, pos = null, anchor 
       )}
 
       <button onClick={onGiveUp} style={S.back}>{tr('חזרה')}</button>
+      {/* ── מתג הפנס ──
+          מופיע רק כשחשוך ורק למי שקנה את הפנס. כבוי: רואים שיש רחוב
+          ולא רואים מי בו. דלוק: עיגול אור גדול, והוא מה שמגלה את צל. */}
+      {dark && hasLantern && (
+        <button onClick={() => setTorch(v => !v)} aria-pressed={torchOn}
+          style={{ ...S.torch, ...(torchOn ? S.torchOn : null) }}>
+          {torchOn ? tr('🔦 כבה פנס') : tr('🔦 הפעל פנס')}
+        </button>
+      )}
     </div>
   )
 }
@@ -701,4 +720,10 @@ const S = {
   back: { position: 'absolute', top: 18, insetInlineStart: 18, padding: '9px 16px', borderRadius: 10,
     border: '1px solid rgba(233,229,216,.3)', background: 'rgba(15,21,15,.55)', color: '#E9E5D8',
     fontFamily: 'inherit', fontSize: 14.5, fontWeight: 700, cursor: 'pointer', zIndex: 6 },
+  // המתג יושב מול כפתור החזרה, באותו גובה — אותה שורה, שני הקצוות.
+  torch: { position: 'absolute', top: 18, insetInlineEnd: 18, padding: '9px 16px', borderRadius: 999,
+    border: '1px solid rgba(255,214,140,.45)', background: 'rgba(15,21,15,.6)', color: '#FFE6B8',
+    fontFamily: 'inherit', fontSize: 14.5, fontWeight: 700, cursor: 'pointer', zIndex: 6 },
+  torchOn: { background: 'rgba(255,216,150,.92)', color: '#2A2112', borderColor: 'rgba(255,236,196,.9)',
+    boxShadow: '0 0 22px rgba(255,214,140,.5)' },
 }

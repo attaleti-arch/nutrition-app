@@ -415,7 +415,12 @@ export default function Wilden() {
               setFleeFrom(null)
             }}
             onDone={ok => {
-              dispatch({ type: ok ? 'WIND_FLED' : 'WIND_TOOK_BUDDY', id: fleeFrom, t: Date.now() })
+              // שלוש תוצאות, לא שתיים. null הוא "לא הצלחנו למדוד": החיישן
+              // לא שלח דגימה ולא הייתה נגיעה, ולכן אין לנו מושג אם רצו.
+              // גוסטבו מתפוגג בלי מטבעות ובלי לקחת אף אחד — כי להעניש על
+              // כשל מדידה זה בדיוק מה ששבר את הטיול בשטח.
+              const type = ok === null ? 'WIND_UNMEASURED' : ok ? 'WIND_FLED' : 'WIND_TOOK_BUDDY'
+              dispatch({ type, id: fleeFrom, t: Date.now() })
               setFleeFrom(null)
             }} />
         </Guard>

@@ -49,17 +49,28 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
   const cam = useCamera({ active: true })
 
   // רגע ההפתעה: קול, רטט, ואז רצים.
+  // ── ולמה מבקשים כאן הרשאת תנועה ──
+  // "הילד וגם אני טסנו בריצה ועדיין היה רשום שהוא תפס אותנו."
+  // זה המסך היחיד במשחק שדורש ריצה ולא ביקש מעולם את מד הצעדים. באייפון
+  // ההרשאה חייבת לצאת מהדף, ובלעדיה לא מגיעה אף דגימה — כלומר רצו
+  // חמש-עשרה שניות ונספרו אפס צעדים. הבקשה כאן שקטה: מי שכבר אישר
+  // במסך ההליכה מקבל אישור מיידי בלי דיאלוג שני.
   useEffect(() => {
     try { sfxRumble(1.6, 0.6); buzz([90, 60, 90, 60, 140]) } catch (e) { /* */ }
+    try { steps.request() } catch (e) { /* */ }
     const id = setTimeout(() => { setGo(true); startAt.current = Date.now(); lastStepAt.current = Date.now() }, 1200)
     return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // האם בכלל הצלחנו למדוד משהו בריצה הזאת: דגימה מהחיישן, או נגיעה.
+  const measured = useRef(false)
 
   useEffect(() => {
     if (!go) return
     const id = setInterval(() => {
       const n = steps.take()
-      if (n > 0) { tapSteps.current += n; lastStepAt.current = Date.now(); try { sfxRustle() } catch (e) { /* */ } }
+      if (n > 0) { tapSteps.current += n; lastStepAt.current = Date.now(); measured.current = true; try { sfxRustle() } catch (e) { /* */ } }
       const c = tapSteps.current
       setCount(c)
       const ms = Date.now() - startAt.current
@@ -71,6 +82,16 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
         setTimeout(() => onDone?.(true), 900)
       } else if (ms >= goal.ms) {
         doneRef.current = true
+        // ── מה שלא נמדד, לא נכשל ──
+        // אם החיישן לא שלח ולו דגימה אחת ולא הייתה נגיעה, לא מדדנו ריצה
+        // — מדדנו כלום. לקחת את בן הלוויה על כשל מדידה זה בדיוק מה
+        // שקרה בשטח, וזה העונש הכי מתסכל שיש: הילד רץ והמשחק אמר שלא.
+        // במקרה הזה גוסטבו פשוט מתפוגג: בלי מטבעות, ובלי לקחת אף אחד.
+        if (!measured.current && !steps.live) {
+          setLost(false)
+          onDone?.(null)
+          return
+        }
         setLost(true)
         try { sfxRumble(2.2, 0.7); buzz([140, 80, 140]) } catch (e) { /* */ }
         setTimeout(() => onDone?.(false), 1600)
@@ -78,7 +99,7 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
     }, 200)
     return () => clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [go, steps.take])
+  }, [go, steps.take, steps.live])
 
   // ── לחיצה אינה ריצה ──
   // זה היה החור: אפשר היה לברוח מגוסטבו בלי לזוז, עשרים ושתיים נגיעות
@@ -89,6 +110,7 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
   const tap = () => {
     if (!go || doneRef.current || counting()) return
     tapSteps.current += 1
+    measured.current = true
     setCount(tapSteps.current)
   }
   const pct = Math.min(1, count / goal.steps)
@@ -161,6 +183,11 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
               style={{ ...S.buddy, animation: go && !won ? 'wildenFleeRun .5s ease-in-out infinite' : 'none' }} />
           )}
           {go && !counting() && <p style={S.hint}>{tr('אין מד צעדים — נגעו במסך בכל צעד.')}</p>}
+          {go && steps.needsAsk && steps.perm !== 'granted' && (
+            <button onClick={e => { e.stopPropagation(); steps.request() }} style={S.ask}>
+              {tr('לספור לי את הצעדים')}
+            </button>
+          )}
         </>
       )}
 
@@ -231,5 +258,10 @@ const S = {
   buddy: { position: 'absolute', bottom: '9%', left: '50%', transform: 'translateX(-50%)', height: '22vh', width: 'auto',
     filter: 'drop-shadow(0 6px 10px rgba(0,0,0,.5))', pointerEvents: 'none' },
   hint: { position: 'relative', fontSize: 13.5, color: '#9BA495', margin: 0 },
+  // כפתור ההרשאה: באייפון מד הצעדים לא מתחיל לבד, והמסך הזה הוא היחיד
+  // שבו הילד באמת רץ. בלעדיו הריצה לא נספרת בכלל.
+  ask: { position: 'relative', marginTop: 10, padding: '10px 22px', borderRadius: 999,
+    border: '1.5px solid #6EA8E6', background: 'rgba(14,22,18,.7)', color: '#CFE4FA',
+    font: 'inherit', fontSize: 14, fontWeight: 700, cursor: 'pointer' },
   faster: { position: 'relative', fontSize: 15, fontWeight: 800, color: '#F0A08C', margin: 0 },
 }

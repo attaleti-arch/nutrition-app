@@ -473,6 +473,22 @@ export function reduce(g, ev) {
       }
     }
 
+    // ── מה שלא נמדד, לא נכשל ──
+    // "הילד וגם אני טסנו בריצה ועדיין היה רשום שהוא תפס אותנו."
+    // כשמד הצעדים לא שלח ולו דגימה אחת ולא הייתה נגיעה, לא מדדנו ריצה
+    // כושלת — לא מדדנו כלום. גוסטבו מתפוגג: בלי מטבעות, כי לא הרווחנו
+    // אותן, ובלי לקחת את בן הלוויה, כי לא הפסדנו אותו.
+    case 'WIND_UNMEASURED': {
+      const r = g.run
+      if (g.state !== S.SEARCH || !r?.winds) return g
+      const res = windFled(r, ev.id)
+      if (!res) return g
+      return {
+        ...g,
+        run: { ...r, winds: res.winds, lastWind: { t: ev.t ?? 0, kind: 'unmeasured', coins: 0 } },
+      }
+    }
+
     // לא ברחו: היא לוקחת את בן הלוויה עד סוף הטיול.
     case 'WIND_TOOK_BUDDY': {
       const r = g.run

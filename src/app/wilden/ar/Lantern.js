@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
-import { BEAM_Y, BEAM_RX, BEAM_RY } from './beamGeom'
+import { BEAM_Y, BEAM_R } from './beamGeom'
 
 // ─── רחוב חשוך ופנס ───
 // "הפנס יעשה אפקט פנס אמיתי?" — כן. וזה נכתב מחדש אחרי "חשוב לי
@@ -87,7 +87,7 @@ export function Lantern({ on, hot = false }) {
     <div ref={ref} style={{ ...L.wrap, '--ly': '52%' }} aria-hidden="true">
       <style>{LANTERN_CSS}</style>
       {/* 1. החושך, עם החור של הכתם */}
-      <div style={{ ...L.dark, background: hot ? DARK_HOT : DARK_COLD }} />
+      <div style={{ ...L.dark, background: darkHole(vb, hot) }} />
       {/* 2. האלומה באוויר, האבק שבתוכה, והכתם עצמו */}
       <svg style={L.svg} viewBox={`0 0 100 ${vb}`} preserveAspectRatio="none">
         <defs>
@@ -117,7 +117,7 @@ export function Lantern({ on, hot = false }) {
           ))}
         </g>
         {/* הכתם: רחב מגבוה — כך נופל אור על רצפה */}
-        <ellipse ref={poolRef} cx="50" cy={mid} rx={BEAM_RX} ry={BEAM_RY} fill="url(#wl-pool)" filter="url(#wl-edge)" />
+        <ellipse ref={poolRef} cx="50" cy={mid} rx={BEAM_R} ry={BEAM_R} fill="url(#wl-pool)" filter="url(#wl-edge)" />
       </svg>
       {/* 3. הפנס ביד: המקור שממנו האלומה יוצאת */}
       <div style={L.hand} className="wildenFlame" />
@@ -130,13 +130,21 @@ export function Lantern({ on, hot = false }) {
 function cone(x, y, vb) {
   const base = vb + 8
   const w = 3                                    // חצי־רוחב ביציאה מהיד
-  const W = 17 + (base - y) * 0.03               // חצי־רוחב בקצה: רחוק = רחב
+  const W = BEAM_R * 0.8 + (base - y) * 0.03     // חצי־רוחב בקצה: רחוק = רחב
   return `${50 - w},${base} ${50 + w},${base} ${x + W},${y + 3} ${x + W * 0.94},${y - 5} ${x - W * 0.94},${y - 5} ${x - W},${y + 3}`
 }
 
 // החושך: כמעט שחור בשוליים, פתוח בכתם. חם כשהאלומה על היצור.
-const DARK_COLD = 'radial-gradient(ellipse 22% 6.6% at var(--lx) var(--ly), rgba(4,7,5,0) 46%, rgba(4,7,5,.34) 66%, rgba(4,7,5,.8) 84%, rgba(4,7,5,.96) 100%)'
-const DARK_HOT = 'radial-gradient(ellipse 24% 7.4% at var(--lx) var(--ly), rgba(4,7,5,0) 50%, rgba(4,7,5,.3) 70%, rgba(4,7,5,.78) 86%, rgba(4,7,5,.95) 100%)'
+// רדיוס אנכי באחוזי *גובה* — כדי שהחור יישאר עיגול ולא ייעשה אליפסה
+// על מסך צר וארוך. vb הוא גובה/רוחב כפול מאה, כפי שנמדד למעלה.
+const darkHole = (vb, hot) => {
+  const rw = hot ? BEAM_R * 1.04 : BEAM_R          // אחוזי רוחב
+  const rh = (rw / Math.max(100, vb)) * 100        // אותו רדיוס, באחוזי גובה
+  const core = hot ? 62 : 58                       // עד כאן בהיר לגמרי
+  return `radial-gradient(ellipse ${rw.toFixed(1)}% ${rh.toFixed(1)}% at var(--lx) var(--ly),`
+    + ` rgba(4,7,5,0) ${core}%, rgba(4,7,5,${hot ? '.26' : '.32'}) ${core + 16}%,`
+    + ` rgba(4,7,5,${hot ? '.76' : '.8'}) ${core + 32}%, rgba(4,7,5,${hot ? '.94' : '.96'}) 100%)`
+}
 
 const LANTERN_CSS = `
 @keyframes wildenFlame { 0%,100% { opacity: .84 } 13% { opacity: 1 } 27% { opacity: .72 } 41% { opacity: .97 } 58% { opacity: .8 } 72% { opacity: 1 } 86% { opacity: .7 } }
@@ -167,5 +175,5 @@ const L = {
 // אנכית), ולכן "בתוך האלומה" לפי מעלות היה משהו אחר לגמרי מהאליפסה
 // שמצוירת. אז המדידה היא במקום שבו הילד רואה אותה: אחוזי מסך, ואותה
 // אליפסה בדיוק — עם מעט פנומברה, כי אור נגמר בהדרגה.
-export { BEAM_Y, BEAM_RX, BEAM_RY, beamHit } from './beamGeom'
+export { BEAM_Y, BEAM_R, BEAM_RX, BEAM_RY, beamHit } from './beamGeom'
 

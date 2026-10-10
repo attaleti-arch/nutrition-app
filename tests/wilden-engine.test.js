@@ -749,6 +749,26 @@ test('שואב: ביצת הלב בוקעת רק אחרי מסע שלם — זה 
   assert.equal(tamedWind({ tamed: TANK_MAX * 4 }), 3, 'יש תקרה')
 })
 
+// "הילד וגם אני טסנו בריצה ועדיין היה רשום שהוא תפס אותנו וגם לקח את
+// הדמות. זה דפוק, הוא רץ, זה אמור לזהות."
+test('גוסטבו: ריצה שלא נמדדה אינה כישלון — הוא מתפוגג בלי לקחת אף אחד', () => {
+  const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
+  const winds = placeWinds(PATH, { stops, n: 2, rng: () => 0.5 })
+  const progress = { ...initial().progress, buddy: 'nimi', creatures: ['nimi', 'gali'] }
+  const base = { ...initial(), state: S.SEARCH, progress, run: windRun(winds, stops) }
+
+  const un = reduce(base, { type: 'WIND_UNMEASURED', id: winds[0].id, t: 1 })
+  assert.equal(un.run.buddyTaken, undefined, 'בן הלוויה נשאר')
+  assert.equal(un.run.coinsTaken || 0, 0, 'ואין מטבעות — לא הרווחנו ריצה, רק לא הפסדנו')
+  assert.equal(windNearby(un.run, { lat: winds[0].lat, lng: winds[0].lng }), null, 'וגוסטבו התפוגג')
+  assert.equal(un.run.lastWind.kind, 'unmeasured')
+  // ובניגוד ל-WIND_SCARED, הוא לא דורש שריככו אף אחד
+  assert.notEqual(un, base, 'עובד גם למי שעוד לא ריכך איש')
+  // ומי שבאמת לא ברח — עדיין מאבד את בן הלוויה
+  const lost = reduce(base, { type: 'WIND_TOOK_BUDDY', id: winds[0].id, t: 1 })
+  assert.equal(lost.run.buddyTaken, true, 'כישלון שנמדד נשאר כישלון')
+})
+
 test('שואב: הטוב שלכם מבריח את הפרא — פעם אחת בכל מסע', () => {
   const stops = [{ along: 500, lat: PATH[25].lat, lng: PATH[25].lng, creature: 'nimi', done: false }]
   const winds = placeWinds(PATH, { stops, n: 2, rng: () => 0.5 })
@@ -3464,14 +3484,23 @@ test('השואב: פעם אחת בסיבוב, והמונה הוא שמכריע',
 test('צל: אפשר לתפוס אותו גם בלי מד צעדים, והוא נכנס לתוך האלומה', async () => {
   const { makeBeam, BEAM_MAX_SCALE, SLIP_MS } = await import('../src/app/wilden/ar/controllers/beam.js')
   const beam = makeBeam({})
-  // ── הגודל ── נמדד בדפדפן על מסך 402×880: הכתם 354×177, וצל 125×160.
-  // "כל היצורים היו על רקע ירוק, גם האני ורוחי, והם נראים ברחוב בצורה
-  // בולטת ויפה" — אז הוא לא מוקטן לנקודה. הכתם הוא שגדל סביבו.
-  const { BEAM_RX, BEAM_RY } = await import('../src/app/wilden/ar/beamGeom.js')
-  const poolH = 2 * BEAM_RY / 100 * 402
-  const poolW = 2 * BEAM_RX / 100 * 402
-  assert.ok(poolH > 160 && poolW > 330, `הכתם גדול מספיק (${poolW.toFixed(0)}×${poolH.toFixed(0)})`)
+  // ── הגודל ── "האור קטן מדי על המסך. בא לי עיגול מואר גדול."
+  // הכתם היה אליפסה שטוחה, 354×177 על מסך 402. עכשיו הוא עיגול: רדיוס
+  // של 38 אחוזי רוחב, כלומר קוטר של כשלושה רבעים מרוחב המסך, ובגובה
+  // הוא גדל פי יותר מאחד וחצי. צל (125×160) יושב בתוכו בנוח.
+  const { BEAM_R, BEAM_RX, BEAM_RY, beamHit, BEAM_Y } = await import('../src/app/wilden/ar/beamGeom.js')
+  const poolW = 2 * BEAM_R / 100 * 402
+  const poolH = poolW
+  assert.equal(BEAM_RX, BEAM_RY, 'עיגול: אותו רדיוס לשני הכיוונים')
+  assert.ok(poolH > 270 && poolW > 270, `הכתם גדול מספיק (${poolW.toFixed(0)}×${poolH.toFixed(0)})`)
+  assert.ok(poolW / 402 > 0.65, 'והוא תופס לפחות שני שלישים מרוחב המסך')
   assert.ok(BEAM_MAX_SCALE >= 0.5, 'וצל נשאר בגודל של דמות, לא של נקודה')
+
+  // ── ומה שבתוכו ── צל עומד ב-16° מתחת לאופק, והכתם חייב להגיע אליו
+  const aspect = 874 / 402
+  assert.equal(beamHit(0, -16, 60, aspect), true, 'אלומה ישרה קדימה מאירה על צל שלרגליהם')
+  assert.equal(beamHit(0, 40, 60, aspect), false, 'ומי שגבוה בשמיים נשאר בחושך')
+  assert.ok(BEAM_Y > 0.6, 'והכתם נמוך, על המדרכה')
 
   // ── וההתקדמות ── בלי מד צעדים, לחיצה באור מקדמת
   let s = beam.start(0, () => 0.5, 0)
