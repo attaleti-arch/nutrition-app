@@ -2439,7 +2439,9 @@ test('מרדף: כל יצור בסגנון שלו — צל כצל, בולדר ר
   const shadow = makeChase({ id: 'shadow', target: 'creature', style: 'shadow' })
   let s = shadow.start(0)
   assert.equal(shadow.targets(s)[0].shadow, true, 'צל: רק הצל שלו')
-  assert.ok(shadow.targets(s)[0].elev < -10, 'על הרצפה, נמוך')
+  // על הרצפה — אבל לא בשוליים. ירד מ-16 מעלות ל-8 כשהכתם עלה איתו,
+  // כי "נמוך מדי, זה לא נוח" והחצי העליון של המסך נשאר ריק.
+  assert.ok(shadow.targets(s)[0].elev < 0 && shadow.targets(s)[0].elev >= -10, 'על הרצפה, ולא בקצה')
   assert.ok(shadow.copy(s).line.includes('צל'))
   s = { ...s, phase: CH.NEAR }
   assert.equal(shadow.targets(s)[0].shadow, false, 'כשנעצר — קם')
@@ -3492,15 +3494,20 @@ test('צל: אפשר לתפוס אותו גם בלי מד צעדים, והוא �
   const poolW = 2 * BEAM_R / 100 * 402
   const poolH = poolW
   assert.equal(BEAM_RX, BEAM_RY, 'עיגול: אותו רדיוס לשני הכיוונים')
-  assert.ok(poolH > 270 && poolW > 270, `הכתם גדול מספיק (${poolW.toFixed(0)}×${poolH.toFixed(0)})`)
-  assert.ok(poolW / 402 > 0.65, 'והוא תופס לפחות שני שלישים מרוחב המסך')
+  assert.ok(poolW / 402 > 0.8, `והוא תופס רוב מוחלט מרוחב המסך (${poolW.toFixed(0)}px)`)
   assert.ok(BEAM_MAX_SCALE >= 0.5, 'וצל נשאר בגודל של דמות, לא של נקודה')
 
-  // ── ומה שבתוכו ── צל עומד ב-16° מתחת לאופק, והכתם חייב להגיע אליו
+  // ── וגם לא נמוך מדי ── "העיגול אור לא גדול ונמוך מדי, זה לא נוח."
+  // מרכז הכתם ב-62% מהגובה, וצל ב-64% — כלומר הוא יושב במרכז האור,
+  // והאור כולו נשאר על המסך ולא נמרח אל מחוץ לקצה התחתון.
   const aspect = 874 / 402
-  assert.equal(beamHit(0, -16, 60, aspect), true, 'אלומה ישרה קדימה מאירה על צל שלרגליהם')
+  const vh = 874
+  assert.ok(BEAM_Y <= 0.65, 'הכתם לא מודבק לתחתית')
+  assert.ok(BEAM_Y * vh + poolW / 2 < vh, 'וכולו נכנס למסך')
+  const { ELEV_SHADOW } = { ELEV_SHADOW: -8 }           // chase.js: shadow FAR/FLEE
+  assert.equal(beamHit(0, ELEV_SHADOW, 60, aspect), true, 'האלומה מאירה בדיוק על צל')
+  assert.equal(beamHit(0, -16, 60, aspect), true, 'וגם על מי שנמוך ממנו')
   assert.equal(beamHit(0, 40, 60, aspect), false, 'ומי שגבוה בשמיים נשאר בחושך')
-  assert.ok(BEAM_Y > 0.6, 'והכתם נמוך, על המדרכה')
 
   // ── וההתקדמות ── בלי מד צעדים, לחיצה באור מקדמת
   let s = beam.start(0, () => 0.5, 0)

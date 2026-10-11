@@ -97,9 +97,10 @@ export function Lantern({ on, hot = false }) {
             <stop offset="1" stopColor="#FFC97F" stopOpacity="0" />
           </linearGradient>
           <radialGradient id="wl-pool" cx=".5" cy=".5" r=".5">
-            <stop offset="0" stopColor="#FFF6E2" stopOpacity={hot ? '.62' : '.46'} />
-            <stop offset=".42" stopColor="#FFE0AE" stopOpacity={hot ? '.4' : '.28'} />
-            <stop offset=".78" stopColor="#FFC97F" stopOpacity=".07" />
+            <stop offset="0" stopColor="#FFF9EC" stopOpacity={hot ? '.72' : '.6'} />
+            <stop offset=".46" stopColor="#FFF2D8" stopOpacity={hot ? '.66' : '.54'} />
+            <stop offset=".72" stopColor="#FFE0AE" stopOpacity={hot ? '.46' : '.36'} />
+            <stop offset=".9" stopColor="#FFC97F" stopOpacity=".12" />
             <stop offset="1" stopColor="#FFC97F" stopOpacity="0" />
           </radialGradient>
           <filter id="wl-soft" x="-40%" y="-40%" width="180%" height="180%">
@@ -140,10 +141,12 @@ function cone(x, y, vb) {
 const darkHole = (vb, hot) => {
   const rw = hot ? BEAM_R * 1.04 : BEAM_R          // אחוזי רוחב
   const rh = (rw / Math.max(100, vb)) * 100        // אותו רדיוס, באחוזי גובה
-  const core = hot ? 62 : 58                       // עד כאן בהיר לגמרי
+  // הליבה הפתוחה מגיעה כמעט עד הקצה: הדעיכה שהתחילה באמצע הרדיוס היא
+  // מה שגרם לאור להיראות קטן בהרבה ממה שצויר.
+  const core = hot ? 80 : 76                       // עד כאן אין חושך בכלל
   return `radial-gradient(ellipse ${rw.toFixed(1)}% ${rh.toFixed(1)}% at var(--lx) var(--ly),`
-    + ` rgba(4,7,5,0) ${core}%, rgba(4,7,5,${hot ? '.26' : '.32'}) ${core + 16}%,`
-    + ` rgba(4,7,5,${hot ? '.76' : '.8'}) ${core + 32}%, rgba(4,7,5,${hot ? '.94' : '.96'}) 100%)`
+    + ` rgba(4,7,5,0) ${core}%, rgba(4,7,5,${hot ? '.22' : '.28'}) ${core + 9}%,`
+    + ` rgba(4,7,5,${hot ? '.72' : '.78'}) ${core + 18}%, rgba(4,7,5,${hot ? '.9' : '.93'}) 100%)`
 }
 
 const LANTERN_CSS = `

@@ -46,7 +46,10 @@ export const scaleFor = d => clamp(4.6 / Math.max(0.5, d), 0.5, 1.6)
 
 const ELEV = {
   run: { FAR: -6, FLEE: -6, NEAR: -4 },
-  shadow: { FAR: -16, FLEE: -16, NEAR: -4 },
+  // צל ישב ב-16 מעלות מתחת לאופק, כלומר ב-76% מגובה המסך — ממש בקצה
+  // התחתון, ואיתו ירד לשם גם כתם האור. "העיגול אור לא גדול ונמוך מדי,
+  // זה לא נוח." הוא עדיין על המדרכה, רק לא בשוליים.
+  shadow: { FAR: -8, FLEE: -8, NEAR: -4 },
   stomp: { FAR: -4, FLEE: -4, NEAR: -2 },
   fly: { FAR: 14, FLEE: 22, NEAR: 10 },
 }
