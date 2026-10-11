@@ -38,9 +38,15 @@ export const WIND_RES = 'wind'       // ומי ששאב — קיבל משאב, �
 //      נספרת. (זה היה החור: אפשר היה לברוח בלי לזוז.)
 //   3. שאיבה מביאה משאב "רוח" הביתה — וזה משאב שהשומר מבקש, ובלי
 //      השואב הוא מגיע רק מרוחי.
+// ── כמה פעמים הוא קופץ, וכמה הוא מחמיר ──
+// "מבחינתי החלק של גוסטבו הוא כייפי. שיהיו כמה מקטעי ריצה או קפיצות
+// תוך כדי הסיבוב." אז הוא קופץ שלוש-ארבע פעמים במסע ולא פעמיים, וההחמרה
+// רוככה בהתאם: שלושה צעדים נוספים בכל פעם במקום ארבעה, ורצפה של עשר
+// שניות. ארבע קפיצות עם ההחמרה הישנה היו מגיעות ל-34 צעדים ב-12 שניות,
+// וזה כבר לא כיף לילד בן שש.
 export const fleeGoal = (round = 1) => ({
-  steps: FLEE_STEPS + 4 * Math.max(0, round - 1),
-  ms: Math.max(9000, FLEE_MS - 1000 * Math.max(0, round - 1)),
+  steps: FLEE_STEPS + 3 * Math.max(0, round - 1),
+  ms: Math.max(10000, FLEE_MS - 1000 * Math.max(0, round - 1)),
 })
 export const escaped = (steps, ms, round = 1) => {
   const g = fleeGoal(round)
@@ -63,7 +69,7 @@ export const WIND_PUSH_M = 130       // כמה היא גוררת את היצור
 export const WIND_CLEAR_M = 110      // לא צמודה לתחנה — אחרת שתיהן באותו רגע
 export const WIND_START_M = 220
 export const WIND_END_M = 150
-export const MAX_WINDS = 3
+export const MAX_WINDS = 4
 
 // ── איפה הן ──
 // פרוסות על המסלול, לא על תחנה, ולא בהתחלה ובסוף. אותה שיטה כמו

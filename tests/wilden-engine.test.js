@@ -450,9 +450,11 @@ test('רוחות: גוסטבו מתחזק בכל קפיצה, והשאיבה מב
   assert.equal(WIND_NAME, 'גוסטבו')
   // ראשונה: 22 צעדים ב-15 שניות. שלישית: 30 ב-13.
   assert.deepEqual(fleeGoal(1), { steps: 22, ms: 15000 })
-  assert.deepEqual(fleeGoal(2), { steps: 26, ms: 14000 })
-  assert.deepEqual(fleeGoal(3), { steps: 30, ms: 13000 })
-  assert.ok(fleeGoal(9).ms >= 9000, 'יש רצפה — הוא לא נעשה בלתי אפשרי')
+  assert.deepEqual(fleeGoal(2), { steps: 25, ms: 14000 })
+  assert.deepEqual(fleeGoal(3), { steps: 28, ms: 13000 })
+  // ארבע קפיצות במסע: ההחמרה רוככה כדי שהאחרונה תישאר אפשרית לילד
+  assert.deepEqual(fleeGoal(4), { steps: 31, ms: 12000 })
+  assert.ok(fleeGoal(9).ms >= 10000, 'יש רצפה — הוא לא נעשה בלתי אפשרי')
   assert.equal(escaped(22, 14000, 1), true)
   assert.equal(escaped(22, 14000, 2), false, 'בפעם השנייה 22 כבר לא מספיק')
   assert.equal(escaped(26, 13500, 2), true)
@@ -747,6 +749,23 @@ test('שואב: ביצת הלב בוקעת רק אחרי מסע שלם — זה 
   // וזה גם משק: חמישה טובי לב = רוח אחת בכל מסע
   assert.equal(tamedWind(done.progress), 1)
   assert.equal(tamedWind({ tamed: TANK_MAX * 4 }), 3, 'יש תקרה')
+})
+
+// "אצל הבן שלי מתחיל סיבוב משמאל ואצלי מימין, זה אף פעם לא מסתנכרן."
+test('מסלול: שני טלפונים באותו בית מקבלים אותו מסלול ואותו כיוון', async () => {
+  const { routeSpin } = await import('../src/app/wilden/engine/loop.js')
+  const home = { lat: 32.0853, lng: 34.7818 }
+  assert.equal(routeSpin(home), routeSpin({ lat: home.lat, lng: home.lng }), 'אותו בית — אותו זרע')
+  // סטיית GPS רגילה בין שני טלפונים זה לצד זה לא משנה את המסלול
+  assert.equal(routeSpin({ lat: home.lat + 0.00004, lng: home.lng - 0.00003 }), routeSpin(home),
+    'וגם חמישה מטר הפרש לא מפצלים אותם')
+  // אבל בתים שונים באמת מקבלים מסלולים שונים
+  assert.notEqual(routeSpin({ lat: home.lat + 0.002, lng: home.lng }), routeSpin(home))
+  // ויש פיזור אמיתי, לא שלושה מסלולים לכל העולם
+  const sectors = new Set()
+  for (let i = 0; i < 300; i++) sectors.add(Math.floor(routeSpin({ lat: 32 + i * 0.0013, lng: 34.78 }) / 30))
+  assert.ok(sectors.size >= 10, `הזרע מתפזר (${sectors.size}/12 סקטורים)`)
+  assert.equal(routeSpin(null), 0, 'ובלי בית — אפס, בלי להתפוצץ')
 })
 
 // "הילד וגם אני טסנו בריצה ועדיין היה רשום שהוא תפס אותנו וגם לקח את

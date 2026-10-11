@@ -407,6 +407,7 @@ export default function Wilden() {
           <WindFlee
             round={windRound(g.run)}
             canVacuum={hasVacuum}
+            pos={g.run?.pos || null}
             buddyImg={creatureById(g.progress.buddy)?.live || null}
             buddyName={tr(creatureById(g.progress.buddy)?.name || '')}
             onSuck={() => {

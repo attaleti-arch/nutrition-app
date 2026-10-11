@@ -21,7 +21,8 @@ export function useSteps({ active = true } = {}) {
     if (a > STEP_G && !s.above) {
       s.above = true
       if (now - s.lastT > STEP_MIN_MS) { s.lastT = now; s.pending += 1; s.total += 1 }
-    } else if (a < STEP_G - 1.2) s.above = false
+    } else if (a < STEP_G - 0.8) s.above = false   // חלון צר יותר: בריצה הערך
+    // כמעט לא יורד עד 10.4, ואז כל הריצה נספרה כצעד אחד
   } })
   // כמה צעדים נצברו מאז הפעם הקודמת
   const take = useCallback(() => { const n = st.current.pending; st.current.pending = 0; return n }, [])

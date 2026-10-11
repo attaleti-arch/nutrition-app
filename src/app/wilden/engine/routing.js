@@ -191,7 +191,7 @@ function roundness(graph, loop) {
 // window: איפה נקודת המפנה יושבת, כחלק מאורך המסלול. minLen: מתחת לזה
 // הלולאה נפסלת. ברירת המחדל קפדנית; loop.js מרפה אותה בהדרגה כשבשכונה
 // קטנה אין מה למצוא — במקום להחזיר null ולהשאיר ילד בלי מסלול.
-export function planLoop(graph, homeIdx, target, { candidates = 14, window = [0.3, 0.62], minLen = 0.55, maxOverlap = 1, out: outGiven = null } = {}) {
+export function planLoop(graph, homeIdx, target, { candidates = 14, window = [0.3, 0.62], minLen = 0.55, maxOverlap = 1, out: outGiven = null, spin: spinGiven = null } = {}) {
   const out = outGiven || dijkstra(graph, homeIdx)
   // נקודת המפנה צריכה לשבת בערך בחצי המסלול: הדרך אליה והדרך חזרה, שהיא
   // רחובות אחרים ולכן ארוכה במקצת, מסתכמות לאורך המבוקש.
@@ -200,7 +200,15 @@ export function planLoop(graph, homeIdx, target, { candidates = 14, window = [0.
 
   // מועמדים לנקודת המפנה, מפוזרים לפי כיוון כדי לא לבחון 14 נקודות
   // שכולן באותו רחוב
-  const spin = Math.random() * 360
+  // ── ולמה זה לא אקראי ──
+  // "אצל הבן שלי מתחיל סיבוב משמאל ואצלי מימין, זה אף פעם לא מסתנכרן."
+  // כאן ישב Math.random: שני טלפונים באותה כתובת קיבלו חלוקה אחרת
+  // לסקטורים, ולכן נקודת מפנה אחרת, ולכן מסלול שיוצא לכיוון ההפוך.
+  // ומכיוון שהמסלול נשמר במטמון, כל טלפון נעל לעצמו את הגרלת הפעם
+  // הראשונה — "זה קבוע מסלול זהה", אבל לא אותו מסלול לשניהם.
+  // עכשיו הזרע מגיע מבחוץ, מהבית עצמו, וכך שני טלפונים באותו מקום
+  // מקבלים בדיוק את אותו מסלול ואת אותו כיוון.
+  const spin = spinGiven == null ? Math.random() * 360 : ((spinGiven % 360) + 360) % 360
   const buckets = new Map()
   for (let i = 0; i < graph.nodes.length; i++) {
     if (!isFinite(out.dist[i]) || out.real[i] < lo || out.real[i] > hi) continue

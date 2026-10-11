@@ -269,7 +269,7 @@ export function reduce(g, ev) {
       // גוסטבו לא יוצא למסע הראשון (ראה windsAllowed): הכרות ראשונה עם
       // המשחק היא לא בריחה מדבר שאין עליו הסבר.
       const winds = windsAllowed(g.progress)
-        ? placeWinds(ev.path, { stops, coinRun, flowerRun, n: (g.run.km || 2) >= 3 ? 3 : 2, holds: takenId(g.progress) })
+        ? placeWinds(ev.path, { stops, coinRun, flowerRun, n: (g.run.km || 2) >= 3 ? 4 : 3, holds: takenId(g.progress) })
         : []
       return {
         ...g,

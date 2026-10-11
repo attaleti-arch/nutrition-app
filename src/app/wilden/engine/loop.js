@@ -47,6 +47,19 @@ const MIN_LOOP_M = 500
 // מחזירה { ok: true, path, meters, overlap, shape, scale, unblocked } או
 // { ok: false, reason }. reason: empty | no-node | no-loop
 // shape: loop | short (לולאה קצרה מהמתוכנן) | there-and-back
+// ── הזרע של המסלול ──
+// נגזר מהבית, מעוגל לכ-11 מטר, כך ששני טלפונים שיוצאים מאותה כתובת
+// מקבלים אותו מספר — ולכן אותו מסלול, לאותו כיוון. עיגול גס מדי היה
+// נותן מסלול זהה לשתי שכונות; עדין מדי, ושני טלפונים זה לצד זה היו
+// שוב מקבלים מסלולים שונים.
+export function routeSpin(home) {
+  if (!home || home.lat == null || home.lng == null) return 0
+  const key = `${Math.round(home.lat * 10000)},${Math.round(home.lng * 10000)}`
+  let h = 2166136261
+  for (let i = 0; i < key.length; i++) { h ^= key.charCodeAt(i); h = Math.imul(h, 16777619) }
+  return ((h >>> 0) % 3600) / 10            // 0–359.9, יציב לחלוטין
+}
+
 export function buildLoop(input, home, target = TARGET_M) {
   const { ways, blocked } = normalize(input)
   if (!ways.length) return { ok: false, reason: 'empty' }
@@ -81,7 +94,7 @@ export function buildLoop(input, home, target = TARGET_M) {
   const tryLoops = (steps, maxOverlap) => {
     for (const step of steps) {
       for (const v of variants) {
-        const plan = planLoop(v.graph, v.start.idx, target * step.scale, { ...(step.relaxed ? RELAXED : {}), maxOverlap, out: v.out })
+        const plan = planLoop(v.graph, v.start.idx, target * step.scale, { ...(step.relaxed ? RELAXED : {}), maxOverlap, out: v.out, spin: routeSpin(home) })
         if (!plan?.loop?.length) continue
         const shape = plan.overlap >= 0.8 ? 'there-and-back' : step.scale < 0.85 ? 'short' : 'loop'
         const r = finish(v, plan, shape, step.scale)

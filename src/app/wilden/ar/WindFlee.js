@@ -5,6 +5,7 @@ import { useSteps } from '../hooks/useSteps'
 import { useCamera } from '../hooks/useCamera'
 import { sfxRumble, sfxCheer, sfxRustle, buzz } from '../engine/audio'
 import { fleeGoal, WIND_NAME } from '../engine/wind'
+import { haversine } from '../engine/geo'
 
 // ─── לברוח מגוסטבו ───
 // "אם אין לו כסף, כשהיא מופיעה בהפתעה הוא צריך לברוח עם בן הלוויה שלו
@@ -32,7 +33,10 @@ import { fleeGoal, WIND_NAME } from '../engine/wind'
 // לשאוב" — לא בהתחלה, ולא במקומה.
 export const SUCK_AT = 0.6
 
-export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum = false, onSuck = null, onDone }) {
+// כמה מטר שווה צעד. משמש רק לתרגום מרחק GPS לצעדים.
+const STEP_M = 0.8
+
+export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum = false, pos = null, onSuck = null, onDone }) {
   // כמה קשה הפעם: בכל קפיצה נוספת באותו טיול הוא מהיר יותר.
   const goal = fleeGoal(round)
   const steps = useSteps({ active: true })
@@ -63,15 +67,35 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // האם בכלל הצלחנו למדוד משהו בריצה הזאת: דגימה מהחיישן, או נגיעה.
+  // האם בכלל הצלחנו למדוד משהו בריצה הזאת: דגימה מהחיישן, נגיעה, או GPS.
   const measured = useRef(false)
+
+  // ── ולמה גם GPS ──
+  // "לי יש אייפון, לו יש שיאומי, בשניהם הוא לא עבד." כלומר לא מדובר
+  // בהרשאה של אייפון בלבד: מד התאוצה פשוט לא אמין מספיק בין מכשירים,
+  // בין אופני אחיזה ובין קצבי ריצה. ילד שרץ חמש-עשרה שניות עבר עשרות
+  // מטרים, וזה מדיד בכל טלפון שקיים.
+  // קו אווירי מנקודת ההתחלה, ולא סכום מקטעים — כך רעש GPS של מי שעומד
+  // במקום לא מצטבר לריצה. בפועל: מי שרץ באמת יגיע ל-18 מטר הרבה לפני
+  // שהזמן ייגמר, ומי שעומד לא יגיע לשם גם אחרי דקה.
+  const startPos = useRef(null)
+  const gpsSteps = useRef(0)
+  useEffect(() => {
+    if (!go || !pos) return
+    if (!startPos.current) { startPos.current = pos; return }
+    const m = haversine(startPos.current, pos)
+    if (!(m > 0)) return
+    const n = Math.floor(m / STEP_M)
+    if (n > gpsSteps.current) { gpsSteps.current = n; measured.current = true }
+  }, [go, pos])
 
   useEffect(() => {
     if (!go) return
     const id = setInterval(() => {
       const n = steps.take()
       if (n > 0) { tapSteps.current += n; lastStepAt.current = Date.now(); measured.current = true; try { sfxRustle() } catch (e) { /* */ } }
-      const c = tapSteps.current
+      // שני מדדים לאותה ריצה, ולא סכום שלהם: מה שמוביל הוא מה שנספר.
+      const c = Math.max(tapSteps.current, gpsSteps.current)
       setCount(c)
       const ms = Date.now() - startAt.current
       setLeft(Math.max(0, goal.ms - ms))
@@ -167,7 +191,12 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
           מונה הצעדים, הפסים ובן הלוויה — נשאר מצויר מעליו, כתוב כחול
           ואפור על ענן לבן ובוהק, ואי אפשר לקרוא אף מילה. בשנייה וחצי
           האלה יש רק דבר אחד לומר. */}
-      {lost && <p style={S.caught}>{tr('{wind} תפס אתכם!', { wind: tr(WIND_NAME) })}</p>}
+      {lost && (
+        <div style={S.caughtBox}>
+          <p style={S.caught}>{tr('{wind} השיג אתכם', { wind: tr(WIND_NAME) })}</p>
+          {buddyName && <p style={S.caughtSub}>{tr('הוא לוקח את {name} עד סוף הטיול', { name: buddyName })}</p>}
+        </div>
+      )}
 
       {!lost && (
         <>
@@ -258,6 +287,10 @@ const S = {
   buddy: { position: 'absolute', bottom: '9%', left: '50%', transform: 'translateX(-50%)', height: '22vh', width: 'auto',
     filter: 'drop-shadow(0 6px 10px rgba(0,0,0,.5))', pointerEvents: 'none' },
   hint: { position: 'relative', fontSize: 13.5, color: '#9BA495', margin: 0 },
+  // רגע ההפסד: מה קרה, ומה המשמעות. שתי שורות, בלי ניסוח פתוח.
+  caughtBox: { position: 'relative', zIndex: 4, textAlign: 'center' },
+  caughtSub: { margin: '6px 0 0', fontSize: 15, color: '#F0E6D2',
+    textShadow: '0 2px 14px rgba(0,0,0,.9)' },
   // כפתור ההרשאה: באייפון מד הצעדים לא מתחיל לבד, והמסך הזה הוא היחיד
   // שבו הילד באמת רץ. בלעדיו הריצה לא נספרת בכלל.
   ask: { position: 'relative', marginTop: 10, padding: '10px 22px', borderRadius: 999,
