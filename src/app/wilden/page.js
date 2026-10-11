@@ -408,6 +408,8 @@ export default function Wilden() {
             round={windRound(g.run)}
             canVacuum={hasVacuum}
             pos={g.run?.pos || null}
+            ownsVacuum={!!g.run?.mods?.vacuum}
+            vacuumPrice={gearById('vacuum')?.price || 55}
             buddyImg={creatureById(g.progress.buddy)?.live || null}
             buddyName={tr(creatureById(g.progress.buddy)?.name || '')}
             onSuck={() => {

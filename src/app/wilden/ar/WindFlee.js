@@ -36,7 +36,8 @@ export const SUCK_AT = 0.6
 // כמה מטר שווה צעד. משמש רק לתרגום מרחק GPS לצעדים.
 const STEP_M = 0.8
 
-export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum = false, pos = null, onSuck = null, onDone }) {
+export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum = false,
+  ownsVacuum = false, vacuumPrice = 55, pos = null, onSuck = null, onDone }) {
   // כמה קשה הפעם: בכל קפיצה נוספת באותו טיול הוא מהיר יותר.
   const goal = fleeGoal(round)
   const steps = useSteps({ active: true })
@@ -44,6 +45,14 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
   const [left, setLeft] = useState(goal.ms)
   const [go, setGo] = useState(false)
   const [lost, setLost] = useState(false)
+  // ── רגע התפיסה הוא הרגע של השואב ──
+  // "ולשואב אין תכלית. גוסטבו אחרי ריצה צריך להיות 'הוא תפס אותך',
+  // שלוף שואב אם יש, ואז כפתור לחיץ אם רכש וכפתור כבוי אם לא, כדי
+  // שיהיה גירוי ללחוץ להבא."
+  // זה בדיוק המקום: הכלי מוצג כשהוא היה מציל, ולא בחנות כשורה ברשימה.
+  // מי שקנה — שולף ומציל. מי שלא — רואה כפתור כבוי ויודע בדיוק מה
+  // הוא פספס, ובכמה.
+  const [rescue, setRescue] = useState(false)
   const startAt = useRef(0)
   const doneRef = useRef(false)
   const tapSteps = useRef(0)
@@ -118,7 +127,8 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
         }
         setLost(true)
         try { sfxRumble(2.2, 0.7); buzz([140, 80, 140]) } catch (e) { /* */ }
-        setTimeout(() => onDone?.(false), 1600)
+        // לא סוגרים מיד: קודם מראים את השואב, ורק אז מפסידים.
+        setTimeout(() => setRescue(true), 1500)
       }
     }, 200)
     return () => clearInterval(id)
@@ -193,8 +203,31 @@ export function WindFlee({ buddyImg = null, buddyName = '', round = 1, canVacuum
           האלה יש רק דבר אחד לומר. */}
       {lost && (
         <div style={S.caughtBox}>
-          <p style={S.caught}>{tr('{wind} השיג אתכם', { wind: tr(WIND_NAME) })}</p>
+          <p style={S.caught}>{tr('{wind} תפס אתכם', { wind: tr(WIND_NAME) })}</p>
           {buddyName && <p style={S.caughtSub}>{tr('הוא לוקח את {name} עד סוף הטיול', { name: buddyName })}</p>}
+          {/* ── ורק עכשיו, השואב ── */}
+          {rescue && (
+            <div style={S.rescue}>
+              {canVacuum ? (
+                <>
+                  <p style={S.rescueLine}>{tr('יש לכם שואב. עכשיו!')}</p>
+                  <button onClick={e => { e.stopPropagation(); if (doneRef.current === 'used') return; doneRef.current = 'used'; onSuck?.() }}
+                    style={S.rescueBtn}>{tr('🌀 לשלוף את השואב')}</button>
+                </>
+              ) : (
+                <>
+                  <button disabled style={S.rescueOff}>{tr('🌀 לשלוף את השואב')}</button>
+                  <p style={S.rescueWhy}>
+                    {ownsVacuum
+                      ? tr('השואב כבר נשלף במסע הזה. בפעם הבאה הוא יחכה טעון.')
+                      : tr('שואב הרוח היה שולף את {name} בלחיצה אחת. הוא בחנות, {n} מטבעות.', { name: buddyName || tr('בן הלוויה'), n: vacuumPrice })}
+                  </p>
+                </>
+              )}
+              <button onClick={e => { e.stopPropagation(); if (doneRef.current === 'used') return; doneRef.current = 'used'; onDone?.(false) }}
+                style={S.rescueSkip}>{canVacuum ? tr('לוותר הפעם') : tr('הבנתי')}</button>
+            </div>
+          )}
         </div>
       )}
 
@@ -276,8 +309,15 @@ const S = {
   burst: { position: 'relative', fontSize: 46, fontWeight: 900, color: '#8ED0F0', margin: 0, animation: 'wildenFleeIn .5s ease-out both' },
   line: { position: 'relative', fontSize: 25, fontWeight: 900, margin: 0, textShadow: '0 2px 14px rgba(0,0,0,.8)' },
   // על ענן לבן במסך מלא, צל טקסט רגיל לא מספיק: קו מתאר כהה מסביב.
-  caught: { position: 'absolute', bottom: '13%', insetInline: 0, margin: 0, padding: '0 22px', textAlign: 'center',
-    fontSize: 30, fontWeight: 900, color: '#FFE8D8', zIndex: 5,
+  // ── רגע התפיסה ──
+  // עמודה אחת ממורכזת, ולא שורה שצפה בתחתית: מתחתיה נפתח לוח השואב,
+  // והוא צריך להישאר על המסך ולחיץ. קודם הכותרת הייתה absolute והלוח
+  // נדחף מתחת לקצה — בדיוק המקום שבו כפתור קיים אבל לא ניתן ללחוץ עליו.
+  caughtBox: { position: 'absolute', insetInline: 0, top: '50%', transform: 'translateY(-50%)',
+    zIndex: 5, padding: '0 22px', textAlign: 'center',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' },
+  caught: { position: 'relative', margin: 0, textAlign: 'center',
+    fontSize: 30, fontWeight: 900, color: '#FFE8D8',
     textShadow: '0 0 6px #1A0E08, 0 0 18px #1A0E08, 0 3px 20px rgba(0,0,0,.95)' },
   sub: { position: 'relative', fontSize: 19, fontWeight: 800, color: '#8ED0F0', margin: 0 },
   barWrap: { position: 'relative', width: '100%', maxWidth: 320, height: 16, borderRadius: 999, background: 'rgba(233,229,216,.15)', overflow: 'hidden', marginTop: 6 },
@@ -288,9 +328,26 @@ const S = {
     filter: 'drop-shadow(0 6px 10px rgba(0,0,0,.5))', pointerEvents: 'none' },
   hint: { position: 'relative', fontSize: 13.5, color: '#9BA495', margin: 0 },
   // רגע ההפסד: מה קרה, ומה המשמעות. שתי שורות, בלי ניסוח פתוח.
-  caughtBox: { position: 'relative', zIndex: 4, textAlign: 'center' },
   caughtSub: { margin: '6px 0 0', fontSize: 15, color: '#F0E6D2',
     textShadow: '0 2px 14px rgba(0,0,0,.9)' },
+  // ── לוח השואב ──
+  // מי שקנה רואה כפתור חי. מי שלא — רואה את אותו כפתור כבוי, ומתחתיו
+  // מה הוא עושה ובכמה. זה הרגע היחיד שבו הערך שלו מוחשי.
+  rescue: { marginTop: 22, padding: '16px 18px', borderRadius: 18,
+    background: 'rgba(8,13,11,.95)', border: '1px solid rgba(255,255,255,.18)',
+    maxWidth: 320, marginInline: 'auto' },
+  rescueLine: { margin: '0 0 10px', fontSize: 15, fontWeight: 700, color: '#CFE4FA' },
+  rescueBtn: { width: '100%', padding: '14px 20px', borderRadius: 999, border: 0,
+    background: '#6EA8E6', color: '#0C1620', font: 'inherit', fontSize: 17, fontWeight: 800,
+    cursor: 'pointer', boxShadow: '0 0 24px rgba(110,168,230,.45)' },
+  rescueOff: { width: '100%', padding: '14px 20px', borderRadius: 999,
+    border: '1.5px dashed rgba(207,228,250,.35)', background: 'rgba(110,168,230,.1)',
+    color: 'rgba(207,228,250,.6)', font: 'inherit', fontSize: 17, fontWeight: 800,
+    cursor: 'not-allowed' },
+  rescueWhy: { margin: '10px 0 0', fontSize: 14, lineHeight: 1.65, color: '#D3DED6' },
+  rescueSkip: { marginTop: 12, padding: '8px 16px', borderRadius: 999, border: 0,
+    background: 'none', color: '#A9B6AB', font: 'inherit', fontSize: 14.5, fontWeight: 600,
+    cursor: 'pointer' },
   // כפתור ההרשאה: באייפון מד הצעדים לא מתחיל לבד, והמסך הזה הוא היחיד
   // שבו הילד באמת רץ. בלעדיו הריצה לא נספרת בכלל.
   ask: { position: 'relative', marginTop: 10, padding: '10px 22px', borderRadius: 999,
