@@ -21,6 +21,8 @@ const nextConfig = {
       { source: '/quiz/', destination: '/quiz.html' },
       { source: '/gallbladder', destination: '/gallbladder.html' },
       { source: '/gallbladder/', destination: '/gallbladder.html' },
+      { source: '/fiber', destination: '/fiber.html' },
+      { source: '/fiber/', destination: '/fiber.html' },
     ]
   },
 }
