@@ -23,6 +23,8 @@ const nextConfig = {
       { source: '/gallbladder/', destination: '/gallbladder.html' },
       { source: '/fiber', destination: '/fiber.html' },
       { source: '/fiber/', destination: '/fiber.html' },
+      { source: '/bloat', destination: '/bloat.html' },
+      { source: '/bloat/', destination: '/bloat.html' },
     ]
   },
 }
