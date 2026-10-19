@@ -111,6 +111,19 @@ td:first-child { font-weight: 700; color: var(--olive-deep); white-space: nowrap
 }
 .week-t { font-size: 16.5px; line-height: 1.6; padding-top: 7px; }
 
+/* ── CHECK ── */
+.check { padding: 10px 60px 8px; }
+.check-card { background: var(--paper); border: 1.5px solid var(--gold); border-radius: 14px; padding: 20px 22px; }
+.check-card ul { list-style: none; }
+.check-card li { position: relative; padding-inline-start: 30px; margin-bottom: 13px; font-size: 16.5px; line-height: 1.6; }
+.check-card li:last-child { margin-bottom: 0; }
+.check-card li::before {
+  content: ''; position: absolute; inset-inline-start: 0; top: 4px;
+  width: 17px; height: 17px; border: 1.5px solid var(--gold); border-radius: 5px;
+}
+.verdict { margin: 14px 60px 0; background: var(--olive-tint); border-radius: 10px; padding: 14px 18px; font-size: 16px; line-height: 1.7; }
+.verdict b { color: var(--olive-deep); }
+
 /* ── NOTES ── */
 .notes { padding: 14px 60px 10px; display: flex; flex-direction: column; gap: 10px; }
 .note { background: var(--gold-tint); border-inline-start: 3px solid var(--gold); border-radius: 0 6px 6px 0; padding: 12px 16px; font-size: 15.5px; line-height: 1.7; }
@@ -165,10 +178,10 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
 
 /* ── RESPONSIVE ── */
 @media (max-width: 640px) {
-  .intro, .sec-head, .body, .tablewrap, .weeks, .notes, .diagram, .points, .plain, .closing, footer { padding-inline: 22px; }
+  .intro, .sec-head, .body, .tablewrap, .weeks, .notes, .diagram, .points, .plain, .check, .closing, footer { padding-inline: 22px; }
   .cover { padding: 44px 22px 40px; }
   .sec-head { padding: 36px 22px 16px; }
-  .sec-divider, .flags { margin-inline: 22px; }
+  .sec-divider, .flags, .verdict { margin-inline: 22px; }
   th, td { padding: 10px 10px; font-size: 15.5px; }
   td:first-child { white-space: normal; }
 }
@@ -178,7 +191,7 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
   body { background: #fff; font-size: 11pt; }
   .sheet { max-width: none; box-shadow: none; }
   .cta { display: none; }
-  .week, .point, tr, .diagram-card { break-inside: avoid; }
+  .week, .point, tr, .diagram-card, .check-card { break-inside: avoid; }
   .reveal { opacity: 1; transform: none; }
   .closing, .flags { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   @page { margin: 14mm; }
@@ -206,6 +219,26 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
       <p>המדריך הזה עוזר לבנות את הסיבים מחדש, בהדרגה, בלי להפוך את הצלחת לפרויקט.</p>
     </div>
   </div>
+
+  <!-- בדיקה עצמית -->
+  <div class="sec-head reveal">
+    <span class="sec-eyebrow">בטוחה שאין לך עצירות?</span>
+    <h2>בדיקה עצמית</h2>
+    <p class="hint">רוב האנשים חושבים שעצירות זה "לא ללכת כמה ימים". אבל עצירות זה גם <b>איך</b>. תעני לעצמך בכנות:</p>
+  </div>
+  <div class="sec-divider"></div>
+  <div class="check reveal">
+    <div class="check-card">
+      <ul>
+        <li>את צריכה ללחוץ?</li>
+        <li>היציאה קשה, קטנה או בחתיכות?</li>
+        <li>את קמה בתחושה שלא התרוקנת עד הסוף?</li>
+        <li>הבטן לא נרגעת גם אחרי?</li>
+        <li>את "הולכת" רק אחרי קפה חזק, ובלעדיו לא?</li>
+      </ul>
+    </div>
+  </div>
+  <p class="verdict reveal">אם ענית <b>כן על שתיים ומעלה</b> — גם אם יש לך יציאה כל יום — המעי לא מתרוקן עד הסוף. וזה מספיק כדי להרגיש את זה.</p>
 
   <!-- תווית -->
   <div class="sec-head reveal">
@@ -266,6 +299,20 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
   <div class="notes reveal">
     <p class="note"><b>מים:</b> כשמעלים סיבים, מעלים גם שתייה. סיבים בלי מספיק מים עלולים להחמיר את העצירות.</p>
   </div>
+
+  <!-- הרגלים -->
+  <div class="sec-head reveal">
+    <span class="sec-eyebrow">מה שבאמת מזיז</span>
+    <h2>הרגלים, לא רק אוכל</h2>
+    <p class="hint">הצלחת היא חצי מהסיפור. החצי השני הוא מה שעושים, ולא תלוי בגלוטן בכלל.</p>
+  </div>
+  <div class="sec-divider"></div>
+  <ul class="points reveal">
+    <li class="point"><b>לא להתאפק.</b> המעי שולח אות כשהוא מוכן. כל פעם שדוחים אותו "כי אני בעבודה", האות נחלש, ומה שנשאר מתייבש ואחר כך קשה יותר להוציא.</li>
+    <li class="point"><b>10 דקות בבוקר.</b> אחרי קפה או ארוחה המעי מתעורר מעצמו — זה רפלקס אמיתי, לא תחושה. מי שרצה החוצה מפספסת את החלון הכי טוב ביום. תני לו 10 דקות, בלי טלפון, בלי לחץ.</li>
+    <li class="point"><b>שרפרף מתחת לרגליים.</b> ברכיים מעל הירכיים מיישרות את המעי, והיציאה יוצאת בלי לחץ. אפשר שרפרף רגיל, קופסה, כל דבר בגובה 15–20 ס"מ. זה עובד בדיוק אותו דבר למבוגרים ולילדים.</li>
+    <li class="point"><b>לא לחכות עד שכואב.</b> דחייה חוזרת מלמדת את הגוף להתעלם מהאות. שבועיים של הקשבה מחזירים אותו.</li>
+  </ul>
 
   <!-- תנועה -->
   <div class="sec-head reveal">
@@ -339,6 +386,27 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
     <li class="point"><b>לא עושים</b> כשיש כאב בטן חזק, חום, הקאות, או אחרי ניתוח בבטן. אם יש ספק, קודם לרופא.</li>
   </ul>
 
+  <!-- שבוע ראשון -->
+  <div class="sec-head reveal">
+    <span class="sec-eyebrow">השבוע הראשון</span>
+    <h2>תוכנית של 7 ימים</h2>
+    <p class="hint">לא עושים הכול ביחד. ככה זה נראה כשמתחילים נכון.</p>
+  </div>
+  <div class="sec-divider"></div>
+  <div class="tablewrap reveal">
+    <table>
+      <thead><tr><th>יום</th><th>מה עושים</th></tr></thead>
+      <tbody>
+        <tr><td>1–2</td><td>רק דבר אחד: 10 דקות בשירותים אחרי הקפה של הבוקר, עם שרפרף. בלי שינוי באוכל.</td></tr>
+        <tr><td>3–4</td><td>מוסיפים כוס מים לכל ארוחה. ממשיכים עם הבוקר.</td></tr>
+        <tr><td>5–7</td><td>מחליפים ללחם ללא גלוטן עם יותר סיבים, לפי שורת ה־100 גרם. זה השינוי היחיד בצלחת השבוע.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="notes reveal">
+    <p class="note"><b>בסוף השבוע:</b> אם היציאה סדירה יותר, ממשיכים לשלב 2 ברשימה (קטנייה). אם לא השתנה כלום, עוברים לפרק "מה עוד יכול לגרום לעצירות".</p>
+  </div>
+
   <!-- ילדים -->
   <div class="sec-head reveal">
     <span class="sec-eyebrow">לא תמיד מתחיל בצלחת</span>
@@ -372,13 +440,15 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
   <div class="sec-head reveal">
     <span class="sec-eyebrow">לא רק הצלחת</span>
     <h2>מה עוד יכול לגרום לעצירות</h2>
-    <p class="hint">שלושה דברים שכדאי לבדוק, במיוחד בצליאק.</p>
+    <p class="hint">כמה דברים שכדאי לבדוק, ואחד מהם ייחודי לצליאק.</p>
   </div>
   <div class="sec-divider"></div>
   <ul class="points reveal">
     <li class="point"><b>תוסף ברזל:</b> הרבה צליאקים נוטלים ברזל בגלל חוסר, וברזל הוא גורם מוכר לעצירות. לא מפסיקים אותו לבד. מספרים לרופא, לפעמים אפשר לשנות סוג או מינון.</li>
     <li class="point"><b>חשיפה לגלוטן:</b> עצירות היא גם אחד הסימנים לחשיפה. אם היא הופיעה פתאום אחרי תקופה שהבטן הייתה בסדר, בודקים מה נכנס לצלחת: מסעדה חדשה, מוצר שהחליף יצרן, טוסטר או מטבח משותף.</li>
     <li class="point"><b>בלוטת התריס:</b> תת־פעילות של הבלוטה גורמת לעצירות, והשימוטו שכיח יותר בצליאק. אם יש גם עייפות, קור ונשירת שיער, שווה לבקש בדיקת TSH.</li>
+    <li class="point"><b>לחץ:</b> כשהגוף דרוך, העיכול נדחק הצידה והמעי מאט. זו הסיבה שהנשימה בפרק התנועה היא לא קישוט, ושעצירות מתגברת בתקופות עמוסות.</li>
+    <li class="point"><b>תרופות:</b> חלק ממשככי הכאבים, מהתרופות ללחץ דם, מנוגדי הדיכאון ומתוספי הסידן גורמים לעצירות. אם העצירות התחילה אחרי תרופה חדשה, שווה להעלות את זה מול הרופא.</li>
   </ul>
 
   <div class="flags reveal">
