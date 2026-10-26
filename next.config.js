@@ -25,6 +25,8 @@ const nextConfig = {
       { source: '/fiber/', destination: '/fiber.html' },
       { source: '/bloat', destination: '/bloat.html' },
       { source: '/bloat/', destination: '/bloat.html' },
+      { source: '/log', destination: '/log.html' },
+      { source: '/log/', destination: '/log.html' },
     ]
   },
 }
