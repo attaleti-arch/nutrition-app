@@ -1,0 +1,16 @@
+{
+  "name": "היומן שלי — בין הראש לצלחת",
+  "short_name": "היומן שלי",
+  "description": "יומן אכילה לימים שלפני הפגישה הראשונה.",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "/log",
+  "scope": "/log",
+  "display": "standalone",
+  "theme_color": "#3d4728",
+  "background_color": "#f8f5ee",
+  "icons": [
+    { "src": "/log-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/log-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

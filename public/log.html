@@ -21,6 +21,12 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://eti-zitun.com/og-brand.jpg?v=1">
 <link rel="icon" href="/logo.png">
+<link rel="manifest" href="/log-manifest.webmanifest">
+<link rel="apple-touch-icon" href="/log-icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="היומן שלי">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#3d4728">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;700;900&family=Assistant:wght@300;400;600;700;800&display=swap" rel="stylesheet">
@@ -119,8 +125,18 @@ table.ex tr.sym td { background: var(--gold-tint); }
 .log { background: var(--olive-tint); border-top: 1px solid var(--rule); padding: 36px 60px 44px; }
 .log-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
 .log-head h2 { font-size: 27px; font-weight: 700; color: var(--olive-deep); }
-.log-head .saved { font-size: 13px; color: var(--olive); }
+.log-head .saved { font-size: 13px; color: var(--olive); font-variant-numeric: tabular-nums; }
+.log-head .saved.bad { color: #a3402f; font-weight: 700; }
 .log-sub { font-size: 15.5px; color: var(--muted); margin-bottom: 20px; }
+
+/* התראות על אחסון: הדף שומר בטלפון, ויש מצבים שבהם הדפדפן לא מרשה.
+   עדיף להגיד את זה מראש מאשר שהלקוחה תגלה שיום שלם נמחק. */
+.warn { background: #fdece9; border: 1px solid #f0c6bd; border-radius: 12px; padding: 13px 16px; margin-bottom: 14px; font-size: 15.5px; line-height: 1.65; color: #8a3324; }
+.warn b { color: #6f241a; }
+.keep { background: var(--gold-tint); border: 1px solid #ecdcb4; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; font-size: 15.5px; line-height: 1.65; }
+.keep b { color: var(--olive-deep); }
+.keep-how { color: var(--muted); margin-top: 3px; }
+.keep-x { font: inherit; font-size: 13.5px; font-weight: 600; color: var(--muted); background: none; border: 0; cursor: pointer; padding: 8px 0 0; text-decoration: underline; }
 
 .daybar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
 .daybar label { font-size: 14.5px; font-weight: 700; color: var(--olive-deep); }
@@ -177,6 +193,7 @@ input:focus, select:focus, textarea:focus { outline: 2.5px solid var(--gold); ou
 
 .send { margin-top: 26px; }
 .send-note { font-size: 15.5px; color: var(--olive-deep); text-align: center; margin-bottom: 14px; line-height: 1.6; }
+.send-note-sm { font-size: 14px; color: var(--muted); }
 .send .btn { width: 100%; font: inherit; font-size: 17.5px; font-weight: 800; cursor: pointer; border: 0; border-radius: 99px; padding: 16px 26px; min-height: 56px; display: block; text-align: center; text-decoration: none; }
 .btn-wa { background: var(--olive-deep); color: var(--paper); }
 .btn-copy { background: none; color: var(--olive-deep); border: 1.5px solid var(--olive-soft) !important; margin-top: 10px; }
@@ -322,7 +339,15 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
       <h2>היומן שלי</h2>
       <span class="saved" id="saved"></span>
     </div>
-    <p class="log-sub">הכול נשמר אצלך בטלפון לבד. אפשר לצאת ולחזור במשך היום — מה שכתבת מחכה לך.</p>
+    <p class="log-sub">כל מילה נשמרת אצלך בטלפון ברגע שכתבת אותה — למעלה כאן רשום מתי נשמר לאחרונה. אפשר לכתוב אחרי כל ארוחה, לצאת, ולחזור בערב; הכול יחכה לך.</p>
+
+    <div class="warn" id="warnStore" hidden></div>
+
+    <div class="keep" id="keep" hidden>
+      <p><b>כדי שהיומן יחכה לך כל היום</b> — שמרי אותו במסך הבית. משם הוא נפתח כמו אפליקציה, ומה שכתבת תמיד שם.</p>
+      <p class="keep-how" id="keepHow"></p>
+      <button class="keep-x" type="button" id="keepX">הבנתי, אפשר להסתיר</button>
+    </div>
 
     <div class="daybar">
       <label for="date">תאריך</label>
@@ -367,7 +392,7 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
     </div>
 
     <div class="send">
-      <p class="send-note">סיימת את היום? שלחי לי אותו. אני קוראת ומחזירה לך דגשים קטנים.</p>
+      <p class="send-note">סיימת את היום? שלחי לי אותו. אני קוראת ומחזירה לך דגשים קטנים.<br><span class="send-note-sm">אפשר לשלוח גם באמצע היום ולהמשיך לכתוב אחר כך — השליחה לא מוחקת כלום.</span></p>
       <a class="btn btn-wa" id="wa" href="#" target="_blank" rel="noopener">לשלוח לי את היום בוואטסאפ</a>
       <button class="btn btn-copy" type="button" id="copy">להעתיק את היום כטקסט</button>
       <p class="say" id="say" role="status"></p>
@@ -391,13 +416,25 @@ var KEY = "etiLog_v1_";
 // ── המצב ──
 // יום אחד = אובייקט אחד, נשמר לפי תאריך. אין שרת ואין חשבון: מה שנכתב
 // יושב בטלפון של הלקוחה, ועובר אליי רק כשהיא לוחצת לשלוח.
-var day = null, dateKey = "";
+var day = null, dateKey = "", manualDate = false;
+
+// האם הדפדפן הזה באמת שומר? בודקים בפועל, לא מניחים.
+// גלישה פרטית, דפדפן מוטמע באינסטגרם וחסימת אחסון — כולם נכשלים כאן.
+function storageWorks() {
+  try {
+    localStorage.setItem(KEY + "_t", "1");
+    var ok = localStorage.getItem(KEY + "_t") === "1";
+    localStorage.removeItem(KEY + "_t");
+    return ok;
+  } catch (e) { return false; }
+}
+var canStore = storageWorks();
 
 function todayKey() {
   var d = new Date(), p = function(n){ return (n<10?"0":"") + n; };
   return d.getFullYear() + "-" + p(d.getMonth()+1) + "-" + p(d.getDate());
 }
-function blank() { return { rows: [], water: "", noBm: false, bms: [], meds: [], note: "" }; }
+function blank() { return { rows: [], water: "", noBm: false, bms: [], meds: [], note: "", at: "" }; }
 
 function load(k) {
   try {
@@ -406,19 +443,24 @@ function load(k) {
     var o = JSON.parse(raw);
     return {
       rows: o.rows || [], water: o.water || "", noBm: !!o.noBm,
-      bms: o.bms || [], meds: o.meds || [], note: o.note || ""
+      bms: o.bms || [], meds: o.meds || [], note: o.note || "", at: o.at || ""
     };
   } catch (e) { return blank(); }
 }
-var saveT = 0;
+var lastEdit = 0;
 function save() {
+  lastEdit = Date.now();
+  var el = document.getElementById("saved");
+  day.at = nowTime();
   try {
     localStorage.setItem(KEY + dateKey, JSON.stringify(day));
-    var el = document.getElementById("saved");
-    el.textContent = "נשמר";
-    clearTimeout(saveT);
-    saveT = setTimeout(function(){ el.textContent = ""; }, 1400);
-  } catch (e) { /* גלישה פרטית או אחסון חסום — הדף ימשיך לעבוד, בלי זיכרון */ }
+    // החיווי נשאר על המסך. לקוחה שרושמת אחרי ארוחה רוצה לראות שזה נתפס.
+    el.textContent = "✓ נשמר " + day.at;
+    el.classList.remove("bad");
+  } catch (e) {
+    el.textContent = "לא נשמר — הדפדפן חוסם";
+    el.classList.add("bad");
+  }
   drawDays();
 }
 function savedDays() {
@@ -426,7 +468,9 @@ function savedDays() {
   try {
     for (var i = 0; i < localStorage.length; i++) {
       var k = localStorage.key(i);
-      if (k && k.indexOf(KEY) === 0) out.push(k.slice(KEY.length));
+      if (!k || k.indexOf(KEY) !== 0) continue;
+      var d = k.slice(KEY.length);
+      if (/^\d{4}-\d{2}-\d{2}$/.test(d)) out.push(d);
     }
   } catch (e) { /* */ }
   return out.sort().reverse().slice(0, 8);
@@ -655,9 +699,37 @@ function nowTime() {
   return p(d.getHours()) + ":" + p(d.getMinutes());
 }
 
+// חוזרים לדף אחרי שעתיים, או שהוא היה פתוח בלשונית אחרת —
+// קוראים מחדש מהאחסון כדי שלשונית ישנה לא תדרוס את מה שנכתב מאז.
+var resyncT = 0;
+function resync() {
+  if (!canStore) return;
+  // באמצע כתיבה לא מרעננים — זה היה מוחק לה את השדה מתחת לאצבע.
+  // מנסים שוב כשהיא עוצרת, כך שהרענון לא הולך לאיבוד.
+  if (Date.now() - lastEdit < 4000) {
+    clearTimeout(resyncT);
+    resyncT = setTimeout(resync, 4000);
+    return;
+  }
+  var k = todayKey();
+  if (!manualDate && dateKey !== k) {
+    document.getElementById("date").value = k;
+    switchDay(k);
+    return;
+  }
+  var fresh = load(dateKey);
+  if (JSON.stringify(fresh) !== JSON.stringify(day)) { day = fresh; draw(); drawSummary(); }
+}
+document.addEventListener("visibilitychange", function(){ if (!document.hidden) resync(); });
+window.addEventListener("focus", resync);
+window.addEventListener("storage", function(e){ if (e.key && e.key.indexOf(KEY) === 0) resync(); });
+
 function switchDay(k) {
   dateKey = k;
   day = load(k);
+  var el = document.getElementById("saved");
+  el.classList.remove("bad");
+  el.textContent = day.at ? "✓ נשמר " + day.at : "";
   draw(); drawSummary(); drawDays();
 }
 
@@ -687,7 +759,10 @@ document.getElementById("noBm").addEventListener("click", function(){
 });
 document.getElementById("water").addEventListener("input", function(e){ day.water = e.target.value; save(); updateCount(); });
 document.getElementById("note").addEventListener("input", function(e){ day.note = e.target.value; save(); updateCount(); });
-document.getElementById("date").addEventListener("change", function(e){ switchDay(e.target.value || todayKey()); });
+document.getElementById("date").addEventListener("change", function(e){
+  manualDate = true;
+  switchDay(e.target.value || todayKey());
+});
 
 document.getElementById("copy").addEventListener("click", function(){
   var say = document.getElementById("say");
@@ -709,6 +784,47 @@ document.getElementById("copy").addEventListener("click", function(){
     entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
   }, { threshold: .12, rootMargin: "0px 0px -40px" });
   [].forEach.call(els, function(n){ io.observe(n); });
+})();
+
+// ── מה הדפדפן הזה מרשה, ומה להגיד על זה ──
+(function(){
+  var ua = navigator.userAgent || "";
+  var inApp = /Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger|TikTok/i.test(ua);
+  var iOS = /iPad|iPhone|iPod/.test(ua);
+  var android = /Android/i.test(ua);
+  var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
+  var warn = document.getElementById("warnStore");
+
+  if (!canStore) {
+    warn.innerHTML = "<b>הדפדפן הזה לא שומר את מה שאת כותבת.</b> אם תסגרי את הדף, הכול ייעלם. " +
+      "אפשר לפתוח את הקישור בדפדפן רגיל (ספארי או כרום, לא בגלישה פרטית), " +
+      "או פשוט לשלוח לי כל ארוחה מיד אחרי שכתבת אותה — אפשר לשלוח כמה פעמים ביום.";
+    warn.hidden = false;
+  } else if (inApp) {
+    warn.innerHTML = "<b>פתחת את הדף מתוך אפליקציה</b> (אינסטגרם או פייסבוק), והדפדפן הפנימי שלה עלול למחוק " +
+      "את מה שכתבת כשתצאי. כדאי לפתוח אותו בדפדפן של הטלפון: " +
+      (iOS ? "הכפתור עם שלוש הנקודות למטה ← ״פתיחה בספארי״." : "שלוש הנקודות למעלה ← ״פתיחה בדפדפן״.");
+    warn.hidden = false;
+  }
+
+  // ההצעה לשמור במסך הבית — רק למי שזה רלוונטי עבורה, ורק עד שהיא מסתירה.
+  var hidKeep = false;
+  try { hidKeep = localStorage.getItem(KEY + "_keep") === "0"; } catch (e) { /* */ }
+  if (canStore && !standalone && !inApp && !hidKeep && (iOS || android)) {
+    document.getElementById("keepHow").textContent = iOS
+      ? "בספארי: כפתור השיתוף למטה ← ״הוספה למסך הבית״."
+      : "בכרום: שלוש הנקודות למעלה ← ״הוספה למסך הבית״.";
+    document.getElementById("keep").hidden = false;
+  }
+  document.getElementById("keepX").addEventListener("click", function(){
+    document.getElementById("keep").hidden = true;
+    try { localStorage.setItem(KEY + "_keep", "0"); } catch (e) { /* */ }
+  });
+
+  // מבקשים מהדפדפן לא לפנות את האחסון כשנגמר לו המקום.
+  if (navigator.storage && navigator.storage.persist) {
+    try { navigator.storage.persist(); } catch (e) { /* */ }
+  }
 })();
 
 // ── התחלה ──
