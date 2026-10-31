@@ -73,6 +73,12 @@ h1, h2, h3 { font-family: 'Frank Ruhl Libre', serif; line-height: 1.15; }
 .jump { display: block; text-align: center; padding: 16px 22px; background: var(--olive-deep); color: var(--paper); text-decoration: none; font-weight: 700; font-size: 16.5px; }
 .jump span { color: #e9dfc4; font-weight: 400; }
 
+.pull { margin: 20px 60px 6px; background: var(--olive-tint); border-radius: 14px; padding: 20px 24px; text-align: center;
+  font-family: 'Frank Ruhl Libre', serif; font-size: clamp(19px, 3.4vw, 23px); font-weight: 700; line-height: 1.45; color: var(--olive-deep); text-wrap: balance; }
+.body p.small { font-size: 15px; color: var(--muted); }
+.door-rule { height: 1px; background: var(--rule); margin: 26px 60px 0; }
+.door { padding: 16px 60px 8px; font-size: 15px; color: var(--muted); line-height: 1.7; text-align: center; max-width: 60ch; margin-inline: auto; }
+
 .lede { padding: 22px 60px 4px; font-size: 16.5px; color: var(--muted); line-height: 1.7; }
 
 /* ההסברים מקופלים: הדף נחת מקרוסלה, והיומן צריך להיות במסך הראשון. */
@@ -248,7 +254,8 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
 :focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
 
 @media (max-width: 640px) {
-  .sec-head, .body, .cards, .steps, .tablewrap, .notes, .scroll-note, .log, .lede, .folds, footer { padding-inline: 20px; }
+  .sec-head, .body, .cards, .steps, .tablewrap, .notes, .scroll-note, .log, .lede, .folds, .door, footer { padding-inline: 20px; }
+  .pull, .door-rule { margin-inline: 20px; }
   .fold-body .cards, .fold-body .steps, .fold-body .tablewrap, .fold-body .scroll-note, .fold-body .sec-head { padding-inline: 14px; }
   .fold-body .ex-sum, .fold-body .sec-divider { margin-inline: 14px; }
   .cards { grid-template-columns: 1fr; }
@@ -370,6 +377,24 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
     </div>
   </section>
 
+  <!-- מה היא מקבלת. עומד בפני עצמו, לפני ההסברים ומיד אחרי השליחה. -->
+  <div class="sec-head">
+    <span class="sec-eyebrow">אחרי שתשלחי</span>
+    <h2>מה אני עושה עם זה</h2>
+  </div>
+  <div class="sec-divider"></div>
+  <div class="body">
+    <p>אני יושבת על שלושת הימים שלך וקוראת אותם לעומק — לא רק מה אכלת, אלא מתי, אחרי כמה זמן, ומה הרגשת סביב זה. משם אני מחזירה לך שלוש תובנות שיצאו מהרישום שלך עצמו: לא עצות כלליות, אלא דברים שמתאימים בדיוק ליום שלך, ושאפשר להתחיל בהם כבר מחר.</p>
+    <p>לפעמים זו שעה שחוזרת על עצמה. לפעמים פער שמייצר רעב. לפעמים שילוב שמחזיר את הנפיחות.</p>
+  </div>
+  <p class="pull">צעד קטן במקום הנכון עושה יותר מעשרה שינויים במקום הלא נכון.</p>
+  <div class="body">
+    <p class="small">שלושה ימים מראים כיוון, לא תמונה מלאה — ובשביל להתחיל, כיוון זה הרבה.</p>
+  </div>
+
+  <div class="door-rule"></div>
+  <p class="door">רוצה להמשיך מכאן? אפשר לבנות יחד תוכנית אכילה אישית, בפגישת ייעוץ, מתוך מה שאת כבר אוכלת. ואם יתברר שצריך יותר מזה — נדבר על זה אז.</p>
+
   <!-- ההסברים: פתוחים למי שרוצה לדייק, סגורים לכל השאר -->
   <div class="sec-head">
     <span class="sec-eyebrow">אם בא לך לדייק</span>
@@ -483,18 +508,6 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
     </details>
   </div>
 
-
-  <div class="sec-head">
-    <span class="sec-eyebrow">אחרי שתשלחי</span>
-    <h2>מה אני עושה עם זה</h2>
-  </div>
-  <div class="sec-divider"></div>
-  <div class="notes">
-    <p class="note"><b>שלוש תובנות מהרישום שלך.</b> שעה שחוזרת, פער שמייצר רעב, שילוב שמחזיר נפיחות — דברים שאפשר לעשות איתם משהו כבר מחר. לא תפריט, לא אבחנה, ולא שיפוט.</p>
-  </div>
-  <div class="body" style="padding:10px 60px 8px">
-    <p>אם אחרי זה תרצי ללכת לעומק — תפריט שבנוי עלייך, ליווי, התאמה לבדיקות דם — זו העבודה שלי בתשלום, ונדבר על זה רק אם את רוצה.</p>
-  </div>
 
 </div>
 
