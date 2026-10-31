@@ -238,6 +238,9 @@ input:focus, select:focus, textarea:focus { outline: 2.5px solid var(--gold); ou
 .send .btn { width: 100%; font: inherit; font-size: 17.5px; font-weight: 800; cursor: pointer; border: 0; border-radius: 99px; padding: 16px 26px; min-height: 56px; display: block; text-align: center; text-decoration: none; }
 .btn-wa { background: var(--olive-deep); color: var(--paper); }
 .btn-copy { background: none; color: var(--olive-deep); border: 1.5px solid var(--olive-soft) !important; margin-top: 10px; }
+.btn-wa.btn-wait { background: none; color: var(--olive-deep); border: 1.5px solid var(--olive-soft); font-weight: 700; }
+/* display:block על .btn גובר על ברירת המחדל של [hidden] */
+.send .btn[hidden] { display: none; }
 .say { text-align: center; font-size: 14.5px; color: var(--olive-deep); min-height: 22px; margin-top: 10px; }
 .count { text-align: center; font-size: 12.5px; color: var(--muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
 
@@ -371,7 +374,6 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
       <p class="send-note" id="sendNote"></p>
       <a class="btn btn-wa" id="wa" href="#" target="_blank" rel="noopener">לשלוח לי בוואטסאפ</a>
       <button class="btn btn-copy" type="button" id="copy">להעתיק כטקסט</button>
-      <p class="only-day" id="onlyDay" hidden><button type="button" id="waDay">לשלוח רק את היום הזה</button></p>
       <p class="say" id="say" role="status"></p>
       <p class="count" id="count"></p>
     </div>
@@ -411,7 +413,7 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
   <div class="sec-head">
     <span class="sec-eyebrow">איך זה עובד</span>
     <h2>חמישה דגשים</h2>
-    <p class="hint">את רושמת כל יום, לאורך כל היום, ושולחת את היום בסוף הערב. אני עוברת על הרישום ומחזירה לך משוב. אחת לשבוע אנחנו מסתכלות על השבוע כולו ומחפשות דפוסים.</p>
+    <p class="hint">את רושמת לאורך היום, שלושה ימים, ושולחת לי בסוף היום השלישי. אני עוברת על שלושתם יחד ומחזירה לך שני צעדים.</p>
   </div>
   <div class="sec-divider"></div>
   <ul class="cards">
@@ -419,7 +421,7 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
     <li><h3>אוכלים כרגיל</h3><p>לא משנים את האכילה בגלל שרושמים. המטרה היא לראות מה קורה באמת.</p></li>
     <li><h3>כל יום נרשם</h3><p>גם יום מבולגן, אירוע, מסעדה או סוף שבוע. כמות משוערת עדיפה על שורה ריקה.</p></li>
     <li><h3>הרישום הוא מידע, לא ציון</h3><p>דווקא הימים הפחות טובים מלמדים הכי הרבה.</p></li>
-    <li><h3>שולחים כל ערב</h3><p>גם כשהיום לא הושלם. יום חלקי עדיף על יום שלא נשלח.</p></li>
+    <li><h3>שולחים בסוף, ביחד</h3><p>שלושת הימים בהודעה אחת. דווקא ההשוואה ביניהם היא מה שמראה את הדפוס.</p></li>
   </ul>
 
       </div>
@@ -883,26 +885,27 @@ function updateCount() {
   var full = days.filter(function(x){ return isFull(x.d); }).length;
   var wa = document.getElementById("wa");
   var note = document.getElementById("sendNote");
-  var only = document.getElementById("onlyDay");
+  var copyBtn = document.getElementById("copy");
 
-  // הכפתור אומר בדיוק מה ייצא ממנו. אין הפתעות בוואטסאפ.
-  if (days.length > 1) {
-    var HOW_MANY = { 2: "שני הימים", 3: "שלושת הימים", 4: "ארבעת הימים", 5: "חמשת הימים" };
-    wa.textContent = "לשלוח לי את " + (HOW_MANY[days.length] || days.length + " הימים");
-    only.hidden = false;
-  } else {
-    wa.textContent = "לשלוח לי את היום בוואטסאפ";
-    only.hidden = true;
-  }
+  // שליחה אחת בסוף, לא אחת ליום. לפני היום השלישי הכפתור עדיין
+  // עובד — אסור לנעול אותה בחוץ — אבל הוא שקט, ולא מזמין ללחוץ.
+  var HOW_MANY = { 1: "היום הזה", 2: "שני הימים", 3: "שלושת הימים", 4: "ארבעת הימים", 5: "חמשת הימים" };
   wa.href = waLink("all");
-  document.getElementById("waDay").onclick = function(){ window.open(waLink("day"), "_blank", "noopener"); };
 
   if (full >= GOAL) {
+    wa.textContent = "לשלוח לי את " + (HOW_MANY[days.length] || days.length + " הימים");
+    wa.classList.remove("btn-wait");
+    copyBtn.hidden = false;
     note.innerHTML = "<b>זהו, שלושה ימים.</b> שלחי לי אותם ואני חוזרת אלייך עם שני צעדים מתוך מה שכתבת." +
       "<br><span class=\"send-note-sm\">אפשר להמשיך לרשום גם אחרי — זה לא מוחק כלום.</span>";
   } else {
-    note.innerHTML = "אפשר לשלוח לי כבר עכשיו מה שיש, ולהמשיך למחרת." +
-      "<br><span class=\"send-note-sm\">אחרי שלושה ימים מלאים אני מחזירה לך שני צעדים — השליחה לא מוחקת כלום.</span>";
+    wa.textContent = days.length ? "לשלוח לי כבר עכשיו מה שיש" : "לשלוח לי בוואטסאפ";
+    wa.classList.add("btn-wait");
+    // ההעתקה היא גיבוי לשליחה האמיתית. לפני היום השלישי היא רק
+    // מתחרה בכפתור היחיד שיש, ושניהם יוצאים חיוורים.
+    copyBtn.hidden = true;
+    note.innerHTML = "ממלאים שלושה ימים, ושולחים הכול בהודעה אחת בסוף." +
+      "<br><span class=\"send-note-sm\">אפשר לסגור את הדף ולחזור מחר — מה שכתבת מחכה לך כאן.</span>";
   }
 }
 
