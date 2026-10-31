@@ -27,6 +27,8 @@ const nextConfig = {
       { source: '/bloat/', destination: '/bloat.html' },
       { source: '/log', destination: '/log.html' },
       { source: '/log/', destination: '/log.html' },
+      { source: '/log1', destination: '/log1.html' },
+      { source: '/log1/', destination: '/log1.html' },
     ]
   },
 }
