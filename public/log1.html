@@ -361,7 +361,7 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
       </div>
 
       <p class="send-note" id="sendNote"></p>
-      <a class="btn btn-wa" id="wa" href="#" target="_blank" rel="noopener">לשלוח לי בוואטסאפ</a>
+      <a class="btn btn-wa" id="wa" href="#" target="_blank" rel="noopener">לשלוח לי את היום בוואטסאפ</a>
       <button class="btn btn-copy" type="button" id="copy">להעתיק כטקסט</button>
       <p class="say" id="say" role="status"></p>
       <p class="count" id="count"></p>
@@ -840,30 +840,23 @@ function dateLabel(k) {
   return dow(k) + ", " + a[2] + "." + a[1] + "." + a[0];
 }
 
-// scope: "day" — רק היום שפתוח. "all" — כל הימים שמילאה.
-function message(scope) {
-  var who = whoName().trim();
-  var days = (scope === "day") ? [{ k: dateKey, d: day }] : filledDays();
-  if (!days.length) days = [{ k: dateKey, d: day }];
-  var L = [];
+// איפה היום הזה עומד ברצף של השלושה — כדי שיהיה ברור אם מגיע עוד.
+function dayIndex() {
+  var days = filledDays();
+  for (var i = 0; i < days.length; i++) if (days[i].k === dateKey) return i + 1;
+  return days.length + 1;
+}
 
-  if (days.length > 1) {
-    L.push("🌿 יומן אכילה" + (who ? " — " + who : ""));
-    L.push(days.length + " מתוך " + GOAL + " ימים: " + days.map(function(x){ return short(x.k); }).join(", "));
-    days.forEach(function(x, i){
-      L.push("", "━━━ יום " + (i + 1) + " · " + dateLabel(x.k) + " ━━━", "");
-      dayLines(x.k, x.d, L);
-    });
-  } else {
-    L.push("🌿 יומן אכילה" + (who ? " — " + who : "") + " · " + dateLabel(days[0].k));
-    L.push("יום 1 מתוך " + GOAL, "");
-    dayLines(days[0].k, days[0].d, L);
-  }
+function message() {
+  var who = whoName().trim();
+  var L = ["🌿 יומן אכילה" + (who ? " — " + who : "") + " · " + dateLabel(dateKey)];
+  L.push("יום " + Math.min(dayIndex(), GOAL) + " מתוך " + GOAL, "");
+  dayLines(dateKey, day, L);
   return L.join("\n");
 }
 
-function waLink(scope) {
-  return "https://wa.me/" + WA_NUMBER + "?text=" + encodeURIComponent(message(scope));
+function waLink() {
+  return "https://wa.me/" + WA_NUMBER + "?text=" + encodeURIComponent(message());
 }
 
 function updateCount() {
@@ -877,20 +870,16 @@ function updateCount() {
   var note = document.getElementById("sendNote");
   var copyBtn = document.getElementById("copy");
 
-  // שולחים בסוף כל יום. הדף זוכר את הימים הקודמים ומצרף גם אותם,
-  // כך שההודעה האחרונה היא התמונה המלאה — ואם הדפדפן שכח בינתיים,
-  // היום הקודם כבר הגיע ביום שלו ולא הלך לאיבוד.
-  var HOW_MANY = { 1: "היום", 2: "שני הימים", 3: "שלושת הימים", 4: "ארבעת הימים", 5: "חמשת הימים" };
-  wa.href = waLink("all");
-  wa.textContent = "לשלוח לי את " + (HOW_MANY[days.length] || days.length + " הימים");
+  // יום אחד, הודעה אחת — בדיוק כמו ביומן של הלקוחות.
+  wa.href = waLink();
   copyBtn.hidden = false;
 
   if (full >= GOAL) {
-    note.innerHTML = "<b>זהו, שלושה ימים.</b> שלחי לי אותם ואני חוזרת אלייך עם שני צעדים מתוך מה שכתבת." +
+    note.innerHTML = "<b>זהו, היום השלישי.</b> שלחי לי אותו ואני חוזרת אלייך עם שני צעדים מתוך מה שכתבת." +
       "<br><span class=\"send-note-sm\">אפשר להמשיך לרשום גם אחרי — זה לא מוחק כלום.</span>";
   } else {
     note.innerHTML = "סיימת את היום? שלחי לי אותו עכשיו, ומחר נמשיך." +
-      "<br><span class=\"send-note-sm\">שולחים בסוף כל יום, שלושה ימים. אני מחברת אותם אצלי — השליחה לא מוחקת כלום.</span>";
+      "<br><span class=\"send-note-sm\">שולחים בסוף כל יום, שלושה ימים. אני אוספת אותם אצלי — השליחה לא מוחקת כלום.</span>";
   }
 }
 
@@ -979,7 +968,7 @@ document.getElementById("who").addEventListener("input", function(e){ setName(e.
 
 document.getElementById("copy").addEventListener("click", function(){
   var say = document.getElementById("say");
-  var txt = message("all");
+  var txt = message();
   var done = function(ok){ say.textContent = ok ? "העתקתי. אפשר להדביק בהודעה אליי." : "ההעתקה לא עבדה — אפשר לשלוח בכפתור הוואטסאפ."; };
   if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(txt).then(function(){ done(true); }, function(){ done(false); });
