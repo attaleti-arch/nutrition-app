@@ -172,10 +172,6 @@ table.ex tr.sym td { background: var(--gold-tint); }
    עדיף להגיד את זה מראש מאשר שהלקוחה תגלה שיום שלם נמחק. */
 .warn { background: #fdece9; border: 1px solid #f0c6bd; border-radius: 12px; padding: 13px 16px; margin-bottom: 14px; font-size: 15.5px; line-height: 1.65; color: #8a3324; }
 .warn b { color: #6f241a; }
-.keep { background: var(--gold-tint); border: 1px solid #ecdcb4; border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; font-size: 15.5px; line-height: 1.65; }
-.keep b { color: var(--olive-deep); }
-.keep-how { color: var(--muted); margin-top: 3px; }
-.keep-x { font: inherit; font-size: 13.5px; font-weight: 600; color: var(--muted); background: none; border: 0; cursor: pointer; padding: 8px 0 0; text-decoration: underline; }
 
 .daybar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
 .daybar label { font-size: 14.5px; font-weight: 700; color: var(--olive-deep); }
@@ -238,7 +234,6 @@ input:focus, select:focus, textarea:focus { outline: 2.5px solid var(--gold); ou
 .send .btn { width: 100%; font: inherit; font-size: 17.5px; font-weight: 800; cursor: pointer; border: 0; border-radius: 99px; padding: 16px 26px; min-height: 56px; display: block; text-align: center; text-decoration: none; }
 .btn-wa { background: var(--olive-deep); color: var(--paper); }
 .btn-copy { background: none; color: var(--olive-deep); border: 1.5px solid var(--olive-soft) !important; margin-top: 10px; }
-.btn-wa.btn-wait { background: none; color: var(--olive-deep); border: 1.5px solid var(--olive-soft); font-weight: 700; }
 /* display:block על .btn גובר על ברירת המחדל של [hidden] */
 .send .btn[hidden] { display: none; }
 .say { text-align: center; font-size: 14.5px; color: var(--olive-deep); min-height: 22px; margin-top: 10px; }
@@ -317,12 +312,6 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
     </div>
 
     <div class="warn" id="warnStore" hidden></div>
-
-    <div class="keep" id="keep" hidden>
-      <p><b>כדי שהיומן יחכה לך כל היום</b> — שמרי אותו במסך הבית. משם הוא נפתח כמו אפליקציה, ומה שכתבת תמיד שם.</p>
-      <p class="keep-how" id="keepHow"></p>
-      <button class="keep-x" type="button" id="keepX">הבנתי, אפשר להסתיר</button>
-    </div>
 
     <div class="daybar">
       <label for="date">תאריך</label>
@@ -413,7 +402,7 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
   <div class="sec-head">
     <span class="sec-eyebrow">איך זה עובד</span>
     <h2>חמישה דגשים</h2>
-    <p class="hint">את רושמת לאורך היום, שלושה ימים, ושולחת לי בסוף היום השלישי. אני עוברת על שלושתם יחד ומחזירה לך שני צעדים.</p>
+    <p class="hint">את רושמת לאורך היום ושולחת לי בסוף היום, שלושה ימים ברצף. אני אוספת אותם אצלי, ואחרי השלישי מחזירה לך שני צעדים.</p>
   </div>
   <div class="sec-divider"></div>
   <ul class="cards">
@@ -421,7 +410,7 @@ footer .footer-legal { margin-top: 12px; font-size: 13px; color: var(--muted); f
     <li><h3>אוכלים כרגיל</h3><p>לא משנים את האכילה בגלל שרושמים. המטרה היא לראות מה קורה באמת.</p></li>
     <li><h3>כל יום נרשם</h3><p>גם יום מבולגן, אירוע, מסעדה או סוף שבוע. כמות משוערת עדיפה על שורה ריקה.</p></li>
     <li><h3>הרישום הוא מידע, לא ציון</h3><p>דווקא הימים הפחות טובים מלמדים הכי הרבה.</p></li>
-    <li><h3>שולחים בסוף, ביחד</h3><p>שלושת הימים בהודעה אחת. דווקא ההשוואה ביניהם היא מה שמראה את הדפוס.</p></li>
+    <li><h3>שולחים בסוף כל יום</h3><p>ברגע שהיום נגמר, הוא כבר אצלי ולא יכול ללכת לאיבוד. אחרי שלושה ימים אני משווה ביניהם — שם נמצא הדפוס.</p></li>
   </ul>
 
       </div>
@@ -860,13 +849,14 @@ function message(scope) {
 
   if (days.length > 1) {
     L.push("🌿 יומן אכילה" + (who ? " — " + who : ""));
-    L.push(days.length + " ימים: " + days.map(function(x){ return short(x.k); }).join(", "));
+    L.push(days.length + " מתוך " + GOAL + " ימים: " + days.map(function(x){ return short(x.k); }).join(", "));
     days.forEach(function(x, i){
       L.push("", "━━━ יום " + (i + 1) + " · " + dateLabel(x.k) + " ━━━", "");
       dayLines(x.k, x.d, L);
     });
   } else {
-    L.push("🌿 יומן אכילה" + (who ? " — " + who : "") + " · " + dateLabel(days[0].k), "");
+    L.push("🌿 יומן אכילה" + (who ? " — " + who : "") + " · " + dateLabel(days[0].k));
+    L.push("יום 1 מתוך " + GOAL, "");
     dayLines(days[0].k, days[0].d, L);
   }
   return L.join("\n");
@@ -887,25 +877,20 @@ function updateCount() {
   var note = document.getElementById("sendNote");
   var copyBtn = document.getElementById("copy");
 
-  // שליחה אחת בסוף, לא אחת ליום. לפני היום השלישי הכפתור עדיין
-  // עובד — אסור לנעול אותה בחוץ — אבל הוא שקט, ולא מזמין ללחוץ.
-  var HOW_MANY = { 1: "היום הזה", 2: "שני הימים", 3: "שלושת הימים", 4: "ארבעת הימים", 5: "חמשת הימים" };
+  // שולחים בסוף כל יום. הדף זוכר את הימים הקודמים ומצרף גם אותם,
+  // כך שההודעה האחרונה היא התמונה המלאה — ואם הדפדפן שכח בינתיים,
+  // היום הקודם כבר הגיע ביום שלו ולא הלך לאיבוד.
+  var HOW_MANY = { 1: "היום", 2: "שני הימים", 3: "שלושת הימים", 4: "ארבעת הימים", 5: "חמשת הימים" };
   wa.href = waLink("all");
+  wa.textContent = "לשלוח לי את " + (HOW_MANY[days.length] || days.length + " הימים");
+  copyBtn.hidden = false;
 
   if (full >= GOAL) {
-    wa.textContent = "לשלוח לי את " + (HOW_MANY[days.length] || days.length + " הימים");
-    wa.classList.remove("btn-wait");
-    copyBtn.hidden = false;
     note.innerHTML = "<b>זהו, שלושה ימים.</b> שלחי לי אותם ואני חוזרת אלייך עם שני צעדים מתוך מה שכתבת." +
       "<br><span class=\"send-note-sm\">אפשר להמשיך לרשום גם אחרי — זה לא מוחק כלום.</span>";
   } else {
-    wa.textContent = days.length ? "לשלוח לי מה שיש עד עכשיו" : "לשלוח לי בוואטסאפ";
-    wa.classList.add("btn-wait");
-    // ההעתקה היא גיבוי לשליחה האמיתית. לפני היום השלישי היא רק
-    // מתחרה בכפתור היחיד שיש, ושניהם יוצאים חיוורים.
-    copyBtn.hidden = true;
-    note.innerHTML = "ממלאים שלושה ימים, ושולחים הכול בהודעה אחת בסוף." +
-      "<br><span class=\"send-note-sm\">אפשר לסגור את הדף ולחזור מחר — מה שכתבת מחכה לך כאן.</span>";
+    note.innerHTML = "סיימת את היום? שלחי לי אותו עכשיו, ומחר נמשיך." +
+      "<br><span class=\"send-note-sm\">שולחים בסוף כל יום, שלושה ימים. אני מחברת אותם אצלי — השליחה לא מוחקת כלום.</span>";
   }
 }
 
@@ -1018,36 +1003,20 @@ document.getElementById("copy").addEventListener("click", function(){
 (function(){
   var ua = navigator.userAgent || "";
   var inApp = /Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger|TikTok/i.test(ua);
-  var iOS = /iPad|iPhone|iPod/.test(ua);
-  var android = /Android/i.test(ua);
-  var standalone = (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || navigator.standalone === true;
   var warn = document.getElementById("warnStore");
 
+  // בלי הוראות טכניות. מי שהגיעה מפוסט לא תלמד עכשיו לשמור דף
+  // למסך הבית — אז התשובה לכל תקלת אחסון היא אותה פעולה אחת
+  // שהיא ממילא עושה: לשלוח בסוף היום.
   if (!canStore) {
-    warn.innerHTML = "<b>הדפדפן הזה לא שומר את מה שאת כותבת.</b> אם תסגרי את הדף, הכול ייעלם. " +
-      "אפשר לפתוח את הקישור בדפדפן רגיל (ספארי או כרום, לא בגלישה פרטית), " +
-      "או פשוט לשלוח לי כל ארוחה מיד אחרי שכתבת אותה — אפשר לשלוח כמה פעמים ביום.";
+    warn.innerHTML = "<b>הדפדפן הזה לא זוכר מה שאת כותבת.</b> " +
+      "לכן חשוב לשלוח לי בסוף כל יום — ככה שום דבר לא הולך לאיבוד.";
     warn.hidden = false;
   } else if (inApp) {
-    warn.innerHTML = "<b>פתחת את הדף מתוך אפליקציה</b> (אינסטגרם או פייסבוק), והדפדפן הפנימי שלה עלול למחוק " +
-      "את מה שכתבת כשתצאי. כדאי לפתוח אותו בדפדפן של הטלפון: " +
-      (iOS ? "הכפתור עם שלוש הנקודות למטה ← ״פתיחה בספארי״." : "שלוש הנקודות למעלה ← ״פתיחה בדפדפן״.");
+    warn.innerHTML = "<b>פתחת את הדף מתוך אפליקציה.</b> אם תצאי ממנה לפני ששלחת, מה שכתבת עלול להימחק. " +
+      "שלחי לי בסוף כל יום, ואז זה כבר אצלי.";
     warn.hidden = false;
   }
-
-  // ההצעה לשמור במסך הבית — רק למי שזה רלוונטי עבורה, ורק עד שהיא מסתירה.
-  var hidKeep = false;
-  try { hidKeep = localStorage.getItem(KEY + "_keep") === "0"; } catch (e) { /* */ }
-  if (canStore && !standalone && !inApp && !hidKeep && (iOS || android)) {
-    document.getElementById("keepHow").textContent = iOS
-      ? "בספארי: כפתור השיתוף למטה ← ״הוספה למסך הבית״."
-      : "בכרום: שלוש הנקודות למעלה ← ״הוספה למסך הבית״.";
-    document.getElementById("keep").hidden = false;
-  }
-  document.getElementById("keepX").addEventListener("click", function(){
-    document.getElementById("keep").hidden = true;
-    try { localStorage.setItem(KEY + "_keep", "0"); } catch (e) { /* */ }
-  });
 
   // מבקשים מהדפדפן לא לפנות את האחסון כשנגמר לו המקום.
   if (navigator.storage && navigator.storage.persist) {
